@@ -1,0 +1,3 @@
+[submodule "external/kirin"]
+	path = external/kirin
+	url = https://github.com/ArnavMehta3000/Kirin.git
