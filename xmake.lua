@@ -18,7 +18,7 @@ includes("Xmake/Packages.lua")
 --includes("Xmake/Options.lua")
 
 target("Koi")
-    add_packages("Kirin")
+    add_packages("Kirin", "spdlog")
     set_kind("binary")
     add_includedirs("Source/Koi")
     add_headerfiles("Source/Koi/**.h")

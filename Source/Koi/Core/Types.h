@@ -1,7 +1,11 @@
 #pragma once
+#include "Kirin/Common/StandardTypes.h"
 
 namespace koi
 {
+	// Pull krn standard types into koi namespace
+	using namespace krn::types;
+
     struct NonCopyable
     {
         NonCopyable() = default;
@@ -20,7 +24,7 @@ namespace koi
         NonMovable& operator=(NonMovable&&) = delete;
     };
 
-    struct NonCopyableNonMovable : NonCopyable, NonMovable 
+    struct NonCopyableNonMovable : NonCopyable, NonMovable
     {
         NonCopyableNonMovable() = default;
     };

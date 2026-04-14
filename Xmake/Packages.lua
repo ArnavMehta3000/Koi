@@ -18,3 +18,6 @@ package("Kirin")
 package_end()
 
 add_requires("Kirin")
+
+
+add_requires("spdlog", { configs = { wchar = true, std_format = false, fmt_external = false }})
