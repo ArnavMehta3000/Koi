@@ -4,77 +4,57 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/msvc_sink.h>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace koi
 {
-	// Common categories
-	namespace log
-	{
-		constexpr auto Core = "Core";
-	}
+    struct LoggerConfig
+    {
+        bool SpawnConsole = false; // force-allocate a console on Windows
+        bool UseDebugSink = true;  // OutputDebugString sink (Win only)
+    };
 
-	class Logger
-	{
-	public:
-		static void Init(const std::string& logDir = "Logs");
-		static void Shutdown();
+    class Logger
+    {
+    public:
+        static void Init(const LoggerConfig& cfg = {});
+        static void Shutdown();
 
-		static std::shared_ptr<spdlog::logger> GetLogger(const std::string& category);
-		static std::shared_ptr<spdlog::logger> GetOrCreateLogger(const std::string& category);
+        static std::shared_ptr<spdlog::logger> GetLogger(std::string_view category);
+        static std::shared_ptr<spdlog::logger> GetOrCreateLogger(std::string_view category);
 
-		static void SetLevel(LogLevel level);
-		static void SetCategoryLevel(const std::string& category, LogLevel level);
-		static void SetPattern(const std::string& pattern);
+        static void SetLevel(LogLevel level);
+        static void SetCategoryLevel(std::string_view category, LogLevel level);
+        static void SetPattern(const std::string& pattern);
+        static void Flush();
 
-		static void Flush();
-
-	private:
-		static std::shared_ptr<spdlog::logger> CreateLogger(const std::string& category);
-		static spdlog::level::level_enum ToSpdlogLevel(LogLevel level);
-
-		static std::unordered_map<std::string, std::shared_ptr<spdlog::logger>> s_loggers;
-		static std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> s_consoleSink;
-		static std::shared_ptr<spdlog::sinks::basic_file_sink_mt> s_fileSink;
-		static bool s_initialized;
-	};
+    private:
+        static std::shared_ptr<spdlog::logger> CreateLogger(std::string_view category);
+        static spdlog::level::level_enum ToSpdlogLevel(LogLevel level);
+    };
 }
-// TODO configure this via options
-#define KOI_LOG_LEVEL 0
 
-#define KOI_LOG_IMPL(func, category, ...)                         \
-		auto logger = ::koi::Logger::GetOrCreateLogger(category); \
-		if (logger) logger->func(__VA_ARGS__);                    \
+#define KOI_LOG_IMPL(func, ...)                                          \
+    do                                                                   \
+    {                                                                    \
+        auto _logger = ::koi::Logger::GetOrCreateLogger(KOI_FILE);       \
+        if (_logger) _logger->func(__VA_ARGS__);                         \
+    } while(0)
 
+#define KOI_LOG_TRACE(...)    do { if constexpr (KOI_LOG_LEVEL <= 0) KOI_LOG_IMPL(trace,    __VA_ARGS__); } while(0)
+#define KOI_LOG_DEBUG(...)    do { if constexpr (KOI_LOG_LEVEL <= 1) KOI_LOG_IMPL(debug,    __VA_ARGS__); } while(0)
+#define KOI_LOG_INFO(...)     do { if constexpr (KOI_LOG_LEVEL <= 2) KOI_LOG_IMPL(info,     __VA_ARGS__); } while(0)
+#define KOI_LOG_WARN(...)     do { if constexpr (KOI_LOG_LEVEL <= 3) KOI_LOG_IMPL(warn,     __VA_ARGS__); } while(0)
+#define KOI_LOG_ERROR(...)    do { if constexpr (KOI_LOG_LEVEL <= 4) KOI_LOG_IMPL(error,    __VA_ARGS__); } while(0)
+#define KOI_LOG_CRITICAL(...) do { if constexpr (KOI_LOG_LEVEL <= 5) KOI_LOG_IMPL(critical, __VA_ARGS__); } while(0)
 
-#define KOI_LOG_TRACE(category, ...)                              \
-	do { if (KOI_LOG_LEVEL <= 0) {                                \
-		KOI_LOG_IMPL(trace, category, __VA_ARGS__);               \
-	} } while(0)
-
-#define KOI_LOG_DEBUG(category, ...)                              \
-	do { if (KOI_LOG_LEVEL <= 1) {                                \
-		KOI_LOG_IMPL(debug, category, __VA_ARGS__);               \
-	} } while(0)
-
-#define KOI_LOG_INFO(category, ...)                               \
-	do{ if (KOI_LOG_LEVEL <= 2) {                                 \
-		KOI_LOG_IMPL(info, category, __VA_ARGS__);                \
-	} } while(0)
-
-#define KOI_LOG_WARN(category, ...)                               \
-	do { if (KOI_LOG_LEVEL <= 3) {                                \
-		KOI_LOG_IMPL(warn, category, __VA_ARGS__);               \
-	} } while(0)
-
-#define KOI_LOG_ERROR(category, ...)                              \
-	do { if (KOI_LOG_LEVEL <= 4) {                                \
-		KOI_LOG_IMPL(error, category, __VA_ARGS__);               \
-	} } while(0)
-
-#define KOI_LOG_CRITICAL(category, ...)                           \
-	do { if (KOI_LOG_LEVEL <= 5) {                                \
-		KOI_LOG_IMPL(critical, category, __VA_ARGS__);             \
-	} } while(0)
+// Optional escape hatch when you want an explicit category
+#define KOI_LOG_INFO_CAT(cat, ...)                                       \
+    do { if (KOI_LOG_LEVEL <= 2) {                                       \
+        auto _logger = ::koi::Logger::GetOrCreateLogger(cat);            \
+        if (_logger) _logger->info(__VA_ARGS__);                         \
+    } } while(0)

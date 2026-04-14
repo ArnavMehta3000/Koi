@@ -15,11 +15,14 @@ set_policy("build.warning", true)
 set_policy("run.autobuild", true)
 
 includes("Xmake/Packages.lua")
---includes("Xmake/Options.lua")
+includes("Xmake/Options.lua")
 
 target("Koi")
-    add_packages("Kirin", "spdlog")
     set_kind("binary")
+
+    add_options("LogLevel")
+
+    add_packages("Kirin", "spdlog")
     add_includedirs("Source/Koi")
     add_headerfiles("Source/Koi/**.h")
     add_files("Source/Koi/**.cpp")
@@ -28,7 +31,7 @@ target("Koi")
     add_includedirs("$(builddir)/Generated")
     add_headerfiles("$(builddir)/Generated/**.h")
 
-    add_configfiles("Xmake/ConfigFiles/Version.h.in", { prefixdir = "Config" })
+    add_configfiles("Xmake/ConfigFiles/**.h.in", { prefixdir = "Config" })
 
     if is_plat("windows") then
         add_syslinks("user32", "dwmapi")
