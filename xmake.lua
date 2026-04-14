@@ -14,10 +14,19 @@ set_warnings("all", "extra")
 set_policy("build.warning", true)
 set_policy("run.autobuild", true)
 
-includes("Xmake/packages.lua")
+includes("Xmake/Packages.lua")
+--includes("Xmake/Options.lua")
 
 target("Koi")
     add_packages("Kirin")
     set_kind("binary")
+    add_includedirs("Source/Koi")
+    add_headerfiles("Source/Koi/**.h")
     add_files("Source/Koi/**.cpp")
+
+    set_configdir("$(builddir)/Generated")
+    add_includedirs("$(builddir)/Generated")
+    add_headerfiles("$(builddir)/Generated/**.h")
+
+    add_configfiles("Xmake/ConfigFiles/Version.h.in", { prefixdir = "Config"})
 target_end()
