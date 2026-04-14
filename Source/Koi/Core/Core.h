@@ -1,19 +1,15 @@
 #pragma once
 #include "Core/Config.h"
+#include "Core/ClassUtils.h"
 #include "Kirin/Common/Assert.h"
 
 #define KOI_DEBUGBREAK() KRN_DEBUGBREAK()
 
-#if KOI_DEBUG
-	#define KOI_ASSERT(x) KRN_ASSERT(x)
-	#define KOI_ASSERT_MSG(x, msg) KRN_ASSERT_MSG(x, msg)
-#else
-	#define KOI_ASSERT(x)
-	#define KOI_ASSERT_MSG(x, msg)
-#endif
-
-#define KOI_VERIFY(x) KRN_VERIFY(x)
-#define KOI_VERIFY_MSG(x, msg) KRN_VERIFY_MSG(x, msg)
+#define KOI_ASSERT(cond)            KRN_ASSERT(cond)
+#define KOI_ASSERT_MSG(cond, msg)   KRN_ASSERT_MSG(cond, msg)
+#define KOI_VERIFY(cond)            KRN_VERIFY(cond)
+#define KOI_VERIFY_MSG(cond, msg)   KRN_VERIFY_MSG(cond, msg)
+#define KOI_UNREACHABLE(msg)        KRN_UNREACHABLE(msg)
 
 namespace koi
 {

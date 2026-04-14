@@ -28,5 +28,10 @@ target("Koi")
     add_includedirs("$(builddir)/Generated")
     add_headerfiles("$(builddir)/Generated/**.h")
 
-    add_configfiles("Xmake/ConfigFiles/Version.h.in", { prefixdir = "Config"})
+    add_configfiles("Xmake/ConfigFiles/Version.h.in", { prefixdir = "Config" })
+
+    if is_plat("windows") then
+        add_syslinks("user32", "dwmapi")
+    end
+
 target_end()
