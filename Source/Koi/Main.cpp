@@ -1,9 +1,9 @@
 #include "Platform/Application.h"
-#include "Core/Logger.h"
+#include "Core/Logging/Logger.h"
 
 int main()
 {
-	koi::Logger::Initialize();
+	koi::Logger::Init();
 
 	KOI_LOG_TRACE(koi::log::Core, "This is a {}", "trace message");
 

@@ -1,6 +1,6 @@
-#include "Core/Logger.h"
+#include "Core/Logging/Logger.h"
 #include <filesystem>
-
+#include "Core/Utils/StringUtils.h"
 namespace koi
 {
     namespace fs = std::filesystem;
@@ -10,9 +10,10 @@ namespace koi
 	std::shared_ptr<spdlog::sinks::basic_file_sink_mt> Logger::s_fileSink;
 	bool Logger::s_initialized = false;
 
-    void Logger::Initialize(const std::string& logDir)
+
+    void Logger::Init(const std::string& logDir)
     {
-        if (s_initialized) 
+        if (s_initialized)
             return;
 
         fs::create_directories(logDir);
@@ -73,10 +74,10 @@ namespace koi
         return CreateLogger(category);
     }
 
-    void Logger::SetLevel(Level level)
+    void Logger::SetLevel(LogLevel level)
     {
         auto spdlogLevel = ToSpdlogLevel(level);
-    
+
         if (s_consoleSink) s_consoleSink->set_level(spdlogLevel);
         if (s_fileSink) s_fileSink->set_level(spdlogLevel);
 
@@ -86,7 +87,7 @@ namespace koi
         }
     }
 
-    void Logger::SetCategoryLevel(const std::string& category, Level level)
+    void Logger::SetCategoryLevel(const std::string& category, LogLevel level)
     {
         if (auto logger = GetOrCreateLogger(category))
         {
@@ -135,17 +136,17 @@ namespace koi
         }
     }
 
-    spdlog::level::level_enum Logger::ToSpdlogLevel(Level level)
+    spdlog::level::level_enum Logger::ToSpdlogLevel(LogLevel level)
     {
         switch (level)
         {
-        case Level::Trace:    return spdlog::level::trace;
-        case Level::Debug:    return spdlog::level::debug;
-        case Level::Info:     return spdlog::level::info;
-        case Level::Warn:     return spdlog::level::warn;
-        case Level::Error:    return spdlog::level::err;
-        case Level::Critical: return spdlog::level::critical;
-        default:              return spdlog::level::info;
+        case LogLevel::Trace:    return spdlog::level::trace;
+        case LogLevel::Debug:    return spdlog::level::debug;
+        case LogLevel::Info:     return spdlog::level::info;
+        case LogLevel::Warn:     return spdlog::level::warn;
+        case LogLevel::Error:    return spdlog::level::err;
+        case LogLevel::Critical: return spdlog::level::critical;
+        default:                 return spdlog::level::info;
         }
     }
 }

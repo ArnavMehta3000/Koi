@@ -4,7 +4,6 @@
 
 #define UNICODE
 #define _UNICODE
-#define STRICT
 #define NOMINMAX
 #define NOMCX
 #define NOSERVICE

@@ -1,5 +1,6 @@
 #pragma once
 #include "Core/Core.h"
+#include "Core/Logging/LogLevel.h"
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -18,31 +19,21 @@ namespace koi
 	class Logger
 	{
 	public:
-		enum class Level
-		{
-			Trace,
-			Debug,
-			Info,
-			Warn,
-			Error,
-			Critical,
-		};
-
-		static void Initialize(const std::string& logDir = "Logs");
+		static void Init(const std::string& logDir = "Logs");
 		static void Shutdown();
 
 		static std::shared_ptr<spdlog::logger> GetLogger(const std::string& category);
 		static std::shared_ptr<spdlog::logger> GetOrCreateLogger(const std::string& category);
 
-		static void SetLevel(Level level);
-		static void SetCategoryLevel(const std::string& category, Level level);
+		static void SetLevel(LogLevel level);
+		static void SetCategoryLevel(const std::string& category, LogLevel level);
 		static void SetPattern(const std::string& pattern);
 
 		static void Flush();
 
 	private:
 		static std::shared_ptr<spdlog::logger> CreateLogger(const std::string& category);
-		static spdlog::level::level_enum ToSpdlogLevel(Level level);
+		static spdlog::level::level_enum ToSpdlogLevel(LogLevel level);
 
 		static std::unordered_map<std::string, std::shared_ptr<spdlog::logger>> s_loggers;
 		static std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> s_consoleSink;
@@ -51,12 +42,12 @@ namespace koi
 	};
 }
 // TODO configure this via options
-#define KOI_LOG_LEVEL 0 
+#define KOI_LOG_LEVEL 0
 
 #define KOI_LOG_IMPL(func, category, ...)                         \
 		auto logger = ::koi::Logger::GetOrCreateLogger(category); \
 		if (logger) logger->func(__VA_ARGS__);                    \
-	
+
 
 #define KOI_LOG_TRACE(category, ...)                              \
 	do { if (KOI_LOG_LEVEL <= 0) {                                \
