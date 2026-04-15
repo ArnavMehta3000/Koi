@@ -5,18 +5,14 @@ namespace koi
 	Window& Application::CreateWindow(const WindowDesc& desc)
 	{
 		auto& window = m_windows.emplace_back(std::make_unique<Window>(desc));
-		window->Show();
 		return *window;
 	}
 
 	bool Application::Tick()
 	{
-		for (auto& window : m_windows)
-		{
-			std::ignore = window->ProcessMessages();
-		}
+		Window::PollEvents();
 
-		std::erase_if(m_windows, [](auto& window) { return !window->IsAlive(); });
+		std::erase_if(m_windows, [](auto& window) { return !window->ShouldClose(); });
 
 		return !m_windows.empty();
 	}

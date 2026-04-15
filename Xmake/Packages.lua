@@ -17,7 +17,10 @@ package("Kirin")
     end)
 package_end()
 
-add_requires("Kirin")
+add_requires(
+    "Kirin",
+    "glfw"
+)
 
 
 add_requires("spdlog", { configs = { wchar = true, std_format = false, fmt_external = false }})

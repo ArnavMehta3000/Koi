@@ -51,10 +51,3 @@ namespace koi
 #define KOI_LOG_WARN(...)     do { if constexpr (KOI_LOG_LEVEL <= 3) KOI_LOG_IMPL(warn,     __VA_ARGS__); } while(0)
 #define KOI_LOG_ERROR(...)    do { if constexpr (KOI_LOG_LEVEL <= 4) KOI_LOG_IMPL(error,    __VA_ARGS__); } while(0)
 #define KOI_LOG_CRITICAL(...) do { if constexpr (KOI_LOG_LEVEL <= 5) KOI_LOG_IMPL(critical, __VA_ARGS__); } while(0)
-
-// Optional escape hatch when you want an explicit category
-#define KOI_LOG_INFO_CAT(cat, ...)                                       \
-    do { if (KOI_LOG_LEVEL <= 2) {                                       \
-        auto _logger = ::koi::Logger::GetOrCreateLogger(cat);            \
-        if (_logger) _logger->info(__VA_ARGS__);                         \
-    } } while(0)

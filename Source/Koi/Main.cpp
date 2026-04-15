@@ -9,6 +9,7 @@ struct LoggerAutoInit
 };
 LoggerAutoInit g_loggerAutoInit;
 
+
 int main()
 {
 	KOI_LOG_TRACE("This is a {}", "trace message");
@@ -18,15 +19,12 @@ int main()
 	KOI_LOG_ERROR("This is a {}", "error message");
 	KOI_LOG_CRITICAL("This is a {}", "critical message");
 
-	koi::Application app;
+	koi::Window main({ .Title = "Main View", .Width = 1920, .Height = 1080 });
+	koi::Window side({ .Title = "Inspector", .Mode = koi::WindowMode::Borderless, .Width = 800, .Height = 600,  });
 
-	auto& mainWin = app.CreateWindow({ .Title = L"Main Viewport", .Width = 1800, .Height = 1000});
-	auto& auxWin = app.CreateWindow({ .Title = L"Debug View",   .Width = 800,  .Height = 600 });
-	
-	while (app.Tick())
+	while (!main.ShouldClose() && !side.ShouldClose())
 	{
-		// Updating...
+		koi::Window::PollEvents();
+		// render to both swapchains, present each
 	}
-	
-	return 0;
 }

@@ -1,173 +1,247 @@
 #include "Platform/Window.h"
+#include "Core/Logging/Logger.h"
 #include <windowsx.h>
 #include <dwmapi.h>
+
 
 namespace koi
 {
 	Window::Window(const WindowDesc& desc)
-		: m_hWnd(nullptr)
+		: m_mode(desc.Mode)
 		, m_width(desc.Width)
 		, m_height(desc.Height)
+		, m_title(desc.Title)
 	{
-		s_hInstance = GetModuleHandleW(nullptr);
-
 		if (s_windowCount == 0)
 		{
-			WNDCLASSEXW windowClass
+			::glfwSetErrorCallback([](int code, const char* desc)
+				{ KOI_LOG_ERROR("GLFW Error {}: {}", code, desc); });
+
+			if (!::glfwInit())
 			{
-				.cbSize        = sizeof(windowClass),
-				.style         = CS_HREDRAW | CS_VREDRAW,
-				.lpfnWndProc   = WndProcStatic,
-				.hInstance     = s_hInstance,
-				.hCursor       = ::LoadCursorW(nullptr, IDC_ARROW),
-				.lpszClassName = s_className
-			};
-			
-			[[maybe_unused]] auto result = ::RegisterClassExW(&windowClass);
-			KOI_ASSERT_MSG(result, "Failed to register window class");
+				KOI_VERIFY(false, "Failed to initialize GLFW");
+			}
 		}
-		++s_windowCount;
 
-		DWORD style = WS_OVERLAPPEDWINDOW;
-		if (!desc.Resizable)
-			style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
-
-		RECT rc{ 0, 0, static_cast<LONG>(desc.Width), static_cast<LONG>(desc.Height) };
-		::AdjustWindowRect(&rc, style, FALSE);
-
-		// Centre the window
-		i32 x = CW_USEDEFAULT, y = CW_USEDEFAULT;
-		i32 sw =::GetSystemMetrics(SM_CXSCREEN);
-		i32 sh =::GetSystemMetrics(SM_CYSCREEN);
-		x = (sw - (rc.right - rc.left)) / 2;
-		y = (sh - (rc.bottom - rc.top)) / 2;
-
-		m_hWnd = ::CreateWindowExW(
-			0, s_className,
-			desc.Title.c_str(),
-			style, x, y,
-			rc.right - rc.left,
-			rc.bottom - rc.top,
-			nullptr, nullptr,
-			s_hInstance,
-			this
-		);
-		KOI_ASSERT_MSG(m_hWnd, "Failed to create window");
+		Create(desc);
+		s_windowCount++;
 	}
 
 	Window::~Window()
 	{
-		if (m_hWnd)
-		{
-			::DestroyWindow(m_hWnd);
-			m_hWnd = nullptr;
-		}
-
+		Destroy();
 		if (--s_windowCount == 0)
 		{
-			::UnregisterClassW(s_className, s_hInstance);
+			::glfwTerminate();
 		}
 	}
 
-	bool Window::ProcessMessages() const
+	bool Window::ShouldClose() const noexcept
 	{
-		MSG msg{};
-		while (::PeekMessageW(&msg, m_hWnd, 0, 0, PM_REMOVE))
-		{
-			::TranslateMessage(&msg);
-			::DispatchMessageW(&msg);
-		}
-		return m_alive;
-	}
-	
-	void Window::SetTitle(const std::wstring& title) const
-	{
-		::SetWindowTextW(m_hWnd, title.c_str());
+		return m_window? ::glfwWindowShouldClose(m_window) : true;
 	}
 
-	void Window::Show(i32 showCmd) const
+	void Window::RequestClose()
 	{
-		// Set window title bars to be dark mode
-		BOOL enable = TRUE;
-		::DwmSetWindowAttribute(m_hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
-		::SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
-
-		::ShowWindow(m_hWnd, showCmd);
-		::UpdateWindow(m_hWnd);
+		if (m_window)
+			::glfwSetWindowShouldClose(m_window, GLFW_TRUE);
 	}
 
-	LRESULT Window::WndProcStatic(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+	void Window::SetMode(WindowMode newMode)
 	{
-		Window* self = nullptr;
-		if (msg == WM_NCCREATE)
+		if (newMode == m_mode)
+			return;
+
+		// Save window bounds before switching
+		if (m_mode == WindowMode::Windowed || m_mode == WindowMode::Borderless)
 		{
-			auto* cs = reinterpret_cast<CREATESTRUCTW*>(lp);
-			self = static_cast<Window*>(cs->lpCreateParams);
-			SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(self));
-			self->m_hWnd = hwnd;
-		}
-		else {
-			self = reinterpret_cast<Window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+			::glfwGetWindowPos(m_window, &m_savedX, &m_savedY);
+			i32 w, h;
+			::glfwGetWindowSize(m_window, &w, &h);
+			m_savedW = static_cast<u32>(w);
+			m_savedH = static_cast<u32>(h);
 		}
 
-		return self ? self->WndProc(msg, wp, lp) : DefWindowProcW(hwnd, msg, wp, lp);
-	}
-	
-	LRESULT Window::WndProc(UINT msg, WPARAM wp, LPARAM lp)
-	{
-		switch (msg)
+		GLFWmonitor* monitor = SelectMonitor(0);
+		const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
+
+		switch (newMode)
 		{
-		case WM_CLOSE:
+		case WindowMode::Windowed:
 		{
-			m_alive = false;
-			if (OnCloseCallback) OnCloseCallback();
-			return 0;
+			::glfwSetWindowAttrib(m_window, GLFW_DECORATED, GLFW_TRUE);
+			::glfwSetWindowMonitor(m_window, nullptr,
+				m_savedX, m_savedY, m_savedW, m_savedH,
+				GLFW_DONT_CARE);
+			break;
 		}
-		
-		case WM_DESTROY:
+
+		case WindowMode::Borderless:
 		{
+			::glfwSetWindowAttrib(m_window, GLFW_DECORATED, GLFW_FALSE);
+			::glfwSetWindowMonitor(m_window, nullptr,
+				m_savedX, m_savedY, m_savedW, m_savedH,
+				GLFW_DONT_CARE);
+			break;
+		}
+
+		case WindowMode::WindowedFullscreen:
+		{
+			::glfwSetWindowAttrib(m_window, GLFW_DECORATED, GLFW_FALSE);
+			i32 mx, my;
+			::glfwGetMonitorPos(monitor, &mx, &my);
+			::glfwSetWindowMonitor(m_window, nullptr, mx, my,
+				vm->width, vm->height, GLFW_DONT_CARE);
+			break;
+		}
+
+		case WindowMode::ExclusiveFullscreen:
+		{
+			::glfwSetWindowAttrib(m_window, GLFW_DECORATED, GLFW_TRUE);
+			::glfwSetWindowMonitor(m_window, monitor, 0, 0,
+				vm->width, vm->height, vm->refreshRate);
+
+			// [TODO]: Call IDXGISwapChain::SetFullscreenState(TRUE)
+			break;
+		}
+		}
+
+		m_mode = newMode;
+	}
+
+	void Window::SetTitle(std::string_view title)
+	{
+		m_title.assign(title);
+		if (m_window)
+			::glfwSetWindowTitle(m_window, m_title.c_str());
+	}
+
+	void Window::SetSize(u32 width, u32 height)
+	{
+		if (m_window)
+			::glfwSetWindowSize(m_window, width, height);
+	}
+
+	void Window::PollEvents() noexcept
+	{
+		::glfwPollEvents();
+	}
+
+	void Window::Create(const WindowDesc& desc)
+	{
+		::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		::glfwWindowHint(GLFW_RESIZABLE, desc.Resizable ? GLFW_TRUE : GLFW_FALSE);
+
+		GLFWmonitor* monitor = nullptr;
+		i32 w = static_cast<i32>(desc.Width);
+		i32 h = static_cast<i32>(desc.Height);
+
+		switch (desc.Mode)
+		{
+		case WindowMode::Windowed:
+			::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+			break;
+
+		case WindowMode::Borderless:
+			::glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+			break;
+
+		case WindowMode::WindowedFullscreen:
+		{
+			::glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+
+			monitor = SelectMonitor(desc.MonitorID);
+			const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
+
+			w = vm->width;
+			h = vm->height;
+
+			i32 mx, my;
+			::glfwGetMonitorPos(monitor, &mx, &my);
+			::glfwWindowHint(GLFW_POSITION_X, mx);
+			::glfwWindowHint(GLFW_POSITION_Y, my);
+			break;
+		}
+
+		case WindowMode::ExclusiveFullscreen:
+		{
+			::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+
+			monitor = SelectMonitor(desc.MonitorID);
+			const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
+
+			::glfwWindowHint(GLFW_RED_BITS    , vm->redBits);
+			::glfwWindowHint(GLFW_GREEN_BITS  , vm->greenBits);
+			::glfwWindowHint(GLFW_BLUE_BITS   , vm->blueBits);
+			::glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
+
+			// [TODO]: Handle fullscreen state change in DXGI/D3D swapchain
+			break;
+		}
+		}
+
+		m_window = ::glfwCreateWindow(w, h, m_title.c_str(), monitor, nullptr);
+		KOI_VERIFY_MSG(m_window, "Failed to create GLFW window");
+
+		m_width = static_cast<u32>(w);
+		m_height = static_cast<u32>(h);
+
+		::glfwSetWindowUserPointer(m_window, this);
+		::glfwSetFramebufferSizeCallback(m_window, &Window::OnResize);
+		::glfwSetWindowCloseCallback(m_window, &Window::OnClose);
+
+		m_hWnd = ::glfwGetWin32Window(m_window);
+		KOI_ASSERT_MSG(m_hWnd, "Failed to get GLFW window Win32 handle");
+
+		::glfwGetWindowPos(m_window, &m_savedX, &m_savedY);
+		m_savedW= m_width;
+		m_savedH = m_height;
+	}
+
+	void Window::Destroy()
+	{
+		if (m_window)
+		{
+			::glfwDestroyWindow(m_window);
+			m_window = nullptr;
 			m_hWnd = nullptr;
-			return 0;
 		}
+	}
 
-		case WM_SETFOCUS:
+	GLFWmonitor* Window::SelectMonitor(i32 index) const
+	{
+		i32 count = 0;
+		if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
 		{
-			m_focused = true;
-			return 0;
-		}
+			KOI_ASSERT(count == 0);  // We should have at least one monitor
 		
-		case WM_KILLFOCUS:
-		{
-			m_focused = false;
-			return 0;
+			if (index < 0 || index >= count)
+				index = 0;
+
+			return monitors[index];
 		}
 
-		case WM_ENTERSIZEMOVE:
-		{
-			m_resizing = true;
-			return 0;
-		}
-		case WM_EXITSIZEMOVE:
-		{
-			m_resizing = false;
-			[[fallthrough]];
-		}
-		case WM_SIZE:
-		{
-			if (wp == SIZE_MINIMIZED) return 0;
+		return nullptr;
+	}
 
-			u32 w = LOWORD(lp), h = HIWORD(lp);
-			if (w > 0  && h > 0 && (w != m_width || h != m_height))
-			{
-				m_width = w; m_height = h;
+	void Window::OnResize(GLFWwindow* w, i32 width, i32 height) noexcept
+	{
+		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
+		{
+			self->m_width = static_cast<u32>(width);
+			self->m_height = static_cast<u32>(height);
 
-				if (!m_resizing && OnResizeCallback)
-					OnResizeCallback({ w, h });
-			}
-			return 0;
+			if (self->m_onResize)
+				self->m_onResize(self->m_width, self->m_width);
 		}
+	}
 
-		default: return DefWindowProcW(m_hWnd, msg, wp, lp);
+	void Window::OnClose(GLFWwindow* w) noexcept
+	{
+		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
+		{
+			if (self->m_onClose)
+				self->m_onClose();
 		}
 	}
 }

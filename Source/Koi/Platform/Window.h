@@ -2,60 +2,89 @@
 #include "Core/Core.h"
 #include "Platform/Win32.h"
 #include <string>
+#include <memory>
+
+#ifndef GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_NONE
+#endif
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 
 namespace koi
 {
+	enum class WindowMode : u8
+	{
+		Windowed,
+		Borderless,
+		WindowedFullscreen,
+		ExclusiveFullscreen
+	};
+
 	struct WindowDesc
 	{
-		std::wstring Title = L"Koi Window";
+		std::string Title  = "Koi Window";
+		WindowMode Mode    = WindowMode::Windowed;
+		i32 MonitorID      = 0;
 		u32 Width          = 1280;
 		u32 Height         = 720;
 		bool Resizable     = true;
+		bool VSync         = true;
 	};
 
-	struct ResizeEvent
+	class Window : NonCopyable
 	{
-		u32 Width;
-		u32 Height;
-	};
+	public:
+		using ResizeCallback = std::function<void(u32, u32)>;
+		using CloseCallback = std::function<void()>;
 
-	class Window : NonCopyableNonMovable
-	{
 	public:
 		explicit Window(const WindowDesc& desc);
 		~Window();
 
-		[[nodiscard]] bool ProcessMessages() const;
+		[[nodiscard]] bool ShouldClose() const noexcept;
+		void RequestClose();
 
-		[[nodiscard]] inline HWND GetHandle() const noexcept { return m_hWnd; }
+		void SetMode(WindowMode newMode);
+		void SetTitle(std::string_view title);
+		void SetSize(u32 width, u32 height);
+
+		inline void SetResizeCallback(ResizeCallback cb) { m_onResize = std::move(cb); }
+		inline void SetCloseCallback(CloseCallback cb) { m_onClose = std::move(cb); }
+
+		[[nodiscard]] inline WindowMode GetMode() const noexcept { return m_mode; }
+		[[nodiscard]] inline HWND GetHWND() const noexcept { return m_hWnd; }
+		[[nodiscard]] inline GLFWwindow* GetGLFWWindow() const noexcept { return m_window; }
 		[[nodiscard]] inline u32 GetWidth() const noexcept { return m_width; }
 		[[nodiscard]] inline u32 GetHeight() const noexcept { return m_height; }
-		[[nodiscard]] inline bool IsAlive() const noexcept { return m_alive; }
-		[[nodiscard]] inline bool IsFocused() const noexcept { return m_focused; }
 		[[nodiscard]] inline f32 AspectRatio() const noexcept { return static_cast<f32>(m_width) / static_cast<f32>(m_height); }
-		
-		void SetTitle(const std::wstring& title) const;
-		void Show(i32 showCmd = SW_SHOW) const;
 
-	public:
-		std::function<void(const ResizeEvent&)> OnResizeCallback;
-		std::function<void()>                   OnCloseCallback;
+		static void PollEvents() noexcept;
 
 	private:
-		static LRESULT CALLBACK WndProcStatic(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
-		LRESULT WndProc(UINT msg, WPARAM wp, LPARAM lp);
+		void Create(const WindowDesc& desc);
+		void Destroy();
+		GLFWmonitor* SelectMonitor(i32 index) const;
+
+		static void OnResize(GLFWwindow* w, i32 width, i32 height) noexcept;
+		static void OnClose(GLFWwindow* w) noexcept;
 
 	private:
-		HWND m_hWnd;
-		u32  m_width;
-		u32  m_height;
-		bool m_alive = true;
-		bool m_focused = false;
-		bool m_resizing = false;
+		GLFWwindow*   m_window = nullptr;
+		HWND          m_hWnd   = nullptr;
+		u32           m_width  = 0;
+		u32           m_height = 0;
+		WindowMode    m_mode   = WindowMode::Windowed;
+		std::string   m_title ;
 
-		// Input
-		static inline HINSTANCE s_hInstance = nullptr;
-		static inline u32       s_windowCount = 0;
-		static constexpr auto   s_className = L"KoiWindowClass";
+		i32 m_savedX = 0;
+		i32 m_savedY = 0;
+		i32 m_savedW = 0;
+		i32 m_savedH = 0;
+
+		ResizeCallback m_onResize;
+		CloseCallback  m_onClose;
+
+		static inline u32 s_windowCount = 0;
 	};
 }

@@ -22,7 +22,12 @@ target("Koi")
 
     add_options("LogLevel")
 
-    add_packages("Kirin", "spdlog")
+    add_packages(
+        "Kirin",
+        "spdlog",
+        "glfw"
+    )
+
     add_includedirs("Source/Koi")
     add_headerfiles("Source/Koi/**.h")
     add_files("Source/Koi/**.cpp")
