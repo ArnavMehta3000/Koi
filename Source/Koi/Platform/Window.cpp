@@ -3,7 +3,6 @@
 #include <windowsx.h>
 #include <dwmapi.h>
 
-
 namespace koi
 {
 	Window::Window(const WindowDesc& desc)
@@ -19,7 +18,7 @@ namespace koi
 
 			if (!::glfwInit())
 			{
-				KOI_VERIFY(false, "Failed to initialize GLFW");
+				KOI_VERIFY_MSG(false, "Failed to initialize GLFW");
 			}
 		}
 
@@ -196,6 +195,14 @@ namespace koi
 		::glfwGetWindowPos(m_window, &m_savedX, &m_savedY);
 		m_savedW= m_width;
 		m_savedH = m_height;
+
+#if KRN_OS_WINDOWS
+		{
+			BOOL enable = TRUE;
+			::DwmSetWindowAttribute(m_hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
+			::SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		}
+#endif
 	}
 
 	void Window::Destroy()

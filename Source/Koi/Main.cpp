@@ -22,9 +22,18 @@ int main()
 	koi::Window main({ .Title = "Main View", .Width = 1920, .Height = 1080 });
 	koi::Window side({ .Title = "Inspector", .Mode = koi::WindowMode::Borderless, .Width = 800, .Height = 600,  });
 
-	while (!main.ShouldClose() && !side.ShouldClose())
+	bool mainClose = false, sideClose = false;
+	do
 	{
+		mainClose = main.ShouldClose();
+		sideClose = side.ShouldClose();
+
 		koi::Window::PollEvents();
-		// render to both swapchains, present each
-	}
+		// Keep both windows open (until they close)
+	} while (!mainClose && !sideClose);
+
+	int x = 0;
+	x++;
+
+	return 0;
 }
