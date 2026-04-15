@@ -13,6 +13,8 @@
 #include <Windows.h>
 
 // Reference: https://github.com/DominikGrabiec/WindowsHeader/blob/main/Windows.hpp
+#undef IsMinimized
+#undef IsMaximized
 
 // datetimeapi.h
 #undef GetDateFormat

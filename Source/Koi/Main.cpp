@@ -27,9 +27,12 @@ int main()
 	{
 		mainClose = main.ShouldClose();
 		sideClose = side.ShouldClose();
+		HDC dc = ::GetDC(side.GetHWND());
+		RECT rc; ::GetClientRect(side.GetHWND(), &rc);
+		::FillRect(dc, &rc, (HBRUSH)(COLOR_WINDOW + 1));
+		::ReleaseDC(side.GetHWND(), dc);
 
 		koi::Window::PollEvents();
-		// Keep both windows open (until they close)
 	} while (!mainClose && !sideClose);
 
 	int x = 0;

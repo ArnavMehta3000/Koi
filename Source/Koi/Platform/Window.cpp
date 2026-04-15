@@ -3,6 +3,9 @@
 #include <windowsx.h>
 #include <dwmapi.h>
 
+#undef IsMinimized
+#undef IsMaximized
+
 namespace koi
 {
 	Window::Window(const WindowDesc& desc)
@@ -115,6 +118,51 @@ namespace koi
 			::glfwSetWindowTitle(m_window, m_title.c_str());
 	}
 
+	void Window::Minimize()
+	{
+		if (m_window) ::glfwIconifyWindow(m_window);
+	}
+
+	void Window::Maximize()
+	{
+		if (m_window) ::glfwMaximizeWindow(m_window);
+	}
+
+	void Window::Restore()
+	{
+		if (m_window) ::glfwRestoreWindow(m_window);
+	}
+
+	bool Window::IsMinimized() const noexcept
+	{
+		return m_window && ::glfwGetWindowAttrib(m_window, GLFW_ICONIFIED) == GLFW_TRUE;
+	}
+
+	bool Window::IsMaximized() const noexcept
+	{
+		return m_window && ::glfwGetWindowAttrib(m_window, GLFW_MAXIMIZED) == GLFW_TRUE;
+	}
+
+	void Window::Focus()
+	{
+		if (m_window) ::glfwFocusWindow(m_window);
+	}
+
+	bool Window::IsFocused() const noexcept
+	{
+		return m_window && ::glfwGetWindowAttrib(m_window, GLFW_FOCUSED) == GLFW_TRUE;
+	}
+
+	bool Window::IsHovered() const noexcept
+	{
+		return m_window && ::glfwGetWindowAttrib(m_window, GLFW_HOVERED) == GLFW_TRUE;
+	}
+
+	bool Window::IsVisible() const noexcept
+	{
+		return m_window && ::glfwGetWindowAttrib(m_window, GLFW_VISIBLE) == GLFW_TRUE;
+	}
+
 	void Window::SetSize(u32 width, u32 height)
 	{
 		if (m_window)
@@ -142,8 +190,17 @@ namespace koi
 			break;
 
 		case WindowMode::Borderless:
+		{
 			::glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+			monitor = SelectMonitor(desc.MonitorID);
+			const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
+			i32 mx, my;
+			::glfwGetMonitorPos(monitor, &mx, &my);
+			::glfwWindowHint(GLFW_POSITION_X, mx + (vm->width - w) / 2);
+			::glfwWindowHint(GLFW_POSITION_Y, my + (vm->height - h) / 2);
+			monitor = nullptr;
 			break;
+		}
 
 		case WindowMode::WindowedFullscreen:
 		{
@@ -197,6 +254,7 @@ namespace koi
 		m_savedH = m_height;
 
 #if KRN_OS_WINDOWS
+		if (m_hWnd)
 		{
 			BOOL enable = TRUE;
 			::DwmSetWindowAttribute(m_hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
@@ -220,7 +278,7 @@ namespace koi
 		i32 count = 0;
 		if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
 		{
-			KOI_ASSERT(count == 0);  // We should have at least one monitor
+			KOI_ASSERT(count != 0);  // We should have at least one monitor
 		
 			if (index < 0 || index >= count)
 				index = 0;
@@ -239,7 +297,7 @@ namespace koi
 			self->m_height = static_cast<u32>(height);
 
 			if (self->m_onResize)
-				self->m_onResize(self->m_width, self->m_width);
+				self->m_onResize(self->m_width, self->m_height);
 		}
 	}
 
@@ -249,6 +307,15 @@ namespace koi
 		{
 			if (self->m_onClose)
 				self->m_onClose();
+		}
+	}
+
+	void Window::OnFocus(GLFWwindow* w, i32 focused) noexcept
+	{
+		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
+		{
+			if (self->m_onFocus)
+				self->m_onFocus(focused == GLFW_TRUE);
 		}
 	}
 }

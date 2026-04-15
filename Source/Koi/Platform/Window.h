@@ -37,6 +37,7 @@ namespace koi
 	public:
 		using ResizeCallback = std::function<void(u32, u32)>;
 		using CloseCallback = std::function<void()>;
+		using FocusCallback = std::function<void(bool)>;
 
 	public:
 		explicit Window(const WindowDesc& desc);
@@ -47,6 +48,16 @@ namespace koi
 
 		void SetMode(WindowMode newMode);
 		void SetTitle(std::string_view title);
+		void Minimize();
+		void Maximize();
+		void Restore();
+		void Focus();
+
+		[[nodiscard]] bool IsFocused() const noexcept;
+		[[nodiscard]] bool IsHovered() const noexcept;
+		[[nodiscard]] bool IsVisible() const noexcept;
+		[[nodiscard]] bool IsMinimized() const noexcept;
+		[[nodiscard]] bool IsMaximized() const noexcept;
 		void SetSize(u32 width, u32 height);
 
 		inline void SetResizeCallback(ResizeCallback cb) { m_onResize = std::move(cb); }
@@ -68,6 +79,7 @@ namespace koi
 
 		static void OnResize(GLFWwindow* w, i32 width, i32 height) noexcept;
 		static void OnClose(GLFWwindow* w) noexcept;
+		static void OnFocus(GLFWwindow* w, i32 focused) noexcept;
 
 	private:
 		GLFWwindow*   m_window = nullptr;
@@ -84,6 +96,7 @@ namespace koi
 
 		ResizeCallback m_onResize;
 		CloseCallback  m_onClose;
+		FocusCallback  m_onFocus;
 
 		static inline u32 s_windowCount = 0;
 	};
