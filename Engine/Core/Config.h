@@ -1,3 +1,5 @@
+// Includes auto-generated headers acting as global configuration
+
 #pragma once
 #include "Core/Config/Version.h"  // Generated at build time
 #include "Core/Config/LogLevel.h"  // Generated at build time

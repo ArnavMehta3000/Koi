@@ -1,6 +1,8 @@
+// Contains GLFW wrapper window class
+
 #pragma once
 #include "Core/Core.h"
-#include "Platform/Win32.h"
+#include "Platform/Win32/Win32.h"
 #include <string>
 #include <memory>
 

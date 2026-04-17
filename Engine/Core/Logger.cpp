@@ -3,7 +3,7 @@
 #include <filesystem>
 
 #if KRN_OS_WINDOWS
-	#include "Platform/Win32.h"
+	#include "Platform/Win32/Win32.h"
 	#include <io.h>
 	#include <fcntl.h>
 #endif

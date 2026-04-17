@@ -1,3 +1,4 @@
+// Contains utility functions for string manipulation in static StringUtils class
 #pragma once
 #include "Core/Types.h"
 #include "Kirin/Common/Platform.h"
@@ -49,7 +50,6 @@ namespace koi
 			}
 			return out;
 		}
-
 
 		template <typename T>
 		[[nodiscard]] std::optional<T> ToNumber(std::string_view sv) noexcept

@@ -1,6 +1,6 @@
 #include "Core/StringUtils.h"
 #if KRN_OS_WINDOWS
-	#include "Platform/Win32.h"
+	#include "Platform/Win32/Win32.h"
 	#include <stringapiset.h>
 #endif
 #include <ranges>

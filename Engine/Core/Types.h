@@ -1,3 +1,4 @@
+// Contains utility types and functions used throughout the engine
 #pragma once
 #include "Kirin/Common/StandardTypes.h"
 #include <string_view>
@@ -31,7 +32,7 @@ namespace koi
     };
 
 
-	
+
 	/// No better place to put this
 	constexpr std::string_view ExtractFilename(std::string_view path) noexcept
 	{

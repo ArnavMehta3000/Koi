@@ -1,3 +1,5 @@
+// Contains the static Logger class, using spdlog under the hood
+
 #pragma once
 #include "Core/Core.h"
 #include "Core/LogLevel.h"
