@@ -1,5 +1,0 @@
-target("Koi.Editor")
-    set_kind("static")
-    add_files("EditorMain.cpp")
-    add_deps("Koi.Engine")
-target_end()

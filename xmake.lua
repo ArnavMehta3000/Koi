@@ -1,5 +1,6 @@
 set_xmakever("3.0.8")
 add_rules("mode.debug", "mode.release", "mode.releasedbg", "mode.profile")
+add_rules("plugin.compile_commands.autoupdate")
 
 set_project("Koi")
 set_version("0.0.1", { build = "%Y%m%d%H%M" })
@@ -15,7 +16,8 @@ set_policy("run.autobuild", true)
 includes("Xmake/Packages.lua")
 includes("Xmake/Options.lua")
 
+add_cxxflags("/utf-8", { public = true })
+
 includes("Engine")
-includes("Editor")
 includes("Launcher")
 includes("Sandbox")
