@@ -1,5 +1,5 @@
 #include "Platform/Window.h"
-#include "Core/Logging/Logger.h"
+#include "Core/Logger.h"
 #include <windowsx.h>
 #include <dwmapi.h>
 
@@ -279,7 +279,7 @@ namespace koi
 		if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
 		{
 			KOI_ASSERT(count != 0);  // We should have at least one monitor
-		
+
 			if (index < 0 || index >= count)
 				index = 0;
 

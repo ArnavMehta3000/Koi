@@ -1,5 +1,5 @@
-#include "Core/Logging/Logger.h"
-#include "Utils/StringUtils.h"
+#include "Core/Logger.h"
+#include "Core/StringUtils.h"
 #include <filesystem>
 
 #if KRN_OS_WINDOWS

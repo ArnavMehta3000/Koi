@@ -1,23 +1,15 @@
-#pragma once
-#include "Core/Types.h"
-#include "Platform/Win32.h"
-#include "Kirin/Common/Platform.h"
-#include <vector>
-#include <optional>
-#include <string>
-#include <string_view>
+#include "Core/StringUtils.h"
+#if KRN_OS_WINDOWS
+	#include "Platform/Win32.h"
+	#include <stringapiset.h>
+#endif
 #include <ranges>
 #include <algorithm>
 #include <cctype>
-#include <charconv>
-
-#if KRN_OS_WINDOWS
-	#include <stringapiset.h>
-#endif
 
 namespace koi
 {
-	[[nodiscard]] inline std::wstring ToWide(std::string_view utf8)
+	std::wstring StringUtils::ToWide(std::string_view utf8)
 	{
 #if KRN_OS_WINDOWS
 		if (utf8.empty())  return {};
@@ -40,7 +32,7 @@ namespace koi
 #endif
 	}
 
-	[[nodiscard]] inline std::string FromWide(std::wstring_view ws)
+	std::string StringUtils::FromWide(std::wstring_view ws)
 	{
 #if KRN_OS_WINDOWS
 		if (ws.empty()) return {};
@@ -64,7 +56,7 @@ namespace koi
 #endif
 	}
 
-	[[nodiscard]] inline std::string ToLower(std::string_view sv)
+	std::string StringUtils::ToLower(std::string_view sv)
 	{
 		std::string r(sv);
 		std::ranges::transform(r, r.begin(),
@@ -72,7 +64,7 @@ namespace koi
 		return r;
 	}
 
-	[[nodiscard]] inline std::string ToUpper(std::string_view sv)
+	std::string StringUtils::ToUpper(std::string_view sv)
 	{
 		std::string r(sv);
 		std::ranges::transform(r, r.begin(),
@@ -80,42 +72,38 @@ namespace koi
 		return r;
 	}
 
-	inline void MakeLower(std::string& s)
+	void StringUtils::MakeLower(std::string& s)
 	{
 		std::ranges::transform(s, s.begin(),
 			[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 	}
 
-	inline void MakeUpper(std::string& s)
+	void StringUtils::MakeUpper(std::string& s)
 	{
 		std::ranges::transform(s, s.begin(),
 			[](unsigned char c) { return static_cast<char>(std::toupper(c)); });
 	}
 
-	[[nodiscard]] inline std::string_view TrimLeftView(std::string_view sv) noexcept
+	std::string_view StringUtils::TrimLeftView(std::string_view sv) noexcept
 	{
 		auto it = std::ranges::find_if(sv,
 			[](unsigned char c) { return !std::isspace(c); });
 		return sv.substr(static_cast<size_t>(it - sv.begin()));
 	}
 
-	[[nodiscard]] inline std::string_view TrimRightView(std::string_view sv) noexcept
+	std::string_view StringUtils::TrimRightView(std::string_view sv) noexcept
 	{
 		auto it = std::ranges::find_if(sv | std::views::reverse,
 			[](unsigned char c) { return !std::isspace(c); });
 		return sv.substr(0, static_cast<size_t>(sv.rend() - it));
 	}
 
-	[[nodiscard]] inline std::string_view TrimView(std::string_view sv) noexcept
+	std::string_view StringUtils::TrimView(std::string_view sv) noexcept
 	{
 		return TrimRightView(TrimLeftView(sv));
 	}
 
-	[[nodiscard]] inline std::string TrimLeft(std::string_view sv) { return std::string(TrimLeftView(sv)); }
-	[[nodiscard]] inline std::string TrimRight(std::string_view sv) { return std::string(TrimRightView(sv)); }
-	[[nodiscard]] inline std::string Trim(std::string_view sv) { return std::string(TrimView(sv)); }
-
-	inline void TrimInplace(std::string& s)
+	void StringUtils::TrimInplace(std::string& s)
 	{
 		auto v = TrimView(s);
 		if (v.data() != s.data() || v.size() != s.size())
@@ -124,7 +112,7 @@ namespace koi
 		}
 	}
 
-	[[nodiscard]] inline bool EqualsCaseInsensitive(std::string_view a, std::string_view b) noexcept
+	bool StringUtils::EqualsCaseInsensitive(std::string_view a, std::string_view b) noexcept
 	{
 		if (a.size() != b.size())
 			return false;
@@ -140,7 +128,7 @@ namespace koi
 		return true;
 	}
 
-	[[nodiscard]] inline bool StartWithCaseInsensitive(std::string_view s, std::string_view prefix) noexcept
+	bool StringUtils::StartWithCaseInsensitive(std::string_view s, std::string_view prefix) noexcept
 	{
 		if (prefix.size() > s.size())
 		{
@@ -149,7 +137,7 @@ namespace koi
 		return EqualsCaseInsensitive(s.substr(0, prefix.size()), prefix);
 	}
 
-	[[nodiscard]] inline bool EndWithCaseInsensitive(std::string_view s, std::string_view suffix) noexcept
+	bool StringUtils::EndWithCaseInsensitive(std::string_view s, std::string_view suffix) noexcept
 	{
 		if (suffix.size() > s.size())
 		{
@@ -158,7 +146,7 @@ namespace koi
 		return EqualsCaseInsensitive(s.substr(s.size() - suffix.size()), suffix);
 	}
 
-	[[nodiscard]] inline bool contains_ci(std::string_view s, std::string_view needle) noexcept
+	bool StringUtils::ContainsCaseInsensitive(std::string_view s, std::string_view needle) noexcept
 	{
 		if (needle.empty())
 			return true;
@@ -172,7 +160,7 @@ namespace koi
 		return lo_s.find(lo_n) != std::string::npos;
 	}
 
-	[[nodiscard]] inline std::vector<std::string> Split(std::string_view s, char delim, bool keep_empty = true)
+	std::vector<std::string> StringUtils::Split(std::string_view s, char delim, bool keep_empty)
 	{
 		size_t start = 0;
 		std::vector<std::string> out;
@@ -191,7 +179,7 @@ namespace koi
 		return out;
 	}
 
-	[[nodiscard]] inline std::vector<std::string> Split(std::string_view s, std::string_view delim, bool keep_empty = true)
+	std::vector<std::string> Split(std::string_view s, std::string_view delim, bool keep_empty)
 	{
 		std::vector<std::string> out;
 		if (delim.empty())
@@ -217,23 +205,7 @@ namespace koi
 		return out;
 	}
 
-	template <std::ranges::input_range R>
-	[[nodiscard]] std::string Join(const R& parts, std::string_view sep)
-	{
-		std::string out;
-		bool first = true;
-		for (const auto& p : parts)
-		{
-			if (!first)
-				out.append(sep);
-
-			out.append(std::string_view{ p });
-			first = false;
-		}
-		return out;
-	}
-
-	inline void ReplaceAllInplace(std::string& s, std::string_view from, std::string_view to)
+	void StringUtils::ReplaceAllInplace(std::string& s, std::string_view from, std::string_view to)
 	{
 		if (from.empty())
 			return;
@@ -246,25 +218,10 @@ namespace koi
 		}
 	}
 
-	[[nodiscard]] inline std::string Replace(std::string_view s, std::string_view from, std::string_view to)
+	std::string StringUtils::Replace(std::string_view s, std::string_view from, std::string_view to)
 	{
 		std::string r(s);
 		ReplaceAllInplace(r, from, to);
 		return r;
-	}
-
-	template <typename T>
-	[[nodiscard]] std::optional<T> ToNumber(std::string_view sv) noexcept
-	{
-		T value{};
-		const auto* first = sv.data();
-		const auto* last = sv.data() + sv.size();
-
-		auto [ptr, ec] = std::from_chars(first, last, value);
-		if (ec == std::errc{} && ptr == last)
-		{
-			return value;
-		}
-		return std::nullopt;
 	}
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "Config/LogLevel.h"  // Xmake generated config file
+#include "Core/Config/LogLevel.h"  // Xmake generated config file
 
 namespace koi
 {
