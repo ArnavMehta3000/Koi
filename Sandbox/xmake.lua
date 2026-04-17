@@ -1,5 +1,5 @@
 target("Sandbox")
-    set_kind("binary")
+    set_kind("static")
     add_files("SandboxApp.cpp")
     add_deps("Koi.Engine")
 target_end()
