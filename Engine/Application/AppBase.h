@@ -1,0 +1,50 @@
+#pragma once
+#include "Platform/Window.h"
+#include "Core/Logger.h"
+
+namespace koi
+{
+	class Engine;
+
+	struct AppCreateDesc
+	{
+		WindowDesc   WindowDesc{};
+		LoggerConfig LogConfig{};
+		std::string  AppName = "Koi Application";
+		i32          ArgC = 0;
+		char** ArgV = nullptr;
+	};
+
+	class AppBase : public NonCopyable
+	{
+		friend class Engine;
+	public:
+		explicit AppBase(const AppCreateDesc& desc);
+		virtual ~AppBase();
+
+		[[nodiscard]] static AppBase& Get() { return *s_instance; }
+		[[nodiscard]] const AppCreateDesc& GetDesc() const { return m_desc; }
+		[[nodiscard]] Engine* GetEngine() const { return m_engine; }
+
+		virtual void OnInit() {}
+		virtual void OnShutdown() {}
+		virtual void OnTick(f32 /*dt*/) {}
+		virtual void OnRender() {}
+
+	private:
+		void Init();       // called by Engine::RunApp
+		void Shutdown();   // called by Engine::RunApp
+
+		AppCreateDesc m_desc;
+		Engine* m_engine = nullptr;
+
+		static inline AppBase* s_instance = nullptr;
+	};
+
+	std::unique_ptr<AppBase> CreateApplication(i32 argc, char** argv);
+
+	namespace internal
+	{
+		int RunApplication(int argc, char** argv);
+	}
+}

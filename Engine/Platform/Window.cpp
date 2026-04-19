@@ -6,8 +6,46 @@
 #undef IsMinimized
 #undef IsMaximized
 
+#ifndef GLFW_INCLUDE_NONE
+	#define GLFW_INCLUDE_NONE
+#endif
+
+#include <GLFW/glfw3.h>
+
+#if KRN_OS_WINDOWS
+	#define GLFW_EXPOSE_NATIVE_WIN32
+	#include <GLFW/glfw3native.h>
+	#include "Platform/Win32/Win32.h"
+	#include <windowsx.h>
+	#include <dwmapi.h>
+	#undef IsMinimized
+	#undef IsMaximized
+#elif KRN_OS_LINUX
+	#define GLFW_EXPOSE_NATIVE_X11
+	#include <GLFW/glfw3native.h>
+#endif
+
 namespace koi
 {
+	namespace
+	{
+		static GLFWmonitor* SelectMonitor(i32 index)
+		{
+			i32 count = 0;
+			if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
+			{
+				KOI_ASSERT(count != 0);  // We should have at least one monitor
+
+				if (index < 0 || index >= count)
+					index = 0;
+
+				return monitors[index];
+			}
+
+			return nullptr;
+		}
+	}
+
 	Window::Window(const WindowDesc& desc)
 		: m_mode(desc.Mode)
 		, m_width(desc.Width)
@@ -31,11 +69,51 @@ namespace koi
 
 	Window::~Window()
 	{
-		Destroy();
-		if (--s_windowCount == 0)
+		if (m_window)
 		{
-			::glfwTerminate();
+			Destroy();
+			if (--s_windowCount == 0) ::glfwTerminate();
 		}
+	}
+
+	Window::Window(Window&& other) noexcept
+		: m_window(other.m_window)
+		, m_width(other.m_width)
+		, m_height(other.m_height)
+		, m_mode(other.m_mode)
+		, m_title(std::move(other.m_title))
+		, m_savedX(other.m_savedX), m_savedY(other.m_savedY)
+		, m_savedW(other.m_savedW), m_savedH(other.m_savedH)
+		, m_onResize(std::move(other.m_onResize))
+		, m_onClose(std::move(other.m_onClose))
+		, m_onFocus(std::move(other.m_onFocus))
+	{
+		other.m_window = nullptr;
+		// Re-point GLFW user pointer to the new address
+		if (m_window) ::glfwSetWindowUserPointer(m_window, this);
+	}
+
+	Window& Window::operator=(Window&& other) noexcept
+	{
+		if (this != &other)
+		{
+			Destroy();
+
+			m_window = other.m_window;
+			m_width = other.m_width;
+			m_height = other.m_height;
+			m_mode = other.m_mode;
+			m_title = std::move(other.m_title);
+			m_savedX = other.m_savedX; m_savedY = other.m_savedY;
+			m_savedW = other.m_savedW; m_savedH = other.m_savedH;
+			m_onResize = std::move(other.m_onResize);
+			m_onClose = std::move(other.m_onClose);
+			m_onFocus = std::move(other.m_onFocus);
+
+			other.m_window = nullptr;
+			if (m_window) ::glfwSetWindowUserPointer(m_window, this);
+		}
+		return *this;
 	}
 
 	bool Window::ShouldClose() const noexcept
@@ -246,21 +324,24 @@ namespace koi
 		::glfwSetFramebufferSizeCallback(m_window, &Window::OnResize);
 		::glfwSetWindowCloseCallback(m_window, &Window::OnClose);
 
-		m_hWnd = ::glfwGetWin32Window(m_window);
-		KOI_ASSERT_MSG(m_hWnd, "Failed to get GLFW window Win32 handle");
-
 		::glfwGetWindowPos(m_window, &m_savedX, &m_savedY);
 		m_savedW= m_width;
 		m_savedH = m_height;
 
 #if KRN_OS_WINDOWS
-		if (m_hWnd)
-		{
-			BOOL enable = TRUE;
-			::DwmSetWindowAttribute(m_hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
-			::SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
-		}
+		HWND hwnd = ::glfwGetWin32Window(m_window);
+		KOI_ASSERT_MSG(hwnd, "Failed to get Win32 window handle");
+		m_nativeHandle = hwnd;
+
+		BOOL enable = TRUE;
+		::DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
+		::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+			SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+#elif KRN_OS_LINUX
+		m_nativeHandle = reinterpret_cast<void*>(::glfwGetX11Window(m_window));
 #endif
+
+		KOI_LOG_TRACE("Window created: {}({}x{})", m_title, m_width, m_height);
 	}
 
 	void Window::Destroy()
@@ -269,24 +350,10 @@ namespace koi
 		{
 			::glfwDestroyWindow(m_window);
 			m_window = nullptr;
-			m_hWnd = nullptr;
+			m_nativeHandle = nullptr;
+
+			KOI_LOG_TRACE("Window destroyed: {}", m_title);
 		}
-	}
-
-	GLFWmonitor* Window::SelectMonitor(i32 index) const
-	{
-		i32 count = 0;
-		if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
-		{
-			KOI_ASSERT(count != 0);  // We should have at least one monitor
-
-			if (index < 0 || index >= count)
-				index = 0;
-
-			return monitors[index];
-		}
-
-		return nullptr;
 	}
 
 	void Window::OnResize(GLFWwindow* w, i32 width, i32 height) noexcept

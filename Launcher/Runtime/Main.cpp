@@ -1,9 +1,3 @@
-#include "Core/Logger.h"
+#include "Application/EntryPoint.h"
 
-int main()
-{
-	koi::Logger::Init();
-	koi::Logger::Shutdown();
-
-	return 0;
-}
+KOI_IMPLEMENT_MAIN()

@@ -134,6 +134,18 @@ namespace koi
 			m_freeListHead = sparseIdx;
 		}
 
+		// In HandlePool (public):
+		template <typename Fn>
+		void ForEach(Fn&& fn)
+		{
+			for (IndexType denseIdx = 0; denseIdx < m_dense.size(); ++denseIdx)
+			{
+				IndexType sparseIdx = m_denseToSparse[denseIdx];
+				HandleType h(sparseIdx, m_sparse[sparseIdx].Generation);
+				fn(h, m_dense[denseIdx]);
+			}
+		}
+
 	private:
 		static constexpr IndexType INVALID_IDX = std::numeric_limits<IndexType>::max();
 
@@ -260,6 +272,17 @@ namespace koi
 			m_sparse[sparseIdx].Generation++;
 			m_sparse[sparseIdx].NextFree = m_freeListHead;
 			m_freeListHead               = sparseIdx;
+		}
+
+		template <typename Fn>
+		void ForEach(Fn&& fn)
+		{
+			for (IndexType denseIdx = 0; denseIdx < m_size; ++denseIdx)
+			{
+				IndexType sparseIdx = m_denseToSparse[denseIdx];
+				HandleType h(sparseIdx, m_sparse[sparseIdx].Generation);
+				fn(h, m_dense[denseIdx]);
+			}
 		}
 
 	private:

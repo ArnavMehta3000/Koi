@@ -5,14 +5,15 @@ target("Koi.Engine")
     add_packages("Kirin", "spdlog", "glfw", { public = true })
 
     add_includedirs(".", { public = true })
-    add_headerfiles("**.h")
-    add_files("**.cpp")
+    add_headerfiles("**.h", { public = true })
+    add_files("**.cpp", { public = true })
 
-    local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)/Generated/Engine/"
+	local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)"
+    local config_dir = path.join(base_config_dir, "Generated/Engine")
 
-    set_configdir(base_config_dir)
-    add_includedirs("$(builddir)/Generated/$(mode)-$(arch)", { public = true })
-    add_headerfiles("$(builddir)/Generated/$(mode)-$(arch)")
+    set_configdir(config_dir)
+    add_includedirs(base_config_dir, { public = true })
+    add_headerfiles(base_config_dir, { public = true })
     add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in")
 
     if is_plat("windows") then

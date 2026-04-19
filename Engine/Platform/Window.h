@@ -13,6 +13,8 @@
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
 
+struct GLFWwindow;
+
 namespace koi
 {
 	enum class WindowMode : u8
@@ -45,6 +47,9 @@ namespace koi
 		explicit Window(const WindowDesc& desc);
 		~Window();
 
+		Window(Window&& other) noexcept;
+		Window& operator=(Window&& other) noexcept;
+
 		[[nodiscard]] bool ShouldClose() const noexcept;
 		void RequestClose();
 
@@ -66,7 +71,7 @@ namespace koi
 		inline void SetCloseCallback(CloseCallback cb) { m_onClose = std::move(cb); }
 
 		[[nodiscard]] inline WindowMode GetMode() const noexcept { return m_mode; }
-		[[nodiscard]] inline HWND GetHWND() const noexcept { return m_hWnd; }
+		[[nodiscard]] inline void* GetNativeHandle() const noexcept { return m_nativeHandle; }
 		[[nodiscard]] inline GLFWwindow* GetGLFWWindow() const noexcept { return m_window; }
 		[[nodiscard]] inline u32 GetWidth() const noexcept { return m_width; }
 		[[nodiscard]] inline u32 GetHeight() const noexcept { return m_height; }
@@ -77,19 +82,18 @@ namespace koi
 	private:
 		void Create(const WindowDesc& desc);
 		void Destroy();
-		GLFWmonitor* SelectMonitor(i32 index) const;
 
 		static void OnResize(GLFWwindow* w, i32 width, i32 height) noexcept;
 		static void OnClose(GLFWwindow* w) noexcept;
 		static void OnFocus(GLFWwindow* w, i32 focused) noexcept;
 
 	private:
-		GLFWwindow*   m_window = nullptr;
-		HWND          m_hWnd   = nullptr;
-		u32           m_width  = 0;
-		u32           m_height = 0;
-		WindowMode    m_mode   = WindowMode::Windowed;
-		std::string   m_title ;
+		GLFWwindow*   m_window       = nullptr;
+		void*         m_nativeHandle = nullptr;
+		u32           m_width        = 0;
+		u32           m_height       = 0;
+		WindowMode    m_mode         = WindowMode::Windowed;
+		std::string   m_title;
 
 		i32 m_savedX = 0;
 		i32 m_savedY = 0;
