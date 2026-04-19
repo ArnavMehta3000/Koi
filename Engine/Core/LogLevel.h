@@ -1,6 +1,6 @@
 // This file contains the LogLevel generated config and the LogLevel enum  + string conversion
 #pragma once
-#include "Core/Config/LogLevel.h"  // Xmake generated config file
+#include "Generated/Engine/LogLevel.h"  // Xmake generated config file
 #include <string_view>
 
 namespace koi

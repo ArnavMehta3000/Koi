@@ -8,12 +8,12 @@ target("Koi.Engine")
     add_headerfiles("**.h")
     add_files("**.cpp")
 
-    local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)/Engine/"
+    local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)/Generated/Engine/"
 
     set_configdir(base_config_dir)
-    add_includedirs(base_config_dir, { public = true })
-    add_headerfiles(base_config_dir .. "Core/Config/**.h")
-    add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in", { prefixdir = "Core/Config" })
+    add_includedirs("$(builddir)/Generated/$(mode)-$(arch)", { public = true })
+    add_headerfiles("$(builddir)/Generated/$(mode)-$(arch)")
+    add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in")
 
     if is_plat("windows") then
         add_syslinks("user32", "dwmapi", { public = true })
