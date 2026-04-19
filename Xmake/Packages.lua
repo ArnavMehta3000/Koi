@@ -19,7 +19,8 @@ package_end()
 
 add_requires(
     "Kirin",
-    "glfw"
+    "glfw",
+    "directx-headers"
 )
 
 

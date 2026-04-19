@@ -1,6 +1,6 @@
 #include "Engine/Engine.h"
 #include "Application/AppBase.h"
-
+#include "Graphics/Renderer.h"
 namespace koi
 {
 	Engine::Engine([[maybe_unused]] i32 argc, [[maybe_unused]] char** argv)
@@ -27,6 +27,7 @@ namespace koi
 		m_windowManager->CreateMainWindow(app.GetDesc().WindowDesc);
 
 		app.Init();
+		Renderer r(gfx::API::DX12);
 
 		m_startTime     = Clock::now();
 		m_lastFrameTime = m_startTime;
