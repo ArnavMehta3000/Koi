@@ -3,6 +3,7 @@
 
 namespace koi
 {
+	// Type erased object
 	struct Object
 	{
 		union

@@ -11,8 +11,12 @@
 #include <dxgi1_6.h>
 #include <concepts>
 
-namespace koi::gfx
+namespace koi::rhi
 {
+	class DX12Device;
+	class DX12SwapChain;
+	class DX12RenderWindow;
+
 	namespace dx12
 	{
 		using Object              = ID3D12Object;

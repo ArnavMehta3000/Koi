@@ -1,10 +1,8 @@
 #pragma once
-#include "Graphics/RHI/IDevice.h"
+#include "Graphics/RHI/RHI.h"
 #include "Graphics/RHI/DX12/DX12.h"
 
-namespace koi { class Window; }
-
-namespace koi::gfx
+namespace koi::rhi
 {
 	class DX12Device final : public IDevice
 	{
@@ -14,15 +12,19 @@ namespace koi::gfx
 		DX12Device();
 		~DX12Device();
 
+		Object GetNativeType() const override { return m_device.Get(); }
+
+		std::unique_ptr<IRenderWindow> CreateRenderWindow(Window& window) override;
+
 	private:
 		void CreateDeviceResources();
 
 	private:
-		IDeviceNotify* m_notify = nullptr;
+		IDeviceNotify* m_notify;
 
-		ComPtr<dxgi::Factory> m_dxgiFactory;
-		ComPtr<dx12::Device> m_device;
-		ComPtr<dx12::CommandList> m_cmdList;
+		ComPtr<dxgi::Factory>      m_dxgiFactory;
+		ComPtr<dx12::Device>       m_device;
+		ComPtr<dx12::CommandList>  m_cmdList;
 		ComPtr<dx12::CommandQueue> m_cmdQueue;
 
 		HWND m_window;

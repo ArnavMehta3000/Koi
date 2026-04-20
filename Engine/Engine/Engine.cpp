@@ -27,7 +27,7 @@ namespace koi
 		m_windowManager->CreateMainWindow(app.GetDesc().WindowDesc);
 
 		app.Init();
-		Renderer r(gfx::API::DX12);
+		Renderer r(rhi::API::DX12);
 
 		m_startTime     = Clock::now();
 		m_lastFrameTime = m_startTime;

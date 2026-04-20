@@ -1,21 +1,20 @@
 #pragma once
 #include "Graphics/RHI/RHI.h"
-#include "Graphics/RHI/IDevice.h"
 #include <memory>
 
 namespace koi
 {
 	class Window;
 
-	class Renderer: gfx::IDeviceNotify
+	class Renderer: rhi::IDeviceNotify
 	{
 	public:
-		Renderer(gfx::API api);
+		Renderer(rhi::API api);
 		~Renderer();
 
 	private:
-		std::unique_ptr<gfx::IDevice> m_device;
-		gfx::API m_api;
+		std::unique_ptr<rhi::IDevice> m_device;
+		rhi::API m_api;
 
 		// Inherited via IDeviceNotify
 		void OnDeviceLost() override;

@@ -1,4 +1,5 @@
 #include "Graphics/RHI/DX12/DX12Device.h"
+#include "Graphics/RHI/DX12/DX12RenderWindow.h"
 #include "Platform/Window.h"
 #include "Core/StringUtils.h"
 #include "Core/Logger.h"
@@ -7,7 +8,7 @@
 #endif
 #include <array>
 
-namespace koi::gfx
+namespace koi::rhi
 {
 	namespace
 	{
@@ -17,7 +18,6 @@ namespace koi::gfx
 
 		void GetAdapter(ComPtr<dxgi::Factory> factory, IDXGIAdapter1** ppAdapter)
 		{
-
 			*ppAdapter = nullptr;
 
 			ComPtr<IDXGIAdapter1> adapter;
@@ -38,8 +38,7 @@ namespace koi::gfx
 
 					if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
 					{
-						// Don't select the Basic Render Driver adapter.
-						continue;
+						continue;  // Don't select the Basic Render Driver adapter
 					}
 
 					// Check to see if the adapter supports Direct3D 12, but don't create the actual device yet.
@@ -66,8 +65,7 @@ namespace koi::gfx
 
 					if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
 					{
-						// Don't select the Basic Render Driver adapter.
-						continue;
+						continue;  // Don't select the Basic Render Driver adapter
 					}
 
 					// Check to see if the adapter supports Direct3D 12, but don't create the actual device yet.
@@ -87,13 +85,19 @@ namespace koi::gfx
 	}
 
 	DX12Device::DX12Device()
-		//: m_window(static_cast<HWND>(window.GetNativeHandle()))
+		: m_notify(nullptr)
+		, m_window(nullptr)
 	{
 		CreateDeviceResources();
 	}
 
 	DX12Device::~DX12Device()
 	{
+	}
+
+	std::unique_ptr<IRenderWindow> DX12Device::CreateRenderWindow(Window& window)
+	{
+		return std::make_unique<DX12RenderWindow>(*this, window);
 	}
 
 	void DX12Device::CreateDeviceResources()
@@ -193,5 +197,7 @@ namespace koi::gfx
 
 		hr = m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(m_cmdQueue.ReleaseAndGetAddressOf()));
 		KOI_ASSERT(SUCCEEDED(hr));
+		m_cmdQueue->SetName(L"DX12 Command Queue");
+
 	}
 }

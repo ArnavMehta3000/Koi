@@ -7,16 +7,16 @@
 
 namespace koi
 {
-	Renderer::Renderer(gfx::API api)
+	Renderer::Renderer(rhi::API api)
 		: m_api(api)
 	{
 		switch (api)
 		{
-		case koi::gfx::API::Headless:
+		case koi::rhi::API::Headless:
 			KOI_VERIFY_MSG(false, "Headless API is not supported yet.");
 			break;
-		case koi::gfx::API::DX12:
-			m_device = std::make_unique<gfx::DX12Device>();
+		case koi::rhi::API::DX12:
+			m_device = std::make_unique<rhi::DX12Device>();
 			break;
 		}
 	}
