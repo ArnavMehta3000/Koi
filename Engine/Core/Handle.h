@@ -304,3 +304,16 @@ namespace koi
 		IndexType                       m_freeListHead = INVALID_IDX;
 	};
 }
+
+namespace std
+{
+	template <typename T, size_t I, size_t G>
+	struct hash<koi::Handle<T, I, G>>
+	{
+		size_t operator()(const koi::Handle<T, I, G>& h) const noexcept
+		{
+			return std::hash<typename koi::Handle<T, I, G>::IndexType>{}(h.GetId());
+		}
+	};
+
+}
