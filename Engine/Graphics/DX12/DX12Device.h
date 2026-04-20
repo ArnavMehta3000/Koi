@@ -1,8 +1,7 @@
 #pragma once
-#include "Graphics/RHI/RHI.h"
-#include "Graphics/RHI/DX12/DX12.h"
+#include "Graphics/RHI/DX12/DX12Common.h"
 
-namespace koi::rhi
+namespace koi
 {
 	class DX12Device final : public IDevice
 	{
@@ -13,6 +12,7 @@ namespace koi::rhi
 		~DX12Device();
 
 		Object GetNativeType() const override { return m_device.Get(); }
+		dxgi::Factory* GetDXGIFactory() const { return m_dxgiFactory.Get(); }
 
 		std::unique_ptr<IRenderWindow> CreateRenderWindow(Window& window) override;
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "Kirin/Common/Platform.h"  // For the Win32 macro
+#include "Core/Core.h"  // For the Win32 macro
 
 #if KRN_OS_WINDOWS
 	#include "Platform/Win32/Win32.h"
@@ -11,12 +11,8 @@
 #include <dxgi1_6.h>
 #include <concepts>
 
-namespace koi::rhi
+namespace koi
 {
-	class DX12Device;
-	class DX12SwapChain;
-	class DX12RenderWindow;
-
 	namespace dx12
 	{
 		using Object              = ID3D12Object;
@@ -60,4 +56,16 @@ namespace koi::rhi
 			&& std::is_class_v<std::remove_pointer_t<T>>
 			&& requires(T p) { p->Release(); };
 	}
+
+	inline constexpr u32 FRAMES_IN_FLIGHT  = 3;
+	inline constexpr u32 BACK_BUFFER_COUNT = 3;
+
+	// Result-check helper. Logs + asserts on failure.
+	void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line);
+
+#if KOI_DEBUG
+	#define DX_CHECK(expr) ::koi::ThrowOnHRFail((expr), #expr, __FILE__, __LINE__)
+#else
+	#define DX_CHECK(expr) (void)(expr)
+#endif
 }

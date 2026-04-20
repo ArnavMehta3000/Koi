@@ -1,3 +1,4 @@
+#pragma once
 #include "Core/Types.h"
 #include "Core/Assert.h"
 #include <compare>
@@ -37,7 +38,7 @@ namespace koi
 		IndexType m_id = INVALID_ID;
 	};
 
-	
+
 	template <typename T, typename Tag = T, size_t IndexBits = 20, size_t GenBits = 12>
 	class HandlePool
 	{
@@ -286,6 +287,9 @@ namespace koi
 		}
 
 	private:
+		T* Dense() noexcept { return reinterpret_cast<T*>(m_denseStorage.data()); }
+
+	private:
 		static constexpr IndexType INVALID_IDX = std::numeric_limits<IndexType>::max();
 
 		struct Slot
@@ -296,7 +300,7 @@ namespace koi
 
 		// Dense storage uses aligned raw bytes to support non-default-constructible T
 		alignas(T) std::array<std::byte, sizeof(T)* Capacity> m_denseStorage;
-		T* m_dense = reinterpret_cast<T*>(m_denseStorage.data());
+		T* m_dense = Dense();
 
 		std::array<Slot, Capacity>      m_sparse;
 		std::array<IndexType, Capacity> m_denseToSparse;
