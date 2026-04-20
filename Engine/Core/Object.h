@@ -1,4 +1,5 @@
 // Lightweight object wrapper
+#pragma once
 #include "Core/Types.h"
 
 namespace koi
@@ -16,6 +17,6 @@ namespace koi
 		Object(void* value) : AsPointer(value) {}
 
 		template <typename T>
-		operator T*() const { return static_cast<T*>(AsPointer); }
+		T* As() const { return static_cast<T*>(AsPointer); }
 	};
 }

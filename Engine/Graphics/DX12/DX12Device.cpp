@@ -8,7 +8,7 @@
 #endif
 #include <array>
 
-namespace koi::rhi
+namespace koi
 {
 	namespace
 	{
@@ -93,6 +93,8 @@ namespace koi::rhi
 
 	DX12Device::~DX12Device()
 	{
+		m_dxgiFactory = nullptr;
+		m_device = nullptr;
 	}
 
 	std::unique_ptr<IRenderWindow> DX12Device::CreateRenderWindow(Window& window)
@@ -105,7 +107,7 @@ namespace koi::rhi
 		u32 dxgiFactoryFlags = 0;
 
 		// --- Debug layer ---
-#if KRN_DEBUG
+#if KOI_DEBUG
 		ComPtr<ID3D12Debug> debugController;
 		if (SUCCEEDED(::D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 		{

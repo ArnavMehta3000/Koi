@@ -1,0 +1,80 @@
+#pragma once
+#include "Core/Core.h"
+#include "Core/Handle.h"
+#include "Graphics/Format.h"
+#include <Kirin/Common/Macros.h>
+#include <Kirin/Core/Enum.h>
+
+namespace koi
+{
+	class Texture;
+	class Buffer;
+	class Pipeline;
+	class Shader;
+
+	using TextureHandle  = Handle<Texture>;
+	using BufferHandle   = Handle<Buffer>;
+	using PipelineHandle = Handle<Pipeline>;
+	using ShaderHandle   = Handle<Shader>;
+	
+	enum class TextureUsage : u32
+	{
+		None         = 0,
+		ShaderRead   = KRN_BIT(0),
+		ShaderWrite  = KRN_BIT(1),
+		RenderTarget = KRN_BIT(2),
+		DepthStencil = KRN_BIT(3),
+		Present      = KRN_BIT(4),
+	};
+
+	enum class BufferUsage : u32
+	{
+		None       = 0,
+		Vertex     = KRN_BIT(0),
+		Index      = KRN_BIT(1),
+		Constant   = KRN_BIT(2),
+		Storage    = KRN_BIT(3),
+		Indirect   = KRN_BIT(4),
+		CopySource = KRN_BIT(5),
+		CopyDest   = KRN_BIT(6),
+	};
+
+	enum class MemoryUsage : u8
+	{
+		GpuOnly,     // DEFAULT heap
+		CpuToGpu,    // UPLOAD heap (dynamic / per-frame data)
+		GpuToCpu,    // READBACK heap
+	};
+
+	enum class CommandQueueType : u8 { Graphics, Compute, Copy };
+
+	struct TextureDesc
+	{
+		u32 Width          = 1;
+		u32 Height         = 1;
+		u32 DepthOrArray   = 1;
+		u32 MipLevels      = 1;
+		u32 SampleCount    = 1;
+		Format Format      = Format::R8G8B8A8_UNORM;
+		TextureUsage Usage = TextureUsage::ShaderRead;
+		std::string_view DebugName;
+	};
+
+	struct BufferDesc
+	{
+		u64 Size              = 0;
+		u32 Stride            = 0;     // Element stride for structured/vertex buffers
+		BufferUsage Usage     = BufferUsage::None;
+		MemoryUsage Memory    = MemoryUsage::GpuOnly;
+		const char* DebugName = nullptr;
+	};
+
+	struct IDeviceNotify
+	{
+		virtual ~IDeviceNotify() = default;
+		virtual void OnDeviceLost() = 0;
+		virtual void OnDeviceRestored() = 0;
+	};
+}
+KRN_ENABLE_ENUM_FLAGS(koi::TextureUsage);
+KRN_ENABLE_ENUM_FLAGS(koi::BufferUsage);
