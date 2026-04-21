@@ -20,6 +20,7 @@ namespace koi
 		[[nodiscard]] inline const RenderWindow* GetRenderWindow(RenderWindowHandle h) const noexcept { return m_renderWindows.Get(h); }
 
 		RenderWindowHandle AddWindow(WindowHandle handle, bool vsync);
+		RenderWindowHandle FindWindow(WindowHandle w) const noexcept;
 		void RemoveWindow(WindowHandle handle);
 
 		void BeginFrame();
