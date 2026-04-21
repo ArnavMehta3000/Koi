@@ -24,12 +24,12 @@ namespace koi
 		ComPtr<dx12::Resource> Resource;
 		BufferDesc Desc;
 		D3D12_RESOURCE_STATES CurrentState  = D3D12_RESOURCE_STATE_COMMON;
-		D3D12_GPU_VIRTUAL_ADDRESS GpuAddress = 0;
+		D3D12_GPU_VIRTUAL_ADDRESS GPUAddress = 0;
 		void* MappedPtr                      = nullptr;   // Non-null for CpuToGpu / GpuToCpu
 
-		DescriptorIndex CbvIndex = INVALID_DESCRIPTOR;
-		DescriptorIndex SrvIndex = INVALID_DESCRIPTOR;
-		DescriptorIndex UavIndex = INVALID_DESCRIPTOR;
+		DescriptorIndex CBVIndex = INVALID_DESCRIPTOR;
+		DescriptorIndex SRVIndex = INVALID_DESCRIPTOR;
+		DescriptorIndex UAVIndex = INVALID_DESCRIPTOR;
 	};
 
 	struct Pipeline

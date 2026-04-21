@@ -1,6 +1,7 @@
 #include "Engine/Engine.h"
 #include "Application/AppBase.h"
-#include "Graphics/Renderer.h"
+#include "Graphics/RHI/Device.cpp"
+
 namespace koi
 {
 	Engine::Engine([[maybe_unused]] i32 argc, [[maybe_unused]] char** argv)
@@ -12,10 +13,12 @@ namespace koi
 		KOI_LOG_INFO("Engine initializing");
 
 		m_windowManager = std::make_unique<WindowManager>();
+		m_renderer = std::make_unique<Renderer>();
 	}
 
 	Engine::~Engine()
 	{
+		m_renderer = nullptr;
 		m_windowManager = nullptr;
 		KOI_LOG_INFO("Engine shut down");
 		Logger::Shutdown();
@@ -24,10 +27,17 @@ namespace koi
 
 	void Engine::RunApp(AppBase& app)
 	{
-		m_windowManager->CreateMainWindow(app.GetDesc().WindowDesc);
+		const WindowDesc& mainWndDesc = app.GetDesc().WindowDesc;
+		WindowHandle mainWindow = m_windowManager->CreateMainWindow(mainWndDesc);
+		RenderWindowHandle mainRenderWindow = m_renderer->AddWindow(mainWindow, mainWndDesc.VSync);
+
+		m_windowManager->GetMain()->SetCloseCallback(
+			[window = mainWindow, renderer = m_renderer.get()]()
+			{
+				renderer->RemoveWindow(window);
+			});
 
 		app.Init();
-		Renderer r(rhi::API::DX12);
 
 		m_startTime     = Clock::now();
 		m_lastFrameTime = m_startTime;
@@ -54,6 +64,8 @@ namespace koi
 
 		Window::PollEvents();
 		m_windowManager->DestroyClosedWindows();
+
+		m_renderer->BeginFrame();
 	}
 
 	void Engine::Tick(AppBase& app)
@@ -64,7 +76,7 @@ namespace koi
 
 	void Engine::EndFrame()
 	{
-		++m_frameCount;
-		// Present/ Swap Buffers
+		m_renderer->EndFrame();
+		m_frameCount = m_renderer->GetDevice().GetCurrentFrameIndex();
 	}
 }

@@ -57,14 +57,11 @@ namespace koi
 			&& requires(T p) { p->Release(); };
 	}
 
-	inline constexpr u32 FRAMES_IN_FLIGHT  = 3;
-	inline constexpr u32 BACK_BUFFER_COUNT = 3;
-
 	// Result-check helper. Logs + asserts on failure.
 	void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line);
 
 #if KOI_DEBUG
-	#define DX_CHECK(expr) ::koi::ThrowOnHRFail((expr), #expr, __FILE__, __LINE__)
+	#define DX_CHECK(expr) ::koi::ThrowOnHRFail((expr), #expr, (KOI_FILENAME).data(), __LINE__)
 #else
 	#define DX_CHECK(expr) (void)(expr)
 #endif

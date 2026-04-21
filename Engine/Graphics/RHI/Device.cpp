@@ -1,4 +1,5 @@
 #include "Graphics/RHI/Device.h"
+#include "Graphics/RHI/Resources.h"
 #include "Core/Logger.h"
 #include "Core/StringUtils.h"
 
@@ -8,6 +9,18 @@
 
 namespace koi
 {
+	static D3D12_RESOURCE_FLAGS ToD3DFlags(krn::EnumFlag<TextureUsage> u)
+	{
+		D3D12_RESOURCE_FLAGS f = D3D12_RESOURCE_FLAG_NONE;
+		if (u.Has(TextureUsage::RenderTarget)) f |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		if (u.Has(TextureUsage::DepthStencil)) f |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		if (u.Has(TextureUsage::ShaderWrite))  f |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		if (u.Has(TextureUsage::DepthStencil) && !u.Has(TextureUsage::ShaderRead))
+			f |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+
+		return f;
+	}
+
 	// From DX12Common.h
 	void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line)
 	{
@@ -32,6 +45,8 @@ namespace koi
 
 	GfxDevice::~GfxDevice()
 	{
+		KOI_LOG_TRACE("Destroying D3D12 device");
+
 		WaitForIdle();
 		FlushDeferredDeletions(~0ull);
 
@@ -40,11 +55,145 @@ namespace koi
 			::CloseHandle(m_fenceEvent);
 			m_fenceEvent = nullptr;
 		}
+
+		// [NOTE]: Not clearing resource pool here
+		KOI_LOG_TRACE("Finished destroying D3D12 device");
 	}
 
 	u64 GfxDevice::GetCompletedFenceValue() const noexcept
 	{
 		return m_frameFence ? m_frameFence->GetCompletedValue() : 0;
+	}
+
+	TextureHandle GfxDevice::RegisterSwapChainImage(ComPtr<dx12::Resource> resource, const TextureDesc& desc)
+	{
+		Texture tex
+		{
+			.Resource         = resource,
+			.Desc             = desc,
+			.CurrentState     = D3D12_RESOURCE_STATE_PRESENT,
+			.IsSwapChainImage = true
+		};
+		return m_textures.Emplace(tex);
+	}
+
+	TextureHandle GfxDevice::CreateTexture(const TextureDesc& desc)
+	{
+		Texture tex{ .Desc = desc, .IsSwapChainImage = false };
+
+		auto rd = CD3DX12_RESOURCE_DESC::Tex2D(
+			ToDXGIFormat(desc.Format),
+			desc.Width, desc.Height,
+			static_cast<u16>(desc.DepthOrArray),
+			static_cast<u16>(desc.MipLevels),
+			desc.SampleCount, 0U,  // [NOTE]: Sample quality is 0
+			ToD3DFlags(desc.Usage),
+			D3D12_TEXTURE_LAYOUT_UNKNOWN
+		);
+
+		CD3DX12_HEAP_PROPERTIES heap(D3D12_HEAP_TYPE_DEFAULT);
+		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+
+		DX_CHECK(m_device->CreateCommittedResource(
+			&heap, D3D12_HEAP_FLAG_NONE, &rd,
+			initialState, nullptr, IID_PPV_ARGS(&tex.Resource)));
+
+		tex.CurrentState = initialState;
+		if (!desc.DebugName.empty())
+		{
+			const std::wstring wname = StringUtils::ToWide(desc.DebugName);
+			tex.Resource->SetName(wname.c_str());
+		}
+
+		KOI_LOG_TRACE("Created texture: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+
+		return m_textures.Emplace(std::move(tex));
+	}
+
+	BufferHandle GfxDevice::CreateBuffer(const BufferDesc& desc)
+	{
+		Buffer buf{ .Desc = desc };
+
+		D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT;
+		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+
+		switch (desc.Memory)
+		{
+		case MemoryUsage::CpuToGpu:
+			heapType     = D3D12_HEAP_TYPE_UPLOAD;
+			initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
+			break;
+		case MemoryUsage::GpuToCpu:
+			heapType     = D3D12_HEAP_TYPE_READBACK;
+			initialState = D3D12_RESOURCE_STATE_COPY_DEST;
+			break;
+		default: break;
+		}
+
+		CD3DX12_HEAP_PROPERTIES heap(heapType);
+		CD3DX12_RESOURCE_DESC rd = CD3DX12_RESOURCE_DESC::Buffer(desc.Size);
+
+		if (desc.Usage.Has(BufferUsage::Storage))
+			rd.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+		DX_CHECK(m_device->CreateCommittedResource(
+			&heap, D3D12_HEAP_FLAG_NONE, &rd,
+			initialState, nullptr, IID_PPV_ARGS(&buf.Resource)));
+
+		buf.CurrentState = initialState;
+		buf.GPUAddress   = buf.Resource->GetGPUVirtualAddress();
+
+		if (desc.Memory == MemoryUsage::CpuToGpu)
+		{
+			CD3DX12_RANGE readRange(0, 0);
+			DX_CHECK(buf.Resource->Map(0, &readRange, &buf.MappedPtr));
+		}
+
+		if (!desc.DebugName.empty())
+		{
+			const std::wstring wname = StringUtils::ToWide(desc.DebugName);
+			buf.Resource->SetName(wname.c_str());
+		}
+
+		KOI_LOG_TRACE("Created buffer: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+
+		return m_buffers.Emplace(std::move(buf));
+	}
+
+	void GfxDevice::Destroy(TextureHandle h)
+	{
+		if (m_textures.IsValid(h))
+		{
+			PendingDeletion d;
+			d.Type       = PendingDeletion::ResourceType::Texture;
+			d.FenceValue = m_nextFenceValue;
+			d.Texture    = h;
+
+			m_deletionQueue.push(d);
+			KOI_LOG_TRACE("Marked texture for deletion (Handle: {})", h.GetId());
+		}
+		else
+		{
+			KOI_LOG_WARN("Trying to mark invalid texture for deletion (Handle: {})", h.GetId());
+		}
+	}
+
+	void GfxDevice::Destroy(BufferHandle h)
+	{
+		if (m_buffers.IsValid(h))
+		{
+			PendingDeletion d;
+			d.Type       = PendingDeletion::ResourceType::Buffer;
+			d.FenceValue = m_nextFenceValue;
+			d.Buffer     = h;
+
+			m_deletionQueue.push(d);
+			KOI_LOG_TRACE("Marked buffer for deletion: {}", h.GetId());
+		}
+		else
+		{
+			KOI_LOG_WARN("Trying to mark invalid buffer for deletion (Hanlde: {})", h.GetId());
+		}
 	}
 
 	u64 GfxDevice::SignalFrame()
@@ -99,6 +248,7 @@ namespace koi
 
 	void GfxDevice::CreateFactory(bool enableDebug)
 	{
+		KOI_LOG_TRACE("Creating D3D12 factory");
 		u32 flags = 0;
 
 #if KOI_DEBUG
@@ -157,6 +307,7 @@ namespace koi
 
 	void GfxDevice::PickAdapter()
 	{
+		KOI_LOG_TRACE("Selecting D3D12 adapter");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 
 		ComPtr<IDXGIAdapter1> adapter;
@@ -187,6 +338,7 @@ namespace koi
 
 	void GfxDevice::CreateDevice()
 	{
+		KOI_LOG_TRACE("Creating D3D12 device");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 		DX_CHECK(::D3D12CreateDevice(m_adapter.Get(), MIN_FEATURE_LEVEL, IID_PPV_ARGS(&m_device)));
 		m_device->SetName(L"Koi GfxDevice");
@@ -215,6 +367,7 @@ namespace koi
 
 	void GfxDevice::CreateQueues()
 	{
+		KOI_LOG_TRACE("Creating D3D12 queues");
 		D3D12_COMMAND_QUEUE_DESC desc
 		{
 			.Type = D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -226,6 +379,7 @@ namespace koi
 
 	void GfxDevice::CreateFences()
 	{
+		KOI_LOG_TRACE("Creating D3D12 fences");
 		DX_CHECK(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_frameFence)));
 		m_frameFence->SetName(L"Koi Frame Fence");
 
@@ -235,6 +389,7 @@ namespace koi
 
 	void GfxDevice::CreateHeaps()
 	{
+		KOI_LOG_TRACE("Creating D3D12 heaps");
 		m_rtvHeap.Init(m_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1024, false);
 		m_dsvHeap.Init(m_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 256, false);
 		m_resourceHeap.Init(m_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 65536, true);
@@ -246,35 +401,42 @@ namespace koi
 		while (!m_deletionQueue.empty())
 		{
 			const PendingDeletion& p = m_deletionQueue.front();
-			if (p.FenceValue > completedFence) break;
+			if (p.FenceValue > completedFence)
+				break;
 
 			switch (p.Type)
 			{
-			case PendingDeletion::Kind::Texture:
+			case PendingDeletion::ResourceType::Texture:
+			{
 				if (Texture* t = m_textures.Get(p.Texture))
 				{
-					//m_rtvHeap.Free(t->RtvIndex);
-					//m_dsvHeap.Free(t->DsvIndex);
-					//m_resourceHeap.Free(t->SrvIndex);
-					//m_resourceHeap.Free(t->UavIndex);
+					m_rtvHeap.Free(t->RTVIndex);
+					m_dsvHeap.Free(t->DSVIndex);
+					m_resourceHeap.Free(t->SRVIndex);
+					m_resourceHeap.Free(t->UAVIndex);
 					// IsSwapChainImage: we must NOT release the ComPtr here — swapchain owns it.
 					// The pool erase below will drop the ref, but since the swapchain also holds
 					// one it stays alive.
 				}
+				KOI_LOG_TRACE("Texture resource deleted (Handle: {})", p.Texture.GetId());
 				m_textures.Erase(p.Texture);
 				break;
+			}
 
-			case PendingDeletion::Kind::Buffer:
+			case PendingDeletion::ResourceType::Buffer:
+			{
 				if (Buffer* b = m_buffers.Get(p.Buffer))
 				{
-					//m_resourceHeap.Free(b->CbvIndex);
-					//m_resourceHeap.Free(b->SrvIndex);
-					//m_resourceHeap.Free(b->UavIndex);
-					//if (b->MappedPtr && b->Resource)
-					//	b->Resource->Unmap(0, nullptr);
+					m_resourceHeap.Free(b->CBVIndex);
+					m_resourceHeap.Free(b->SRVIndex);
+					m_resourceHeap.Free(b->UAVIndex);
+					if (b->MappedPtr && b->Resource)
+						b->Resource->Unmap(0, nullptr);
 				}
+				KOI_LOG_TRACE("Buffer resource deleted (Handle: {})", p.Buffer.GetId());
 				m_buffers.Erase(p.Buffer);
 				break;
+			}
 			}
 			m_deletionQueue.pop();
 		}

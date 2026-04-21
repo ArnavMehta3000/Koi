@@ -14,10 +14,12 @@ namespace koi
 		Renderer();
 		~Renderer();
 
-		[[nodiscard]] inline RenderWindow* Get(RenderWindowHandle h) { return m_renderWindows.Get(h); }
-		[[nodiscard]] inline const RenderWindow* Get(RenderWindowHandle h) const { return m_renderWindows.Get(h); }
+		[[nodiscard]] inline GfxDevice& GetDevice() noexcept { return *m_device; }
+		[[nodiscard]] inline const GfxDevice& GetDevice() const noexcept { return *m_device; }
+		[[nodiscard]] inline RenderWindow* GetRenderWindow(RenderWindowHandle h) noexcept { return m_renderWindows.Get(h); }
+		[[nodiscard]] inline const RenderWindow* GetRenderWindow(RenderWindowHandle h) const noexcept { return m_renderWindows.Get(h); }
 
-		RenderWindowHandle AddWindow(WindowHandle handle);
+		RenderWindowHandle AddWindow(WindowHandle handle, bool vsync);
 		void RemoveWindow(WindowHandle handle);
 
 		void BeginFrame();

@@ -29,7 +29,7 @@ namespace koi
 
 
 	/// No better place to put this
-	constexpr std::string_view ExtractFilename(std::string_view path) noexcept
+	consteval std::string_view ExtractFilename(std::string_view path) noexcept
 	{
 		// Find the last occurrence of either '/' or '\'
 		size_t lastSlash = path.find_last_of("/\\");
@@ -44,7 +44,7 @@ namespace koi
 		return path.substr(lastSlash + 1);
 	}
 
-	constexpr std::string_view ExtractFilenameNoExt(std::string_view path) noexcept
+	consteval std::string_view ExtractFilenameNoExt(std::string_view path) noexcept
 	{
 		std::string_view filename = ExtractFilename(path);
 

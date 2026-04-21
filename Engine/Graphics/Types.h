@@ -4,9 +4,16 @@
 #include "Graphics/Format.h"
 #include <Kirin/Common/Macros.h>
 #include <Kirin/Core/Enum.h>
+#include <string_view>
+#include <array>
 
 namespace koi
 {
+	static constexpr u32 BACK_BUFFER_COUNT = 3;
+
+	template <typename T>
+	using FrameArray = std::array<T, BACK_BUFFER_COUNT>;
+
 	struct Texture;
 	struct Buffer;
 	struct Pipeline;
@@ -19,7 +26,7 @@ namespace koi
 
 	using DescriptorIndex = u32;
 	inline constexpr DescriptorIndex INVALID_DESCRIPTOR = ~0u;
-	
+
 	enum class TextureUsage : u32
 	{
 		None         = 0,
@@ -53,23 +60,23 @@ namespace koi
 
 	struct TextureDesc
 	{
-		u32 Width          = 1;
-		u32 Height         = 1;
-		u32 DepthOrArray   = 1;
-		u32 MipLevels      = 1;
-		u32 SampleCount    = 1;
-		Format Format      = Format::R8G8B8A8_UNORM;
-		TextureUsage Usage = TextureUsage::ShaderRead;
+		u32 Width                         = 1;
+		u32 Height                        = 1;
+		u32 DepthOrArray                  = 1;
+		u32 MipLevels                     = 1;
+		u32 SampleCount                   = 1;
+		Format Format                     = Format::R8G8B8A8_UNORM;
+		krn::EnumFlag<TextureUsage> Usage = TextureUsage::ShaderRead;
 		std::string_view DebugName;
 	};
 
 	struct BufferDesc
 	{
-		u64 Size              = 0;
-		u32 Stride            = 0;     // Element stride for structured/vertex buffers
-		BufferUsage Usage     = BufferUsage::None;
-		MemoryUsage Memory    = MemoryUsage::GpuOnly;
-		const char* DebugName = nullptr;
+		u64 Size                         = 0;
+		u32 Stride                       = 0;     // Element stride for structured/vertex buffers
+		krn::EnumFlag<BufferUsage> Usage = BufferUsage::None;
+		MemoryUsage Memory               = MemoryUsage::GpuOnly;
+		std::string_view DebugName;
 	};
 
 	struct IDeviceNotify
