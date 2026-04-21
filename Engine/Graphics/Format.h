@@ -1,9 +1,10 @@
 #pragma once
+#include "Core/Types.h"
 #include <directx/dxgiformat.h>
 
 namespace koi
 {
-	enum class Format
+	enum class Format : u32
 	{
 		UNKNOWN                                 = 0,
 		R32G32B32A32_TYPELESS                   = 1,

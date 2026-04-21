@@ -9,32 +9,48 @@ namespace koi
 	Renderer::Renderer()
 	{
 		m_device = std::make_unique<GfxDevice>();
+		m_device->SetDeviceNotify(this);
+
+		KOI_LOG_INFO("Initializing renderer");
 	}
 
 	Renderer::~Renderer()
 	{
-		m_device = nullptr;
+		if (m_device)
+			m_device->WaitForIdle();
+
+		m_renderWindows.Clear();  // destroys RenderWindows before the device
+		m_windowMap.clear();
+		m_device.reset();
+
+		KOI_LOG_INFO("Shutdown renderer");
 	}
 
-	RenderWindowHandle Renderer::AddWindow(WindowHandle handle)
+	RenderWindowHandle Renderer::AddWindow(WindowHandle handle, bool vsync)
 	{
-		KOI_ASSERT_MSG(m_windowMap.find(handle) == m_windowMap.end(), "Window already has a render window!");
+		if (auto it = m_windowMap.find(handle); it != m_windowMap.end())
+			return it->second;
 
-		Window* window = Engine::Get().GetWindowManager().Get(handle);
-		KOI_ASSERT(window);
-		if (!window) return;
+		Window* w = Engine::Get().GetWindowManager().Get(handle);
+		KOI_VERIFY_MSG(w, "Trying to create RenderWindow from invalid window handle");
+		if (!w) { return {}; }
 
-		KOI_ASSERT(m_device);
-		RenderWindowHandle renderHandle/* = m_renderWindows.Emplace(
-			m_device->CreateRenderWindow(*window))*/;
+		RenderWindowHandle h = m_renderWindows.Emplace(*m_device, *w, vsync);
+		m_windowMap.emplace(handle, h);
 
-		m_windowMap[handle] = renderHandle;
-		return renderHandle;
+		KOI_LOG_INFO("Created RenderWindow (Handle:{})", h.GetId());
+		return h;
 	}
 
 	void Renderer::RemoveWindow(WindowHandle handle)
 	{
-		//TODO: yet to implement (needs to flush GPU)
+		auto it = m_windowMap.find(handle);
+		if (it == m_windowMap.end()) return;
+
+		// RenderWindow's destructor calls WaitForIdle, so it's safe to erase here.
+		KOI_LOG_INFO("Destroying RenderWindow (Handle:{})", it->second.GetId());
+		m_renderWindows.Erase(it->second);
+		m_windowMap.erase(it);
 	}
 
 	void Renderer::BeginFrame()

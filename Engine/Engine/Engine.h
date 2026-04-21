@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Core.h"
 #include "Application/WindowManager.h"
+#include "Graphics/Renderer.h"
 #include <chrono>
 
 namespace koi
@@ -18,10 +19,11 @@ namespace koi
 		void RunApp(AppBase& app);
 		void RequestExit() { m_isRunning = false; }
 
-		[[nodiscard]] WindowManager& GetWindowManager() { return *m_windowManager; }
-		[[nodiscard]] f32            GetDeltaTime() const { return m_deltaTime; }
-		[[nodiscard]] f64            GetTime()      const { return m_elapsed; }
-		[[nodiscard]] u64            GetFrameCount() const { return m_frameCount; }
+		[[nodiscard]] inline WindowManager& GetWindowManager() { return *m_windowManager; }
+		[[nodiscard]] inline Renderer& GetRenderer() { return *m_renderer; }
+		[[nodiscard]] inline f32 GetDeltaTime() const { return m_deltaTime; }
+		[[nodiscard]] inline f64 GetTime() const { return m_elapsed; }
+		[[nodiscard]] inline u64 GetFrameCount() const { return m_frameCount; }
 
 	private:
 		void BeginFrame();
@@ -32,6 +34,7 @@ namespace koi
 		static inline Engine* s_instance = nullptr;
 
 		std::unique_ptr<WindowManager> m_windowManager;
+		std::unique_ptr<Renderer> m_renderer;
 
 		using Clock = std::chrono::steady_clock;
 		using TimePoint = Clock::time_point;
