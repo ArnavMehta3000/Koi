@@ -48,6 +48,12 @@ namespace koi
 		return h;
 	}
 
+	RenderWindowHandle Renderer::FindWindow(WindowHandle w) const noexcept
+	{
+		auto it = m_windowMap.find(w);
+		return it != m_windowMap.end() ? it->second : RenderWindowHandle{};
+	}
+
 	void Renderer::RemoveWindow(WindowHandle handle)
 	{
 		auto it = m_windowMap.find(handle);
