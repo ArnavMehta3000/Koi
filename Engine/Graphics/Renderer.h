@@ -8,7 +8,7 @@ namespace koi
 {
 	using RenderWindowHandle = Handle<RenderWindow>;
 
-	class Renderer : NonCopyable, NonMovable
+	class Renderer : NonCopyable, NonMovable, public IDeviceNotify
 	{
 	public:
 		Renderer();
@@ -22,6 +22,10 @@ namespace koi
 
 		void BeginFrame();
 		void EndFrame();
+
+	private:
+		void OnDeviceLost() override;
+		void OnDeviceRestored() override;
 
 	private:
 		using WindowMap = std::unordered_map<WindowHandle, RenderWindowHandle>;

@@ -1,18 +1,14 @@
 #include "Graphics/Renderer.h"
+#include "Graphics/RHI/Device.h"
 #include "Core/Assert.h"
 #include "Engine/Engine.h"
 #include "Core/Logger.h"
 
-#if KRN_OS_WINDOWS
-	#include "Graphics/RHI/DX12/DX12Device.h"
-#endif
-
 namespace koi
 {
-	using namespace koi::rhi;
-
 	Renderer::Renderer()
 	{
+		m_device = std::make_unique<GfxDevice>();
 	}
 
 	Renderer::~Renderer()
@@ -43,9 +39,24 @@ namespace koi
 
 	void Renderer::BeginFrame()
 	{
+		// TODO: Reset allocators
 	}
 
 	void Renderer::EndFrame()
 	{
+		m_renderWindows.ForEach([](RenderWindowHandle, RenderWindow& rw)
+		{
+			rw.Present();
+		});
+	}
+
+	void Renderer::OnDeviceLost()
+	{
+		KOI_LOG_CRITICAL(" Graphics device lost");
+	}
+
+	void Renderer::OnDeviceRestored()
+	{
+		KOI_LOG_INFO("Graphics device restored");
 	}
 }
