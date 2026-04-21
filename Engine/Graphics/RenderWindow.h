@@ -1,5 +1,6 @@
 #pragma once
-#include "Graphics/RHI/DX12/DX12Common.h"
+#include "Graphics/Types.h"
+#include "Graphics/DX12/DX12Common.h"
 
 namespace koi
 {
@@ -18,6 +19,16 @@ namespace koi
 
      	void Resize(u32 width, u32 height);
         void Present();
+
+		[[nodiscard]] Window* GetWindow() const noexcept { return m_window; }
+		[[nodiscard]] u32 GetWidth()  const noexcept { return m_width; }
+		[[nodiscard]] u32 GetHeight() const noexcept { return m_height; }
+		[[nodiscard]] u32 GetCurrentBackBufferIndex() const noexcept { return m_currentBackBuffer; }
+		[[nodiscard]] TextureHandle CurrentBackBuffer() const noexcept;
+		[[nodiscard]] Format        GetFormat() const noexcept { return m_format; }
+		[[nodiscard]] bool          IsVSyncEnabled() const noexcept { return m_vsync; }
+
+		void SetVSync(bool enabled) noexcept { m_vsync = enabled; }
 
 	private:
 		void CreateSwapChain();

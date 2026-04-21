@@ -7,15 +7,18 @@
 
 namespace koi
 {
-	class Texture;
-	class Buffer;
-	class Pipeline;
-	class Shader;
+	struct Texture;
+	struct Buffer;
+	struct Pipeline;
+	struct Shader;
 
 	using TextureHandle  = Handle<Texture>;
 	using BufferHandle   = Handle<Buffer>;
 	using PipelineHandle = Handle<Pipeline>;
 	using ShaderHandle   = Handle<Shader>;
+
+	using DescriptorIndex = u32;
+	inline constexpr DescriptorIndex INVALID_DESCRIPTOR = ~0u;
 	
 	enum class TextureUsage : u32
 	{
