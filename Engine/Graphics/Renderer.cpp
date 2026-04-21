@@ -8,7 +8,13 @@ namespace koi
 {
 	Renderer::Renderer()
 	{
-		m_device = std::make_unique<GfxDevice>();
+		m_device = std::make_unique<GfxDevice>(
+		GfxDevice::Desc 
+		{
+			.EnableDebugLayer = KOI_DEBUG,
+			.EnableGPUValidation = KOI_DEBUG
+		});
+
 		m_device->SetDeviceNotify(this);
 
 		KOI_LOG_INFO("Initializing renderer");
