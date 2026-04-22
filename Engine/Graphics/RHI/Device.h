@@ -76,9 +76,9 @@ namespace koi
 
 		IDeviceNotify*             m_notify = nullptr;
 
+		ComPtr<dx12::Device>       m_device;
 		ComPtr<dxgi::Factory>      m_dxgiFactory;
 		ComPtr<dxgi::Adapter>      m_adapter;
-		ComPtr<dx12::Device>       m_device;
 		ComPtr<dx12::CommandQueue> m_graphicsQueue;
 		ComPtr<dx12::Fence>        m_frameFence;
 		HANDLE                     m_fenceEvent = nullptr;

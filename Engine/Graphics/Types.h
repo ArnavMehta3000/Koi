@@ -10,6 +10,7 @@
 namespace koi
 {
 	static constexpr u32 BACK_BUFFER_COUNT = 3;
+	static constexpr u32 FRAMES_IN_FLIGHT = 3;
 
 	template <typename T>
 	using FrameArray = std::array<T, BACK_BUFFER_COUNT>;

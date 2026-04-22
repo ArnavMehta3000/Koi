@@ -16,6 +16,7 @@ namespace koi
 		[[nodiscard]] u32 GetCapacity() const noexcept { return m_capacity; }
 
 		void Init(dx12::Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, u32 capacity, bool shaderVisible);
+		void Reset();
 
 		[[nodiscard]] DescriptorIndex Allocate();
 		void Free(DescriptorIndex index);

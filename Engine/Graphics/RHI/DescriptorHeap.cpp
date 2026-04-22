@@ -35,6 +35,15 @@ namespace koi
 		m_freeList.reserve(64);  // Maybe reserve capccity instead?
 	}
 
+	void DescriptorHeap::Reset()
+	{
+		m_heap = nullptr;
+		m_freeList.clear();
+		m_nextFresh = 0;
+		m_capacity  = 0;
+		m_stride    = 0;
+	}
+
 	DescriptorIndex DescriptorHeap::Allocate()
 	{
 		std::scoped_lock lock(m_mutex);

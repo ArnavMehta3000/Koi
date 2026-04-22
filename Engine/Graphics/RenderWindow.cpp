@@ -95,6 +95,9 @@ namespace koi
 		if (width == 0 || height == 0) return;
 		if (width == m_width && height == m_height) return;
 
+		KOI_LOG_DEBUG("Resizing RenderWindow ({}x{}) -> ({}x{})",
+			m_width, m_height, width, height);
+
 		m_device->WaitForIdle();
 		ReleaseBackBuffers();
 
@@ -121,6 +124,8 @@ namespace koi
 		m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 
 		AcquireBackBuffers();
+
+		KOI_LOG_TRACE("RenderWindow resize successful");
 	}
 
 	void RenderWindow::Present()
