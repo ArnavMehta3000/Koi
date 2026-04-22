@@ -23,6 +23,7 @@ namespace koi
 
 	static void ReportLiveObjects()
 	{
+#if KOI_DEBUG
 		Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
 		if (SUCCEEDED(::DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
 		{
@@ -31,6 +32,7 @@ namespace koi
 				DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)
 			);
 		}
+#endif
 	}
 
 	// From DX12Common.h
@@ -270,7 +272,7 @@ namespace koi
 		if (m_notify) m_notify->OnDeviceRestored();
 	}
 
-	void GfxDevice::CreateFactory(bool enableDebug)
+	void GfxDevice::CreateFactory([[maybe_unused]] bool enableDebug)
 	{
 		KOI_LOG_TRACE("Creating D3D12 factory");
 		u32 flags = 0;
