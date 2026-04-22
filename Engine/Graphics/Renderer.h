@@ -1,5 +1,8 @@
 #pragma once
 #include "Graphics/RenderWindow.h"
+#include "Graphics/RHI/CommandAllocator.h"
+#include "Graphics/RHI/CommandList.h"
+#include "Graphics/RHI/CommandQueue.h"
 #include "Application/WindowManager.h"
 #include <memory>
 #include <unordered_map>
@@ -10,6 +13,14 @@ namespace koi
 
 	class Renderer : NonCopyable, NonMovable, public IDeviceNotify
 	{
+		using WindowMap = std::unordered_map<WindowHandle, RenderWindowHandle>;
+		struct FrameContext  // Per-window rendering context
+		{
+			CommandAllocator Allocator;
+			CommandList List;
+		};
+		using FrameMap = std::unordered_map<u64 /*handle id*/, std::unique_ptr<FrameContext>>;
+
 	public:
 		Renderer();
 		~Renderer();
@@ -29,12 +40,14 @@ namespace koi
 	private:
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
+		FrameContext& GetOrCreateFrameContext(RenderWindowHandle h);
 
 	private:
-		using WindowMap = std::unordered_map<WindowHandle, RenderWindowHandle>;
-
-		std::unique_ptr<GfxDevice>  m_device;
-		HandlePool<RenderWindow>    m_renderWindows;
-		WindowMap                   m_windowMap;
+		std::unique_ptr<GfxDevice> m_device;
+		CommandQueue               m_graphicsQueue;
+		HandlePool<RenderWindow>   m_renderWindows;
+		FrameMap                   m_frameContexts;
+		WindowMap                  m_windowMap;
+		u32                        m_frameSlot = 0;
 	};
 }

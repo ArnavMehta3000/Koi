@@ -37,6 +37,13 @@ namespace koi
 				renderer->RemoveWindow(window);
 			});
 
+		m_windowManager->GetMain()->SetResizeCallback(
+			[rwHandle = mainRenderWindow, renderer = m_renderer.get()](u32 w, u32 h)
+			{
+				if (auto rw = renderer->GetRenderWindow(rwHandle))
+					rw->Resize(w, h);
+			});
+
 		app.Init();
 
 		m_startTime     = Clock::now();

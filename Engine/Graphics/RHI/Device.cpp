@@ -21,6 +21,18 @@ namespace koi
 		return f;
 	}
 
+	static void ReportLiveObjects()
+	{
+		Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
+		if (SUCCEEDED(::DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
+		{
+			debug->ReportLiveObjects(
+				DXGI_DEBUG_ALL,
+				DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)
+			);
+		}
+	}
+
 	// From DX12Common.h
 	void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line)
 	{
@@ -55,6 +67,18 @@ namespace koi
 			::CloseHandle(m_fenceEvent);
 			m_fenceEvent = nullptr;
 		}
+		m_frameFence    = nullptr;
+		m_graphicsQueue = nullptr;
+		m_adapter       = nullptr;
+		m_dxgiFactory   = nullptr;
+		m_device        = nullptr;
+
+		m_rtvHeap.Reset();
+		m_dsvHeap.Reset();
+		m_resourceHeap.Reset();
+		m_samplerHeap.Reset();
+
+		ReportLiveObjects();
 
 		// [NOTE]: Not clearing resource pool here
 		KOI_LOG_TRACE("Finished destroying D3D12 device");
@@ -170,11 +194,11 @@ namespace koi
 			d.Texture    = h;
 
 			m_deletionQueue.push(d);
-			KOI_LOG_TRACE("Marked texture for deletion (Handle: {})", h.GetId());
+			KOI_LOG_TRACE("Marked texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 		else
 		{
-			KOI_LOG_WARN("Trying to mark invalid texture for deletion (Handle: {})", h.GetId());
+			KOI_LOG_WARN("Trying to mark invalid texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 	}
 
@@ -418,7 +442,7 @@ namespace koi
 					// The pool erase below will drop the ref, but since the swapchain also holds
 					// one it stays alive.
 				}
-				KOI_LOG_TRACE("Texture resource deleted (Handle: {})", p.Texture.GetId());
+				KOI_LOG_TRACE("Texture resource deleted (Handle: idx={}, gen={})", p.Buffer.GetIndex(), p.Buffer.GetGeneration());
 				m_textures.Erase(p.Texture);
 				break;
 			}
@@ -433,7 +457,7 @@ namespace koi
 					if (b->MappedPtr && b->Resource)
 						b->Resource->Unmap(0, nullptr);
 				}
-				KOI_LOG_TRACE("Buffer resource deleted (Handle: {})", p.Buffer.GetId());
+				KOI_LOG_TRACE("Buffer resource deleted (Handle: idx={}, gen={})", p.Buffer.GetIndex(), p.Buffer.GetGeneration());
 				m_buffers.Erase(p.Buffer);
 				break;
 			}
