@@ -30,7 +30,7 @@ namespace koi
 		[[nodiscard]] inline RenderWindow* GetRenderWindow(RenderWindowHandle h) noexcept { return m_renderWindows.Get(h); }
 		[[nodiscard]] inline const RenderWindow* GetRenderWindow(RenderWindowHandle h) const noexcept { return m_renderWindows.Get(h); }
 
-		RenderWindowHandle AddWindow(WindowHandle handle, bool vsync);
+		std::pair<RenderWindowHandle, RenderWindow*> AddWindow(WindowHandle handle, bool vsync);
 		RenderWindowHandle FindWindow(WindowHandle w) const noexcept;
 		void RemoveWindow(WindowHandle handle);
 

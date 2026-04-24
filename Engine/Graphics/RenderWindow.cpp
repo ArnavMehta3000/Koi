@@ -94,6 +94,7 @@ namespace koi
 	{
 		if (width == 0 || height == 0) return;
 		if (width == m_width && height == m_height) return;
+		KOI_ASSERT_MSG(m_device, "Render Window has been moved-from");
 
 		KOI_LOG_DEBUG("Resizing RenderWindow ({}x{}) -> ({}x{})",
 			m_width, m_height, width, height);

@@ -2,25 +2,29 @@
 
 namespace koi
 {
-	WindowHandle WindowManager::Create(const WindowDesc& desc)
+	std::pair<WindowHandle, Window*> WindowManager::CreateWindow(const WindowDesc& desc)
 	{
-		return m_pool.Emplace(desc);
+		WindowHandle handle = m_pool.Emplace(desc);
+		return { handle, GetWindow(handle) };
 	}
 
-	void WindowManager::Destroy(WindowHandle handle)
+	void WindowManager::DestroyWindow(WindowHandle handle)
 	{
-		if (Window* w = Get(handle)) [[likely]]
+		if (Window* w = GetWindow(handle)) [[likely]]
 		{
 			w->RequestClose();
 			m_pool.Erase(handle);
 		}
 	}
 
-	WindowHandle WindowManager::CreateMainWindow(const WindowDesc& desc)
+	std::pair<WindowHandle, Window*> WindowManager::CreateMainWindow(const WindowDesc& desc)
 	{
 		KOI_ASSERT_MSG(!m_mainWindow, "Main window already created");
-		m_mainWindow = Create(desc);
-		return m_mainWindow;
+
+		auto [handle, window] = CreateWindow(desc);
+		m_mainWindow = handle;
+
+		return { m_mainWindow, window };
 	}
 
 	bool WindowManager::AllClosed() const
@@ -42,6 +46,6 @@ namespace koi
 			if (w.ShouldClose()) toDestroy.push_back(h);
 		});
 
-		for (auto h : toDestroy) Destroy(h);
+		for (auto h : toDestroy) DestroyWindow(h);
 	}
 }

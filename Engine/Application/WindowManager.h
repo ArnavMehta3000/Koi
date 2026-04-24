@@ -9,16 +9,16 @@ namespace koi
 	class WindowManager : public NonCopyable
 	{
 	public:
-		WindowHandle Create(const WindowDesc& desc);
-		void         Destroy(WindowHandle handle);
+		std::pair<WindowHandle, Window*> CreateWindow(const WindowDesc& desc);
+		void DestroyWindow(WindowHandle handle);
 
-		WindowHandle CreateMainWindow(const WindowDesc& desc);  // For internal use only
+		std::pair<WindowHandle, Window*> CreateMainWindow(const WindowDesc& desc);  // For internal use only
 
-		[[nodiscard]] inline Window* Get(WindowHandle handle) { return m_pool.Get(handle); }
-		[[nodiscard]] inline const Window* Get(WindowHandle handle) const { return m_pool.Get(handle); }
+		[[nodiscard]] inline Window* GetWindow(WindowHandle handle) { return m_pool.Get(handle); }
+		[[nodiscard]] inline const Window* GetWindow(WindowHandle handle) const { return m_pool.Get(handle); }
 
-		[[nodiscard]] inline WindowHandle GetMainHandle() const { return m_mainWindow; }
-		[[nodiscard]] inline Window* GetMain() { return m_pool.Get(m_mainWindow); }
+		[[nodiscard]] inline WindowHandle GetMainWndowHandle() const { return m_mainWindow; }
+		[[nodiscard]] inline Window* GetMainWindow() { return m_pool.Get(m_mainWindow); }
 
 		[[nodiscard]] bool AllClosed() const;
 		void DestroyClosedWindows();

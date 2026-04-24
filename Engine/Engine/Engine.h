@@ -26,6 +26,7 @@ namespace koi
 		[[nodiscard]] inline u64 GetFrameCount() const { return m_frameCount; }
 
 		std::pair<WindowHandle, RenderWindowHandle> CreateAndAddRenderWindow(const WindowDesc& desc);
+		RenderWindowHandle RegisterWindowWithRenderer(WindowHandle handle, bool isVsync);
 
 	private:
 		void BeginFrame();

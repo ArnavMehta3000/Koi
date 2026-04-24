@@ -27,23 +27,10 @@ namespace koi
 
 	void Engine::RunApp(AppBase& app)
 	{
-		// Create main window, register with renderer and set up callbacks
-		const WindowDesc& mainWndDesc             = app.GetDesc().WindowDesc;
-		const WindowHandle mainWindow             = m_windowManager->CreateMainWindow(mainWndDesc);
-		const RenderWindowHandle mainRenderWindow = m_renderer->AddWindow(mainWindow, mainWndDesc.VSync);
+		const WindowDesc& mainWndDesc = app.GetDesc().WindowDesc;
 
-		m_windowManager->GetMain()->SetCloseCallback(
-			[window = mainWindow, renderer = m_renderer.get()]()
-			{
-				renderer->RemoveWindow(window);
-			});
-
-		m_windowManager->GetMain()->SetResizeCallback(
-			[rwHandle = mainRenderWindow, renderer = m_renderer.get()](u32 w, u32 h)
-			{
-				if (RenderWindow* rw = renderer->GetRenderWindow(rwHandle))
-					rw->Resize(w, h);
-			});
+		auto [windowHandle, windowPtr] = m_windowManager->CreateMainWindow(mainWndDesc);
+		RegisterWindowWithRenderer(windowHandle, mainWndDesc.VSync);
 
 		app.Init();
 		MainLoop(app);
@@ -52,27 +39,33 @@ namespace koi
 
 	std::pair<WindowHandle, RenderWindowHandle> Engine::CreateAndAddRenderWindow(const WindowDesc& desc)
 	{
-		WindowHandle window = m_windowManager->Create(desc);
-		RenderWindowHandle renderWindow = m_renderer->AddWindow(window, desc.VSync);
+		auto&& [windowHandle, windowPtr] = m_windowManager->CreateWindow(desc);
+		RenderWindowHandle renderHandle = RegisterWindowWithRenderer(windowHandle, desc.VSync);
+		return { windowHandle, renderHandle };
+	}
 
-		// Set up callbacks
-		if (Window* wnd = m_windowManager->Get(window))
+	RenderWindowHandle Engine::RegisterWindowWithRenderer(WindowHandle handle, bool isVsync)
+	{
+		RenderWindowHandle renderWndHandle;
+		if (Window* wnd = m_windowManager->GetWindow(handle))
 		{
+			auto&& [renderHandle, renderWindowPtr] = m_renderer->AddWindow(handle, isVsync);
+			renderWndHandle = renderHandle;
+
+			wnd->SetResizeCallback(
+				[renderWnd = renderWindowPtr](u32 w, u32 h)
+				{
+					renderWnd->Resize(w, h);
+				});
+
 			wnd->SetCloseCallback(
-				[window = window, renderer = m_renderer.get()]()
+				[window = handle, renderer = m_renderer.get()]()
 				{
 					renderer->RemoveWindow(window);
 				});
-
-			m_windowManager->Get(window)->SetResizeCallback(
-				[rwHandle = renderWindow, renderer = m_renderer.get()](u32 w, u32 h)
-				{
-					if (RenderWindow* rw = renderer->GetRenderWindow(rwHandle)) rw->Resize(w, h);
-				});
 		}
 
-
-		return { window, renderWindow };
+		return renderWndHandle;
 	}
 
 	void Engine::BeginFrame()

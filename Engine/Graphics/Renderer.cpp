@@ -35,20 +35,21 @@ namespace koi
 		KOI_LOG_INFO("Shutdown renderer");
 	}
 
-	RenderWindowHandle Renderer::AddWindow(WindowHandle handle, bool vsync)
+	std::pair<RenderWindowHandle, RenderWindow*> Renderer::AddWindow(WindowHandle handle, bool vsync)
 	{
 		if (auto it = m_windowMap.find(handle); it != m_windowMap.end())
-			return it->second;
+			return { it->second, GetRenderWindow(it->second) };
 
-		Window* w = Engine::Get().GetWindowManager().Get(handle);
+		Window* w = Engine::Get().GetWindowManager().GetWindow(handle);
+
 		KOI_VERIFY_MSG(w, "Trying to create RenderWindow from invalid window handle");
-		if (!w) { return {}; }
+		if (!w) { return { RenderWindowHandle{}, nullptr }; }
 
 		RenderWindowHandle h = m_renderWindows.Emplace(*m_device, *w, vsync);
 		m_windowMap.emplace(handle, h);
 
 		KOI_LOG_TRACE("Created RenderWindow (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
-		return h;
+		return { h, GetRenderWindow(h) };
 	}
 
 	RenderWindowHandle Renderer::FindWindow(WindowHandle w) const noexcept
