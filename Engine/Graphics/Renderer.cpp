@@ -47,7 +47,7 @@ namespace koi
 		RenderWindowHandle h = m_renderWindows.Emplace(*m_device, *w, vsync);
 		m_windowMap.emplace(handle, h);
 
-		KOI_LOG_INFO("Created RenderWindow (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+		KOI_LOG_TRACE("Created RenderWindow (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		return h;
 	}
 
@@ -63,7 +63,7 @@ namespace koi
 		if (it == m_windowMap.end()) return;
 
 		// RenderWindow's destructor calls WaitForIdle, so it's safe to erase here.
-		KOI_LOG_INFO("Destroying RenderWindow (Handle: idx={}, gen={})", handle.GetIndex(), handle.GetGeneration());
+		KOI_LOG_TRACE("Destroying RenderWindow (Handle: idx={}, gen={})", handle.GetIndex(), handle.GetGeneration());
 		m_renderWindows.Erase(it->second);
 		m_windowMap.erase(it);
 	}

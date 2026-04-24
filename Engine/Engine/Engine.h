@@ -25,10 +25,13 @@ namespace koi
 		[[nodiscard]] inline f64 GetTime() const { return m_elapsed; }
 		[[nodiscard]] inline u64 GetFrameCount() const { return m_frameCount; }
 
+		std::pair<WindowHandle, RenderWindowHandle> CreateAndAddRenderWindow(const WindowDesc& desc);
+
 	private:
 		void BeginFrame();
 		void Tick(AppBase& app);
 		void EndFrame();
+		void MainLoop(AppBase& app);
 
 	private:
 		static inline Engine* s_instance = nullptr;

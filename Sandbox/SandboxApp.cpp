@@ -15,22 +15,10 @@ public:
 
 		if (auto e = GetEngine())
 		{
-			auto& wm = e->GetWindowManager();
-			m_childWindow = wm.Create(koi::WindowDesc{ .Title = "SandboxChild", .Width = 800, .Height = 600 });
+			auto [w, r] = e->CreateAndAddRenderWindow(koi::WindowDesc{ .Title = "SandboxChild", .Width = 800, .Height = 600 });
 
-			m_childRenderWindow = e->GetRenderer().AddWindow(m_childWindow, false);
-			wm.Get(m_childWindow)->SetCloseCallback(
-				[window = m_childWindow, renderer = &e->GetRenderer()]()
-				{
-					renderer->RemoveWindow(window);
-				});
-
-			wm.Get(m_childWindow)->SetResizeCallback(
-				[rwHandle = m_childRenderWindow, renderer = &e->GetRenderer()](koi::u32 w, koi::u32 h)
-				{
-					if (auto rw = renderer->GetRenderWindow(rwHandle))
-						rw->Resize(w, h);
-				});
+			m_childWindow = w;
+			m_childRenderWindow = r;
 		}
 	}
 

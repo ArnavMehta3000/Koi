@@ -27,9 +27,10 @@ namespace koi
 
 	void Engine::RunApp(AppBase& app)
 	{
-		const WindowDesc& mainWndDesc = app.GetDesc().WindowDesc;
-		WindowHandle mainWindow = m_windowManager->CreateMainWindow(mainWndDesc);
-		RenderWindowHandle mainRenderWindow = m_renderer->AddWindow(mainWindow, mainWndDesc.VSync);
+		// Create main window, register with renderer and set up callbacks
+		const WindowDesc& mainWndDesc             = app.GetDesc().WindowDesc;
+		const WindowHandle mainWindow             = m_windowManager->CreateMainWindow(mainWndDesc);
+		const RenderWindowHandle mainRenderWindow = m_renderer->AddWindow(mainWindow, mainWndDesc.VSync);
 
 		m_windowManager->GetMain()->SetCloseCallback(
 			[window = mainWindow, renderer = m_renderer.get()]()
@@ -40,26 +41,38 @@ namespace koi
 		m_windowManager->GetMain()->SetResizeCallback(
 			[rwHandle = mainRenderWindow, renderer = m_renderer.get()](u32 w, u32 h)
 			{
-				if (auto rw = renderer->GetRenderWindow(rwHandle))
+				if (RenderWindow* rw = renderer->GetRenderWindow(rwHandle))
 					rw->Resize(w, h);
 			});
 
 		app.Init();
+		MainLoop(app);
+		app.Shutdown();
+	}
 
-		m_startTime     = Clock::now();
-		m_lastFrameTime = m_startTime;
+	std::pair<WindowHandle, RenderWindowHandle> Engine::CreateAndAddRenderWindow(const WindowDesc& desc)
+	{
+		WindowHandle window = m_windowManager->Create(desc);
+		RenderWindowHandle renderWindow = m_renderer->AddWindow(window, desc.VSync);
 
-		while (m_isRunning)
+		// Set up callbacks
+		if (Window* wnd = m_windowManager->Get(window))
 		{
-			BeginFrame();
-			Tick(app);
-			EndFrame();
+			wnd->SetCloseCallback(
+				[window = window, renderer = m_renderer.get()]()
+				{
+					renderer->RemoveWindow(window);
+				});
 
-			if (m_windowManager->AllClosed())
-				m_isRunning = false;
+			m_windowManager->Get(window)->SetResizeCallback(
+				[rwHandle = renderWindow, renderer = m_renderer.get()](u32 w, u32 h)
+				{
+					if (RenderWindow* rw = renderer->GetRenderWindow(rwHandle)) rw->Resize(w, h);
+				});
 		}
 
-		app.Shutdown();
+
+		return { window, renderWindow };
 	}
 
 	void Engine::BeginFrame()
@@ -85,5 +98,21 @@ namespace koi
 	{
 		m_renderer->EndFrame();
 		m_frameCount = m_renderer->GetDevice().GetCurrentFrameIndex();
+	}
+
+	void Engine::MainLoop(AppBase& app)
+	{
+		m_startTime = Clock::now();
+		m_lastFrameTime = m_startTime;
+
+		while (m_isRunning)
+		{
+			BeginFrame();
+			Tick(app);
+			EndFrame();
+
+			if (m_windowManager->AllClosed())
+				m_isRunning = false;
+		}
 	}
 }
