@@ -25,6 +25,8 @@ namespace koi
 		constexpr Handle(IndexType index, IndexType generation) noexcept
 			: m_id((index& INDEX_MASK) | ((generation & GENERATION_MASK) << IndexBits)) { }
 
+		static Handle FromID(IndexType id) { return Handle(id & INDEX_MASK, (id >> IndexBits) & GENERATION_MASK); }
+
 		auto operator<=>(const Handle&) const = default;
 
 		[[nodiscard]] constexpr inline IndexType GetIndex()      const noexcept { return m_id & INDEX_MASK; }
