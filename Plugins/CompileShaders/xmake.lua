@@ -16,5 +16,37 @@ task("compile_shaders")
 	})
 
 	on_run("main")
-
 task_end()
+
+--[[
+// This is a sample input JSON
+{
+	"common_args": [
+		"-WX",
+		"-Zi",
+		"-Qembed_debug"
+	],
+	"include_dirs": [],
+	"defines": [
+		"DEBUG=1"
+	],
+	"entries": [
+		{
+			"source_file": "GeometryPassVS.hlsl",
+			"output_file": "GeometryPassVS.cso",
+			"entry": "VSMain",
+			"target": "vs_6_0",
+			"defines": [],
+			"extra_args": []
+		},
+		{
+			"source_file": "GeometryPassPS.hlsl",
+			"output_file": "GeometryPassPS.cso",
+			"entry": "PSMain",
+			"target": "ps_6_0",
+			"defines": [],
+			"extra_args": []
+		},
+	]
+}
+]]
