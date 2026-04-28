@@ -42,7 +42,7 @@ namespace koi
 		FrameArray<TextureHandle>  m_backBuffers{};
 		bool                       m_vsync             = true;
 		bool                       m_tearingAllowed    = false;
-		FrameArray <u64>           m_frameFenceValues{};
+		FrameArray<u64>            m_frameFenceValues{};
 		u32                        m_width             = 0;
 		u32                        m_height            = 0;
 		u32                        m_currentBackBuffer = 0;

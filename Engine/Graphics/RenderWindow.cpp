@@ -101,20 +101,7 @@ namespace koi
 
 		m_device->WaitForIdle();
 		ReleaseBackBuffers();
-
-		// Pending swapchain-image destructions are queued; flush them before Resize.
-		// WaitForIdle already advanced the fence, but the deletion queue is processed
-		// on SignalFrame. We need to force a flush here:
-		// (A public FlushDeferredDeletions(u64) on GfxDevice would be cleaner; for now
-		// WaitForIdle + SignalFrame-less flush is awkward. One clean option: expose
-		// GfxDevice::FlushDestroyed() and call it here.)
-		// Workaround: just reset our ComPtrs via ReleaseBackBuffers (done above),
-		// and rely on the pool erase dropping the last ref on the next flush.
-		// For safety we force-clear pending deletions by signaling & waiting:
-
-		// [TODO]: Fix this
-		m_device->SignalFrame();
-		m_device->WaitForIdle();
+		m_device->FlushPendingDeletions();
 
 		const u32 flags = m_tearingAllowed ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 		DX_CHECK(m_swapChain->ResizeBuffers(
@@ -144,12 +131,14 @@ namespace koi
 		}
 		DX_CHECK(hr);
 
-		// Record the fence value that guards this backbuffer, then rotate.
+		/// DevNote: Here are the steps done regarding synchronization
+		/// - After presenting buffer N, record the fence value at that moment
+		/// - Rotate to the next buffer the swapchain gives
+		/// - Before writing to 'that' buffer, wait for the fence value recorded the 'last time' that slot was used
+		/// This guarantees I never start writing to a backbuffer the GPU is still presenting too
+
 		m_frameFenceValues[m_currentBackBuffer] = m_device->SignalFrame();
 		m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
-
-		// Before the renderer writes to the *new* current backbuffer, ensure the
-		// GPU has finished its previous use of that same backbuffer slot.
 		WaitForCurrentBackBuffer();
 	}
 

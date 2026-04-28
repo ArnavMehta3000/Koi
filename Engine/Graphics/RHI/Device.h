@@ -18,16 +18,16 @@ namespace koi
 		explicit GfxDevice(const GfxDevice::Desc& desc = {});
 		~GfxDevice();
 
-		[[nodiscard]] inline dx12::Device* GetNative() const noexcept{ return m_device.Get (); }
-		[[nodiscard]] inline dxgi::Factory* GetDXGIFactory() const noexcept{ return m_dxgiFactory.Get (); }
-		[[nodiscard]] inline dx12::CommandQueue* GetGraphicsQueue() const noexcept{ return m_graphicsQueue.Get(); }
-		[[nodiscard]] inline dx12::Fence* GetFrameFence() const noexcept{ return m_frameFence.Get (); }
-		[[nodiscard]] inline bool SupportsTearing() const noexcept{ return m_supportsTearing; }
-		[[nodiscard]] inline u64 GetCurrentFrameIndex() const noexcept{ return m_frameIndex; }
-		[[nodiscard]] inline DescriptorHeap& RTVHeap() noexcept{ return m_rtvHeap; }
-		[[nodiscard]] inline DescriptorHeap& DSVHeap() noexcept{ return m_dsvHeap; }
-		[[nodiscard]] inline DescriptorHeap& ResourceHeap() noexcept{ return m_resourceHeap; }
-		[[nodiscard]] inline DescriptorHeap& SamplerHeap() noexcept{ return m_samplerHeap; }
+		[[nodiscard]] inline dx12::Device* GetNative() const noexcept              { return m_device.Get ();       }
+		[[nodiscard]] inline dxgi::Factory* GetDXGIFactory() const noexcept        { return m_dxgiFactory.Get ();  }
+		[[nodiscard]] inline dx12::CommandQueue* GetGraphicsQueue() const noexcept { return m_graphicsQueue.Get(); }
+		[[nodiscard]] inline dx12::Fence* GetFrameFence() const noexcept           { return m_frameFence.Get ();   }
+		[[nodiscard]] inline bool SupportsTearing() const noexcept                 { return m_supportsTearing;     }
+		[[nodiscard]] inline u64 GetCurrentFrameIndex() const noexcept             { return m_frameIndex;          }
+		[[nodiscard]] inline DescriptorHeap& RTVHeap() noexcept                    { return m_rtvHeap;             }
+		[[nodiscard]] inline DescriptorHeap& DSVHeap() noexcept                    { return m_dsvHeap;             }
+		[[nodiscard]] inline DescriptorHeap& ResourceHeap() noexcept               { return m_resourceHeap;        }
+		[[nodiscard]] inline DescriptorHeap& SamplerHeap() noexcept                { return m_samplerHeap;         }
 		[[nodiscard]] u64 GetCompletedFenceValue () const noexcept;
 
 		[[nodiscard]] Texture* Get(TextureHandle h) noexcept              { return m_textures.Get(h); }
@@ -45,7 +45,8 @@ namespace koi
 
 		u64 SignalFrame();
 		void WaitForFence(u64 fenceValue);
-		void WaitForIdle();  // Block until GPU has completed all subbed in work
+		void WaitForIdle();           // Block until GPU has completed all submitted work
+		void FlushPendingDeletions(); // Free all queued resources; caller must ensure GPU is idle
 
 		void SetDeviceNotify(IDeviceNotify* notify) noexcept { m_notify = notify; }
 		void HandleDeviceLost();

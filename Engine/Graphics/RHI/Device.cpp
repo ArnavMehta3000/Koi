@@ -224,6 +224,10 @@ namespace koi
 
 	u64 GfxDevice::SignalFrame()
 	{
+		/// DevNote: This function tells the GPU to write the current counter value into the fence
+		/// when it finishes all the work so far, then increments the counter.
+		/// It also flushes the defferred deltion queue
+
 		const u64 value = m_nextFenceValue++;
 		DX_CHECK(m_graphicsQueue->Signal(m_frameFence.Get(), value));
 		++m_frameIndex;
@@ -240,11 +244,18 @@ namespace koi
 
 	void GfxDevice::WaitForIdle()
 	{
+		///DevNote: This is the nuclear option, it signal a new value and immediately waits for it
+		/// draining the entire GPU pipeline. Used before resize and shutdown
+		
 		const u64 value = m_nextFenceValue++;
 		DX_CHECK(m_graphicsQueue->Signal(m_frameFence.Get(), value));
 		WaitForFence(value);
 	}
 
+	void GfxDevice::FlushPendingDeletions()
+	{
+		FlushDeferredDeletions(~0ull);
+	}
 	void GfxDevice::HandleDeviceLost()
 	{
 		KOI_LOG_CRITICAL("D3D12 device lost. Attempting recovery...");
