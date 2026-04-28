@@ -34,6 +34,8 @@ namespace koi
 		RenderWindowHandle FindWindow(WindowHandle w) const noexcept;
 		void RemoveWindow(WindowHandle handle);
 
+		[[nodiscard]] CommandList* GetCommandList(RenderWindowHandle h) noexcept;
+
 		void BeginFrame();
 		void EndFrame();
 

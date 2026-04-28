@@ -101,6 +101,12 @@ namespace koi
 		m_frameSlot = (m_frameSlot + 1) % FRAMES_IN_FLIGHT;
 	}
 
+	CommandList* Renderer::GetCommandList(RenderWindowHandle h) noexcept
+	{
+		auto it = m_frameContexts.find(h.GetId());
+		return it != m_frameContexts.end() ? &it->second->List : nullptr;
+	}
+
 	void Renderer::OnDeviceLost()
 	{
 		KOI_LOG_CRITICAL(" Graphics device lost");

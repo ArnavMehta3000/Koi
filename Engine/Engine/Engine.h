@@ -24,6 +24,7 @@ namespace koi
 		[[nodiscard]] inline f32 GetDeltaTime() const { return m_deltaTime; }
 		[[nodiscard]] inline f64 GetTime() const { return m_elapsed; }
 		[[nodiscard]] inline u64 GetFrameCount() const { return m_frameCount; }
+		[[nodiscard]] inline RenderWindowHandle GetMainRenderWindowHandle() const { return m_mainRenderWindow; }
 
 		std::pair<WindowHandle, RenderWindowHandle> CreateAndAddRenderWindow(const WindowDesc& desc);
 		RenderWindowHandle RegisterWindowWithRenderer(WindowHandle handle, bool isVsync);
@@ -48,6 +49,7 @@ namespace koi
 		f32       m_deltaTime  = 0.0f;
 		f64       m_elapsed    = 0.0;
 		u64       m_frameCount = 0;
-		bool      m_isRunning  = true;
+		bool               m_isRunning       = true;
+		RenderWindowHandle m_mainRenderWindow;
 	};
 }

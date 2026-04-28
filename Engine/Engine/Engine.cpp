@@ -30,7 +30,7 @@ namespace koi
 		const WindowDesc& mainWndDesc = app.GetDesc().WindowDesc;
 
 		auto [windowHandle, windowPtr] = m_windowManager->CreateMainWindow(mainWndDesc);
-		RegisterWindowWithRenderer(windowHandle, mainWndDesc.VSync);
+		m_mainRenderWindow = RegisterWindowWithRenderer(windowHandle, mainWndDesc.VSync);
 
 		app.Init();
 		MainLoop(app);

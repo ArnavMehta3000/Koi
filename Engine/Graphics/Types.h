@@ -9,8 +9,11 @@
 
 namespace koi
 {
-	static constexpr u32 BACK_BUFFER_COUNT = 3;
-	static constexpr u32 FRAMES_IN_FLIGHT = 3;
+	static constexpr u32 BACK_BUFFER_COUNT     = 3;
+	static constexpr u32 FRAMES_IN_FLIGHT      = 3;
+	static constexpr u32 MAX_RENDER_TARGETS    = 8;
+	static constexpr u32 MAX_VERTEX_ATTRIBUTES = 16;
+	static constexpr u32 MAX_PUSH_CONSTANT_U32S = 32;
 
 	template <typename T>
 	using FrameArray = std::array<T, BACK_BUFFER_COUNT>;
@@ -78,6 +81,16 @@ namespace koi
 		krn::EnumFlag<BufferUsage> Usage = BufferUsage::None;
 		MemoryUsage Memory               = MemoryUsage::GpuOnly;
 		std::string_view DebugName;
+	};
+
+	struct VertexAttribute
+	{
+		const char* SemanticName  = nullptr;
+		u32         SemanticIndex = 0;
+		Format      Format        = Format::UNKNOWN;
+		u32         InputSlot     = 0;
+		u32         ByteOffset    = 0;
+		bool        PerInstance   = false;
 	};
 
 	struct IDeviceNotify

@@ -55,6 +55,7 @@ namespace koi
 		CreateQueues();
 		CreateFences();
 		CreateHeaps();
+		CreateRootSignature();
 	}
 
 	GfxDevice::~GfxDevice()
@@ -71,6 +72,7 @@ namespace koi
 		}
 		m_frameFence    = nullptr;
 		m_graphicsQueue = nullptr;
+		m_rootSignature = nullptr;
 		m_adapter       = nullptr;
 		m_dxgiFactory   = nullptr;
 		m_device        = nullptr;
@@ -237,6 +239,10 @@ namespace koi
 
 	void GfxDevice::WaitForFence(u64 fenceValue)
 	{
+		/// DevNote: This function checks if the GPU has already passed that (signalled) value
+		/// If not, then it uses `SetEventOnCompletion` + `WaitForSingleObject` to block the CPU until it has
+		/// This is the DX12 equivalent of DX11' `Flush()` stall, except I have the control here
+
 		if (m_frameFence->GetCompletedValue() >= fenceValue) return;
 		DX_CHECK(m_frameFence->SetEventOnCompletion(fenceValue, m_fenceEvent));
 		::WaitForSingleObject(m_fenceEvent, INFINITE);
@@ -256,6 +262,221 @@ namespace koi
 	{
 		FlushDeferredDeletions(~0ull);
 	}
+
+	void GfxDevice::Destroy(PipelineHandle h)
+	{
+		if (m_pipelines.IsValid(h))
+		{
+			PendingDeletion d;
+			d.Type       = PendingDeletion::ResourceType::Pipeline;
+			d.FenceValue = m_nextFenceValue;
+			d.Pipeline   = h;
+			m_deletionQueue.push(d);
+			KOI_LOG_TRACE("Marked pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+		}
+		else
+		{
+			KOI_LOG_WARN("Trying to mark invalid pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+		}
+	}
+
+	PipelineHandle GfxDevice::CreatePipeline(const PipelineDesc& desc)
+	{
+		KOI_ASSERT_MSG(!desc.VertexShader.empty(), "PipelineDesc missing vertex shader");
+		KOI_ASSERT_MSG(!desc.PixelShader.empty(),  "PipelineDesc missing pixel shader");
+		KOI_ASSERT_MSG(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN,
+			"PipelineDesc has neither render targets nor a depth target");
+
+		// Vertex input layout
+		D3D12_INPUT_ELEMENT_DESC inputElements[MAX_VERTEX_ATTRIBUTES];
+		u32 numElements = 0;
+		for (const auto& attr : desc.VertexLayout)
+		{
+			KOI_ASSERT_MSG(numElements < MAX_VERTEX_ATTRIBUTES, "Too many vertex attributes");
+			inputElements[numElements++] =
+			{
+				.SemanticName         = attr.SemanticName,
+				.SemanticIndex        = attr.SemanticIndex,
+				.Format               = ToDXGIFormat(attr.Format),
+				.InputSlot            = attr.InputSlot,
+				.AlignedByteOffset    = attr.ByteOffset,
+				.InputSlotClass       = attr.PerInstance
+					? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA
+					: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+				.InstanceDataStepRate = attr.PerInstance ? 1u : 0u,
+			};
+		}
+
+		// Rasterizer
+		D3D12_RASTERIZER_DESC rasterDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		rasterDesc.FillMode              = desc.Rasterizer.FillMode;
+		rasterDesc.CullMode              = desc.Rasterizer.CullMode;
+		rasterDesc.FrontCounterClockwise = desc.Rasterizer.FrontCounterClockwise;
+		rasterDesc.DepthClipEnable       = desc.Rasterizer.DepthClipEnable;
+		rasterDesc.ConservativeRaster    = desc.Rasterizer.ConservativeRaster
+			? D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON
+			: D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+		rasterDesc.DepthBias             = desc.Rasterizer.DepthBias;
+		rasterDesc.DepthBiasClamp        = desc.Rasterizer.DepthBiasClamp;
+		rasterDesc.SlopeScaledDepthBias  = desc.Rasterizer.SlopeScaledDepthBias;
+
+		// Blend state
+		D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		for (u32 i = 0; i < desc.RenderTargetCount; i++)
+		{
+			const BlendTargetDesc& src    = desc.BlendTargets[i];
+			auto& dst                     = blendDesc.RenderTarget[i];
+			dst.BlendEnable               = src.BlendEnable;
+			dst.SrcBlend                  = src.SrcBlend;
+			dst.DestBlend                 = src.DstBlend;
+			dst.BlendOp                   = src.BlendOp;
+			dst.SrcBlendAlpha             = src.SrcBlendAlpha;
+			dst.DestBlendAlpha            = src.DstBlendAlpha;
+			dst.BlendOpAlpha              = src.BlendOpAlpha;
+			dst.RenderTargetWriteMask     = src.WriteMask;
+		}
+
+		// Depth-stencil
+		D3D12_DEPTH_STENCIL_DESC depthDesc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		depthDesc.DepthEnable              = desc.DepthStencil.DepthEnable;
+		depthDesc.DepthWriteMask           = desc.DepthStencil.DepthWrite
+			? D3D12_DEPTH_WRITE_MASK_ALL
+			: D3D12_DEPTH_WRITE_MASK_ZERO;
+		depthDesc.DepthFunc                = desc.DepthStencil.DepthFunc;
+		depthDesc.StencilEnable            = desc.DepthStencil.StencilEnable;
+
+		// RT formats
+		DXGI_FORMAT rtFormats[MAX_RENDER_TARGETS] = {};
+		for (u32 i = 0; i < desc.RenderTargetCount; i++)
+			rtFormats[i] = ToDXGIFormat(desc.RenderTargetFormats[i]);
+
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+		psoDesc.pRootSignature                     = m_rootSignature.Get();
+		psoDesc.VS                                 = { desc.VertexShader.data(), desc.VertexShader.size() };
+		psoDesc.PS                                 = { desc.PixelShader.data(),  desc.PixelShader.size()  };
+		if (!desc.GeometryShader.empty()) psoDesc.GS = { desc.GeometryShader.data(), desc.GeometryShader.size() };
+		if (!desc.HullShader.empty())     psoDesc.HS = { desc.HullShader.data(),     desc.HullShader.size()     };
+		if (!desc.DomainShader.empty())   psoDesc.DS = { desc.DomainShader.data(),   desc.DomainShader.size()   };
+		psoDesc.InputLayout                        = { inputElements, numElements };
+		psoDesc.RasterizerState                    = rasterDesc;
+		psoDesc.BlendState                         = blendDesc;
+		psoDesc.DepthStencilState                  = depthDesc;
+		psoDesc.PrimitiveTopologyType              = desc.TopologyType;
+		psoDesc.NumRenderTargets                   = desc.RenderTargetCount;
+		for (u32 i = 0; i < desc.RenderTargetCount; i++)
+			psoDesc.RTVFormats[i] = rtFormats[i];
+		psoDesc.DSVFormat                          = ToDXGIFormat(desc.DepthFormat);
+		psoDesc.SampleDesc                         = { desc.SampleCount, 0 };
+		psoDesc.SampleMask                         = UINT_MAX;
+
+		Pipeline pipeline;
+		pipeline.Topology = desc.Topology;
+
+		DX_CHECK(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline.Pso)));
+
+		if (!desc.DebugName.empty())
+		{
+			const std::wstring wname = StringUtils::ToWide(std::string(desc.DebugName));
+			pipeline.Pso->SetName(wname.c_str());
+		}
+
+		KOI_LOG_TRACE("Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		return m_pipelines.Emplace(std::move(pipeline));
+	}
+
+	void GfxDevice::UploadBufferData(BufferHandle dst, const void* data, u64 size)
+	{
+		BufferHandle staging = CreateBuffer(BufferDesc
+		{
+			.Size      = size,
+			.Usage     = BufferUsage::CopySource,
+			.Memory    = MemoryUsage::CpuToGpu,
+			.DebugName = "Upload Staging",
+		});
+
+		Buffer* stagingBuf = m_buffers.Get(staging);
+		KOI_ASSERT_MSG(stagingBuf && stagingBuf->MappedPtr, "Staging buffer mapping failed");
+		std::memcpy(stagingBuf->MappedPtr, data, size);
+
+		Buffer* dstBuf = m_buffers.Get(dst);
+		KOI_ASSERT_MSG(dstBuf, "Invalid destination buffer");
+
+		ComPtr<dx12::CommandAllocator> allocator;
+		DX_CHECK(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
+
+		ComPtr<dx12::GraphicsCommandList> cmdList;
+		DX_CHECK(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator.Get(), nullptr, IID_PPV_ARGS(&cmdList)));
+
+		if (dstBuf->CurrentState != D3D12_RESOURCE_STATE_COPY_DEST)
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				dstBuf->Resource.Get(), dstBuf->CurrentState, D3D12_RESOURCE_STATE_COPY_DEST);
+			cmdList->ResourceBarrier(1, &barrier);
+		}
+
+		cmdList->CopyBufferRegion(dstBuf->Resource.Get(), 0, stagingBuf->Resource.Get(), 0, size);
+
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				dstBuf->Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
+			cmdList->ResourceBarrier(1, &barrier);
+			dstBuf->CurrentState = D3D12_RESOURCE_STATE_COMMON;
+		}
+
+		DX_CHECK(cmdList->Close());
+
+		dx12::CommandList* lists[] = { cmdList.Get() };
+		m_graphicsQueue->ExecuteCommandLists(1, lists);
+		WaitForIdle();
+
+		Destroy(staging);
+		FlushPendingDeletions();
+	}
+
+	void GfxDevice::CreateRootSignature()
+	{
+		KOI_LOG_TRACE("Creating bindless root signature");
+
+		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData{};
+		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
+		if (FAILED(m_device->CheckFeatureSupport(
+			D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+		{
+			featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+		}
+
+		CD3DX12_ROOT_PARAMETER1 rootParam;
+		rootParam.InitAsConstants(MAX_PUSH_CONSTANT_U32S, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
+
+		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC desc;
+		desc.Init_1_1(
+			1, &rootParam,
+			0, nullptr,
+			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED  |
+			D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED
+		);
+
+		ComPtr<ID3DBlob> blob, error;
+		HRESULT hr = D3DX12SerializeVersionedRootSignature(
+			&desc, featureData.HighestVersion, &blob, &error);
+
+		if (FAILED(hr))
+		{
+			if (error)
+				KOI_LOG_ERROR("Root signature serialization: {}",
+					static_cast<const char*>(error->GetBufferPointer()));
+			DX_CHECK(hr);
+		}
+
+		DX_CHECK(m_device->CreateRootSignature(
+			0, blob->GetBufferPointer(), blob->GetBufferSize(),
+			IID_PPV_ARGS(&m_rootSignature)));
+
+		m_rootSignature->SetName(L"Koi Bindless Root Signature");
+		KOI_LOG_TRACE("Bindless root signature created");
+	}
+
 	void GfxDevice::HandleDeviceLost()
 	{
 		KOI_LOG_CRITICAL("D3D12 device lost. Attempting recovery...");
@@ -266,7 +487,9 @@ namespace koi
 		FlushDeferredDeletions(~0ull);
 		m_textures.Clear();
 		m_buffers.Clear();
+		m_pipelines.Clear();
 
+		m_rootSignature = nullptr;
 		m_graphicsQueue.Reset();
 		m_frameFence.Reset();
 		m_device.Reset();
@@ -279,6 +502,7 @@ namespace koi
 		CreateQueues();
 		CreateFences();
 		CreateHeaps();
+		CreateRootSignature();
 
 		if (m_notify) m_notify->OnDeviceRestored();
 	}
@@ -472,6 +696,13 @@ namespace koi
 				}
 				KOI_LOG_TRACE("Buffer resource deleted (Handle: idx={}, gen={})", p.Buffer.GetIndex(), p.Buffer.GetGeneration());
 				m_buffers.Erase(p.Buffer);
+				break;
+			}
+
+			case PendingDeletion::ResourceType::Pipeline:
+			{
+				KOI_LOG_TRACE("Pipeline resource deleted (Handle: idx={}, gen={})", p.Pipeline.GetIndex(), p.Pipeline.GetGeneration());
+				m_pipelines.Erase(p.Pipeline);
 				break;
 			}
 			}

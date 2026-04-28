@@ -35,7 +35,7 @@ namespace koi
 	struct Pipeline
 	{
 		ComPtr<dx12::PipelineState> Pso;
-		ComPtr<dx12::RootSignature> RootSig;
+		D3D_PRIMITIVE_TOPOLOGY      Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	};
 
 	struct Shader

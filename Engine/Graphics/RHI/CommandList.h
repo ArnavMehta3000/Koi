@@ -27,6 +27,23 @@ namespace koi
 
 		void ClearRenderTarget(TextureHandle rt, const f32 color[4]);
 
+		// State binding
+		void SetRenderTarget(TextureHandle colorRT, TextureHandle depthRT = {});
+		void SetViewport(f32 x, f32 y, f32 width, f32 height, f32 minDepth = 0.0f, f32 maxDepth = 1.0f);
+		void SetScissor(u32 x, u32 y, u32 width, u32 height);
+		void SetViewportAndScissor(u32 width, u32 height);
+		void SetPipeline(PipelineHandle h);
+		void SetVertexBuffer(u32 slot, BufferHandle h);
+		void SetIndexBuffer(BufferHandle h);
+		void SetPushConstants(const void* data, u32 count32BitValues, u32 destOffsetIn32BitValues = 0);
+
+		// Draw
+		void Draw(u32 vertexCount, u32 instanceCount = 1, u32 startVertex = 0, u32 startInstance = 0);
+		void DrawIndexed(u32 indexCount, u32 instanceCount = 1, u32 startIndex = 0, i32 vertexOffset = 0, u32 startInstance = 0);
+
+		// Copy
+		void CopyBuffer(BufferHandle dst, u64 dstOffset, BufferHandle src, u64 srcOffset, u64 size);
+
 	private:
 		GfxDevice*                          m_device    = nullptr;
 		CommandAllocator*                   m_allocator = nullptr;
