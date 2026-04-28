@@ -53,9 +53,10 @@ namespace koi
 			renderWndHandle = renderHandle;
 
 			wnd->SetResizeCallback(
-				[renderWnd = renderWindowPtr](u32 w, u32 h)
+				[renderHandle = renderHandle, renderer = m_renderer.get()](u32 w, u32 h)
 				{
-					renderWnd->Resize(w, h);
+					if (RenderWindow* rw = renderer->GetRenderWindow(renderHandle))
+						rw->Resize(w, h);
 				});
 
 			wnd->SetCloseCallback(

@@ -8,11 +8,11 @@ namespace koi
 
 	class WindowManager : public NonCopyable
 	{
+		friend class Engine;
 	public:
-		std::pair<WindowHandle, Window*> CreateWindow(const WindowDesc& desc);
+		std::pair<WindowHandle, Window*> CreateWindow(const WindowDesc& desc);   // NOTE: The pointer is not safe to store, but okay for temporary actions (same with create main window)
 		void DestroyWindow(WindowHandle handle);
 
-		std::pair<WindowHandle, Window*> CreateMainWindow(const WindowDesc& desc);  // For internal use only
 
 		[[nodiscard]] inline Window* GetWindow(WindowHandle handle) { return m_pool.Get(handle); }
 		[[nodiscard]] inline const Window* GetWindow(WindowHandle handle) const { return m_pool.Get(handle); }
@@ -22,6 +22,9 @@ namespace koi
 
 		[[nodiscard]] bool AllClosed() const;
 		void DestroyClosedWindows();
+
+	private:
+		std::pair<WindowHandle, Window*> CreateMainWindow(const WindowDesc& desc);
 
 	private:
 		HandlePool<Window> m_pool;
