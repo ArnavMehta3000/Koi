@@ -33,12 +33,12 @@ namespace koi
 
 		[[nodiscard]] u64 GetCompletedFenceValue () const noexcept;
 
-		[[nodiscard]] Texture*        Get(TextureHandle h)  noexcept       { return m_textures.Get(h);  }
-		[[nodiscard]] const Texture*  Get(TextureHandle h)  const noexcept { return m_textures.Get(h);  }
-		[[nodiscard]] Buffer*         Get(BufferHandle h)   noexcept       { return m_buffers.Get(h);   }
-		[[nodiscard]] const Buffer*   Get(BufferHandle h)   const noexcept { return m_buffers.Get(h);   }
-		[[nodiscard]] Pipeline*       Get(PipelineHandle h) noexcept       { return m_pipelines.Get(h); }
-		[[nodiscard]] const Pipeline* Get(PipelineHandle h) const noexcept { return m_pipelines.Get(h); }
+		[[nodiscard]] inline Texture*        Get(TextureHandle h)  noexcept       { return m_textures.Get(h);  }
+		[[nodiscard]] inline const Texture*  Get(TextureHandle h)  const noexcept { return m_textures.Get(h);  }
+		[[nodiscard]] inline Buffer*         Get(BufferHandle h)   noexcept       { return m_buffers.Get(h);   }
+		[[nodiscard]] inline const Buffer*   Get(BufferHandle h)   const noexcept { return m_buffers.Get(h);   }
+		[[nodiscard]] inline Pipeline*       Get(PipelineHandle h) noexcept       { return m_pipelines.Get(h); }
+		[[nodiscard]] inline const Pipeline* Get(PipelineHandle h) const noexcept { return m_pipelines.Get(h); }
 
 		[[nodiscard]] TextureHandle  RegisterSwapChainImage(ComPtr<dx12::Resource> resource, const TextureDesc& desc);
 
@@ -46,8 +46,7 @@ namespace koi
 		[[nodiscard]] BufferHandle   CreateBuffer(const BufferDesc& desc);
 		[[nodiscard]] PipelineHandle CreatePipeline(const PipelineDesc& desc);
 
-		// Uploads CPU data to a GPU-only buffer via a one-shot command list. Stalls the CPU.
-		void UploadBufferData(BufferHandle dst, const void* data, u64 size);
+		void UploadBufferData(BufferHandle dst, const void* data, u64 size);  // Uploads CPU data to a GPU-only buffer via a one-shot command list. Stalls the CPU
 
 		void Destroy(TextureHandle h);
 		void Destroy(BufferHandle h);
