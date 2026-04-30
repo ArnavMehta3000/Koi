@@ -120,17 +120,15 @@ namespace koi
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle{};
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle{};
 
-		if (colorRT)
+		if (Texture* tex = m_device->Get(colorRT))
 		{
-			Texture* tex = m_device->Get(colorRT);
-			KOI_ASSERT_MSG(tex && tex->RTVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid color RT");
+			KOI_ASSERT_MSG(tex->RTVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid color RT");
 			rtvHandle = m_device->RTVHeap().CpuHandle(tex->RTVIndex);
 		}
 
-		if (depthRT)
+		if (Texture* tex = m_device->Get(depthRT))
 		{
-			Texture* tex = m_device->Get(depthRT);
-			KOI_ASSERT_MSG(tex && tex->DSVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid depth RT");
+			KOI_ASSERT_MSG(tex->DSVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid depth RT");
 			dsvHandle = m_device->DSVHeap().CpuHandle(tex->DSVIndex);
 		}
 
