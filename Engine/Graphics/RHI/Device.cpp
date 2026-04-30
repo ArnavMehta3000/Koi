@@ -9,6 +9,8 @@
 
 namespace koi
 {
+	CD3DX12FeatureSupport g_featureSupport;
+
 	static D3D12_RESOURCE_FLAGS ToD3DFlags(krn::EnumFlag<TextureUsage> u)
 	{
 		D3D12_RESOURCE_FLAGS f = D3D12_RESOURCE_FLAG_NONE;
@@ -437,13 +439,7 @@ namespace koi
 	{
 		KOI_LOG_TRACE("Creating bindless root signature");
 
-		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData{};
-		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
-		if (FAILED(m_device->CheckFeatureSupport(
-			D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
-		{
-			featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
-		}
+		const D3D_ROOT_SIGNATURE_VERSION rootSignatureVersion = g_featureSupport.HighestRootSignatureVersion();
 
 		CD3DX12_ROOT_PARAMETER1 rootParam;
 		rootParam.InitAsConstants(MAX_PUSH_CONSTANT_U32S, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
@@ -458,14 +454,14 @@ namespace koi
 		);
 
 		ComPtr<ID3DBlob> blob, error;
-		HRESULT hr = D3DX12SerializeVersionedRootSignature(
-			&desc, featureData.HighestVersion, &blob, &error);
-
+		HRESULT hr = ::D3DX12SerializeVersionedRootSignature(&desc, rootSignatureVersion, &blob, &error); 
 		if (FAILED(hr))
 		{
 			if (error)
-				KOI_LOG_ERROR("Root signature serialization: {}",
+			{
+				KOI_LOG_ERROR("Failed to serialize bindless root signature: {}",
 					static_cast<const char*>(error->GetBufferPointer()));
+			}
 			DX_CHECK(hr);
 		}
 
@@ -473,8 +469,7 @@ namespace koi
 			0, blob->GetBufferPointer(), blob->GetBufferSize(),
 			IID_PPV_ARGS(&m_rootSignature)));
 
-		m_rootSignature->SetName(L"Koi Bindless Root Signature");
-		KOI_LOG_TRACE("Bindless root signature created");
+		m_rootSignature->SetName(L"Bindless Root Signature");
 	}
 
 	void GfxDevice::HandleDeviceLost()
@@ -624,6 +619,8 @@ namespace koi
 			infoQueue->AddStorageFilterEntries(&filter);
 		}
 #endif
+
+		g_featureSupport.Init(m_device.Get());
 	}
 
 	void GfxDevice::CreateQueues()
