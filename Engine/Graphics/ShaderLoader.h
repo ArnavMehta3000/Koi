@@ -9,12 +9,12 @@ namespace koi
 {
 	// Reads a compiled shader bytecode file (.cso) from the given filesystem.
 	// Returns an empty vector and logs an error on failure.
-	inline std::vector<byte> LoadShaderBytecode(const krn::IFileSystem& fs, const std::filesystem::path& path)
+	[[nodiscard]] inline std::vector<byte> LoadShaderBytecode(const krn::IFileSystem& fs, const std::filesystem::path& path)
 	{
-		auto result = fs.ReadFile(path);
+		krn::IFileSystem::ReadFileResult result = fs.ReadFile(path);
 		if (!result)
 		{
-			KOI_LOG_ERROR("Failed to load shader '{}': VFSError={}", path.string(), static_cast<int>(result.error()));
+			KOI_LOG_ERROR("Failed to load shader '{}': VFSError={}", path.string(), static_cast<i32>(result.error()));
 			return {};
 		}
 

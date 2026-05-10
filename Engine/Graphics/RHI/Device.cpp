@@ -2,6 +2,7 @@
 #include "Graphics/RHI/Resources.h"
 #include "Core/Logger.h"
 #include "Core/StringUtils.h"
+#include <ranges>
 
 #if KOI_DEBUG
 	#include <dxgidebug.h>
@@ -11,13 +12,13 @@ namespace koi
 {
 	CD3DX12FeatureSupport g_featureSupport;
 
-	static D3D12_RESOURCE_FLAGS ToD3DFlags(krn::EnumFlag<TextureUsage> u)
+	static D3D12_RESOURCE_FLAGS ToD3DFlags(TextureUsageFlag flag)
 	{
 		D3D12_RESOURCE_FLAGS f = D3D12_RESOURCE_FLAG_NONE;
-		if (u.Has(TextureUsage::RenderTarget)) f |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		if (u.Has(TextureUsage::DepthStencil)) f |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-		if (u.Has(TextureUsage::ShaderWrite))  f |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		if (u.Has(TextureUsage::DepthStencil) && !u.Has(TextureUsage::ShaderRead))
+		if (flag.Has(TextureUsage::RenderTarget)) f |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+		if (flag.Has(TextureUsage::DepthStencil)) f |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+		if (flag.Has(TextureUsage::ShaderWrite))  f |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+		if (flag.Has(TextureUsage::DepthStencil) && !flag.Has(TextureUsage::ShaderRead))
 			f |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
 		return f;
@@ -72,6 +73,7 @@ namespace koi
 			::CloseHandle(m_fenceEvent);
 			m_fenceEvent = nullptr;
 		}
+
 		m_frameFence    = nullptr;
 		m_graphicsQueue = nullptr;
 		m_rootSignature = nullptr;
@@ -290,21 +292,21 @@ namespace koi
 			"PipelineDesc has neither render targets nor a depth target");
 
 		// Vertex input layout
-		D3D12_INPUT_ELEMENT_DESC inputElements[MAX_VERTEX_ATTRIBUTES];
-		u32 numElements = 0;
-		for (const auto& attr : desc.VertexLayout)
+		std::array<D3D12_INPUT_ELEMENT_DESC, MAX_VERTEX_ATTRIBUTES> inputElements;
+
+		for (const auto& [index, attr] : std::views::enumerate(desc.VertexLayout) | std::views::as_const)
 		{
-			KOI_ASSERT_MSG(numElements < MAX_VERTEX_ATTRIBUTES, "Too many vertex attributes");
-			inputElements[numElements++] =
+			KOI_ASSERT_MSG(index < MAX_VERTEX_ATTRIBUTES, "Too many vertex attributes");
+			KOI_ASSERT_MSG(!attr.SemanticName.empty(), "Vertex attribute missing semantic name");
+
+			inputElements[index] =
 			{
-				.SemanticName         = attr.SemanticName,
+				.SemanticName         = attr.SemanticName.data(),
 				.SemanticIndex        = attr.SemanticIndex,
 				.Format               = ToDXGIFormat(attr.Format),
 				.InputSlot            = attr.InputSlot,
 				.AlignedByteOffset    = attr.ByteOffset,
-				.InputSlotClass       = attr.PerInstance
-					? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA
-					: D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+				.InputSlotClass       = attr.PerInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
 				.InstanceDataStepRate = attr.PerInstance ? 1u : 0u,
 			};
 		}
@@ -347,33 +349,35 @@ namespace koi
 		depthDesc.DepthFunc                = desc.DepthStencil.DepthFunc;
 		depthDesc.StencilEnable            = desc.DepthStencil.StencilEnable;
 
-		// RT formats
-		DXGI_FORMAT rtFormats[MAX_RENDER_TARGETS] = {};
-		for (u32 i = 0; i < desc.RenderTargetCount; i++)
-			rtFormats[i] = ToDXGIFormat(desc.RenderTargetFormats[i]);
+		// Create PSO desc
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc
+		{
+				.pRootSignature        = m_rootSignature.Get(),
+				.VS                    = { desc.VertexShader.data(), desc.VertexShader.size() },
+				.PS                    = { desc.PixelShader.data(), desc.PixelShader.size() },
+				.BlendState            = blendDesc,
+				.SampleMask            = 0xffffffff , // Same as UINT_MAX
+				.RasterizerState       = rasterDesc,
+				.DepthStencilState     = depthDesc,
+				.InputLayout           = { inputElements.data(), static_cast<u32>(desc.VertexLayout.size())},
+				.PrimitiveTopologyType = desc.TopologyType,
+				.NumRenderTargets      = desc.RenderTargetCount,
+				.DSVFormat             = ToDXGIFormat(desc.DepthFormat),
+				.SampleDesc            = { desc.SampleCount , 0 },
+		};
 
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-		psoDesc.pRootSignature                     = m_rootSignature.Get();
-		psoDesc.VS                                 = { desc.VertexShader.data(), desc.VertexShader.size() };
-		psoDesc.PS                                 = { desc.PixelShader.data(),  desc.PixelShader.size()  };
+		// Add optional shaders
 		if (!desc.GeometryShader.empty()) psoDesc.GS = { desc.GeometryShader.data(), desc.GeometryShader.size() };
-		if (!desc.HullShader.empty())     psoDesc.HS = { desc.HullShader.data(),     desc.HullShader.size()     };
-		if (!desc.DomainShader.empty())   psoDesc.DS = { desc.DomainShader.data(),   desc.DomainShader.size()   };
-		psoDesc.InputLayout                        = { inputElements, numElements };
-		psoDesc.RasterizerState                    = rasterDesc;
-		psoDesc.BlendState                         = blendDesc;
-		psoDesc.DepthStencilState                  = depthDesc;
-		psoDesc.PrimitiveTopologyType              = desc.TopologyType;
-		psoDesc.NumRenderTargets                   = desc.RenderTargetCount;
+		if (!desc.HullShader.empty())     psoDesc.HS = { desc.HullShader.data(), desc.HullShader.size()         };
+		if (!desc.DomainShader.empty())   psoDesc.DS = { desc.DomainShader.data(), desc.DomainShader.size()     };
+
 		for (u32 i = 0; i < desc.RenderTargetCount; i++)
-			psoDesc.RTVFormats[i] = rtFormats[i];
-		psoDesc.DSVFormat                          = ToDXGIFormat(desc.DepthFormat);
-		psoDesc.SampleDesc                         = { desc.SampleCount, 0 };
-		psoDesc.SampleMask                         = UINT_MAX;
+		{
+			psoDesc.RTVFormats[i] = ToDXGIFormat(desc.RenderTargetFormats[i]);
+		}
 
-		Pipeline pipeline;
-		pipeline.Topology = desc.Topology;
-
+		// Create pipeline/PSO
+		Pipeline pipeline{ .Topology = desc.Topology };
 		DX_CHECK(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline.Pso)));
 
 		if (!desc.DebugName.empty())
@@ -449,21 +453,18 @@ namespace koi
 			1, &rootParam,
 			0, nullptr,
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED  |
-			D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED
+			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED  |  // For bindless
+			D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED			// For bindless
 		);
 
 		ComPtr<ID3DBlob> blob, error;
 		HRESULT hr = ::D3DX12SerializeVersionedRootSignature(&desc, rootSignatureVersion, &blob, &error);
-		if (FAILED(hr))
+		if (FAILED(hr) && error)
 		{
-			if (error)
-			{
-				KOI_LOG_ERROR("Failed to serialize bindless root signature: {}",
-					static_cast<const char*>(error->GetBufferPointer()));
-			}
-			DX_CHECK(hr);
+			KOI_LOG_ERROR("Failed to serialize bindless root signature: {}",
+				static_cast<const char*>(error->GetBufferPointer()));
 		}
+		DX_CHECK(hr);
 
 		DX_CHECK(m_device->CreateRootSignature(
 			0, blob->GetBufferPointer(), blob->GetBufferSize(),

@@ -9,10 +9,10 @@
 
 namespace koi
 {
-	static constexpr u32 BACK_BUFFER_COUNT     = 3;
-	static constexpr u32 FRAMES_IN_FLIGHT      = 3;
-	static constexpr u32 MAX_RENDER_TARGETS    = 8;
-	static constexpr u32 MAX_VERTEX_ATTRIBUTES = 16;
+	static constexpr u32 BACK_BUFFER_COUNT      = 3;
+	static constexpr u32 FRAMES_IN_FLIGHT       = 3;
+	static constexpr u32 MAX_RENDER_TARGETS     = 8;
+	static constexpr u32 MAX_VERTEX_ATTRIBUTES  = 16;
 	static constexpr u32 MAX_PUSH_CONSTANT_U32S = 32;
 
 	template <typename T>
@@ -40,6 +40,7 @@ namespace koi
 		DepthStencil = KRN_BIT(3),
 		Present      = KRN_BIT(4),
 	};
+	using TextureUsageFlag = krn::EnumFlag<TextureUsage>;
 
 	enum class BufferUsage : u32
 	{
@@ -52,6 +53,7 @@ namespace koi
 		CopySource = KRN_BIT(5),
 		CopyDest   = KRN_BIT(6),
 	};
+	using BufferUsageFlag = krn::EnumFlag<BufferUsage>;
 
 	enum class MemoryUsage : u8
 	{
@@ -64,33 +66,33 @@ namespace koi
 
 	struct TextureDesc
 	{
-		u32 Width                         = 1;
-		u32 Height                        = 1;
-		u32 DepthOrArray                  = 1;
-		u32 MipLevels                     = 1;
-		u32 SampleCount                   = 1;
-		Format Format                     = Format::R8G8B8A8_UNORM;
-		krn::EnumFlag<TextureUsage> Usage = TextureUsage::ShaderRead;
+		u32 Width              = 1;
+		u32 Height             = 1;
+		u32 DepthOrArray       = 1;
+		u32 MipLevels          = 1;
+		u32 SampleCount        = 1;
+		Format Format          = Format::R8G8B8A8_UNORM;
+		TextureUsageFlag Usage = TextureUsage::ShaderRead;
 		std::string_view DebugName;
 	};
 
 	struct BufferDesc
 	{
-		u64 Size                         = 0;
-		u32 Stride                       = 0;     // Element stride for structured/vertex buffers
-		krn::EnumFlag<BufferUsage> Usage = BufferUsage::None;
-		MemoryUsage Memory               = MemoryUsage::GpuOnly;
+		u64 Size              = 0;
+		u32 Stride            = 0;     // Element stride for structured/vertex buffers
+		BufferUsageFlag Usage = BufferUsage::None;
+		MemoryUsage Memory    = MemoryUsage::GpuOnly;
 		std::string_view DebugName;
 	};
 
 	struct VertexAttribute
 	{
-		const char* SemanticName  = nullptr;
-		u32         SemanticIndex = 0;
-		Format      Format        = Format::UNKNOWN;
-		u32         InputSlot     = 0;
-		u32         ByteOffset    = 0;
-		bool        PerInstance   = false;
+		std::string_view SemanticName = "";
+		u32 SemanticIndex             = 0;
+		Format Format                 = Format::UNKNOWN;
+		u32 InputSlot                 = 0;
+		u32 ByteOffset                = 0;
+		bool PerInstance              = false;
 	};
 
 	struct IDeviceNotify
