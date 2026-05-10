@@ -15,8 +15,11 @@ set_policy("run.autobuild", true)
 
 includes("Xmake/Packages.lua")
 includes("Xmake/Options.lua")
+includes("Xmake/Rules.lua")
 
 add_cxxflags("/utf-8", { public = true })
+
+add_rules("GenerateRDI")
 
 includes("Engine")
 includes("Launcher")

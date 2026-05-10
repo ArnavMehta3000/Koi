@@ -15,11 +15,11 @@ namespace koi
 		: m_device(&device)
 		, m_window(&window)
 		, m_hwnd(static_cast<HWND>(window.GetNativeHandle()))
+		, m_vsync(vsync)
+		, m_tearingAllowed(device.SupportsTearing())
 		, m_width(window.GetWidth())
 		, m_height(window.GetHeight())
 		, m_format(SWAPCHAIN_FORMAT)
-		, m_vsync(vsync)
-		, m_tearingAllowed(device.SupportsTearing())
 	{
 		KOI_ASSERT_MSG(m_hwnd, "Window has no native HWND");
 		CreateSwapChain();
