@@ -19,7 +19,7 @@ includes("Xmake/Rules.lua")
 
 add_cxxflags("/utf-8", { public = true })
 
-add_rules("GenerateRDI")
+add_rules("GenerateRDI", "Natvis")
 
 includes("Engine")
 includes("Launcher")
