@@ -254,7 +254,7 @@ namespace koi
 	{
 		///DevNote: This is the nuclear option, it signal a new value and immediately waits for it
 		/// draining the entire GPU pipeline. Used before resize and shutdown
-		
+
 		const u64 value = m_nextFenceValue++;
 		DX_CHECK(m_graphicsQueue->Signal(m_frameFence.Get(), value));
 		WaitForFence(value);
@@ -454,7 +454,7 @@ namespace koi
 		);
 
 		ComPtr<ID3DBlob> blob, error;
-		HRESULT hr = ::D3DX12SerializeVersionedRootSignature(&desc, rootSignatureVersion, &blob, &error); 
+		HRESULT hr = ::D3DX12SerializeVersionedRootSignature(&desc, rootSignatureVersion, &blob, &error);
 		if (FAILED(hr))
 		{
 			if (error)
@@ -648,10 +648,18 @@ namespace koi
 	void GfxDevice::CreateHeaps()
 	{
 		KOI_LOG_TRACE("Creating D3D12 heaps");
-		m_rtvHeap.Init(m_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 1024, false);
-		m_dsvHeap.Init(m_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 256, false);
-		m_resourceHeap.Init(m_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 65536, true);
-		m_samplerHeap.Init(m_device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 512, true);
+
+		constexpr u32 rtvHeapSize      = 256;
+		constexpr u32 dsvHeapSize      = 64;
+		constexpr u32 resourceHeapSize = 16384;
+		constexpr u32 samplerHeapSize  = 128;
+
+		auto dev = m_device.Get();
+
+		m_rtvHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, rtvHeapSize, false);
+		m_dsvHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, dsvHeapSize, false);
+		m_resourceHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, resourceHeapSize, true);
+		m_samplerHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, samplerHeapSize, true);
 	}
 
 	void GfxDevice::FlushDeferredDeletions(u64 completedFence)
