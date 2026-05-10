@@ -1,28 +1,33 @@
 target("Koi.Engine")
-    set_kind("static")
+	set_kind("static")
 
-    add_options("LogLevel")
-    add_packages("Kirin", "spdlog", "glfw", "directx-headers", { public = true })
+	add_options("LogLevel")
+	add_packages(
+		"Kirin",
+		"spdlog",
+		"glfw",
+		"myhlslpp",
+		"directx-headers", { public = true })
 
-    add_includedirs(".", { public = true })
-    add_headerfiles("**.h", { public = true })
-    add_files("**.cpp", { public = true })
+	add_includedirs(".", { public = true })
+	add_headerfiles("**.h", { public = true })
+	add_files("**.cpp", { public = true })
 
 	local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)"
-    local config_dir = path.join(base_config_dir, "Generated/Engine")
+	local config_dir = path.join(base_config_dir, "Generated/Engine")
 
-    set_configdir(config_dir)
-    add_includedirs(base_config_dir, { public = true })
-    add_headerfiles(base_config_dir, { public = true })
-    add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in")
+	set_configdir(config_dir)
+	add_includedirs(base_config_dir, { public = true })
+	add_headerfiles(base_config_dir, { public = true })
+	add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in")
 
-    if is_plat("windows") then
-        add_syslinks(
-        "user32",
-        "dwmapi",
-        "d3d12",
+	if is_plat("windows") then
+		add_syslinks(
+		"user32",
+		"dwmapi",
+		"d3d12",
 		"dxgi",
 		"dxguid",
 		"d3dcompiler", { public = true })
-    end
+	end
 target_end()
