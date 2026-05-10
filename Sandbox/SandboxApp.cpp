@@ -9,13 +9,14 @@
 #include "Graphics/ShaderLoader.h"
 #include <Kirin/IO/VirtualFileSystem.h>
 #include <Kirin/IO/File.h>
+#include "Core/Math.h"
 
 using namespace krn::types;
 
 struct Vertex
 {
-	float Position[3];
-	float Color[4];
+	koi::math::float3 Position;
+	koi::math::float4 Color;
 };
 
 class SandboxApp : public koi::AppBase
@@ -31,30 +32,40 @@ public:
 		koi::GfxDevice& device = engine.GetRenderer().GetDevice();
 
 		// Load shader bytecode from the compiled output directory
-		auto vsFileResult = krn::File::Open("Assets/Shaders/TriangleVS.cso");
-		auto psFileResult = krn::File::Open("Assets/Shaders/TrianglePS.cso");
+		krn::NativeFileSystem fs;
+		std::vector<byte> vsData = koi::LoadShaderBytecode(fs, "Assets/Shaders/TriangleVS.cso");
+		std::vector<byte> psData = koi::LoadShaderBytecode(fs, "Assets/Shaders/TrianglePS.cso");
 
-		KOI_ASSERT_MSG(vsFileResult.has_value() && psFileResult.has_value(), "Failed to load Hello Triangle shaders");
+		KOI_ASSERT_MSG(!vsData.empty() && !psData.empty(), "Failed to load Hello Triangle shaders");
 
-		const krn::File& vsFileData = vsFileResult.value();
-		const krn::File& psFileData = psFileResult.value();
-
-		// Vertex layout: POSITION (float3) + COLOR (float4)
-		const koi::VertexAttribute vertexLayout[] =
+		const std::array<koi::VertexAttribute, 2> vertexLayout =
 		{
-			{ "POSITION", 0, koi::Format::R32G32B32_FLOAT,    0, offsetof(Vertex, Position) },
-			{ "COLOR",    0, koi::Format::R32G32B32A32_FLOAT, 0, offsetof(Vertex, Color)    },
+			koi::VertexAttribute
+			{
+				.SemanticName  = "POSITION",
+				.SemanticIndex = 0,
+				.Format        = koi::Format::R32G32B32_FLOAT,
+				.InputSlot     = 0,
+				.ByteOffset    = offsetof(Vertex, Position),
+				.PerInstance   = false
+			},
+			{
+				.SemanticName  = "COLOR",
+				.SemanticIndex = 0,
+				.Format        = koi::Format::R32G32B32A32_FLOAT,
+				.InputSlot     = 0,
+				.ByteOffset    = offsetof(Vertex, Color),
+				.PerInstance   = false
+			}
 		};
 
 		koi::Format rtFormat = koi::Format::R8G8B8A8_UNORM;
 
-		auto ToSpan = [](std::string_view data) -> std::span<const byte> { return { reinterpret_cast<const byte*>(data.data()), data.size() }; };
-
 		koi::PipelineDesc pipelineDesc
 		{
 			.VertexLayout        = vertexLayout,
-			.VertexShader        = ToSpan(vsFileData.Data()),
-			.PixelShader         = ToSpan(psFileData.Data()),
+			.VertexShader        = vsData,
+			.PixelShader         = psData,
 			.DepthStencil        = { .DepthEnable = false },
 			.RenderTargetFormats = { rtFormat },
 			.RenderTargetCount   = 1,
@@ -64,16 +75,18 @@ public:
 		m_pipeline = device.CreatePipeline(pipelineDesc);
 
 		// Vertex data: NDC-space triangle with per-vertex colour
-		const Vertex vertices[] =
+		const std::array<Vertex, 3> vertices =
 		{
+			Vertex
 			{ {  0.0f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },  // top    – red
 			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },  // right  – green
 			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },  // left   – blue
 		};
-		const u16 indices[] = { 0, 1, 2 };
 
-		const u64 vbSize = sizeof(vertices);
-		const u64 ibSize = sizeof(indices);
+		constexpr  std::array<u16, 3> indices = { 0, 1, 2 };
+
+		constexpr u64 vbSize = sizeof(vertices);
+		constexpr u64 ibSize = sizeof(indices);
 
 		m_vertexBuffer = device.CreateBuffer(koi::BufferDesc
 		{
@@ -93,8 +106,8 @@ public:
 			.DebugName = "Triangle IB",
 		});
 
-		device.UploadBufferData(m_vertexBuffer, vertices, vbSize);
-		device.UploadBufferData(m_indexBuffer,  indices,  ibSize);
+		device.UploadBufferData(m_vertexBuffer, vertices.data(), vbSize);
+		device.UploadBufferData(m_indexBuffer,  indices.data(),  ibSize);
 	}
 
 	void OnTick(koi::f32 /*dt*/) override {}

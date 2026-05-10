@@ -3,6 +3,11 @@ target("Sandbox")
     add_files("SandboxApp.cpp")
     add_deps("Koi.Engine")
 
+    add_extrafiles(
+    	"Shaders/**.hlsl",
+     	"ShaderBuild.json"
+    )
+
     after_build(function(target)
         import("core.base.task")
         task.run("compile_shaders",
