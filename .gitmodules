@@ -1,6 +1,6 @@
 [submodule "External/Kirin"]
 	path = External/Kirin
 	url = https://github.com/ArnavMehta3000/Kirin.git
-# [submodule "External/hlslpp"]
-# 	path = External/hlslpp
-# 	url = https://github.com/redorav/hlslpp.git
+[submodule "External/hlslpp"]
+	path = External/hlslpp
+	url = https://github.com/redorav/hlslpp.git
