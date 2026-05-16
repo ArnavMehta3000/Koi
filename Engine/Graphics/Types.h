@@ -1,11 +1,13 @@
 #pragma once
 #include "Core/Core.h"
 #include "Core/Handle.h"
+#include "Core/Math.h"
 #include "Graphics/Format.h"
 #include <Kirin/Common/Macros.h>
 #include <Kirin/Core/Enum.h>
 #include <string_view>
 #include <array>
+#include <vector>
 
 namespace koi
 {
@@ -100,6 +102,59 @@ namespace koi
 		virtual ~IDeviceNotify() = default;
 		virtual void OnDeviceLost() = 0;
 		virtual void OnDeviceRestored() = 0;
+	};
+
+	struct Vertex
+	{
+		math::float3 Position;
+		math::float3 Normal;
+		math::float4 Tangent;
+		math::float2 UV;
+	};
+
+	struct Material
+	{
+		std::string Name;
+		math::float4 BaseColorFactor;
+		i32 BaseColorTexture;
+		i32 NormalTexture;
+		i32 MetallicRoughnessTexture;
+		f32 MetallicFactor = 1.f;
+		f32 RoughnessFactor = 1.f;
+	};
+
+	struct SubMesh
+	{
+		std::vector<Vertex> Vertices;
+		std::vector<u32> Indices;
+		u32 MaterialIndex;
+		math::AABB Bounds;
+	};
+
+	struct Mesh
+	{
+		std::string Name;
+		std::vector<SubMesh> SubMeshes;
+		math::AABB Bounds;
+	};
+
+	struct ImageAsset
+	{
+		std::string Name;
+		std::string Path;
+		u32 Width = 0;
+		u32 Height = 0;
+		u32 Channels = 0;
+		std::vector<koi::byte> Pixels;
+	};
+
+	struct ModelAsset
+	{
+		std::string Name;
+		std::vector<Mesh> Meshes;
+		std::vector<Material> Materials;
+		std::vector<ImageAsset> Images;
+		math::AABB Bounds;
 	};
 }
 KRN_ENABLE_ENUM_FLAGS(koi::TextureUsage);

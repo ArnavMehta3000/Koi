@@ -21,4 +21,6 @@ namespace koi::math
 {
 	// Pull hlslpp types into Koi's math namespace
 	using namespace hlslpp;
+
+	struct AABB;
 }

@@ -284,6 +284,29 @@ namespace koi
 		}
 	}
 
+	void GfxDevice::FreeResource(TextureHandle h)
+	{
+		if (Texture* t = m_textures.Get(h))
+		{
+			m_rtvHeap.Free(t->RTVIndex);
+			m_dsvHeap.Free(t->DSVIndex);
+			m_resourceHeap.Free(t->SRVIndex);
+			m_resourceHeap.Free(t->UAVIndex);
+		}
+	}
+
+	void GfxDevice::FreeResource(BufferHandle h)
+	{
+		if (Buffer* b = m_buffers.Get(h))
+		{
+			m_resourceHeap.Free(b->CBVIndex);
+			m_resourceHeap.Free(b->SRVIndex);
+			m_resourceHeap.Free(b->UAVIndex);
+			if (b->MappedPtr && b->Resource)
+				b->Resource->Unmap(0, nullptr);
+		}
+	}
+
 	PipelineHandle GfxDevice::CreatePipeline(const PipelineDesc& desc)
 	{
 		KOI_ASSERT_MSG(!desc.VertexShader.empty(), "PipelineDesc missing vertex shader");
@@ -673,39 +696,28 @@ namespace koi
 
 			switch (p.Type)
 			{
-			case PendingDeletion::ResourceType::Texture:
+				using enum PendingDeletion::ResourceType;
+			case Texture:
 			{
-				if (Texture* t = m_textures.Get(p.Texture))
-				{
-					m_rtvHeap.Free(t->RTVIndex);
-					m_dsvHeap.Free(t->DSVIndex);
-					m_resourceHeap.Free(t->SRVIndex);
-					m_resourceHeap.Free(t->UAVIndex);
-					// IsSwapChainImage: we must NOT release the ComPtr here — swapchain owns it.
-					// The pool erase below will drop the ref, but since the swapchain also holds
-					// one it stays alive.
-				}
-				KOI_LOG_TRACE("Texture resource deleted (Handle: idx={}, gen={})", p.Buffer.GetIndex(), p.Buffer.GetGeneration());
+				// IsSwapChainImage: we must NOT release the ComPtr here — swapchain owns it.
+				// The pool erase below will drop the ref, but since the swapchain also holds
+				// one it stays alive.
+				
+				FreeResource(p.Texture);
+				KOI_LOG_TRACE("Texture resource deleted (Handle: idx={}, gen={})", p.Texture.GetIndex(), p.Texture.GetGeneration());
 				m_textures.Erase(p.Texture);
 				break;
 			}
 
-			case PendingDeletion::ResourceType::Buffer:
+			case Buffer:
 			{
-				if (Buffer* b = m_buffers.Get(p.Buffer))
-				{
-					m_resourceHeap.Free(b->CBVIndex);
-					m_resourceHeap.Free(b->SRVIndex);
-					m_resourceHeap.Free(b->UAVIndex);
-					if (b->MappedPtr && b->Resource)
-						b->Resource->Unmap(0, nullptr);
-				}
+				FreeResource(p.Buffer);
 				KOI_LOG_TRACE("Buffer resource deleted (Handle: idx={}, gen={})", p.Buffer.GetIndex(), p.Buffer.GetGeneration());
 				m_buffers.Erase(p.Buffer);
 				break;
 			}
 
-			case PendingDeletion::ResourceType::Pipeline:
+			case Pipeline:
 			{
 				KOI_LOG_TRACE("Pipeline resource deleted (Handle: idx={}, gen={})", p.Pipeline.GetIndex(), p.Pipeline.GetGeneration());
 				m_pipelines.Erase(p.Pipeline);

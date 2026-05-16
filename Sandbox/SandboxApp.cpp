@@ -7,6 +7,7 @@
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/RHI/PipelineDesc.h"
 #include "Graphics/ShaderLoader.h"
+#include "Graphics/MeshLoader.h"
 #include <Kirin/IO/VirtualFileSystem.h>
 #include <Kirin/IO/File.h>
 #include "Core/Math.h"
@@ -108,6 +109,15 @@ public:
 
 		device.UploadBufferData(m_vertexBuffer, vertices.data(), vbSize);
 		device.UploadBufferData(m_indexBuffer,  indices.data(),  ibSize);
+
+		{
+			// Test load mesh
+			if (auto loadResult = koi::MeshLoader::Load("Assets/Models/DamagedHelmet.gltf"))
+			{
+				auto& mesh = loadResult.value();
+				int x = 0;
+			}
+		}
 	}
 
 	void OnTick(koi::f32 /*dt*/) override {}

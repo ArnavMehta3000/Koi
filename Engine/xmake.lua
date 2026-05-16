@@ -6,7 +6,8 @@ target("Koi.Engine")
 		"Kirin",
 		"spdlog",
 		"glfw",
-		"myhlslpp",
+    	"myhlslpp",
+		"fastgltf",
 		"directx-headers", { public = true })
 
 	add_includedirs(".", { public = true })

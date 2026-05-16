@@ -1,3 +1,4 @@
+#pragma once
 #include "Graphics/DX12/DX12Common.h"
 #include "Graphics/RHI/DescriptorHeap.h"
 #include "Graphics/RHI/Resources.h"
@@ -46,18 +47,24 @@ namespace koi
 		[[nodiscard]] BufferHandle   CreateBuffer(const BufferDesc& desc);
 		[[nodiscard]] PipelineHandle CreatePipeline(const PipelineDesc& desc);
 
-		void UploadBufferData(BufferHandle dst, const void* data, u64 size);  // Uploads CPU data to a GPU-only buffer via a one-shot command list. Stalls the CPU
+		// Uploads CPU data to a GPU-only buffer via a one-shot command list. Stalls the CPU
+		void UploadBufferData(BufferHandle dst, const void* data, u64 size);
 
+		// Mark resource to be defer deleted
 		void Destroy(TextureHandle h);
 		void Destroy(BufferHandle h);
 		void Destroy(PipelineHandle h);
+
+		// Removes resources from descriptor heaps
+		void FreeResource(TextureHandle h);
+		void FreeResource(BufferHandle h);
 
 		u64 SignalFrame();
 		void WaitForFence(u64 fenceValue);
 		void WaitForIdle();           // Block until GPU has completed all submitted work
 		void FlushPendingDeletions(); // Free all queued resources; caller must ensure GPU is idle
 
-		void SetDeviceNotify(IDeviceNotify* notify) noexcept { m_notify = notify; }
+		inline void SetDeviceNotify(IDeviceNotify* notify) noexcept { m_notify = notify; }
 		void HandleDeviceLost();
 
 	private:
