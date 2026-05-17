@@ -112,45 +112,58 @@ namespace koi
 		math::float2 UV;
 	};
 
+
 	struct Material
 	{
+		enum class AlphaMode { Opaque, Mask, Blend };
+		struct Constants
+		{
+			math::float4 BaseColorFactor  = math::float4(1.0f, 1.0f, 1.0, 1.0f);
+			f32          MetallicFactor    = 1.0f;
+			f32          RoughnessFactor   = 1.0f;
+			f32          NormalScale       = 1.0f;
+			f32          OcclusionStrength = 1.0f;
+			math::float3 EmissiveFactor    = math::float3(0.0f, 0.0f, 0.0f);
+			f32          AlphaCutoff       = 0.5f;
+		};
+
 		std::string Name;
-		math::float4 BaseColorFactor;
-		i32 BaseColorTexture;
-		i32 NormalTexture;
-		i32 MetallicRoughnessTexture;
-		f32 MetallicFactor = 1.f;
-		f32 RoughnessFactor = 1.f;
+		Constants MaterialConstants{};
+		bool DoubleSided = false;
+		AlphaMode Mode;
 	};
 
 	struct SubMesh
-	{
-		std::vector<Vertex> Vertices;
-		std::vector<u32> Indices;
-		u32 MaterialIndex;
-		math::AABB Bounds;
-	};
+    {
+        u32 IndexOffset   = 0;
+        u32 IndexCount    = 0;
+        u32 VertexOffset  = 0;
+        i32 MaterialIndex = -1;   // index into Scene::Materials, -1 = default
+        math::AABB Bounds;
+    };
 
 	struct Mesh
 	{
 		std::string Name;
 		std::vector<SubMesh> SubMeshes;
 		math::AABB Bounds;
+		u32 VertexCount = 0;
+		u32 IndexCount = 0;
 	};
 
 	struct ImageAsset
 	{
 		std::string Name;
 		std::string Path;
-		u32 Width = 0;
-		u32 Height = 0;
+		u32 Width    = 0;
+		u32 Height   = 0;
 		u32 Channels = 0;
 		std::vector<koi::byte> Pixels;
 	};
 
 	struct ModelAsset
 	{
-		std::string Name;
+		std::string SourcPath;
 		std::vector<Mesh> Meshes;
 		std::vector<Material> Materials;
 		std::vector<ImageAsset> Images;

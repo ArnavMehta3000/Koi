@@ -18,6 +18,7 @@ includes("Xmake/Options.lua")
 includes("Xmake/Rules.lua")
 
 add_cxxflags("/utf-8", { public = true })
+add_defines("KOI_ENABLE_PROFILING=" .. (is_mode("profile") and "1" or "0"))
 
 add_rules("GenerateRDI", "Natvis")
 

@@ -3,211 +3,228 @@
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
+#include <vector>
+#include <string>
 
 namespace koi
 {
-	void LoadMaterials(const fastgltf::Asset& asset);
-	void LoadMeshes(const fastgltf::Asset& asset, std::vector<Mesh>& outMeshes);
-	bool LoadPrimitive(const fastgltf::Asset& asset, const fastgltf::Primitive& primitive, SubMesh& outSubMesh, std::string_view name);
-
-	std::optional<ModelAsset> MeshLoader::Load(const fs::path& path)
+	namespace
 	{
-		KOI_LOG_INFO("Loading mesh: {}", path.string());
+		struct Loader
+		{
+			fastgltf::Asset* Asset = nullptr;
+			fs::path BasePath;
+
+			std::unique_ptr<ModelAsset>BuildModelAsset();
+			void LoadMeshes(ModelAsset& model);
+			void LoadMaterials();
+		};
+	}
+
+	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& path)
+	{
+		KOI_LOG_INFO("Loading mesh: {}", path.string().c_str());
 
 		fastgltf::Parser parser(fastgltf::Extensions::KHR_materials_variants
 			| fastgltf::Extensions::KHR_texture_transform
 			| fastgltf::Extensions::KHR_mesh_quantization);
 
 		auto data = fastgltf::GltfDataBuffer::FromPath(path);
-
 		if (data.error() != fastgltf::Error::None)
 		{
 			KOI_LOG_ERROR("fastgltf: failed to read file: {}", fastgltf::getErrorMessage(data.error()));
-			return std::nullopt;
+			return nullptr;
 		}
+
+		Loader loader{ .BasePath = path.parent_path() };
 
 		constexpr fastgltf::Options options = fastgltf::Options::LoadExternalBuffers
 			| fastgltf::Options::LoadExternalImages
 			| fastgltf::Options::GenerateMeshIndices;
 
-		fastgltf::GltfType type = fastgltf::determineGltfFileType(data.get());
-
-		const fs::path basePath = path.parent_path();
-
-		// Load GLTF or GLB
-		auto loadResult = (type == fastgltf::GltfType::glTF)
-			? parser.loadGltf(data.get(), basePath, options)
-			: parser.loadGltfBinary(data.get(), basePath, options);
-
-		if (loadResult.error() != fastgltf::Error::None)
+		auto loadResult = parser.loadGltf(data.get(), loader.BasePath, options);
+		if (!loadResult)
 		{
-			KOI_LOG_ERROR("fastgltf: failed to parse: {}", fastgltf::getErrorMessage(loadResult.error()));
-			return std::nullopt;
+			KOI_LOG_ERROR("fastgltf: failed to load file: {}", fastgltf::getErrorMessage(loadResult.error()).data());
+			return nullptr;
 		}
 
-		 const fastgltf::Asset& asset = loadResult.get();
+		std::unique_ptr<ModelAsset> model = loader.BuildModelAsset();
 
-		 ModelAsset model{ .Name = path.stem().string() };
+		model->SourcPath = path.string();
 
-		 LoadMaterials(asset);
-		 LoadMeshes(asset, model.Meshes);
 
-		 return model;
+		return model;
 	}
 
-	void LoadMaterials(const fastgltf::Asset& asset)
+	std::unique_ptr<ModelAsset>Loader::BuildModelAsset()
 	{
-		for (const fastgltf::Material& gltfMaterial : asset.materials)
-		{
-			Material m;
-			m.Name = gltfMaterial.name.empty() ? "<Unnamed Material>" : gltfMaterial.name;
-			KOI_LOG_WARN("GLTF material implementation is incomplete!");
-		}
+		auto model = std::make_unique<ModelAsset>();
+
+		LoadMeshes(*model);
+		LoadMaterials();
+
+		return model;
+		return model;
 	}
 
-	void LoadMeshes(const fastgltf::Asset& asset, std::vector<Mesh>& outMeshes)
+	void Loader::LoadMeshes(ModelAsset& model)
 	{
-		std::vector<Mesh> meshes;
-		for (const fastgltf::Mesh& gltfMesh : asset.meshes)
+		// For-each mesh
+		for (fastgltf::Mesh& gltfMesh : Asset->meshes)
 		{
-			Mesh m;
-			m.Name = gltfMesh.name.empty() ? "<Unnamed Mesh>" : gltfMesh.name;
+			Mesh mesh;
+			mesh.Name = gltfMesh.name;
 
-			for (const fastgltf::Primitive& primitive : gltfMesh.primitives)
+			std::vector<Vertex> allVertices;
+			std::vector<u32> allIndices;
+
+			// For-each primitive
+			for (fastgltf::Primitive& primitive : gltfMesh.primitives)
 			{
-				if (primitive.type != fastgltf::PrimitiveType::Triangles)
+				SubMesh sub;
+				sub.VertexOffset  = static_cast<u32>(allVertices.size());
+				sub.IndexOffset   = static_cast<u32>(allIndices.size());
+				sub.MaterialIndex = static_cast<i32>(primitive.materialIndex.value_or(-1));
+
+				fastgltf::Attribute* posAccessor = primitive.findAttribute("POSITION");
+				if (!posAccessor || posAccessor == primitive.attributes.end())
 				{
-					KOI_LOG_WARN("Primitive of mesh ({}) is not triangulated!", m.Name);
+					KOI_LOG_WARN("Primitive in mesh '{}' has no POSITION attribute, skipping", mesh.Name);
 					continue;
 				}
 
-				SubMesh sub;
-				if (LoadPrimitive(asset, primitive, sub, m.Name))
+				fastgltf::Accessor& posAcc = Asset->accessors[posAccessor->accessorIndex];
+				const u32 vertexCount = static_cast<u32>(posAcc.count);
+
+				allVertices.resize(allVertices.size() + vertexCount);
+				Vertex* vertices = &allVertices[sub.VertexOffset];
+
+				// Read positions
+				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, posAcc,
+					[&](const fastgltf::math::fvec3& pos, std::size_t i)
+					{
+						vertices[i].Position = math::float3(pos.x(), pos.y(), pos.z());
+						sub.Bounds.Expand(vertices[i].Position);
+					});
+
+				// Normals
+				if (fastgltf::Attribute* normAttr = primitive.findAttribute("NORMAL"); normAttr != primitive.attributes.end())
 				{
-					m.Bounds.Expand(sub.Bounds);
-					m.SubMeshes.push_back(std::move(sub));
+					fastgltf::Accessor& acc = Asset->accessors[normAttr->accessorIndex];
+					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, acc,
+						[&](const fastgltf::math::fvec3& n, std::size_t i)
+						{
+							vertices[i].Normal = math::float3 (n.x(), n.y(), n.z());
+						});
 				}
+				else
+				{
+					KOI_LOG_WARN("Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
+				}
+
+				// UV
+				if (fastgltf::Attribute* uvAttr = primitive.findAttribute("TEXCOORD_0"); uvAttr != primitive.attributes.end())
+				{
+					fastgltf::Accessor& acc = Asset->accessors[uvAttr->accessorIndex];
+					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(*Asset, acc,
+						[&](const fastgltf::math::fvec2& uv, std::size_t i)
+						{
+							vertices[i].UV = math::float2(uv.x(), uv.y());
+						});
+				}
+				else
+				{
+					KOI_LOG_WARN("Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
+				}
+
+				// Tangent
+				bool hasTangent = false;
+				if (fastgltf::Attribute* tanAttr = primitive.findAttribute("TANGENT"); tanAttr != primitive.attributes.end())
+				{
+					fastgltf::Accessor& acc = Asset->accessors[tanAttr->accessorIndex];
+					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec4>(*Asset, acc,
+						[&](const fastgltf::math::fvec4& t, std::size_t i)
+						{
+							vertices[i].Tangent = math::float4(t.x(), t.y(), t.z(), t.w());
+						});
+					hasTangent = true;
+				}
+				else
+				{
+					KOI_LOG_WARN("Primitive in mesh '{}' has no TANGENT attribute", mesh.Name);
+				}
+
+				// Indices
+				if (primitive.indicesAccessor.has_value())
+				{
+					fastgltf::Accessor& idxAcc = Asset->accessors[*primitive.indicesAccessor];
+					sub.IndexCount = static_cast<u32>(idxAcc.count);
+					allIndices.reserve(allIndices.size() + sub.IndexCount);
+
+					fastgltf::iterateAccessor<u32>(*Asset, idxAcc,
+						[&](u32 idx)
+						{
+							allIndices.push_back(idx);
+						});
+				}
+				else
+				{
+					// Non-indexed: generate sequential indices
+					sub.IndexCount = vertexCount;
+					for (u32 i = 0; i < vertexCount; ++i)
+					{
+						allIndices.push_back(i);
+					}
+				}
+
+				if (!hasTangent)
+				{
+					// Since no tangents were found, generate them
+					//TODO: MikkTSpace tangent generation
+					for (u32 i = 0; i < vertexCount; ++i)
+					{
+						vertices[i].Tangent = math::float4(1.0f, 0.0f, 0.0f, 0.0f);
+					}
+				}
+
+				mesh.Bounds.Expand(sub.Bounds);
+				mesh.SubMeshes.push_back(std::move(sub));
 			}
 
-			outMeshes.push_back(std::move(m));
+			mesh.VertexCount = static_cast<u32>(allVertices.size());
+			mesh.IndexCount  = static_cast<u32>(allIndices.size());
+
+			model.Meshes.push_back(std::move(mesh));
 		}
 	}
 
-	bool LoadPrimitive(const fastgltf::Asset& asset, const fastgltf::Primitive& primitive, SubMesh& outSubMesh, std::string_view name)
+	void Loader::LoadMaterials()
 	{
-		// [NOTE]: Assuming that material indices are unsigned
-		outSubMesh.MaterialIndex = static_cast<u32>(primitive.materialIndex.value_or(-1));
-
-		const fastgltf::Attribute* posAttrib = primitive.findAttribute("POSITION");
-		if (!posAttrib || posAttrib == primitive.attributes.end())
+		for (fastgltf::Material& gltfMat : Asset->materials)
 		{
-			KOI_LOG_WARN("Mesh ({}) does not have a POSITION attribute!", name.data());
-			return false;
-		}
+			Material mat;
+			mat.Name = gltfMat.name;
+			mat.DoubleSided = gltfMat.doubleSided;
 
-		const fastgltf::Accessor& posAcc = asset.accessors[posAttrib->accessorIndex];
-		const u32 vertexCount = static_cast<u32>(posAcc.count);
-
-		outSubMesh.Vertices.resize(vertexCount);
-
-		// Read position
-		fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(
-			asset, posAcc,
-			[&](const fastgltf::math::fvec3& position, size_t index)
+			switch (gltfMat.alphaMode)
 			{
-				const math::float3 p(position[0], position[1], position[2]);
-
-				outSubMesh.Vertices[index].Position = p;
-				outSubMesh.Bounds.Expand(p);
-			});
-
-		// Normals
-		if (const fastgltf::Attribute* normAttrib = primitive.findAttribute("NORMAL"); normAttrib != primitive.attributes.end())
-		{
-			const fastgltf::Accessor& normAcc = asset.accessors[normAttrib->accessorIndex];
-
-			fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(
-				asset, normAcc,
-				[&](const fastgltf::math::fvec3& normal, size_t index)
-				{
-					outSubMesh.Vertices[index].Normal = math::float3(normal[0], normal[1], normal[2]);
-				});
-		}
-		else
-		{
-			KOI_LOG_WARN("Mesh ({}) does not have a NORMAL attribute!", name.data());
-		}
-
-		// UV
-		if (const fastgltf::Attribute* uvAttrib = primitive.findAttribute("TEXCOORD_0"); uvAttrib != primitive.attributes.end())
-		{
-			const fastgltf::Accessor& uvAcc = asset.accessors[uvAttrib->accessorIndex];
-
-			fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(
-				asset, uvAcc,
-				[&](const fastgltf::math::fvec2& uv, size_t index)
-				{
-					outSubMesh.Vertices[index].UV = math::float2(uv[0], uv[1]);
-				});
-		}
-		else
-		{
-			KOI_LOG_WARN("Mesh ({}) does not have a TEXCOORD_0 attribute!", name.data());
-		}
-
-		// Tangents
-		bool hasTangent = false;
-		if (const fastgltf::Attribute* tangentAttrib = primitive.findAttribute("TANGENT"); tangentAttrib != primitive.attributes.end())
-		{
-			const fastgltf::Accessor& tangentAcc = asset.accessors[tangentAttrib->accessorIndex];
-
-			fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec4>(
-				asset, tangentAcc,
-				[&](const fastgltf::math::fvec4& tangent, size_t index)
-				{
-					outSubMesh.Vertices[index].Tangent = math::float4(tangent[0], tangent[1], tangent[2], tangent[3]);
-				});
-
-			hasTangent = true;
-		}
-		else
-		{
-			KOI_LOG_WARN("Mesh ({}) does not have a TANGENT attribute!", name.data());
-		}
-
-		// Indices
-		if (primitive.indicesAccessor.has_value())
-		{
-			const fastgltf::Accessor& idxAcc = asset.accessors[primitive.indicesAccessor.value()];
-			outSubMesh.Indices.resize(idxAcc.count);
-
-			fastgltf::iterateAccessorWithIndex<u32>(
-				asset, idxAcc,
-				[&](u32 index, size_t index2)
-				{
-					outSubMesh.Indices[index2] = index;
-				});
-		}
-		else
-		{
-			// Non-indexed: generate sequential indices
-			outSubMesh.Indices.reserve(vertexCount);
-			for (u32 i = 0; i < vertexCount; ++i)
-			{
-				outSubMesh.Indices[i] = i;
+				using enum fastgltf::AlphaMode;
+			case Mask:  mat.Mode = Material::AlphaMode::Mask;  break;
+			case Blend: mat.Mode = Material::AlphaMode::Blend; break;
+			default:    mat.Mode = Material::AlphaMode::Opaque; break;
 			}
-		}
 
-		if (!hasTangent)
-		{
-			// Since no tangents were found, generate them
-			//TODO: MikkTSpace tangent generation
-			for (u32 i = 0; i < vertexCount; ++i)
-			{
-				outSubMesh.Vertices[i].Tangent = math::float4(1.0f, 0.0f, 0.0f, 0.0f);  // UnitX
-			}
-		}
+			mat.MaterialConstants.AlphaCutoff = gltfMat.alphaCutoff;
 
-		return true;
+			// PBR
+			auto& pbr = gltfMat.pbrData;
+			mat.MaterialConstants.BaseColorFactor = math::float4(
+				pbr.baseColorFactor[0], pbr.baseColorFactor[1],
+				pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
+
+			mat.MaterialConstants.MetallicFactor  = pbr.metallicFactor;
+			mat.MaterialConstants.RoughnessFactor = pbr.roughnessFactor;
+		}
 	}
 }

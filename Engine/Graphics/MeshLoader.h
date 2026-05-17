@@ -1,8 +1,7 @@
 #pragma once
 #include "Graphics/Types.h"
 #include <filesystem>
-#include <vector>
-#include <optional>
+#include <memory>
 
 namespace koi
 {
@@ -11,6 +10,6 @@ namespace koi
 	class MeshLoader
 	{
 	public:
-		static std::optional<ModelAsset> Load(const fs::path& path);
+		static std::unique_ptr<ModelAsset> Load(const fs::path& path);
 	};
 }

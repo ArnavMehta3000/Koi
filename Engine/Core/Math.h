@@ -7,8 +7,8 @@ namespace koi::math
 {
 	struct AABB
 	{
-		float3 Min;
-		float3 Max;
+		float3 Min{};
+		float3 Max{};
 
 		void Expand(const float3 point)
 		{

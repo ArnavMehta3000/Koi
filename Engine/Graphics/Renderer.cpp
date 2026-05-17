@@ -2,6 +2,8 @@
 #include "Graphics/RHI/Device.h"
 #include "Core/Assert.h"
 #include "Engine/Engine.h"
+#include "Memory/MemoryTracker.h"
+#include "Core/Profiling.h"
 #include "Core/Logger.h"
 #include <DirectXColors.h>
 
@@ -9,6 +11,8 @@ namespace koi
 {
 	Renderer::Renderer()
 	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		m_device = std::make_unique<GfxDevice>(
 		GfxDevice::Desc
 		{
@@ -24,6 +28,9 @@ namespace koi
 
 	Renderer::~Renderer()
 	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
 		if (m_device)
 			m_device->WaitForIdle();
 
@@ -37,6 +44,9 @@ namespace koi
 
 	std::pair<RenderWindowHandle, RenderWindow*> Renderer::AddWindow(WindowHandle handle, bool vsync)
 	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
 		if (auto it = m_windowMap.find(handle); it != m_windowMap.end())
 			return { it->second, GetRenderWindow(it->second) };
 
@@ -54,12 +64,15 @@ namespace koi
 
 	RenderWindowHandle Renderer::FindWindow(WindowHandle w) const noexcept
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		auto it = m_windowMap.find(w);
 		return it != m_windowMap.end() ? it->second : RenderWindowHandle{};
 	}
 
 	void Renderer::RemoveWindow(WindowHandle handle)
 	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		auto it = m_windowMap.find(handle);
 		if (it == m_windowMap.end()) return;
 
@@ -71,9 +84,12 @@ namespace koi
 
 	void Renderer::BeginFrame()
 	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		// Open a command list for each RenderWindow and record a clear.
 		m_renderWindows.ForEach([this](RenderWindowHandle h, RenderWindow& rw)
 		{
+			ZoneScoped;
 			FrameContext& ctx = GetOrCreateFrameContext(h);
 
 			ctx.List.Begin(m_frameSlot);
@@ -86,9 +102,13 @@ namespace koi
 
 	void Renderer::EndFrame()
 	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
 		// Close each window's command list, transition back to PRESENT, submit, then present.
 		m_renderWindows.ForEach([this](RenderWindowHandle h, RenderWindow& rw)
 		{
+			ZoneScoped;
 			FrameContext& ctx = GetOrCreateFrameContext(h);
 
 			ctx.List.TransitionBarrier(rw.CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);
@@ -119,6 +139,9 @@ namespace koi
 
 	Renderer::FrameContext& Renderer::GetOrCreateFrameContext(RenderWindowHandle h)
 	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
 		auto [it, inserted] = m_frameContexts.try_emplace(h.GetId(), nullptr);
 		if (inserted)
 		{

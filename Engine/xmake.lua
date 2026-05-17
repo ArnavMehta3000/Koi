@@ -8,6 +8,7 @@ target("Koi.Engine")
 		"glfw",
     	"myhlslpp",
 		"fastgltf",
+		"tracy",
 		"directx-headers", { public = true })
 
 	add_includedirs(".", { public = true })
