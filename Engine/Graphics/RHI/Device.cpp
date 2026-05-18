@@ -5,6 +5,7 @@
 #include "Core/Profiling.h"
 #include "Memory/MemoryTracker.h"
 #include <ranges>
+#include <cassert>
 
 #if KOI_DEBUG
 	#include <dxgidebug.h>
@@ -50,7 +51,7 @@ namespace koi
 		{
 			KOI_LOG_ERROR("D3D12 call failed (0x{:08X}): {} at {}:{}",
 				static_cast<u32>(hr), expr, file, line);
-			KOI_ASSERT_MSG(false, "D3D12 call failed");
+			assert(false && "D3D12 call failed");
 		}
 	}
 
@@ -356,9 +357,9 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		KOI_ASSERT_MSG(!desc.VertexShader.empty(), "PipelineDesc missing vertex shader");
-		KOI_ASSERT_MSG(!desc.PixelShader.empty(),  "PipelineDesc missing pixel shader");
-		KOI_ASSERT_MSG(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN,
+		assert(!desc.VertexShader.empty() && "PipelineDesc missing vertex shader");
+		assert(!desc.PixelShader.empty() && "PipelineDesc missing pixel shader");
+		assert(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN &&
 			"PipelineDesc has neither render targets nor a depth target");
 
 		// Vertex input layout
@@ -366,8 +367,8 @@ namespace koi
 
 		for (const auto& [index, attr] : std::views::enumerate(desc.VertexLayout) | std::views::as_const)
 		{
-			KOI_ASSERT_MSG(index < MAX_VERTEX_ATTRIBUTES, "Too many vertex attributes");
-			KOI_ASSERT_MSG(!attr.SemanticName.empty(), "Vertex attribute missing semantic name");
+			assert(index < MAX_VERTEX_ATTRIBUTES && "Too many vertex attributes");
+			assert(!attr.SemanticName.empty() && "Vertex attribute missing semantic name");
 
 			inputElements[index] =
 			{
@@ -474,11 +475,11 @@ namespace koi
 		});
 
 		Buffer* stagingBuf = m_buffers.Get(staging);
-		KOI_ASSERT_MSG(stagingBuf && stagingBuf->MappedPtr, "Staging buffer mapping failed");
+		assert((stagingBuf && stagingBuf->MappedPtr) && "Staging buffer mapping failed");
 		std::memcpy(stagingBuf->MappedPtr, data, size);
 
 		Buffer* dstBuf = m_buffers.Get(dst);
-		KOI_ASSERT_MSG(dstBuf, "Invalid destination buffer");
+		assert(dstBuf && "Invalid destination buffer");
 
 		ComPtr<dx12::CommandAllocator> allocator;
 		DX_CHECK(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
@@ -674,7 +675,7 @@ namespace koi
 			}
 		}
 
-		KOI_VERIFY_MSG(adapter, "No D3D12-capable adapter found");
+		assert(adapter && "No D3D12-capable adapter found");
 		DX_CHECK(adapter.As(&m_adapter));
 	}
 
@@ -737,7 +738,7 @@ namespace koi
 		m_frameFence->SetName(L"Koi Frame Fence");
 
 		m_fenceEvent = ::CreateEventW(nullptr, FALSE, FALSE, nullptr);
-		KOI_VERIFY_MSG(m_fenceEvent, "Failed to create fence event");
+		assert(m_fenceEvent && "Failed to create fence event");
 	}
 
 	void GfxDevice::CreateHeaps()

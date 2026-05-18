@@ -1,10 +1,8 @@
 #pragma once
 #include "Core/Core.h"  // For the Win32 macro
 
-#if KRN_OS_WINDOWS
-	#include "Platform/Win32/Win32.h"
-	#include <wrl/client.h>
-#endif
+#include "Platform/Win32/Win32.h"
+#include <wrl/client.h>
 
 #define D3DX12_USE_ARRAY_COM_PTR
 #include <directx/d3dx12.h>

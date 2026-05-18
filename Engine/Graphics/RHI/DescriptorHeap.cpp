@@ -1,6 +1,7 @@
 #include "Graphics/RHI/DescriptorHeap.h"
 #include "Core/Profiling.h"
 #include "Memory/MemoryTracker.h"
+#include <cassert>
 
 namespace koi
 {
@@ -8,7 +9,7 @@ namespace koi
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-		KOI_ASSERT(device && capacity > 0);
+		assert(device && capacity > 0);
 
 		const D3D12_DESCRIPTOR_HEAP_FLAGS flags = shaderVisible
 			? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
@@ -65,7 +66,7 @@ namespace koi
 			return idx;
 		}
 
-		KOI_ASSERT_MSG(m_nextFresh < m_capacity, "DescriptorHeap capacity exhausted");
+		assert(m_nextFresh < m_capacity && "DescriptorHeap capacity exhausted");
 		return m_nextFresh++;
 	}
 
@@ -79,7 +80,7 @@ namespace koi
 			return;
 
 		std::scoped_lock lock(m_mutex);
-		KOI_ASSERT(index < m_capacity);
+		assert(index < m_capacity);
 		m_freeList.push_back(index);
 	}
 

@@ -2,9 +2,9 @@
 #include "Core/Core.h"
 #include "Core/Handle.h"
 #include "Core/Math.h"
+#include "Core/EnumFlags.h"
 #include "Graphics/Format.h"
-#include <Kirin/Common/Macros.h>
-#include <Kirin/Core/Enum.h>
+#include <string>
 #include <string_view>
 #include <array>
 #include <vector>
@@ -36,26 +36,26 @@ namespace koi
 	enum class TextureUsage : u32
 	{
 		None         = 0,
-		ShaderRead   = KRN_BIT(0),
-		ShaderWrite  = KRN_BIT(1),
-		RenderTarget = KRN_BIT(2),
-		DepthStencil = KRN_BIT(3),
-		Present      = KRN_BIT(4),
+		ShaderRead   = KOI_BIT(0),
+		ShaderWrite  = KOI_BIT(1),
+		RenderTarget = KOI_BIT(2),
+		DepthStencil = KOI_BIT(3),
+		Present      = KOI_BIT(4),
 	};
-	using TextureUsageFlag = krn::EnumFlag<TextureUsage>;
+	using TextureUsageFlag = EnumFlag<TextureUsage>;
 
 	enum class BufferUsage : u32
 	{
 		None       = 0,
-		Vertex     = KRN_BIT(0),
-		Index      = KRN_BIT(1),
-		Constant   = KRN_BIT(2),
-		Storage    = KRN_BIT(3),
-		Indirect   = KRN_BIT(4),
-		CopySource = KRN_BIT(5),
-		CopyDest   = KRN_BIT(6),
+		Vertex     = KOI_BIT(0),
+		Index      = KOI_BIT(1),
+		Constant   = KOI_BIT(2),
+		Storage    = KOI_BIT(3),
+		Indirect   = KOI_BIT(4),
+		CopySource = KOI_BIT(5),
+		CopyDest   = KOI_BIT(6),
 	};
-	using BufferUsageFlag = krn::EnumFlag<BufferUsage>;
+	using BufferUsageFlag = EnumFlag<BufferUsage>;
 
 	enum class MemoryUsage : u8
 	{
@@ -170,5 +170,5 @@ namespace koi
 		math::AABB Bounds;
 	};
 }
-KRN_ENABLE_ENUM_FLAGS(koi::TextureUsage);
-KRN_ENABLE_ENUM_FLAGS(koi::BufferUsage);
+KOI_ENABLE_ENUM_FLAGS(koi::TextureUsage);
+KOI_ENABLE_ENUM_FLAGS(koi::BufferUsage);

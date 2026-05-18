@@ -3,6 +3,7 @@
 #include "Core/Logger.h"
 #include "Core/Profiling.h"
 #include "Memory/MemoryTracker.h"
+#include <cassert>
 
 namespace koi
 {
@@ -28,7 +29,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		KOI_ASSERT(frameSlot < FRAMES_IN_FLIGHT);
+		assert(frameSlot < FRAMES_IN_FLIGHT);
 		DX_CHECK(m_allocators[frameSlot]->Reset());
 	}
 }

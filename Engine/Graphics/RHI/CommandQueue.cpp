@@ -1,19 +1,20 @@
 #include "Graphics/RHI/CommandQueue.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RHI/CommandList.h"
+#include <cassert>
 
 namespace koi
 {
 	void CommandQueue::Submit(CommandList& list)
 	{
-		KOI_ASSERT(m_queue);
+		assert(m_queue);
 		ID3D12CommandList* raw[] = { list.GetNativeBase() };
 		m_queue->ExecuteCommandLists(1, raw);
 	}
 
 	void CommandQueue::Submit(std::span<CommandList* const> lists)
 	{
-		KOI_ASSERT(m_queue);
+		assert(m_queue);
 		if (lists.empty()) return;
 
 		std::vector<ID3D12CommandList*> raw;

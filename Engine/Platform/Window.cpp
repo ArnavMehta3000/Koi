@@ -11,19 +11,15 @@
 #endif
 
 #include <GLFW/glfw3.h>
-
-#if KRN_OS_WINDOWS
-	#define GLFW_EXPOSE_NATIVE_WIN32
-	#include <GLFW/glfw3native.h>
-	#include "Platform/Win32/Win32.h"
-	#include <windowsx.h>
-	#include <dwmapi.h>
-	#undef IsMinimized
-	#undef IsMaximized
-#elif KRN_OS_LINUX
-	#define GLFW_EXPOSE_NATIVE_X11
-	#include <GLFW/glfw3native.h>
-#endif
+#include <cassert>
+#include <stdexcept>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#include "Platform/Win32/Win32.h"
+#include <windowsx.h>
+#include <dwmapi.h>
+#undef IsMinimized
+#undef IsMaximized
 
 namespace koi
 {
@@ -34,7 +30,7 @@ namespace koi
 			i32 count = 0;
 			if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
 			{
-				KOI_ASSERT(count != 0);  // We should have at least one monitor
+				assert(count != 0);  // We should have at least one monitor
 
 				if (index < 0 || index >= count)
 					index = 0;
@@ -59,7 +55,7 @@ namespace koi
 
 			if (!::glfwInit())
 			{
-				KOI_VERIFY_MSG(false, "Failed to initialize GLFW");
+				throw std::runtime_error("Failed to initialize GLFW");
 			}
 		}
 
@@ -315,7 +311,7 @@ namespace koi
 		}
 
 		m_window = ::glfwCreateWindow(w, h, m_title.c_str(), monitor, nullptr);
-		KOI_VERIFY_MSG(m_window, "Failed to create GLFW window");
+		assert(m_window && "Failed to create GLFW window");
 
 		m_width = static_cast<u32>(w);
 		m_height = static_cast<u32>(h);
@@ -328,18 +324,14 @@ namespace koi
 		m_savedW= m_width;
 		m_savedH = m_height;
 
-#if KRN_OS_WINDOWS
 		HWND hwnd = ::glfwGetWin32Window(m_window);
-		KOI_ASSERT_MSG(hwnd, "Failed to get Win32 window handle");
+		assert(hwnd && "Failed to get Win32 window handle");
 		m_nativeHandle = hwnd;
 
 		BOOL enable = TRUE;
 		::DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
 		::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
 			SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
-#elif KRN_OS_LINUX
-		m_nativeHandle = reinterpret_cast<void*>(::glfwGetX11Window(m_window));
-#endif
 
 		KOI_LOG_TRACE("Window created: {}({}x{})", m_title, m_width, m_height);
 	}

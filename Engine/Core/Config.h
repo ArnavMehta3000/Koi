@@ -3,7 +3,17 @@
 #pragma once
 #include "Generated/Engine/Version.h"  // Generated at build time
 #include "Generated/Engine/LogLevel.h"  // Generated at build time
-#include "Kirin/Common/Platform.h"
 
-#define KOI_DEBUG KRN_DEBUG
-#define KOI_RELEASE KRN_RELEASE
+#if defined(NDEBUG)
+	#define KOI_DEBUG 0
+	#define KOI_RELEASE 1
+#else
+	#define KOI_DEBUG 1
+	#define KOI_RELEASE 0
+#endif
+
+#if KOI_ENABLE_PROFILING
+	#define KOI_PROFILING 1
+#else
+	#define KOI_PROFILING 0
+#endif

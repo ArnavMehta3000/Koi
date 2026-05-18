@@ -2,25 +2,18 @@
 
 #pragma once
 #include "Core/Core.h"
+#include "Platform/Win32/Win32.h"
 
-#if KRN_OS_WINDOWS
-	#include "Platform/Win32/Win32.h"
-#endif
 
 // Default main
 #define KOI_DEF_MAIN() int main([[maybe_unused]] int argc, [[maybe_unused]] char *argv[])
 
-#if KRN_OS_WINDOWS
-	#define KOI_DEF_WINMAIN()                              \
-	int WINAPI wWinMain(                                   \
-		_In_     [[maybe_unused]] HINSTANCE hInstance,     \
-		_In_opt_ [[maybe_unused]] HINSTANCE hPrevInstance, \
-		_In_     [[maybe_unused]] LPWSTR    lpCmdLine,     \
-		_In_     [[maybe_unused]] int       nCmdShow)
-#else
-	// No WinMain on non-windows platforms
-	#define KOI_DEF_WINMAIN() KOI_DEF_MAIN()
-#endif
+#define KOI_DEF_WINMAIN()                              \
+int WINAPI wWinMain(                                   \
+	_In_     [[maybe_unused]] HINSTANCE hInstance,     \
+	_In_opt_ [[maybe_unused]] HINSTANCE hPrevInstance, \
+	_In_     [[maybe_unused]] LPWSTR    lpCmdLine,     \
+	_In_     [[maybe_unused]] int       nCmdShow)
 
 
 #if KOI_DEBUG
@@ -36,7 +29,7 @@ namespace koi::internal
 	int RunApplication(int argc, char** argv);
 }
 
-#if KOI_DEBUG || !KRN_OS_WINDOWS
+#if KOI_DEBUG
 	#define KOI_IMPLEMENT_MAIN()                                \
 		KOI_DEF_MAIN()                                          \
 		{                                                       \

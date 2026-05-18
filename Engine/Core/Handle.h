@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Types.h"
-#include "Core/Assert.h"
+#include <cassert>
 #include <compare>
 #include <limits>
 #include <vector>
@@ -99,7 +99,7 @@ namespace koi
 			else
 			{
 				sparseIdx = static_cast<IndexType>(m_sparse.size());
-				KOI_ASSERT_MSG(sparseIdx <= HandleType::INDEX_MASK, "Too many handles in pool!");
+				assert(sparseIdx <= HandleType::INDEX_MASK && "Too many handles in pool!");
 				generation = 0;
 				m_sparse.push_back({ 0, generation });
 			}
@@ -235,7 +235,7 @@ namespace koi
 		template <typename... Args>
 		[[nodiscard]] HandleType Emplace(Args&&... args)
 		{
-			KOI_ASSERT_MSG(m_freeListHead != INVALID_IDX, "StaticHandlePool is full, increase capacity!");
+			assert(m_freeListHead != INVALID_IDX && "StaticHandlePool is full, increase capacity!");
 
 			IndexType sparseIdx  = m_freeListHead;
 			m_freeListHead       = m_sparse[sparseIdx].NextFree;

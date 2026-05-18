@@ -1,7 +1,7 @@
 // Contains utility functions for string manipulation in static StringUtils class
 #pragma once
 #include "Core/Types.h"
-#include "Kirin/Common/Platform.h"
+#include "Platform/Win32/Win32.h"
 #include <string>
 #include <string_view>
 #include <vector>

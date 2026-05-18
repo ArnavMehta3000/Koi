@@ -1,7 +1,6 @@
 #pragma once
 #include "Core/Types.h"
 #include "Core/Logger.h"
-#include <Kirin/IO/VirtualFileSystem.h>
 #include <filesystem>
 #include <vector>
 
@@ -9,17 +8,24 @@ namespace koi
 {
 	// Reads a compiled shader bytecode file (.cso) from the given filesystem.
 	// Returns an empty vector and logs an error on failure.
-	[[nodiscard]] inline std::vector<byte> LoadShaderBytecode(const krn::IFileSystem& fs, const std::filesystem::path& path)
+	[[nodiscard]] inline std::vector<byte> LoadShaderBytecode(const std::filesystem::path& path)
 	{
-		krn::IFileSystem::ReadFileResult result = fs.ReadFile(path);
-		if (!result)
+		std::vector<byte> result;
+		std::ifstream file(path, std::ios::binary | std::ios::ate);
+		if (file.is_open())
 		{
-			KOI_LOG_ERROR("Failed to load shader '{}': VFSError={}", path.string(), static_cast<i32>(result.error()));
-			return {};
+			result.resize(file.tellg());
+			file.seekg(0, std::ios::beg);
+			file.read(reinterpret_cast<char*>(result.data()), result.size());
+			file.close();
+
+			return result;
+		}
+		else
+		{
+			KOI_LOG_ERROR("Failed to load shader '{}'", path.string());
 		}
 
-		const krn::IBlob* blob = result->get();
-		const auto* data = static_cast<const byte*>(blob->Data());
-		return std::vector<byte>(data, data + blob->Size());
+		return {};
 	}
 }

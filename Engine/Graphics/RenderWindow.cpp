@@ -5,6 +5,7 @@
 #include "Core/Profiling.h"
 #include "Platform/Window.h"
 #include "Core/Logger.h"
+#include <cassert>
 
 namespace koi
 {
@@ -26,7 +27,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		KOI_ASSERT_MSG(m_hwnd, "Window has no native HWND");
+		assert(m_hwnd && "Window has no native HWND");
 		CreateSwapChain();
 		AcquireBackBuffers();
 	}
@@ -111,7 +112,7 @@ namespace koi
 
 		if (width == 0 || height == 0) return;
 		if (width == m_width && height == m_height) return;
-		KOI_ASSERT_MSG(m_device, "Render Window has been moved-from");
+		assert(m_device && "Render Window has been moved-from");
 
 		KOI_LOG_DEBUG("Resizing RenderWindow ({}x{}) -> ({}x{})",
 			m_width, m_height, width, height);

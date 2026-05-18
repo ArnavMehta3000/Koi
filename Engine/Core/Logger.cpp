@@ -1,12 +1,10 @@
 #include "Core/Logger.h"
 #include "Core/StringUtils.h"
+#include "Platform/Win32/Win32.h"
+#include <cassert>
 #include <filesystem>
-
-#if KRN_OS_WINDOWS
-	#include "Platform/Win32/Win32.h"
-	#include <io.h>
-	#include <fcntl.h>
-#endif
+#include <io.h>
+#include <fcntl.h>
 
 namespace koi
 {
@@ -23,7 +21,6 @@ namespace koi
 		bool g_initialized;
 	}
 
-#if KRN_OS_WINDOWS
 	static bool HasConsoleAttached()
 	{
 		return ::GetConsoleWindow() != nullptr;
@@ -40,7 +37,6 @@ namespace koi
 		freopen_s(&f, "CONIN$", "r", stdin);
 		std::ios::sync_with_stdio(true);
 	}
-#endif
 
 	void Logger::Init(const LoggerConfig& cfg)
 	{
@@ -62,7 +58,6 @@ namespace koi
 			fileSink->set_pattern(pattern);
 			g_loggerData->g_sinks.push_back(fileSink);
 
-#if KRN_OS_WINDOWS
 			if (cfg.UseDebugSink)
 			{
 				auto dbgSink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
@@ -82,20 +77,13 @@ namespace koi
 				consoleSink->set_pattern(pattern);
 				g_loggerData->g_sinks.push_back(consoleSink);
 			}
-#else
-			// Non-Windows: stdout is the console
-			auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-			consoleSink->set_level(spdlog::level::trace);
-			consoleSink->set_pattern(pattern);
-			s_sinks.push_back(consoleSink);
-#endif
 
 			g_initialized = true;
 		}
 		catch (const spdlog::spdlog_ex& ex)
 		{
-			auto errMsg = fmt::format("Failed to initialize logger: {}", ex.what());
-			KOI_ASSERT_MSG(false, errMsg);
+			assert(false);
+			throw ex;  // Catch and throw
 		}
 	}
 
@@ -140,8 +128,7 @@ namespace koi
 		}
 		catch (const spdlog::spdlog_ex& ex)
 		{
-			auto errMsg = fmt::format("Failed to create logger: {}", ex.what());
-			KOI_ASSERT_MSG(false, errMsg);
+			assert(false);
 			return nullptr;
 		}
 	}

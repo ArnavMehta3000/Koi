@@ -1,4 +1,5 @@
 #include "Application/WindowManager.h"
+#include <cassert>
 
 namespace koi
 {
@@ -19,7 +20,7 @@ namespace koi
 
 	std::pair<WindowHandle, Window*> WindowManager::CreateMainWindow(const WindowDesc& desc)
 	{
-		KOI_ASSERT_MSG(!m_mainWindow, "Main window already created");
+		assert(!m_mainWindow && "Main window already created");
 
 		auto [handle, window] = CreateWindow(desc);
 		m_mainWindow = handle;

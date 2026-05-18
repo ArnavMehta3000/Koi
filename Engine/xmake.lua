@@ -3,7 +3,6 @@ target("Koi.Engine")
 
 	add_options("LogLevel")
 	add_packages(
-		"Kirin",
 		"spdlog",
 		"glfw",
     	"myhlslpp",

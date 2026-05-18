@@ -3,14 +3,7 @@
 
 #include <SdkDdkVer.h>
 
-#define UNICODE
-#define _UNICODE
-#define NOMINMAX
-#define NOMCX
-#define NOSERVICE
-#define NOHELP
-#define WIN32_LEAN_AND_MEAN
-
+// Major Win32 'type-stripping' defines are written in the xmake (applied project-wide)
 #include <Windows.h>
 
 // Reference: https://github.com/DominikGrabiec/WindowsHeader/blob/main/Windows.hpp

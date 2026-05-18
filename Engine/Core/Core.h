@@ -3,7 +3,7 @@
 #pragma once
 #include "Core/Config.h"
 #include "Core/Types.h"
-#include "Core/Assert.h"
+#include "Core/Macros.h"
 
 #if KOI_DEBUG
 #define _CRTDBG_MAP_ALLOC

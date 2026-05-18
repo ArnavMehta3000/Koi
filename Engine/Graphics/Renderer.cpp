@@ -1,11 +1,11 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/RHI/Device.h"
-#include "Core/Assert.h"
 #include "Engine/Engine.h"
 #include "Memory/MemoryTracker.h"
 #include "Core/Profiling.h"
 #include "Core/Logger.h"
 #include <DirectXColors.h>
+#include <cassert>
 
 namespace koi
 {
@@ -52,7 +52,7 @@ namespace koi
 
 		Window* w = Engine::Get().GetWindowManager().GetWindow(handle);
 
-		KOI_VERIFY_MSG(w, "Trying to create RenderWindow from invalid window handle");
+		assert(w && "Trying to create RenderWindow from invalid window handle");
 		if (!w) { return { RenderWindowHandle{}, nullptr }; }
 
 		RenderWindowHandle h = m_renderWindows.Emplace(*m_device, *w, vsync);

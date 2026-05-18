@@ -3,7 +3,6 @@
 
 #include "Core/Config.h"
 
-#define NOMINMAX
 #define HLSLPP_FEATURE_TRANSFORM
 
 #if KOI_DEBUG

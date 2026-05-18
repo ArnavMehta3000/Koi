@@ -1,9 +1,7 @@
 -- Custom packages
-includes("Packages/Kirin.lua")
 includes("Packages/HLSLPP.lua")
 
 add_requires(
-    "Kirin",
     "glfw",
     "directx-headers",
     "myhlslpp"

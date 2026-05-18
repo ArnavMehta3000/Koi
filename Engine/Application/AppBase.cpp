@@ -1,12 +1,13 @@
 #include "Application/AppBase.h"
 #include "Engine/Engine.h"
+#include <cassert>
 
 namespace koi
 {
 	AppBase::AppBase(const AppCreateDesc& desc)
 		: m_desc(desc)
 	{
-		KOI_ASSERT_MSG(s_instance == nullptr, "Application already exists!");
+		assert(s_instance == nullptr && "Application already exists!");
 		s_instance = this;
 		m_engine = &Engine::Get();
 	}
@@ -38,7 +39,7 @@ namespace koi
 				Engine engine(argc, argv);
 
 				auto app = CreateApplication(argc, argv);
-				KOI_ASSERT_MSG(app != nullptr, "CreateApplication returned nullptr!");
+				assert(app != nullptr && "CreateApplication returned nullptr!");
 
 				engine.RunApp(*app);
 				return 0;

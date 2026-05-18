@@ -5,6 +5,7 @@
 #include "Platform/Win32/Win32.h"
 #include <string>
 #include <memory>
+#include <functional>
 
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE

@@ -1,8 +1,6 @@
 #include "Core/StringUtils.h"
-#if KRN_OS_WINDOWS
-	#include "Platform/Win32/Win32.h"
-	#include <stringapiset.h>
-#endif
+#include "Platform/Win32/Win32.h"
+#include <stringapiset.h>
 #include <ranges>
 #include <algorithm>
 #include <cctype>
@@ -11,7 +9,6 @@ namespace koi
 {
 	std::wstring StringUtils::ToWide(std::string_view utf8)
 	{
-#if KRN_OS_WINDOWS
 		if (utf8.empty())  return {};
 
 		const i32 len = ::MultiByteToWideChar(
@@ -27,14 +24,10 @@ namespace koi
 			static_cast<i32>(utf8.size()), out.data(), len);
 
 		return out;
-#else
-		return std::wstring(utf8.begin(), utf8.end());
-#endif
 	}
 
 	std::string StringUtils::FromWide(std::wstring_view ws)
 	{
-#if KRN_OS_WINDOWS
 		if (ws.empty()) return {};
 
 		const i32 len = ::WideCharToMultiByte(
@@ -51,9 +44,6 @@ namespace koi
 			out.data(), len, nullptr, nullptr);
 
 		return out;
-#else
-		return std::string(ws.begin(), ws.end());
-#endif
 	}
 
 	std::string StringUtils::ToLower(std::string_view sv)

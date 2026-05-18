@@ -9,11 +9,8 @@
 #include "Graphics/ShaderLoader.h"
 #include "Graphics/MeshLoader.h"
 #include "Memory/MemoryDebug.h"
-#include <Kirin/IO/VirtualFileSystem.h>
-#include <Kirin/IO/File.h>
 #include "Core/Math.h"
-
-using namespace krn::types;
+#include <cassert>
 
 struct Vertex
 {
@@ -34,11 +31,10 @@ public:
 		koi::GfxDevice& device = engine.GetRenderer().GetDevice();
 
 		// Load shader bytecode from the compiled output directory
-		krn::NativeFileSystem fs;
-		std::vector<byte> vsData = koi::LoadShaderBytecode(fs, "Assets/Shaders/TriangleVS.cso");
-		std::vector<byte> psData = koi::LoadShaderBytecode(fs, "Assets/Shaders/TrianglePS.cso");
+		std::vector<byte> vsData = koi::LoadShaderBytecode("Assets/Shaders/TriangleVS.cso");
+		std::vector<byte> psData = koi::LoadShaderBytecode("Assets/Shaders/TrianglePS.cso");
 
-		KOI_ASSERT_MSG(!vsData.empty() && !psData.empty(), "Failed to load Hello Triangle shaders");
+		assert((!vsData.empty() && !psData.empty()) && "Failed to load Hello Triangle shaders");
 
 		const std::array<koi::VertexAttribute, 2> vertexLayout =
 		{
@@ -85,10 +81,10 @@ public:
 			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },  // left   – blue
 		};
 
-		constexpr  std::array<u16, 3> indices = { 0, 1, 2 };
+		constexpr  std::array<koi::u16, 3> indices = { 0, 1, 2 };
 
-		constexpr u64 vbSize = sizeof(vertices);
-		constexpr u64 ibSize = sizeof(indices);
+		constexpr koi::u64 vbSize = sizeof(vertices);
+		constexpr koi::u64 ibSize = sizeof(indices);
 
 		m_vertexBuffer = device.CreateBuffer(koi::BufferDesc
 		{
@@ -102,7 +98,7 @@ public:
 		m_indexBuffer = device.CreateBuffer(koi::BufferDesc
 		{
 			.Size      = ibSize,
-			.Stride    = sizeof(u16),
+			.Stride    = sizeof(koi::u16),
 			.Usage     = koi::BufferUsage::Index | koi::BufferUsage::CopyDest,
 			.Memory    = koi::MemoryUsage::GpuOnly,
 			.DebugName = "Triangle IB",

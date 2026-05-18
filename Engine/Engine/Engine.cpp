@@ -3,6 +3,7 @@
 #include "Graphics/RHI/Device.cpp"
 #include "Memory/MemoryDebug.h"
 #include "Core/Profiling.h"
+#include <cassert>
 
 namespace koi
 {
@@ -13,7 +14,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 
-		KOI_ASSERT_MSG(s_instance == nullptr, "Engine already initialized");
+		assert(s_instance == nullptr && "Engine already initialized");
 		s_instance = this;
 
 		onInitSnapshot = GetMemSnapshot();
