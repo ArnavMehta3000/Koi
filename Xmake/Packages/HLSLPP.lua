@@ -1,4 +1,9 @@
-package("myhlslpp")
-	set_base("hlslpp")
-    set_sourcedir(path.join(os.projectdir(), "External", "hlslpp"))
-package_end()
+target("hlslpp")
+	set_kind("headeronly")
+	set_group("External")
+	local module_dir = "$(projectdir)/External/hlslpp"
+	local include_dir = path.join(module_dir, "include")
+	add_includedirs(include_dir, { public = true })
+	add_headerfiles(path.join(include_dir, "**.h"), { public = true })
+	add_extrafiles(path.join(include_dir, "hlsl++.natvis"), { public = true })
+target_end()

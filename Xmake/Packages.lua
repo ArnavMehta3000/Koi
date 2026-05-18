@@ -3,8 +3,7 @@ includes("Packages/HLSLPP.lua")
 
 add_requires(
     "glfw",
-    "directx-headers",
-    "myhlslpp"
+    "directx-headers"
 )
 
 add_requires("tracy eb411b1138eeab0f02dd3ca7bcbc051aa4436f2f")

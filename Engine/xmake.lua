@@ -1,11 +1,12 @@
 target("Koi.Engine")
 	set_kind("static")
 
+	add_deps("hlslpp")
+
 	add_options("LogLevel")
 	add_packages(
 		"spdlog",
 		"glfw",
-    	"myhlslpp",
 		"fastgltf",
 		"tracy",
 		"directx-headers", { public = true })
