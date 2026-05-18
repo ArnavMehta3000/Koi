@@ -126,7 +126,7 @@ namespace koi
 			spdlog::register_logger(logger);
 			return logger;
 		}
-		catch (const spdlog::spdlog_ex& ex)
+		catch ([[maybe_unused]] const spdlog::spdlog_ex& ex)
 		{
 			assert(false);
 			return nullptr;
