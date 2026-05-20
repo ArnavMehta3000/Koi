@@ -86,11 +86,13 @@ namespace koi
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::CpuHandle(DescriptorIndex i) const noexcept
 	{
-		return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cpuStart, i * m_stride, m_stride);
+		// CD3DX12 multiplies the offset by the increment size, so pass the descriptor
+		// index directly (not index * stride) or the offset gets squared by the stride.
+		return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cpuStart, static_cast<INT>(i), m_stride);
 	}
 
 	CD3DX12_GPU_DESCRIPTOR_HANDLE DescriptorHeap::GpuHandle(DescriptorIndex i) const noexcept
 	{
-		return CD3DX12_GPU_DESCRIPTOR_HANDLE(m_gpuStart, i * m_stride, m_stride);
+		return CD3DX12_GPU_DESCRIPTOR_HANDLE(m_gpuStart, static_cast<INT>(i), m_stride);
 	}
 }
