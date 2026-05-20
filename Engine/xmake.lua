@@ -5,6 +5,7 @@ target("Koi.Engine")
 
 	add_options("LogLevel")
 	add_packages(
+		"cli11",
     	"spdlog",
 		"toml++",
 		"glfw",

@@ -1,6 +1,6 @@
 #include "Engine/Engine.h"
 #include "Application/AppBase.h"
-#include "Graphics/RHI/Device.cpp"
+#include "Graphics/RHI/Device.h"
 #include "Memory/MemoryDebug.h"
 #include "Core/Profiling.h"
 #include <cassert>
@@ -19,7 +19,6 @@ namespace koi
 
 		onInitSnapshot = GetMemSnapshot();
 
-		Logger::Init();
 		KOI_LOG_INFO("Engine initializing");
 
 		m_windowManager = std::make_unique<WindowManager>();
@@ -36,7 +35,6 @@ namespace koi
 
 		PrintMemSnapshot(DiffSnapshots(onInitSnapshot, GetMemSnapshot()));
 
-		Logger::Shutdown();
 		s_instance = nullptr;
 	}
 

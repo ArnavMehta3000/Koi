@@ -18,7 +18,6 @@ namespace koi
 		};
 
 		std::unique_ptr<LoggerData> g_loggerData;
-		bool g_initialized;
 	}
 
 	static bool HasConsoleAttached()

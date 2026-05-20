@@ -3,7 +3,8 @@ includes("Packages/HLSLPP.lua")
 
 add_requires(
     "glfw",
-    "directx-headers"
+    "directx-headers",
+    "cli11"
 )
 
 add_requires("toml++ f22f035fe2d63e2be3d266d8f100e7812a9ab9bd")

@@ -1,6 +1,7 @@
 #pragma once
 #include "Application/AppBase.h"
 #include "Engine/Engine.h"
+#include "Engine/CommandLine.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/RenderWindow.h"
 #include "Graphics/RHI/Device.h"
@@ -11,6 +12,7 @@
 #include "Memory/MemoryDebug.h"
 #include "Core/Math.h"
 #include <cassert>
+#include <toml++/toml.hpp>
 
 struct Vertex
 {
@@ -146,10 +148,20 @@ private:
 	koi::BufferHandle   m_indexBuffer;
 };
 
+
 namespace koi
 {
 	std::unique_ptr<AppBase> CreateApplication(i32 argc, char** argv)
 	{
+		koi::CommandLine cmd;
+		if (auto result = cmd.ParseArgs(argc, argv); result != 0)
+		{
+			return nullptr;
+		}
+
+		auto projFile = cmd.GetProjectFile().string();
+		auto projectFile = toml::parse_file(projFile);
+		
 		AppCreateDesc desc{};
 		desc.AppName             = "Hello Triangle";
 		desc.WindowDesc.Title    = "Koi - Hello Triangle";

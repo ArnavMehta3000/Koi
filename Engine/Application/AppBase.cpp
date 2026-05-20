@@ -1,6 +1,7 @@
 #include "Application/AppBase.h"
 #include "Engine/Engine.h"
 #include <cassert>
+#include <iostream>
 
 namespace koi
 {
@@ -34,24 +35,36 @@ namespace koi
 	{
 		int RunApplication(int argc, char** argv)
 		{
+			// Initialize the logger before the Engine so it outlives it during
+			// stack unwinding — Engine::~Engine calls Logger::Shutdown(), which
+			// would otherwise make IsInitialized() return false in catch blocks.
+			Logger::Init();
+
 			try
 			{
 				Engine engine(argc, argv);
 
-				auto app = CreateApplication(argc, argv);
-				assert(app != nullptr && "CreateApplication returned nullptr!");
-
-				engine.RunApp(*app);
-				return 0;
+				if (auto app = CreateApplication(argc, argv))
+				{
+					engine.RunApp(*app);
+					return 0;
+				}
+				else
+				{
+					KOI_LOG_CRITICAL("Failed to create application");
+					return -1;
+				}
 			}
 			catch (const std::exception& e)
 			{
 				KOI_LOG_CRITICAL("Unhandled exception: {}", e.what());
+				Logger::Shutdown();
 				return 1;
 			}
 			catch (...)
 			{
 				KOI_LOG_CRITICAL("Unhandled unknown exception");
+				Logger::Shutdown();
 				return 2;
 			}
 		}

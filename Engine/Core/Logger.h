@@ -24,6 +24,7 @@ namespace koi
     {
     public:
         static void Init(const LoggerConfig& cfg = {});
+		inline static bool IsInitialized() { return g_initialized; }
         static void Shutdown();
 
         static std::shared_ptr<spdlog::logger> GetLogger(std::string_view category);
@@ -37,6 +38,9 @@ namespace koi
     private:
         static std::shared_ptr<spdlog::logger> CreateLogger(std::string_view category);
         static spdlog::level::level_enum ToSpdlogLevel(LogLevel level);
+
+	private:
+		static inline bool g_initialized = false;
     };
 }
 

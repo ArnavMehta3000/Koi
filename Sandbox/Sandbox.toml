@@ -1,0 +1,17 @@
+# Sandbox project file
+
+app_name = "Koi Sandbox"
+
+# Directories are relative to output exe
+models_dir = "Assets/Models"
+asset_dir = "Assets/Shaders"
+
+ [[shaders]]
+name = "HelloTriangleVS"
+file = "TriangleVS.cso"
+type = "vertex"
+
+[[shaders]]
+name = "HelloTrianglePS"
+file = "TrianglePS.cso"
+type = "pixel"

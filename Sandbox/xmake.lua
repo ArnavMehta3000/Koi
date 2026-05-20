@@ -1,7 +1,9 @@
 target("Sandbox")
 	set_kind("static")
-	add_files("SandboxApp.cpp")
 	add_deps("Koi.Engine")
+
+	add_includedirs("Scripts")
+	add_files("Scripts/**.cpp")
 
 	-- Shader files
 	add_extrafiles(
@@ -11,6 +13,7 @@ target("Sandbox")
 
 	-- Assets
 	add_extrafiles("Assets/Models/**.gltf")
+	add_extrafiles("Sandbox.toml")
 
 	after_build(function(target)
 		import("core.base.task")
