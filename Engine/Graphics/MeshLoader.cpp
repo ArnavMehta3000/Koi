@@ -265,6 +265,8 @@ namespace koi
 				mat.EmissiveTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.emissiveTexture->textureIndex));
 				mat.MaterialConstants.EmissiveFactor = math::float3(gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
 			}
+
+			model.Materials.push_back(std::move(mat));
 		}
 	}
 
@@ -329,13 +331,20 @@ namespace koi
 		}
 		else
 		{
-			assert(img.Width > 0 && img.Height > 0 && img.Channels > 0);
+			assert(img.Width > 0 && img.Height > 0);
 
-			img.Pixels.resize(img.Width * img.Height * img.Channels);
-			std::copy(pixels, pixels + img.Width * img.Height * img.Channels, img.Pixels.data());
+			// stbi was asked for 4 components, so the returned data is always RGBA
+			// regardless of the file's native channel count.
+			img.Channels = 4;
+			const size_t byteCount = static_cast<size_t>(img.Width) * img.Height * 4;
+			img.Pixels.resize(byteCount);
+			std::copy(pixels, pixels + byteCount, img.Pixels.data());
 
 			stbi_image_free(pixels);
 		}
+
+		img.Name = (gltfTexture.name.empty()) ? fmt::format("Texture_{}", idx) : gltfTexture.name.data();
+		model.Images.push_back(std::move(img));
 		return idx;
 	}
 }
