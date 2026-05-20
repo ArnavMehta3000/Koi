@@ -1,12 +1,12 @@
 target("Koi.Engine")
 	set_kind("static")
 
-	add_deps("hlslpp")
+	add_deps("hlslpp", "stb")
 
 	add_options("LogLevel")
 	add_packages(
 		"cli11",
-    	"spdlog",
+		"spdlog",
 		"toml++",
 		"glfw",
 		"fastgltf",

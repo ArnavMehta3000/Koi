@@ -1,6 +1,7 @@
 #pragma once
 #include "Platform/Window.h"
 #include "Core/Logger.h"
+#include "Engine/CommandLine.h"
 
 namespace koi
 {
@@ -11,8 +12,6 @@ namespace koi
 		WindowDesc   WindowDesc{};
 		LoggerConfig LogConfig{};
 		std::string  AppName = "Koi Application";
-		i32          ArgC = 0;
-		char** ArgV = nullptr;
 	};
 
 	class AppBase : public NonCopyable
@@ -41,7 +40,7 @@ namespace koi
 		static inline AppBase* s_instance = nullptr;
 	};
 
-	std::unique_ptr<AppBase> CreateApplication(i32 argc, char** argv);
+	std::unique_ptr<AppBase> CreateApplication(CommandLine& cmd);
 
 	namespace internal
 	{

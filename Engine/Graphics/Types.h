@@ -112,6 +112,16 @@ namespace koi
 		math::float2 UV;
 	};
 
+	struct ImageAsset
+	{
+		std::string Name;
+		std::string Path;
+		u32 MaterialIndex = 0;
+		i32 Width         = -1;
+		i32 Height        = -1;
+		i32 Channels      = -1;
+		std::vector<koi::byte> Pixels;
+	};
 
 	struct Material
 	{
@@ -131,6 +141,12 @@ namespace koi
 		Constants MaterialConstants{};
 		bool DoubleSided = false;
 		AlphaMode Mode;
+
+		u32 BaseColorTextureIdx         = u32(-1);
+		u32 MetallicRoughnessTextureIdx = u32(-1);
+		u32 NormalTextureIdx            = u32(-1);
+		u32 OcclusionTextureIdx         = u32(-1);
+		u32 EmissiveTextureIdx          = u32(-1);
 	};
 
 	struct SubMesh
@@ -149,16 +165,6 @@ namespace koi
 		math::AABB Bounds;
 		u32 VertexCount = 0;
 		u32 IndexCount = 0;
-	};
-
-	struct ImageAsset
-	{
-		std::string Name;
-		std::string Path;
-		u32 Width    = 0;
-		u32 Height   = 0;
-		u32 Channels = 0;
-		std::vector<koi::byte> Pixels;
 	};
 
 	struct ModelAsset

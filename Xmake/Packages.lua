@@ -1,5 +1,6 @@
 -- Custom packages
-includes("Packages/HLSLPP.lua")
+includes("Packages/hlslpp.lua")
+includes("Packages/stb.lua")
 
 add_requires(
     "glfw",

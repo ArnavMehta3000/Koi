@@ -44,7 +44,14 @@ namespace koi
 			{
 				Engine engine(argc, argv);
 
-				if (auto app = CreateApplication(argc, argv))
+				auto cmd = internal::InvokeCommandLineFactory();
+				if (cmd->ParseArgs(argc, argv) != 0)
+				{
+					KOI_LOG_CRITICAL("Failed to parse command line arguments");
+					return -1;
+				}
+
+				if (auto app = CreateApplication(*cmd))
 				{
 					engine.RunApp(*app);
 					return 0;

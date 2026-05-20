@@ -1,8 +1,11 @@
 #include "Graphics/MeshLoader.h"
 #include "Core/Logger.h"
+#include "Core/Profiling.h"
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 #include <vector>
 #include <string>
 
@@ -15,14 +18,16 @@ namespace koi
 			fastgltf::Asset* Asset = nullptr;
 			fs::path BasePath;
 
-			std::unique_ptr<ModelAsset>BuildModelAsset();
+			std::unique_ptr<ModelAsset> BuildModelAsset();
 			void LoadMeshes(ModelAsset& model);
-			void LoadMaterials();
+			void LoadMaterials(ModelAsset& model);
+			u32 LoadTexture(ModelAsset& model, u32 textureIndex);
 		};
 	}
 
 	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& path)
 	{
+		ZoneScoped;
 		KOI_LOG_INFO("Loading mesh: {}", path.string().c_str());
 
 		fastgltf::Parser parser(fastgltf::Extensions::KHR_materials_variants
@@ -59,10 +64,12 @@ namespace koi
 
 	std::unique_ptr<ModelAsset>Loader::BuildModelAsset()
 	{
+		ZoneScoped;
 		auto model = std::make_unique<ModelAsset>();
 
+		LoadMaterials(*model);
 		LoadMeshes(*model);
-		LoadMaterials();
+		// Todo create samplers
 
 		return model;
 		return model;
@@ -70,6 +77,7 @@ namespace koi
 
 	void Loader::LoadMeshes(ModelAsset& model)
 	{
+		ZoneScoped;
 		// For-each mesh
 		for (fastgltf::Mesh& gltfMesh : Asset->meshes)
 		{
@@ -83,8 +91,8 @@ namespace koi
 			for (fastgltf::Primitive& primitive : gltfMesh.primitives)
 			{
 				SubMesh sub;
-				sub.VertexOffset  = static_cast<u32>(allVertices.size());
-				sub.IndexOffset   = static_cast<u32>(allIndices.size());
+				sub.VertexOffset = static_cast<u32>(allVertices.size());
+				sub.IndexOffset = static_cast<u32>(allIndices.size());
 				sub.MaterialIndex = static_cast<i32>(primitive.materialIndex.value_or(-1));
 
 				fastgltf::Attribute* posAccessor = primitive.findAttribute("POSITION");
@@ -115,7 +123,7 @@ namespace koi
 					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, acc,
 						[&](const fastgltf::math::fvec3& n, std::size_t i)
 						{
-							vertices[i].Normal = math::float3 (n.x(), n.y(), n.z());
+							vertices[i].Normal = math::float3(n.x(), n.y(), n.z());
 						});
 				}
 				else
@@ -193,14 +201,15 @@ namespace koi
 			}
 
 			mesh.VertexCount = static_cast<u32>(allVertices.size());
-			mesh.IndexCount  = static_cast<u32>(allIndices.size());
+			mesh.IndexCount = static_cast<u32>(allIndices.size());
 
 			model.Meshes.push_back(std::move(mesh));
 		}
 	}
 
-	void Loader::LoadMaterials()
+	void Loader::LoadMaterials(ModelAsset& model)
 	{
+		ZoneScoped;
 		for (fastgltf::Material& gltfMat : Asset->materials)
 		{
 			Material mat;
@@ -223,8 +232,106 @@ namespace koi
 				pbr.baseColorFactor[0], pbr.baseColorFactor[1],
 				pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
 
-			mat.MaterialConstants.MetallicFactor  = pbr.metallicFactor;
+			mat.MaterialConstants.MetallicFactor = pbr.metallicFactor;
 			mat.MaterialConstants.RoughnessFactor = pbr.roughnessFactor;
+
+			if (pbr.baseColorTexture)
+			{
+				mat.BaseColorTextureIdx = LoadTexture(model, static_cast<u32>(pbr.baseColorTexture->textureIndex));
+			}
+
+			if (pbr.metallicRoughnessTexture)
+			{
+				mat.MetallicRoughnessTextureIdx = LoadTexture(model, static_cast<u32>(pbr.metallicRoughnessTexture->textureIndex));
+			}
+
+			if (gltfMat.normalTexture)
+			{
+				mat.NormalTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.normalTexture->textureIndex));
+			}
+
+			if (gltfMat.occlusionTexture)
+			{
+				mat.OcclusionTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.occlusionTexture->textureIndex));
+				mat.MaterialConstants.OcclusionStrength = gltfMat.occlusionTexture->strength;
+			}
+
+			if (gltfMat.emissiveTexture)
+			{
+				mat.EmissiveTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.emissiveTexture->textureIndex));
+				mat.MaterialConstants.EmissiveFactor = math::float3(gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
+			}
 		}
+	}
+
+	u32 Loader::LoadTexture(ModelAsset& model, u32 textureIndex)
+	{
+		ZoneScoped;
+		u32 idx = static_cast<u32>(model.Images.size());
+
+		fastgltf::Texture& gltfTexture = Asset->textures[textureIndex];
+		if (!gltfTexture.imageIndex.has_value())
+		{
+			return u32(-1);
+		}
+
+		fastgltf::Image& gltfImage = Asset->images[*gltfTexture.imageIndex];
+
+		ImageAsset img{};
+		stbi_uc* pixels = nullptr;
+		if (std::holds_alternative<fastgltf::sources::URI>(gltfImage.data))
+		{
+			auto& uri = std::get<fastgltf::sources::URI>(gltfImage.data);  // Load from filename
+
+			assert(uri.fileByteOffset == 0);
+			assert(uri.uri.isLocalPath());  // Needs to be a local file to be loaded
+
+			fs::path fullPath = BasePath / uri.uri.fspath();
+			pixels = stbi_load(fullPath.string().c_str(), &img.Width, &img.Height, &img.Channels, 4);
+		}
+		else if (std::holds_alternative<fastgltf::sources::Array>(gltfImage.data))  // Load from memory
+		{
+			auto& array = std::get<fastgltf::sources::Array>(gltfImage.data);
+			pixels = stbi_load_from_memory(
+				reinterpret_cast<const stbi_uc*>(array.bytes.data()),
+				static_cast<i32>(array.bytes.size()),
+				&img.Width, &img.Height, &img.Channels, 4);
+		}
+		else if (std::holds_alternative<fastgltf::sources::BufferView>(gltfImage.data))  // Load from buffer view
+		{
+			auto& bufferView = std::get<fastgltf::sources::BufferView>(gltfImage.data);
+
+			fastgltf::BufferView& view = Asset->bufferViews[bufferView.bufferViewIndex];
+			fastgltf::Buffer& buffer = Asset->buffers[view.bufferIndex];
+
+			if (std::holds_alternative<fastgltf::sources::Array>(buffer.data))
+			{
+				auto& array = std::get<fastgltf::sources::Array>(buffer.data);
+				pixels = stbi_load_from_memory(
+					reinterpret_cast<const stbi_uc*>(array.bytes.data()),
+					static_cast<i32>(array.bytes.size()),
+					&img.Width, &img.Height, &img.Channels, 4);
+			}
+		}
+		else
+		{
+			assert(!"Unknown image data type");
+		}
+
+		if (!pixels)
+		{
+			KOI_LOG_WARN("Failed to load texture image index {}", *gltfTexture.imageIndex);
+			return u32(-1);
+		}
+		else
+		{
+			assert(img.Width > 0 && img.Height > 0 && img.Channels > 0);
+
+			img.Pixels.resize(img.Width * img.Height * img.Channels);
+			std::copy(pixels, pixels + img.Width * img.Height * img.Channels, img.Pixels.data());
+
+			stbi_image_free(pixels);
+		}
+		return idx;
 	}
 }

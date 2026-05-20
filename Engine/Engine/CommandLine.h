@@ -1,6 +1,8 @@
 #pragma once
 #include <CLI/CLI.hpp>
 #include <filesystem>
+#include <functional>
+#include <memory>
 
 namespace koi
 {
@@ -9,10 +11,13 @@ namespace koi
 	class CommandLine : private CLI::App
 	{
 	public:
-		CommandLine() : CLI::App("Koi Engine")
+		CommandLine(const std::string& desc = "Koi Engine", const std::string& name = "")
+			: CLI::App(desc, name)
 		{
 			add_option("-p,--project", m_projectFile, "Project file");
 		}
+
+		virtual ~CommandLine() = default;
 
 		int ParseArgs(int argc, char* argv[])
 		{
@@ -20,10 +25,9 @@ namespace koi
 			{
 				CLI::App::parse(argc, argv);
 			}
-			catch (const std::exception& e)
+			catch (const std::exception&)
 			{
 				return 1;
-				throw e;
 			}
 			return 0;
 		}
@@ -33,4 +37,22 @@ namespace koi
 	private:
 		fs::path m_projectFile;
 	};
+
+	namespace internal
+	{
+		using CommandLineFactory = std::function<std::unique_ptr<CommandLine>()>;
+		void RegisterCommandLineFactory(CommandLineFactory factory);
+		std::unique_ptr<CommandLine> InvokeCommandLineFactory();
+	}
+
+	template<typename T>
+	struct CommandLineRegistrar
+	{
+		CommandLineRegistrar()
+		{
+			internal::RegisterCommandLineFactory([] { return std::make_unique<T>(); });
+		}
+	};
+
+	// NOTE: Use static koi::CommandLineRegistrar<T> s_cmdReg to update the command line handler
 }

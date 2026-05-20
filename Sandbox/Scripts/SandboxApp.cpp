@@ -148,27 +148,31 @@ private:
 	koi::BufferHandle   m_indexBuffer;
 };
 
+// Custom commandline parser
+class CmdLine : public koi::CommandLine
+{
+public:
+	CmdLine() : koi::CommandLine("Koi Sandbox") {}
+
+private:
+	koi::i32 m_textVal = 0;
+};
+static koi::CommandLineRegistrar<CmdLine> s_cmdReg;
 
 namespace koi
 {
-	std::unique_ptr<AppBase> CreateApplication(i32 argc, char** argv)
+	std::unique_ptr<AppBase> CreateApplication(CommandLine& cmd)
 	{
-		koi::CommandLine cmd;
-		if (auto result = cmd.ParseArgs(argc, argv); result != 0)
-		{
-			return nullptr;
-		}
+		//auto& child = *static_cast<CmdLine*>(&cmd);
 
-		auto projFile = cmd.GetProjectFile().string();
-		auto projectFile = toml::parse_file(projFile);
-		
+		auto projectFile = toml::parse_file(cmd.GetProjectFile().string());
+
 		AppCreateDesc desc{};
-		desc.AppName             = "Hello Triangle";
-		desc.WindowDesc.Title    = "Koi - Hello Triangle";
-		desc.WindowDesc.Width    = 1280;
-		desc.WindowDesc.Height   = 720;
-		desc.ArgC = argc;
-		desc.ArgV = argv;
+		desc.AppName           = projectFile["project"]["name"].value_or("Koi Application");
+		desc.WindowDesc.Title  = projectFile["window"]["title"].value_or("Koi");
+		desc.WindowDesc.Width  = projectFile["window"]["width"].value_or(1280u);
+		desc.WindowDesc.Height = projectFile["window"]["height"].value_or(720u);
+		desc.WindowDesc.VSync  = projectFile["window"]["vsync"].value_or(true);
 		return std::make_unique<SandboxApp>(std::move(desc));
 	}
 }
