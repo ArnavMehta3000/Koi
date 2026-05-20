@@ -22,11 +22,13 @@
 
 class SandboxApp : public koi::AppBase
 {
-	// Mirrors the HLSL b0 root-constant layout (MVP + bindless vertex buffer index).
+	// Mirrors the HLSL b0 root-constant layout (MVP + bindless descriptor indices).
 	struct PushConstants
 	{
 		koi::f32 MVP[16];
 		koi::u32 VertexBufferIndex;
+		koi::u32 BaseColorTextureIndex;
+		koi::u32 SamplerIndex;
 	};
 
 	// One DrawIndexed per submesh into the shared vertex/index buffers.
@@ -35,6 +37,7 @@ class SandboxApp : public koi::AppBase
 		koi::u32 IndexCount;
 		koi::u32 IndexOffset;
 		koi::i32 VertexOffset;
+		koi::u32 BaseColorTextureIndex;
 	};
 
 public:
@@ -69,6 +72,31 @@ public:
 		std::unique_ptr<koi::ModelAsset> model = koi::MeshLoader::Load("Assets/Models/DamagedHelmet.gltf");
 		assert(model && !model->Meshes.empty() && "Failed to load DamagedHelmet.gltf");
 
+		// Textures + 1x1 white fallback for untextured submeshes.
+		m_sampler      = device.CreateSampler(LinearWrapSampler());
+		m_whiteTexture = CreateSolidTexture(device, 0xFFFFFFFFu);
+		const koi::u32 whiteIndex = device.Get(m_whiteTexture)->SRVIndex;
+
+		std::vector<koi::u32> imageSrv;
+		imageSrv.reserve(model->Images.size());
+		for (const koi::ImageAsset& img : model->Images)
+		{
+			const koi::TextureHandle tex = CreateImageTexture(device, img);
+			imageSrv.push_back(device.Get(tex)->SRVIndex);
+			m_materialTextures.push_back(tex);
+		}
+
+		const auto baseColorIndexFor = [&](koi::i32 materialIndex) -> koi::u32
+		{
+			if (materialIndex >= 0 && static_cast<size_t>(materialIndex) < model->Materials.size())
+			{
+				const koi::u32 imgIdx = model->Materials[materialIndex].BaseColorTextureIdx;
+				if (imgIdx < imageSrv.size())
+					return imageSrv[imgIdx];
+			}
+			return whiteIndex;
+		};
+
 		std::vector<koi::Vertex> vertices;
 		std::vector<koi::u32> indices;
 		for (const koi::Mesh& mesh : model->Meshes)
@@ -83,9 +111,10 @@ public:
 			{
 				m_draws.push_back(DrawItem
 				{
-					.IndexCount   = sub.IndexCount,
-					.IndexOffset  = baseIndex + sub.IndexOffset,
-					.VertexOffset = static_cast<koi::i32>(baseVertex + sub.VertexOffset),
+					.IndexCount            = sub.IndexCount,
+					.IndexOffset           = baseIndex + sub.IndexOffset,
+					.VertexOffset          = static_cast<koi::i32>(baseVertex + sub.VertexOffset),
+					.BaseColorTextureIndex = baseColorIndexFor(sub.MaterialIndex),
 				});
 			}
 		}
@@ -172,13 +201,18 @@ public:
 		cmd->SetPipeline(m_pipeline);
 		cmd->SetIndexBuffer(m_indexBuffer);
 
-		// Model matrix is identity for now, so MVP == camera ViewProjection.
-		PushConstants pc{ .VertexBufferIndex = m_vertexBufferIndex };
+		// Model matrix is identity
+		PushConstants pc{};
 		koi::math::store(pc.MVP, m_camera.ViewProjection);
-		cmd->SetPushConstants(&pc, sizeof(pc) / sizeof(koi::u32));
+		pc.VertexBufferIndex = m_vertexBufferIndex;
+		pc.SamplerIndex      = m_sampler;
 
 		for (const DrawItem& d : m_draws)
+		{
+			pc.BaseColorTextureIndex = d.BaseColorTextureIndex;
+			cmd->SetPushConstants(&pc, sizeof(pc) / sizeof(koi::u32));
 			cmd->DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
+		}
 	}
 
 	void OnShutdown() override
@@ -191,9 +225,52 @@ public:
 		device.Destroy(m_indexBuffer);
 		if (m_depthTexture)
 			device.Destroy(m_depthTexture);
+		if (m_whiteTexture)
+			device.Destroy(m_whiteTexture);
+		for (koi::TextureHandle t : m_materialTextures)
+			device.Destroy(t);
 	}
 
 private:
+	static D3D12_SAMPLER_DESC LinearWrapSampler()
+	{
+		D3D12_SAMPLER_DESC s{};
+		s.Filter   = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+		s.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		s.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		s.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+		s.MaxLOD   = D3D12_FLOAT32_MAX;
+		return s;
+	}
+
+	[[nodiscard]] static koi::TextureHandle CreateImageTexture(koi::GfxDevice& device, const koi::ImageAsset& img)
+	{
+		const koi::TextureHandle tex = device.CreateTexture(koi::TextureDesc
+		{
+			.Width     = static_cast<koi::u32>(img.Width),
+			.Height    = static_cast<koi::u32>(img.Height),
+			.Format    = koi::Format::R8G8B8A8_UNORM,
+			.Usage     = koi::TextureUsage::ShaderRead,
+			.DebugName = "Material Texture",
+		});
+		device.UploadTextureData(tex, img.Pixels.data(), img.Pixels.size());
+		return tex;
+	}
+
+	[[nodiscard]] static koi::TextureHandle CreateSolidTexture(koi::GfxDevice& device, koi::u32 rgba)
+	{
+		const koi::TextureHandle tex = device.CreateTexture(koi::TextureDesc
+		{
+			.Width     = 1,
+			.Height    = 1,
+			.Format    = koi::Format::R8G8B8A8_UNORM,
+			.Usage     = koi::TextureUsage::ShaderRead,
+			.DebugName = "White 1x1",
+		});
+		device.UploadTextureData(tex, &rgba, sizeof(rgba));
+		return tex;
+	}
+
 	[[nodiscard]] koi::f32 GetAspect() const
 	{
 		const koi::WindowDesc& w = GetDesc().WindowDesc;
@@ -232,6 +309,10 @@ private:
 	koi::u32             m_depthWidth        = 0;
 	koi::u32             m_depthHeight       = 0;
 	koi::DescriptorIndex m_vertexBufferIndex = koi::INVALID_DESCRIPTOR;
+	koi::DescriptorIndex m_sampler           = koi::INVALID_DESCRIPTOR;
+
+	koi::TextureHandle              m_whiteTexture;
+	std::vector<koi::TextureHandle> m_materialTextures;
 
 	std::vector<DrawItem> m_draws;
 
