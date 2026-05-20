@@ -1,3 +1,3 @@
-#include "Application/EntryPoint.h"
+#include "Runtime/EntryPoint.h"
 
 KOI_IMPLEMENT_MAIN()

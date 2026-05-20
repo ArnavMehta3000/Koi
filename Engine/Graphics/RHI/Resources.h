@@ -1,6 +1,6 @@
 #pragma once
 #include "Graphics/Types.h"
-#include "Graphics/DX12/DX12Common.h"
+#include "Graphics/RHI/DX12Common.h"
 
 namespace koi
 {

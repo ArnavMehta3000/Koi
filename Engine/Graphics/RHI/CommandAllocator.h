@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/DX12/DX12Common.h"
+#include "Graphics/RHI/DX12Common.h"
 #include "Graphics/Types.h"
 
 namespace koi

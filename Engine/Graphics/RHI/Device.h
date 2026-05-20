@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/DX12/DX12Common.h"
+#include "Graphics/RHI/DX12Common.h"
 #include "Graphics/RHI/DescriptorHeap.h"
 #include "Graphics/RHI/Resources.h"
 #include "Graphics/RHI/PipelineDesc.h"

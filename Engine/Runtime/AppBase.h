@@ -1,7 +1,7 @@
 #pragma once
 #include "Platform/Window.h"
 #include "Core/Logger.h"
-#include "Engine/CommandLine.h"
+#include "Runtime/CommandLine.h"
 
 namespace koi
 {

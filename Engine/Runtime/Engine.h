@@ -1,6 +1,6 @@
 #pragma once
 #include "Core/Core.h"
-#include "Application/WindowManager.h"
+#include "Platform/WindowManager.h"
 #include "Graphics/Renderer.h"
 #include <chrono>
 

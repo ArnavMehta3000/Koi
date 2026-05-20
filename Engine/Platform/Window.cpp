@@ -15,7 +15,7 @@
 #include <stdexcept>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
-#include "Platform/Win32/Win32.h"
+#include "Platform/Win32.h"
 #include <windowsx.h>
 #include <dwmapi.h>
 #undef IsMinimized

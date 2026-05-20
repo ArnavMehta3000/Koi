@@ -1,6 +1,6 @@
 #include "Core/Logger.h"
 #include "Core/StringUtils.h"
-#include "Platform/Win32/Win32.h"
+#include "Platform/Win32.h"
 #include <cassert>
 #include <filesystem>
 #include <io.h>

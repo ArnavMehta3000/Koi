@@ -3,7 +3,7 @@
 #include "Graphics/RHI/CommandAllocator.h"
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/RHI/CommandQueue.h"
-#include "Application/WindowManager.h"
+#include "Platform/WindowManager.h"
 #include <memory>
 #include <unordered_map>
 

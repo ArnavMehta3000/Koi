@@ -2,7 +2,7 @@
 
 #pragma once
 #include "Core/Core.h"
-#include "Platform/Win32/Win32.h"
+#include "Platform/Win32.h"
 
 
 // Default main
