@@ -18,6 +18,8 @@ cbuffer PushConstants : register(b0)
 {
     row_major float4x4 MVP;
     uint               VertexBufferIndex;
+    uint               BaseColorTextureIndex;
+    uint               SamplerIndex;
 };
 
 VSOutput VSMain(uint vertexId : SV_VertexID)
