@@ -181,6 +181,21 @@ namespace koi
 			m_device->CreateDepthStencilView(tex.Resource.Get(), &dsvDesc, m_dsvHeap.CpuHandle(tex.DSVIndex));
 		}
 
+		// Bindless: sampled textures get an SRV addressable via ResourceDescriptorHeap[].
+		if (desc.Usage.Has(TextureUsage::ShaderRead))
+		{
+			tex.SRVIndex = m_resourceHeap.Allocate();
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc
+			{
+				.Format                  = ToDXGIFormat(desc.Format),
+				.ViewDimension           = D3D12_SRV_DIMENSION_TEXTURE2D,
+				.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+				.Texture2D               = { .MostDetailedMip = 0, .MipLevels = desc.MipLevels },
+			};
+			m_device->CreateShaderResourceView(tex.Resource.Get(), &srvDesc, m_resourceHeap.CpuHandle(tex.SRVIndex));
+		}
+
 		KOI_LOG_TRACE("Created texture: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 
 		return m_textures.Emplace(std::move(tex));
@@ -558,6 +573,89 @@ namespace koi
 
 		Destroy(staging);
 		FlushPendingDeletions();
+	}
+
+	void GfxDevice::UploadTextureData(TextureHandle dst, const void* data, u64 size)
+	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
+		Texture* tex = m_textures.Get(dst);
+		assert((tex && tex->Resource) && "Invalid destination texture");
+
+		const D3D12_RESOURCE_DESC rd = tex->Resource->GetDesc();
+
+		// Row-pitch-aligned footprint for the staging copy (mip 0, slice 0).
+		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
+		u32 numRows          = 0;
+		u64 rowSizeInBytes   = 0;
+		u64 totalBytes       = 0;
+		m_device->GetCopyableFootprints(&rd, 0, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
+		assert(size >= rowSizeInBytes * numRows && "Source data smaller than texture mip 0");
+
+		BufferHandle staging = CreateBuffer(BufferDesc
+		{
+			.Size      = totalBytes,
+			.Usage     = BufferUsage::CopySource,
+			.Memory    = MemoryUsage::CpuToGpu,
+			.DebugName = "Texture Upload Staging",
+		});
+
+		Buffer* stagingBuf = m_buffers.Get(staging);
+		assert((stagingBuf && stagingBuf->MappedPtr) && "Staging buffer mapping failed");
+
+		// Copy row by row: source is tightly packed, destination respects the aligned RowPitch.
+		auto* dstBytes       = static_cast<byte*>(stagingBuf->MappedPtr) + footprint.Offset;
+		const auto* srcBytes = static_cast<const byte*>(data);
+		for (u32 row = 0; row < numRows; ++row)
+		{
+			std::memcpy(dstBytes + row * footprint.Footprint.RowPitch, srcBytes + row * rowSizeInBytes, rowSizeInBytes);
+		}
+
+		ComPtr<dx12::CommandAllocator> allocator;
+		DX_CHECK(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
+
+		ComPtr<dx12::GraphicsCommandList> cmdList;
+		DX_CHECK(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator.Get(), nullptr, IID_PPV_ARGS(&cmdList)));
+
+		if (tex->CurrentState != D3D12_RESOURCE_STATE_COPY_DEST)
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				tex->Resource.Get(), tex->CurrentState, D3D12_RESOURCE_STATE_COPY_DEST);
+			cmdList->ResourceBarrier(1, &barrier);
+		}
+
+		const CD3DX12_TEXTURE_COPY_LOCATION dstLoc(tex->Resource.Get(), 0);
+		const CD3DX12_TEXTURE_COPY_LOCATION srcLoc(stagingBuf->Resource.Get(), footprint);
+		cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+
+		constexpr D3D12_RESOURCE_STATES readState =
+			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+		{
+			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				tex->Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, readState);
+			cmdList->ResourceBarrier(1, &barrier);
+			tex->CurrentState = readState;
+		}
+
+		DX_CHECK(cmdList->Close());
+
+		dx12::CommandList* lists[] = { cmdList.Get() };
+		m_graphicsQueue->ExecuteCommandLists(1, lists);
+		WaitForIdle();
+
+		Destroy(staging);
+		FlushPendingDeletions();
+	}
+
+	DescriptorIndex GfxDevice::CreateSampler(const D3D12_SAMPLER_DESC& desc)
+	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
+		const DescriptorIndex index = m_samplerHeap.Allocate();
+		m_device->CreateSampler(&desc, m_samplerHeap.CpuHandle(index));
+		return index;
 	}
 
 	void GfxDevice::CreateRootSignature()

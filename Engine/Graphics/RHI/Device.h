@@ -50,6 +50,13 @@ namespace koi
 		// Uploads CPU data to a GPU-only buffer via a one-shot command list. Stalls the CPU
 		void UploadBufferData(BufferHandle dst, const void* data, u64 size);
 
+		// Uploads tightly-packed CPU pixels to a GPU texture (mip 0, array slice 0). Stalls the CPU.
+		// Leaves the texture in a shader-readable state.
+		void UploadTextureData(TextureHandle dst, const void* data, u64 size);
+
+		// Creates a sampler in the shader-visible sampler heap; returns its bindless index.
+		[[nodiscard]] DescriptorIndex CreateSampler(const D3D12_SAMPLER_DESC& desc);
+
 		// Mark resource to be defer deleted
 		void Destroy(TextureHandle h);
 		void Destroy(BufferHandle h);
