@@ -18,6 +18,22 @@
             "target": "ps_6_6",
             "defines": [],
             "extra_args": []
+        },
+        {
+            "source_file": "MeshVS.hlsl",
+            "output_file": "MeshVS.cso",
+            "entry": "VSMain",
+            "target": "vs_6_6",
+            "defines": [],
+            "extra_args": []
+        },
+        {
+            "source_file": "MeshPS.hlsl",
+            "output_file": "MeshPS.cso",
+            "entry": "PSMain",
+            "target": "ps_6_6",
+            "defines": [],
+            "extra_args": []
         }
     ]
 }

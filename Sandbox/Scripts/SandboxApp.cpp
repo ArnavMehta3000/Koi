@@ -9,19 +9,34 @@
 #include "Graphics/RHI/PipelineDesc.h"
 #include "Graphics/ShaderLoader.h"
 #include "Graphics/MeshLoader.h"
+#include "Graphics/Camera.h"
+#include "Graphics/CameraController.h"
 #include "Memory/MemoryDebug.h"
 #include "Core/Math.h"
+#include <algorithm>
 #include <cassert>
+#include <cmath>
+#include <memory>
+#include <vector>
 #include <toml++/toml.hpp>
-
-struct Vertex
-{
-	koi::math::float3 Position;
-	koi::math::float4 Color;
-};
 
 class SandboxApp : public koi::AppBase
 {
+	// Mirrors the HLSL b0 root-constant layout (MVP + bindless vertex buffer index).
+	struct PushConstants
+	{
+		koi::f32 MVP[16];
+		koi::u32 VertexBufferIndex;
+	};
+
+	// One DrawIndexed per submesh into the shared vertex/index buffers.
+	struct DrawItem
+	{
+		koi::u32 IndexCount;
+		koi::u32 IndexOffset;
+		koi::i32 VertexOffset;
+	};
+
 public:
 	SandboxApp(koi::AppCreateDesc desc) : AppBase(std::move(desc)) {}
 
@@ -32,86 +47,94 @@ public:
 		koi::Engine& engine    = *GetEngine();
 		koi::GfxDevice& device = engine.GetRenderer().GetDevice();
 
-		// Load shader bytecode from the compiled output directory
-		std::vector<byte> vsData = koi::LoadShaderBytecode("Assets/Shaders/TriangleVS.cso");
-		std::vector<byte> psData = koi::LoadShaderBytecode("Assets/Shaders/TrianglePS.cso");
-
-		assert((!vsData.empty() && !psData.empty()) && "Failed to load Hello Triangle shaders");
-
-		const std::array<koi::VertexAttribute, 2> vertexLayout =
-		{
-			koi::VertexAttribute
-			{
-				.SemanticName  = "POSITION",
-				.SemanticIndex = 0,
-				.Format        = koi::Format::R32G32B32_FLOAT,
-				.InputSlot     = 0,
-				.ByteOffset    = offsetof(Vertex, Position),
-				.PerInstance   = false
-			},
-			{
-				.SemanticName  = "COLOR",
-				.SemanticIndex = 0,
-				.Format        = koi::Format::R32G32B32A32_FLOAT,
-				.InputSlot     = 0,
-				.ByteOffset    = offsetof(Vertex, Color),
-				.PerInstance   = false
-			}
-		};
-
-		koi::Format rtFormat = koi::Format::R8G8B8A8_UNORM;
+		// Pipeline
+		std::vector<byte> vsData = koi::LoadShaderBytecode("Assets/Shaders/MeshVS.cso");
+		std::vector<byte> psData = koi::LoadShaderBytecode("Assets/Shaders/MeshPS.cso");
+		assert((!vsData.empty() && !psData.empty()) && "Failed to load mesh shaders");
 
 		koi::PipelineDesc pipelineDesc
 		{
-			.VertexLayout        = vertexLayout,
-			.VertexShader        = vsData,
+			.VertexShader        = vsData,  // No IA vertex layout: vertices are pulled bindlessly
 			.PixelShader         = psData,
-			.DepthStencil        = { .DepthEnable = false },
-			.RenderTargetFormats = { rtFormat },
+			.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+			.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+			.RenderTargetFormats = { koi::Format::R8G8B8A8_UNORM },
 			.RenderTargetCount   = 1,
-			.DebugName           = "HelloTriangle",
+			.DepthFormat         = kDepthFormat,
+			.DebugName           = "MeshOpaque",
 		};
-
 		m_pipeline = device.CreatePipeline(pipelineDesc);
 
-		// Vertex data: NDC-space triangle with per-vertex colour
-		const std::array<Vertex, 3> vertices =
+		// Mesh
+		std::unique_ptr<koi::ModelAsset> model = koi::MeshLoader::Load("Assets/Models/DamagedHelmet.gltf");
+		assert(model && !model->Meshes.empty() && "Failed to load DamagedHelmet.gltf");
+
+		std::vector<koi::Vertex> vertices;
+		std::vector<koi::u32> indices;
+		for (const koi::Mesh& mesh : model->Meshes)
 		{
-			Vertex
-			{ {  0.0f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },  // top    – red
-			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },  // right  – green
-			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },  // left   – blue
-		};
+			const koi::u32 baseVertex = static_cast<koi::u32>(vertices.size());
+			const koi::u32 baseIndex  = static_cast<koi::u32>(indices.size());
 
-		constexpr  std::array<koi::u16, 3> indices = { 0, 1, 2 };
+			vertices.insert(vertices.end(), mesh.Vertices.begin(), mesh.Vertices.end());
+			indices.insert(indices.end(), mesh.Indices.begin(), mesh.Indices.end());
 
-		constexpr koi::u64 vbSize = sizeof(vertices);
-		constexpr koi::u64 ibSize = sizeof(indices);
+			for (const koi::SubMesh& sub : mesh.SubMeshes)
+			{
+				m_draws.push_back(DrawItem
+				{
+					.IndexCount   = sub.IndexCount,
+					.IndexOffset  = baseIndex + sub.IndexOffset,
+					.VertexOffset = static_cast<koi::i32>(baseVertex + sub.VertexOffset),
+				});
+			}
+		}
 
+		const koi::u64 vbSize = vertices.size() * sizeof(koi::Vertex);
+		const koi::u64 ibSize = indices.size() * sizeof(koi::u32);
+
+		// Vertex buffer is a structured (Storage) buffer so it gets a bindless SRV.
 		m_vertexBuffer = device.CreateBuffer(koi::BufferDesc
 		{
 			.Size      = vbSize,
-			.Stride    = sizeof(Vertex),
-			.Usage     = koi::BufferUsage::Vertex | koi::BufferUsage::CopyDest,
+			.Stride    = sizeof(koi::Vertex),
+			.Usage     = koi::BufferUsage::Storage | koi::BufferUsage::CopyDest,
 			.Memory    = koi::MemoryUsage::GpuOnly,
-			.DebugName = "Triangle VB",
+			.DebugName = "Helmet VB",
 		});
 
 		m_indexBuffer = device.CreateBuffer(koi::BufferDesc
 		{
 			.Size      = ibSize,
-			.Stride    = sizeof(koi::u16),
+			.Stride    = sizeof(koi::u32),
 			.Usage     = koi::BufferUsage::Index | koi::BufferUsage::CopyDest,
 			.Memory    = koi::MemoryUsage::GpuOnly,
-			.DebugName = "Triangle IB",
+			.DebugName = "Helmet IB",
 		});
 
 		device.UploadBufferData(m_vertexBuffer, vertices.data(), vbSize);
 		device.UploadBufferData(m_indexBuffer,  indices.data(),  ibSize);
 
+		m_vertexBufferIndex = device.Get(m_vertexBuffer)->SRVIndex;
+		assert(m_vertexBufferIndex != koi::INVALID_DESCRIPTOR && "Vertex buffer has no bindless SRV");
+
+		// Camera
+		koi::f32 mn[4]{}, mx[4]{};
+		koi::math::store(mn, model->Bounds.Min);
+		koi::math::store(mx, model->Bounds.Max);
+
+		const koi::math::float3 center{ 0.5f * (mn[0] + mx[0]), 0.5f * (mn[1] + mx[1]), 0.5f * (mn[2] + mx[2]) };
+		const koi::f32 ex = 0.5f * (mx[0] - mn[0]);
+		const koi::f32 ey = 0.5f * (mx[1] - mn[1]);
+		const koi::f32 ez = 0.5f * (mx[2] - mn[2]);
+		const koi::f32 radius = std::max(std::sqrt(ex * ex + ey * ey + ez * ez), 0.001f);
+
+		m_camera.SetProjection(0.8f, GetAspect(), 0.05f, 1000.0f);
+		m_controller = std::make_unique<koi::CameraController>(&m_camera, koi::CameraMode::Orbit);
+		m_controller->SetOrbitTarget(center, radius * 2.5f, 0.0f, 0.3f);
 	}
 
-	void OnTick(koi::f32 /*dt*/) override
+	void OnTick(koi::f32 dt) override
 	{
 		koi::Engine& engine       = *GetEngine();
 		koi::InputManager& input  = engine.GetInputManager();
@@ -122,10 +145,8 @@ public:
 			if (wi->IsKeyPressed(koi::KeyCode::Escape))
 				engine.RequestExit();
 
-			if (wi->IsMouseButtonPressed(koi::MouseButton::Left))
-			{
-				KOI_LOG_INFO("Left clicked");
-			}
+			if (m_controller)
+				m_controller->Update(dt, *wi);
 		}
 	}
 
@@ -133,6 +154,7 @@ public:
 	{
 		koi::Engine& engine     = *GetEngine();
 		koi::Renderer& renderer = engine.GetRenderer();
+		koi::GfxDevice& device  = renderer.GetDevice();
 
 		koi::RenderWindowHandle rwh = engine.GetMainRenderWindowHandle();
 		koi::RenderWindow* rw       = renderer.GetRenderWindow(rwh);
@@ -140,12 +162,23 @@ public:
 
 		if (!rw || !cmd) return;
 
-		cmd->SetRenderTarget(rw->CurrentBackBuffer());
-		cmd->SetViewportAndScissor(rw->GetWidth(), rw->GetHeight());
+		const koi::u32 width  = rw->GetWidth();
+		const koi::u32 height = rw->GetHeight();
+		EnsureDepthBuffer(device, width, height);
+
+		cmd->ClearDepthStencil(m_depthTexture);
+		cmd->SetRenderTarget(rw->CurrentBackBuffer(), m_depthTexture);
+		cmd->SetViewportAndScissor(width, height);
 		cmd->SetPipeline(m_pipeline);
-		cmd->SetVertexBuffer(0, m_vertexBuffer);
 		cmd->SetIndexBuffer(m_indexBuffer);
-		cmd->DrawIndexed(3);
+
+		// Model matrix is identity for now, so MVP == camera ViewProjection.
+		PushConstants pc{ .VertexBufferIndex = m_vertexBufferIndex };
+		koi::math::store(pc.MVP, m_camera.ViewProjection);
+		cmd->SetPushConstants(&pc, sizeof(pc) / sizeof(koi::u32));
+
+		for (const DrawItem& d : m_draws)
+			cmd->DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
 	}
 
 	void OnShutdown() override
@@ -156,12 +189,54 @@ public:
 		device.Destroy(m_pipeline);
 		device.Destroy(m_vertexBuffer);
 		device.Destroy(m_indexBuffer);
+		if (m_depthTexture)
+			device.Destroy(m_depthTexture);
 	}
 
 private:
-	koi::PipelineHandle m_pipeline;
-	koi::BufferHandle   m_vertexBuffer;
-	koi::BufferHandle   m_indexBuffer;
+	[[nodiscard]] koi::f32 GetAspect() const
+	{
+		const koi::WindowDesc& w = GetDesc().WindowDesc;
+		return w.Height > 0 ? static_cast<koi::f32>(w.Width) / static_cast<koi::f32>(w.Height) : 16.0f / 9.0f;
+	}
+
+	// (Re)creates the depth buffer when the window size changes and keeps the camera aspect in sync.
+	void EnsureDepthBuffer(koi::GfxDevice& device, koi::u32 width, koi::u32 height)
+	{
+		if (width == 0 || height == 0) return;
+		if (m_depthTexture && width == m_depthWidth && height == m_depthHeight) return;
+
+		if (m_depthTexture)
+			device.Destroy(m_depthTexture);
+
+		m_depthTexture = device.CreateTexture(koi::TextureDesc
+		{
+			.Width     = width,
+			.Height    = height,
+			.Format    = kDepthFormat,
+			.Usage     = koi::TextureUsage::DepthStencil,
+			.DebugName = "Scene Depth",
+		});
+
+		m_depthWidth  = width;
+		m_depthHeight = height;
+		m_camera.SetAspect(static_cast<koi::f32>(width) / static_cast<koi::f32>(height));
+	}
+
+	static constexpr koi::Format kDepthFormat = koi::Format::D32_FLOAT;
+
+	koi::PipelineHandle  m_pipeline;
+	koi::BufferHandle    m_vertexBuffer;
+	koi::BufferHandle    m_indexBuffer;
+	koi::TextureHandle   m_depthTexture;
+	koi::u32             m_depthWidth        = 0;
+	koi::u32             m_depthHeight       = 0;
+	koi::DescriptorIndex m_vertexBufferIndex = koi::INVALID_DESCRIPTOR;
+
+	std::vector<DrawItem> m_draws;
+
+	koi::Camera m_camera;
+	std::unique_ptr<koi::CameraController> m_controller;
 };
 
 // Custom commandline parser

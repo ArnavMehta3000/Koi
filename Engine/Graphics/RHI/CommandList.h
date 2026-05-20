@@ -26,6 +26,7 @@ namespace koi
 		void FlushBarriers();
 
 		void ClearRenderTarget(TextureHandle rt, const f32 color[4]);
+		void ClearDepthStencil(TextureHandle ds, f32 depth = 1.0f, u8 stencil = 0);
 
 		// State binding
 		void SetRenderTarget(TextureHandle colorRT, TextureHandle depthRT = {});

@@ -114,6 +114,20 @@ namespace koi
 		m_cmdList->ClearRenderTargetView(cpuHandle, color, 0, nullptr);
 	}
 
+	void CommandList::ClearDepthStencil(TextureHandle ds, f32 depth, u8 stencil)
+	{
+		Texture* tex = m_device->Get(ds);
+
+		assert(tex && tex->Resource && "Trying to clear an invalid depth texture");
+		assert(tex->DSVIndex != INVALID_DESCRIPTOR && "Texture had no attached DSV");
+
+		TransitionBarrier(ds, D3D12_RESOURCE_STATE_DEPTH_WRITE);
+		FlushBarriers();
+
+		const auto cpuHandle = m_device->DSVHeap().CpuHandle(tex->DSVIndex);
+		m_cmdList->ClearDepthStencilView(cpuHandle, D3D12_CLEAR_FLAG_DEPTH, depth, stencil, 0, nullptr);
+	}
+
 	void CommandList::SetRenderTarget(TextureHandle colorRT, TextureHandle depthRT)
 	{
 		FlushBarriers();

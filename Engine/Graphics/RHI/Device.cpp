@@ -144,15 +144,41 @@ namespace koi
 		CD3DX12_HEAP_PROPERTIES heap(D3D12_HEAP_TYPE_DEFAULT);
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
 
+		const bool isDepth = desc.Usage.Has(TextureUsage::DepthStencil);
+
+		// Depth/render targets must be created with an optimized clear value matching later clears.
+		D3D12_CLEAR_VALUE clearValue{};
+		const D3D12_CLEAR_VALUE* pClearValue = nullptr;
+		if (isDepth)
+		{
+			clearValue.Format               = ToDXGIFormat(desc.Format);
+			clearValue.DepthStencil.Depth   = 1.0f;
+			clearValue.DepthStencil.Stencil = 0;
+			pClearValue                     = &clearValue;
+		}
+
 		DX_CHECK(m_device->CreateCommittedResource(
 			&heap, D3D12_HEAP_FLAG_NONE, &rd,
-			initialState, nullptr, IID_PPV_ARGS(&tex.Resource)));
+			initialState, pClearValue, IID_PPV_ARGS(&tex.Resource)));
 
 		tex.CurrentState = initialState;
 		if (!desc.DebugName.empty())
 		{
 			const std::wstring wname = StringUtils::ToWide(desc.DebugName);
 			tex.Resource->SetName(wname.c_str());
+		}
+
+		if (isDepth)
+		{
+			tex.DSVIndex = m_dsvHeap.Allocate();
+
+			D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc
+			{
+				.Format        = ToDXGIFormat(desc.Format),
+				.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D,
+				.Flags         = D3D12_DSV_FLAG_NONE,
+			};
+			m_device->CreateDepthStencilView(tex.Resource.Get(), &dsvDesc, m_dsvHeap.CpuHandle(tex.DSVIndex));
 		}
 
 		KOI_LOG_TRACE("Created texture: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
@@ -200,6 +226,27 @@ namespace koi
 		{
 			CD3DX12_RANGE readRange(0, 0);
 			DX_CHECK(buf.Resource->Map(0, &readRange, &buf.MappedPtr));
+		}
+
+		// Bindless: structured-buffer SRV so the buffer is addressable via ResourceDescriptorHeap[].
+		if (desc.Usage.Has(BufferUsage::Storage) && desc.Stride > 0)
+		{
+			buf.SRVIndex = m_resourceHeap.Allocate();
+
+			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc
+			{
+				.Format                  = DXGI_FORMAT_UNKNOWN,
+				.ViewDimension           = D3D12_SRV_DIMENSION_BUFFER,
+				.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
+				.Buffer =
+				{
+					.FirstElement        = 0,
+					.NumElements         = static_cast<u32>(desc.Size / desc.Stride),
+					.StructureByteStride = desc.Stride,
+					.Flags               = D3D12_BUFFER_SRV_FLAG_NONE,
+				},
+			};
+			m_device->CreateShaderResourceView(buf.Resource.Get(), &srvDesc, m_resourceHeap.CpuHandle(buf.SRVIndex));
 		}
 
 		if (!desc.DebugName.empty())

@@ -162,6 +162,8 @@ namespace koi
 	{
 		std::string Name;
 		std::vector<SubMesh> SubMeshes;
+		std::vector<Vertex> Vertices;
+		std::vector<u32> Indices;
 		math::AABB Bounds;
 		u32 VertexCount = 0;
 		u32 IndexCount = 0;
