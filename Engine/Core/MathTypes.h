@@ -3,8 +3,6 @@
 
 #include "Core/Config.h"
 
-#define HLSLPP_FEATURE_TRANSFORM
-
 #if KOI_DEBUG
 	#define HLSLPP_ASSERT
 #endif

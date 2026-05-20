@@ -23,7 +23,6 @@ add_defines("KOI_ENABLE_PROFILING=" .. (is_mode("profile") and "1" or "0"))
 
 -- Windows defines
 add_defines("NOMINMAX", "UNICODE", "_UNICODE", "NOMCX", "NOSERVICE", "NOHELP", "WIN32_LEAN_AND_MEAN")
-
 add_rules("GenerateRDI", "Natvis")
 
 includes("Engine")
