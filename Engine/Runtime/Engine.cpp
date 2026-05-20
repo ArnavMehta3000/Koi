@@ -22,14 +22,16 @@ namespace koi
 		KOI_LOG_INFO("Engine initializing");
 
 		m_windowManager = std::make_unique<WindowManager>();
-		m_renderer = std::make_unique<Renderer>();
+		m_inputManager  = std::make_unique<InputManager>();
+		m_renderer      = std::make_unique<Renderer>();
 	}
 
 	Engine::~Engine()
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		m_renderer = nullptr;
+		m_renderer      = nullptr;
+		m_inputManager  = nullptr;
 		m_windowManager = nullptr;
 		KOI_LOG_INFO("Engine shut down");
 
@@ -68,6 +70,8 @@ namespace koi
 		RenderWindowHandle renderWndHandle;
 		if (Window* wnd = m_windowManager->GetWindow(handle))
 		{
+			m_inputManager->RegisterWindow(handle, *wnd);
+
 			auto&& [renderHandle, renderWindowPtr] = m_renderer->AddWindow(handle, isVsync);
 			renderWndHandle = renderHandle;
 
@@ -79,9 +83,10 @@ namespace koi
 				});
 
 			wnd->SetCloseCallback(
-				[window = handle, renderer = m_renderer.get()]()
+				[window = handle, renderer = m_renderer.get(), input = m_inputManager.get()]()
 				{
 					renderer->RemoveWindow(window);
+					input->UnregisterWindow(window);
 				});
 		}
 
@@ -96,6 +101,8 @@ namespace koi
 		m_deltaTime     = std::chrono::duration<f32>(now - m_lastFrameTime).count();
 		m_elapsed       = std::chrono::duration<f64>(now - m_startTime).count();
 		m_lastFrameTime = now;
+
+		m_inputManager->BeginFrame();
 
 		Window::PollEvents();
 		m_windowManager->DestroyClosedWindows();

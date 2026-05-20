@@ -111,7 +111,23 @@ public:
 
 	}
 
-	void OnTick(koi::f32 /*dt*/) override {}
+	void OnTick(koi::f32 /*dt*/) override
+	{
+		koi::Engine& engine       = *GetEngine();
+		koi::InputManager& input  = engine.GetInputManager();
+		koi::WindowHandle mainWnd = engine.GetWindowManager().GetMainWndowHandle();
+
+		if (const koi::WindowInput* wi = input.GetWindowInput(mainWnd))
+		{
+			if (wi->IsKeyPressed(koi::KeyCode::Escape))
+				engine.RequestExit();
+
+			if (wi->IsMouseButtonPressed(koi::MouseButton::Left))
+			{
+				KOI_LOG_INFO("Left clicked");
+			}
+		}
+	}
 
 	void OnRender() override
 	{

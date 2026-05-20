@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Core.h"
 #include "Platform/WindowManager.h"
+#include "Platform/InputManager.h"
 #include "Graphics/Renderer.h"
 #include <chrono>
 
@@ -19,8 +20,9 @@ namespace koi
 		void RunApp(AppBase& app);
 		void RequestExit() { m_isRunning = false; }
 
-		[[nodiscard]] inline WindowManager& GetWindowManager() { return *m_windowManager; }
-		[[nodiscard]] inline Renderer& GetRenderer() { return *m_renderer; }
+		[[nodiscard]] inline WindowManager& GetWindowManager()  { return *m_windowManager; }
+		[[nodiscard]] inline Renderer& GetRenderer()            { return *m_renderer; }
+		[[nodiscard]] inline InputManager& GetInputManager()    { return *m_inputManager; }
 		[[nodiscard]] inline f32 GetDeltaTime() const { return m_deltaTime; }
 		[[nodiscard]] inline f64 GetTime() const { return m_elapsed; }
 		[[nodiscard]] inline u64 GetFrameCount() const { return m_frameCount; }
@@ -39,17 +41,18 @@ namespace koi
 		static inline Engine* s_instance = nullptr;
 
 		std::unique_ptr<WindowManager> m_windowManager;
-		std::unique_ptr<Renderer> m_renderer;
+		std::unique_ptr<InputManager>  m_inputManager;
+		std::unique_ptr<Renderer>      m_renderer;
 
 		using Clock = std::chrono::steady_clock;
 		using TimePoint = Clock::time_point;
 
-		TimePoint m_startTime{};
-		TimePoint m_lastFrameTime{};
-		f32       m_deltaTime  = 0.0f;
-		f64       m_elapsed    = 0.0;
-		u64       m_frameCount = 0;
-		bool               m_isRunning       = true;
+		TimePoint          m_startTime{};
+		TimePoint          m_lastFrameTime{};
+		f32                m_deltaTime  = 0.0f;
+		f64                m_elapsed    = 0.0;
+		u64                m_frameCount = 0;
+		bool               m_isRunning  = true;
 		RenderWindowHandle m_mainRenderWindow;
 	};
 }
