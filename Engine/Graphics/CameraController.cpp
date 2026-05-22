@@ -7,8 +7,21 @@
 
 namespace koi
 {
-	static constexpr f32 kPi      = std::numbers::pi_v<f32>;
-	static constexpr f32 kTwoPi   = 2.0f * kPi;
+	static constexpr f32 kPi                     = std::numbers::pi_v<f32>;
+	static constexpr f32 kTwoPi                  = 2.0f * kPi;
+	static constexpr MouseButton kFPVMoveButton  = MouseButton::Right;
+	static constexpr Modifier kFPVSpeedModifier  = Modifier::Shift;
+	static constexpr KeyCode kFPVMoveForwardKey  = KeyCode::W;
+	static constexpr KeyCode kFPVMoveBackwardKey = KeyCode::S;
+	static constexpr KeyCode kFPVMoveRightKey    = KeyCode::D;
+	static constexpr KeyCode kFPVMoveLeftKey     = KeyCode::A;
+	static constexpr KeyCode kFPVMoveUpKey       = KeyCode::E;
+	static constexpr KeyCode kFPVMoveDownKey     = KeyCode::Q;
+	static constexpr KeyCode kFPVMoveUpAltKey    = KeyCode::Space;
+	static constexpr KeyCode kFPVMoveDownAltKey  = KeyCode::LeftControl;
+
+	static constexpr MouseButton kORBMoveButton = MouseButton::Left;
+	static constexpr MouseButton kORBPanButton = MouseButton::Middle;
 
 	// Spherical → cartesian offset for the orbit camera (left-handed, Y-up)
 	static math::float3 SphericalOffset(f32 yaw, f32 pitch, f32 radius)
@@ -21,12 +34,11 @@ namespace koi
 		);
 	}
 
-	// -------------------------------------------------------------------------
-
 	CameraController::CameraController(Camera* camera, CameraMode mode)
 		: m_camera(camera)
 		, m_mode(mode)
 	{
+		assert(m_camera && "Null camera passed to CameraController");
 	}
 
 	void CameraController::SetFirstPersonPosition(math::float3 position, f32 yaw, f32 pitch)
@@ -60,9 +72,9 @@ namespace koi
 			const float3 forward = normalize(m_camera->Forward);
 			m_orbitTarget = m_fpPosition + forward * m_orbitRadius;
 		}
-		// In Orbit→FP, seed the FP position to the current camera position.
 		else
 		{
+			// In Orbit→FP, seed the FP position to the current camera position.
 			m_fpPosition = m_camera->Position;
 		}
 
@@ -91,13 +103,12 @@ namespace koi
 			UpdateOrbit(input);
 	}
 
-	// -------------------------------------------------------------------------
 
 	void CameraController::UpdateFirstPerson(f32 dt, const WindowInput& input)
 	{
 		using namespace math;
 
-		const bool  rmb   = input.IsMouseButtonDown(MouseButton::Right);
+		const bool rmb    = input.IsMouseButtonDown(kFPVMoveButton);
 		m_wantsCursorLock = rmb;
 
 		// Mouse look — only while right mouse is held
@@ -120,21 +131,21 @@ namespace koi
 
 		// WASD + vertical movement
 		const f32 speed = FpMoveSpeed
-			* (input.IsModifierDown(Modifier::Shift) ? FpSpeedBoost : 1.0f)
+			* (input.IsModifierDown(kFPVSpeedModifier) ? FpSpeedBoost : 1.0f)
 			* dt;
 
-		if (input.IsKeyDown(KeyCode::W)) m_fpPosition = m_fpPosition + forward * speed;
-		if (input.IsKeyDown(KeyCode::S)) m_fpPosition = m_fpPosition - forward * speed;
-		if (input.IsKeyDown(KeyCode::D)) m_fpPosition = m_fpPosition + right   * speed;
-		if (input.IsKeyDown(KeyCode::A)) m_fpPosition = m_fpPosition - right   * speed;
-		if (input.IsKeyDown(KeyCode::E) || input.IsKeyDown(KeyCode::Space))
+		if (input.IsKeyDown(kFPVMoveForwardKey))  m_fpPosition = m_fpPosition + forward * speed;
+		if (input.IsKeyDown(kFPVMoveBackwardKey)) m_fpPosition = m_fpPosition - forward * speed;
+		if (input.IsKeyDown(kFPVMoveRightKey))    m_fpPosition = m_fpPosition + right * speed;
+		if (input.IsKeyDown(kFPVMoveLeftKey))     m_fpPosition = m_fpPosition - right * speed;
+
+		if (input.IsKeyDown(kFPVMoveUpKey) || input.IsKeyDown(kFPVMoveUpAltKey))  // Up
 			m_fpPosition = m_fpPosition + worldUp * speed;
-		if (input.IsKeyDown(KeyCode::Q) || input.IsKeyDown(KeyCode::LeftControl))
+		if (input.IsKeyDown(kFPVMoveDownKey) || input.IsKeyDown(kFPVMoveDownAltKey))  // Down
 			m_fpPosition = m_fpPosition - worldUp * speed;
 
 		// Scroll = dolly (move along forward axis)
-		const f32 scroll = input.GetScrollDelta().y;
-		if (scroll != 0.0f)
+		if (const f32 scroll = input.GetScrollDelta().y; scroll != 0.0f)
 			m_fpPosition = m_fpPosition + forward * (scroll * FpScrollDollySpeed);
 
 		ApplyView();
@@ -149,7 +160,7 @@ namespace koi
 		const float2 delta = input.GetMouseDelta();
 
 		// LMB drag — orbit (yaw / pitch)
-		if (input.IsMouseButtonDown(MouseButton::Left))
+		if (input.IsMouseButtonDown(kORBMoveButton))
 		{
 			m_yaw   += delta.x * OrbitSensitivity;
 			m_pitch -= delta.y * OrbitSensitivity;
@@ -158,7 +169,7 @@ namespace koi
 		}
 
 		// MMB drag — pan (translate target in the camera's local XY plane)
-		if (input.IsMouseButtonDown(MouseButton::Middle))
+		if (input.IsMouseButtonDown(kORBPanButton))
 		{
 			// Recompute right/up vectors from view basis
 			const float3 right  = normalize(m_camera->Right);
@@ -169,8 +180,7 @@ namespace koi
 		}
 
 		// Scroll — zoom by adjusting orbit radius
-		const f32 scroll = input.GetScrollDelta().y;
-		if (scroll != 0.0f)
+		if (const f32 scroll = input.GetScrollDelta().y; scroll != 0.0f)
 		{
 			m_orbitRadius -= scroll * m_orbitRadius * OrbitZoomSpeed;
 			m_orbitRadius  = std::clamp(m_orbitRadius, OrbitMinRadius, OrbitMaxRadius);
