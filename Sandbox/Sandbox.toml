@@ -10,24 +10,4 @@ height = 720
 vsync  = true
 
 [assets]
-# All paths are relative to the runtime executable
-shaders = "Assets/Shaders"
-models  = "Assets/Models"
-scenes  = "Assets/Scenes"
-
-# Scene to load on startup
-startup_scene = "Scenes/Main.toml"
-
-[[scenes]]
-name = "Main"
-file = "Scenes/Main.toml"
-
-[[shaders]]
-name = "HelloTriangleVS"
-file = "TriangleVS.cso"
-type = "vertex"
-
-[[shaders]]
-name = "HelloTrianglePS"
-file = "TrianglePS.cso"
-type = "pixel"
+startup_scene = "Assets/Scenes/Main.toml"

@@ -11,7 +11,8 @@ namespace koi
 	{
 		WindowDesc   WindowDesc{};
 		LoggerConfig LogConfig{};
-		std::string  AppName = "Koi Application";
+		std::string  AppName      = "Koi Application";
+		std::string  StartupScene;  // path relative to executable, empty = none
 	};
 
 	class AppBase : public NonCopyable

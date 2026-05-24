@@ -14,6 +14,7 @@ target("Sandbox")
 
 	-- Assets
 	add_extrafiles("Assets/Models/**.gltf")
+	add_extrafiles("Assets/Scenes/**.toml")
 	add_extrafiles("Sandbox.toml")
 
 	after_build(function(target)
@@ -30,5 +31,8 @@ target("Sandbox")
 	os.cp(
 		path.join(os.scriptdir(), "Assets/Models"),
 		path.join(target:targetdir(), "Assets/Models"))
+	os.cp(
+		path.join(os.scriptdir(), "Assets/Scenes"),
+		path.join(target:targetdir(), "Assets/Scenes"))
 	end)
 target_end()
