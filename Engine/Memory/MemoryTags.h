@@ -14,6 +14,7 @@ namespace koi
 		RHI,
 		Assets,
 		Scripting,
+		User,
 		Temp,
 
 		MAX_COUNT
@@ -35,6 +36,7 @@ namespace koi
 			X(RHI)
 			X(Assets)
 			X(Scripting)
+			X(User)
 			X(Temp)
 		default: return "<?>";
 		}

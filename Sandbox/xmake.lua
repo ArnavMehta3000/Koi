@@ -4,6 +4,7 @@ target("Sandbox")
 
 	add_includedirs("Scripts")
 	add_files("Scripts/**.cpp")
+	add_headerfiles("Scripts/**.h")
 
 	-- Shader files
 	add_extrafiles(
