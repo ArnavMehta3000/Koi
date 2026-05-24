@@ -3,6 +3,7 @@
 #include "Core/Logger.h"
 #include "Core/StringUtils.h"
 #include "Core/Profiling.h"
+#include "Core/Patterns/Match.h"
 #include "Memory/MemoryTracker.h"
 #include <ranges>
 #include <cassert>
@@ -68,6 +69,12 @@ namespace koi
 		CreateFences();
 		CreateHeaps();
 		CreateRootSignature();
+
+		m_textures.Reserve(4096);
+		m_buffers.Reserve(8192);
+		m_pipelines.Reserve(512);
+
+		m_uploadContext.Init(this);
 	}
 
 	GfxDevice::~GfxDevice()
@@ -77,6 +84,7 @@ namespace koi
 
 		KOI_LOG_TRACE("Destroying D3D12 device");
 
+		m_uploadContext.Shutdown();
 		WaitForIdle();
 		FlushDeferredDeletions(~0ull);
 
@@ -282,12 +290,7 @@ namespace koi
 
 		if (m_textures.IsValid(h))
 		{
-			PendingDeletion d;
-			d.Type       = PendingDeletion::ResourceType::Texture;
-			d.FenceValue = m_nextFenceValue;
-			d.Texture    = h;
-
-			m_deletionQueue.push(d);
+			m_deletionQueue.push({ m_nextFenceValue, h });
 			KOI_LOG_TRACE("Marked texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 		else
@@ -303,12 +306,7 @@ namespace koi
 
 		if (m_buffers.IsValid(h))
 		{
-			PendingDeletion d;
-			d.Type       = PendingDeletion::ResourceType::Buffer;
-			d.FenceValue = m_nextFenceValue;
-			d.Buffer     = h;
-
-			m_deletionQueue.push(d);
+			m_deletionQueue.push({ m_nextFenceValue, h });
 			KOI_LOG_TRACE("Marked buffer for deletion: {}", h.GetId());
 		}
 		else
@@ -372,11 +370,7 @@ namespace koi
 
 		if (m_pipelines.IsValid(h))
 		{
-			PendingDeletion d;
-			d.Type       = PendingDeletion::ResourceType::Pipeline;
-			d.FenceValue = m_nextFenceValue;
-			d.Pipeline   = h;
-			m_deletionQueue.push(d);
+			m_deletionQueue.push({ m_nextFenceValue, h });
 			KOI_LOG_TRACE("Marked pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 		else
@@ -521,131 +515,6 @@ namespace koi
 
 		KOI_LOG_TRACE("Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return m_pipelines.Emplace(std::move(pipeline));
-	}
-
-	void GfxDevice::UploadBufferData(BufferHandle dst, const void* data, u64 size)
-	{
-		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
-		BufferHandle staging = CreateBuffer(BufferDesc
-		{
-			.Size      = size,
-			.Usage     = BufferUsage::CopySource,
-			.Memory    = MemoryUsage::CpuToGpu,
-			.DebugName = "Upload Staging",
-		});
-
-		Buffer* stagingBuf = m_buffers.Get(staging);
-		assert((stagingBuf && stagingBuf->MappedPtr) && "Staging buffer mapping failed");
-		std::memcpy(stagingBuf->MappedPtr, data, size);
-
-		Buffer* dstBuf = m_buffers.Get(dst);
-		assert(dstBuf && "Invalid destination buffer");
-
-		ComPtr<dx12::CommandAllocator> allocator;
-		DX_CHECK(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
-
-		ComPtr<dx12::GraphicsCommandList> cmdList;
-		DX_CHECK(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator.Get(), nullptr, IID_PPV_ARGS(&cmdList)));
-
-		if (dstBuf->CurrentState != D3D12_RESOURCE_STATE_COPY_DEST)
-		{
-			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				dstBuf->Resource.Get(), dstBuf->CurrentState, D3D12_RESOURCE_STATE_COPY_DEST);
-			cmdList->ResourceBarrier(1, &barrier);
-		}
-
-		cmdList->CopyBufferRegion(dstBuf->Resource.Get(), 0, stagingBuf->Resource.Get(), 0, size);
-
-		{
-			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				dstBuf->Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
-			cmdList->ResourceBarrier(1, &barrier);
-			dstBuf->CurrentState = D3D12_RESOURCE_STATE_COMMON;
-		}
-
-		DX_CHECK(cmdList->Close());
-
-		dx12::CommandList* lists[] = { cmdList.Get() };
-		m_graphicsQueue->ExecuteCommandLists(1, lists);
-		WaitForIdle();
-
-		Destroy(staging);
-		FlushPendingDeletions();
-	}
-
-	void GfxDevice::UploadTextureData(TextureHandle dst, const void* data, [[maybe_unused]] u64 size)
-	{
-		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
-		Texture* tex = m_textures.Get(dst);
-		assert((tex && tex->Resource) && "Invalid destination texture");
-
-		const D3D12_RESOURCE_DESC rd = tex->Resource->GetDesc();
-
-		// Row-pitch-aligned footprint for the staging copy (mip 0, slice 0).
-		D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
-		u32 numRows          = 0;
-		u64 rowSizeInBytes   = 0;
-		u64 totalBytes       = 0;
-		m_device->GetCopyableFootprints(&rd, 0, 1, 0, &footprint, &numRows, &rowSizeInBytes, &totalBytes);
-		assert(size >= rowSizeInBytes * numRows && "Source data smaller than texture mip 0");
-
-		BufferHandle staging = CreateBuffer(BufferDesc
-		{
-			.Size      = totalBytes,
-			.Usage     = BufferUsage::CopySource,
-			.Memory    = MemoryUsage::CpuToGpu,
-			.DebugName = "Texture Upload Staging",
-		});
-
-		Buffer* stagingBuf = m_buffers.Get(staging);
-		assert((stagingBuf && stagingBuf->MappedPtr) && "Staging buffer mapping failed");
-
-		// Copy row by row: source is tightly packed, destination respects the aligned RowPitch.
-		auto* dstBytes       = static_cast<byte*>(stagingBuf->MappedPtr) + footprint.Offset;
-		const auto* srcBytes = static_cast<const byte*>(data);
-		for (u32 row = 0; row < numRows; ++row)
-		{
-			std::memcpy(dstBytes + row * footprint.Footprint.RowPitch, srcBytes + row * rowSizeInBytes, rowSizeInBytes);
-		}
-
-		ComPtr<dx12::CommandAllocator> allocator;
-		DX_CHECK(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)));
-
-		ComPtr<dx12::GraphicsCommandList> cmdList;
-		DX_CHECK(m_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator.Get(), nullptr, IID_PPV_ARGS(&cmdList)));
-
-		if (tex->CurrentState != D3D12_RESOURCE_STATE_COPY_DEST)
-		{
-			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				tex->Resource.Get(), tex->CurrentState, D3D12_RESOURCE_STATE_COPY_DEST);
-			cmdList->ResourceBarrier(1, &barrier);
-		}
-
-		const CD3DX12_TEXTURE_COPY_LOCATION dstLoc(tex->Resource.Get(), 0);
-		const CD3DX12_TEXTURE_COPY_LOCATION srcLoc(stagingBuf->Resource.Get(), footprint);
-		cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
-
-		constexpr D3D12_RESOURCE_STATES readState =
-			D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-		{
-			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				tex->Resource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, readState);
-			cmdList->ResourceBarrier(1, &barrier);
-			tex->CurrentState = readState;
-		}
-
-		DX_CHECK(cmdList->Close());
-
-		dx12::CommandList* lists[] = { cmdList.Get() };
-		m_graphicsQueue->ExecuteCommandLists(1, lists);
-		WaitForIdle();
-
-		Destroy(staging);
-		FlushPendingDeletions();
 	}
 
 	DescriptorIndex GfxDevice::CreateSampler(const D3D12_SAMPLER_DESC& desc)
@@ -917,36 +786,29 @@ namespace koi
 			if (p.FenceValue > completedFence)
 				break;
 
-			switch (p.Type)
+			std::visit(Match
 			{
-				using enum PendingDeletion::ResourceType;
-			case Texture:
-			{
-				// IsSwapChainImage: we must NOT release the ComPtr here — swapchain owns it.
-				// The pool erase below will drop the ref, but since the swapchain also holds
-				// one it stays alive.
-				
-				FreeResource(p.Texture);
-				KOI_LOG_TRACE("Texture resource deleted (Handle: idx={}, gen={})", p.Texture.GetIndex(), p.Texture.GetGeneration());
-				m_textures.Erase(p.Texture);
-				break;
-			}
-
-			case Buffer:
-			{
-				FreeResource(p.Buffer);
-				KOI_LOG_TRACE("Buffer resource deleted (Handle: idx={}, gen={})", p.Buffer.GetIndex(), p.Buffer.GetGeneration());
-				m_buffers.Erase(p.Buffer);
-				break;
-			}
-
-			case Pipeline:
-			{
-				KOI_LOG_TRACE("Pipeline resource deleted (Handle: idx={}, gen={})", p.Pipeline.GetIndex(), p.Pipeline.GetGeneration());
-				m_pipelines.Erase(p.Pipeline);
-				break;
-			}
-			}
+				[this](TextureHandle h)
+				{
+					// IsSwapChainImage: we must NOT release the ComPtr here — swapchain owns it.
+					// The pool erase below will drop the ref, but since the swapchain also holds
+					// one it stays alive.
+					FreeResource(h);
+					KOI_LOG_TRACE("Texture resource deleted (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+					m_textures.Erase(h);
+				},
+				[this](BufferHandle h)
+				{
+					FreeResource(h);
+					KOI_LOG_TRACE("Buffer resource deleted (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+					m_buffers.Erase(h);
+				},
+				[this](PipelineHandle h)
+				{
+					KOI_LOG_TRACE("Pipeline resource deleted (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+					m_pipelines.Erase(h);
+				},
+			}, p.Handle);
 			m_deletionQueue.pop();
 		}
 	}

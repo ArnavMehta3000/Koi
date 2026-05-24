@@ -4,6 +4,8 @@
 #include "Graphics/RHI/Resources.h"
 #include "Graphics/RHI/PipelineDesc.h"
 #include <queue>
+#include <variant>
+#include <vector>
 
 namespace koi
 {
@@ -14,6 +16,51 @@ namespace koi
 		{
 			bool EnableDebugLayer = KOI_DEBUG;
 			bool EnableGPUValidation = false;
+		};
+
+		class UploadContext : NonCopyable, NonMovable
+		{
+		public:
+			void Init(GfxDevice* device);
+			void Shutdown();
+
+			// Synchronous batch -> CPU stalls on End()
+			void Begin();
+			void UploadBuffer(BufferHandle dst, const void* data, u64 size);
+			void UploadTexture(TextureHandle dst, const void* data, u64 size);
+			void End();
+
+			// Deferred -> takes ownership of data, submitted at the next Renderer::BeginFrame.
+			void QueueBufferUpload(BufferHandle dst, const std::vector<byte>& data);
+			void QueueTextureUpload(TextureHandle dst, const std::vector<byte>& data);
+
+			// Called at the start of new frame
+			void FlushQueued(dx12::CommandQueue* graphicsQueue);
+
+		private:
+			struct PendingUpload
+			{
+				std::variant<BufferHandle, TextureHandle> Dst;
+				std::vector<byte> Data;
+			};
+
+			[[nodiscard]] BufferHandle RecordBufferUpload(BufferHandle dst, const void* data, u64 size);
+			[[nodiscard]] BufferHandle RecordTextureUpload(TextureHandle dst, const void* data, u64 size);
+
+			GfxDevice*                        m_device               = nullptr;
+			ComPtr<dx12::CommandQueue>        m_copyQueue;
+			ComPtr<dx12::CommandAllocator>    m_allocator;
+			ComPtr<dx12::GraphicsCommandList> m_cmdList;
+			ComPtr<dx12::Fence>               m_copyFence;
+			HANDLE                            m_fenceEvent           = nullptr;
+			u64                               m_nextFenceValue       = 1;
+
+			std::vector<PendingUpload>        m_pendingUploads;
+			std::vector<BufferHandle>         m_activeStagingBuffers;
+			std::vector<BufferHandle>         m_pendingStagingFree;
+			u64                               m_pendingFreeFenceValue = 0;
+
+			bool                              m_isRecording          = false;
 		};
 
 	public:
@@ -31,6 +78,7 @@ namespace koi
 		[[nodiscard]] inline DescriptorHeap&      DSVHeap()              noexcept       { return m_dsvHeap;             }
 		[[nodiscard]] inline DescriptorHeap&      ResourceHeap()         noexcept       { return m_resourceHeap;        }
 		[[nodiscard]] inline DescriptorHeap&      SamplerHeap()          noexcept       { return m_samplerHeap;         }
+		[[nodiscard]] inline UploadContext&       GetUploadContext()      noexcept       { return m_uploadContext;       }
 
 		[[nodiscard]] u64 GetCompletedFenceValue () const noexcept;
 
@@ -46,13 +94,6 @@ namespace koi
 		[[nodiscard]] TextureHandle  CreateTexture(const TextureDesc& desc);
 		[[nodiscard]] BufferHandle   CreateBuffer(const BufferDesc& desc);
 		[[nodiscard]] PipelineHandle CreatePipeline(const PipelineDesc& desc);
-
-		// Uploads CPU data to a GPU-only buffer via a one-shot command list. Stalls the CPU
-		void UploadBufferData(BufferHandle dst, const void* data, u64 size);
-
-		// Uploads tightly-packed CPU pixels to a GPU texture (mip 0, array slice 0). Stalls the CPU.
-		// Leaves the texture in a shader-readable state.
-		void UploadTextureData(TextureHandle dst, const void* data, u64 size);
 
 		// Creates a sampler in the shader-visible sampler heap; returns its bindless index.
 		[[nodiscard]] DescriptorIndex CreateSampler(const D3D12_SAMPLER_DESC& desc);
@@ -87,17 +128,8 @@ namespace koi
 	private:
 		struct PendingDeletion
 		{
-			enum class ResourceType : u8 { Texture, Buffer, Pipeline };
-			ResourceType Type;
-			u64 DenseGen;
 			u64 FenceValue;
-			union
-			{
-				TextureHandle  Texture;
-				BufferHandle   Buffer;
-				PipelineHandle Pipeline;
-			};
-			PendingDeletion() {}
+			std::variant<TextureHandle, BufferHandle, PipelineHandle> Handle;
 		};
 
 		IDeviceNotify*              m_notify = nullptr;
@@ -120,6 +152,7 @@ namespace koi
 		HandlePool<Pipeline>        m_pipelines;
 
 		std::queue<PendingDeletion> m_deletionQueue;
+		UploadContext               m_uploadContext;
 
 		u64                         m_nextFenceValue  = 1;
 		u64                         m_frameIndex      = 0;

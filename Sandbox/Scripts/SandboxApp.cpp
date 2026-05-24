@@ -73,15 +73,19 @@ public:
 		assert(model && !model->Meshes.empty() && "Failed to load DamagedHelmet.gltf");
 
 		// Textures + 1x1 white fallback for untextured submeshes.
-		m_sampler      = device.CreateSampler(LinearWrapSampler());
-		m_whiteTexture = CreateSolidTexture(device, 0xFFFFFFFFu);
+		m_sampler = device.CreateSampler(LinearWrapSampler());
+
+		koi::GfxDevice::UploadContext& upload = device.GetUploadContext();
+		upload.Begin();
+
+		m_whiteTexture = CreateSolidTexture(device, upload, 0xFFFFFFFFu);
 		const koi::u32 whiteIndex = device.Get(m_whiteTexture)->SRVIndex;
 
 		std::vector<koi::u32> imageSrv;
 		imageSrv.reserve(model->Images.size());
 		for (const koi::ImageAsset& img : model->Images)
 		{
-			const koi::TextureHandle tex = CreateImageTexture(device, img);
+			const koi::TextureHandle tex = CreateImageTexture(device, upload, img);
 			imageSrv.push_back(device.Get(tex)->SRVIndex);
 			m_materialTextures.push_back(tex);
 		}
@@ -141,8 +145,9 @@ public:
 			.DebugName = "Helmet IB",
 		});
 
-		device.UploadBufferData(m_vertexBuffer, vertices.data(), vbSize);
-		device.UploadBufferData(m_indexBuffer,  indices.data(),  ibSize);
+		upload.UploadBuffer(m_vertexBuffer, vertices.data(), vbSize);
+		upload.UploadBuffer(m_indexBuffer,  indices.data(),  ibSize);
+		upload.End();
 
 		m_vertexBufferIndex = device.Get(m_vertexBuffer)->SRVIndex;
 		assert(m_vertexBufferIndex != koi::INVALID_DESCRIPTOR && "Vertex buffer has no bindless SRV");
@@ -243,7 +248,7 @@ private:
 		return s;
 	}
 
-	[[nodiscard]] static koi::TextureHandle CreateImageTexture(koi::GfxDevice& device, const koi::ImageAsset& img)
+	[[nodiscard]] static koi::TextureHandle CreateImageTexture(koi::GfxDevice& device, koi::GfxDevice::UploadContext& upload, const koi::ImageAsset& img)
 	{
 		const koi::TextureHandle tex = device.CreateTexture(koi::TextureDesc
 		{
@@ -253,11 +258,11 @@ private:
 			.Usage     = koi::TextureUsage::ShaderRead,
 			.DebugName = "Material Texture",
 		});
-		device.UploadTextureData(tex, img.Pixels.data(), img.Pixels.size());
+		upload.UploadTexture(tex, img.Pixels.data(), img.Pixels.size());
 		return tex;
 	}
 
-	[[nodiscard]] static koi::TextureHandle CreateSolidTexture(koi::GfxDevice& device, koi::u32 rgba)
+	[[nodiscard]] static koi::TextureHandle CreateSolidTexture(koi::GfxDevice& device, koi::GfxDevice::UploadContext& upload, koi::u32 rgba)
 	{
 		const koi::TextureHandle tex = device.CreateTexture(koi::TextureDesc
 		{
@@ -267,7 +272,7 @@ private:
 			.Usage     = koi::TextureUsage::ShaderRead,
 			.DebugName = "White 1x1",
 		});
-		device.UploadTextureData(tex, &rgba, sizeof(rgba));
+		upload.UploadTexture(tex, &rgba, sizeof(rgba));
 		return tex;
 	}
 

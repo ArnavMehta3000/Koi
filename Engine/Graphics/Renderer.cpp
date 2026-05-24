@@ -86,6 +86,11 @@ namespace koi
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
+		// Submit any queued uploads on the copy queue and insert a GPU-side Wait on the
+		// graphics queue, so all uploaded resources are ready before any draw work begins.
+		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
+
 		// Open a command list for each RenderWindow and record a clear.
 		m_renderWindows.ForEach([this](RenderWindowHandle h, RenderWindow& rw)
 		{
