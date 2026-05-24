@@ -575,7 +575,7 @@ namespace koi
 		FlushPendingDeletions();
 	}
 
-	void GfxDevice::UploadTextureData(TextureHandle dst, const void* data, u64 size)
+	void GfxDevice::UploadTextureData(TextureHandle dst, const void* data, [[maybe_unused]] u64 size)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
