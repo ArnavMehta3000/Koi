@@ -61,7 +61,7 @@ public:
 			.PixelShader         = psData,
 			.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
 			.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-			.RenderTargetFormats = { koi::Format::R8G8B8A8_UNORM },
+			.RenderTargetFormats = {  koi::Format::R16G16B16A16_FLOAT },  // HDR target
 			.RenderTargetCount   = 1,
 			.DepthFormat         = kDepthFormat,
 			.DebugName           = "MeshOpaque",
@@ -201,7 +201,7 @@ public:
 		EnsureDepthBuffer(device, width, height);
 
 		cmd->ClearDepthStencil(m_depthTexture);
-		cmd->SetRenderTarget(rw->CurrentBackBuffer(), m_depthTexture);
+		cmd->SetRenderTarget(rw->GetHDRColorBuffer(), m_depthTexture);
 		cmd->SetViewportAndScissor(width, height);
 		cmd->SetPipeline(m_pipeline);
 		cmd->SetIndexBuffer(m_indexBuffer);
