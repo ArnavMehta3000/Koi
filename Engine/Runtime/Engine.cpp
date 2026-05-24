@@ -9,7 +9,7 @@ namespace koi
 {
 	MemTagSnapshotArray onInitSnapshot;
 
-	Engine::Engine([[maybe_unused]] i32 argc, [[maybe_unused]] char** argv)
+	Engine::Engine()
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);

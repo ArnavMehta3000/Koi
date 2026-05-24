@@ -12,7 +12,7 @@ namespace koi
 	class Engine : public NonCopyable
 	{
 	public:
-		explicit Engine(i32 argc, char** argv);
+		Engine();
 		~Engine();
 
 		[[nodiscard]] static Engine& Get() { return *s_instance; }
@@ -20,12 +20,12 @@ namespace koi
 		void RunApp(AppBase& app);
 		void RequestExit() { m_isRunning = false; }
 
-		[[nodiscard]] inline WindowManager& GetWindowManager()  { return *m_windowManager; }
-		[[nodiscard]] inline Renderer& GetRenderer()            { return *m_renderer; }
-		[[nodiscard]] inline InputManager& GetInputManager()    { return *m_inputManager; }
-		[[nodiscard]] inline f32 GetDeltaTime() const { return m_deltaTime; }
-		[[nodiscard]] inline f64 GetTime() const { return m_elapsed; }
-		[[nodiscard]] inline u64 GetFrameCount() const { return m_frameCount; }
+		[[nodiscard]] inline WindowManager&     GetWindowManager()                { return *m_windowManager;   }
+		[[nodiscard]] inline Renderer&          GetRenderer()                     { return *m_renderer;        }
+		[[nodiscard]] inline InputManager&      GetInputManager()                 { return *m_inputManager;    }
+		[[nodiscard]] inline f32                GetDeltaTime() const              { return m_deltaTime;        }
+		[[nodiscard]] inline f64                GetTime() const                   { return m_elapsed;          }
+		[[nodiscard]] inline u64                GetFrameCount() const             { return m_frameCount;       }
 		[[nodiscard]] inline RenderWindowHandle GetMainRenderWindowHandle() const { return m_mainRenderWindow; }
 
 		std::pair<WindowHandle, RenderWindowHandle> CreateAndAddRenderWindow(const WindowDesc& desc);

@@ -1,7 +1,6 @@
 #include "Runtime/AppBase.h"
 #include "Runtime/Engine.h"
 #include <cassert>
-#include <iostream>
 
 namespace koi
 {
@@ -29,51 +28,5 @@ namespace koi
 	{
 		OnShutdown();
 		KOI_LOG_INFO("Shutting down application: {}", m_desc.AppName);
-	}
-
-	namespace internal
-	{
-		int RunApplication(int argc, char** argv)
-		{
-			// Initialize the logger before the Engine so it outlives it during
-			// stack unwinding — Engine::~Engine calls Logger::Shutdown(), which
-			// would otherwise make IsInitialized() return false in catch blocks.
-			Logger::Init();
-
-			try
-			{
-				Engine engine(argc, argv);
-
-				auto cmd = internal::InvokeCommandLineFactory();
-				if (cmd->ParseArgs(argc, argv) != 0)
-				{
-					KOI_LOG_CRITICAL("Failed to parse command line arguments");
-					return -1;
-				}
-
-				if (auto app = CreateApplication(*cmd))
-				{
-					engine.RunApp(*app);
-					return 0;
-				}
-				else
-				{
-					KOI_LOG_CRITICAL("Failed to create application");
-					return -1;
-				}
-			}
-			catch (const std::exception& e)
-			{
-				KOI_LOG_CRITICAL("Unhandled exception: {}", e.what());
-				Logger::Shutdown();
-				return 1;
-			}
-			catch (...)
-			{
-				KOI_LOG_CRITICAL("Unhandled unknown exception");
-				Logger::Shutdown();
-				return 2;
-			}
-		}
 	}
 }

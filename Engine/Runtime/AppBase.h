@@ -44,6 +44,6 @@ namespace koi
 
 	namespace internal
 	{
-		int RunApplication(int argc, char** argv);
+		int RunApplication(int argc, char* argv[]);
 	}
 }
