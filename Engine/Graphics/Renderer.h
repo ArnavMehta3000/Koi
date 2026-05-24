@@ -50,6 +50,7 @@ namespace koi
 		HandlePool<RenderWindow>   m_renderWindows;
 		FrameMap                   m_frameContexts;
 		WindowMap                  m_windowMap;
+		PipelineHandle             m_tonemapPipeline{};
 		u32                        m_frameSlot = 0;
 	};
 }

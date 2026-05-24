@@ -23,6 +23,22 @@ namespace koi
 		m_device->SetDeviceNotify(this);
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
+		// Tone-mapping pipeline: fullscreen triangle VS + ACES PS, no depth, writes to swapchain format
+		auto vsData = LoadShaderBytecode("Assets/Shaders/TonemapVS.cso");
+		auto psData = LoadShaderBytecode("Assets/Shaders/TonemapPS.cso");
+		assert((!vsData.empty() && !psData.empty()) && "Failed to load tonemap shaders");
+
+		m_tonemapPipeline = m_device->CreatePipeline(PipelineDesc
+		{
+			.VertexShader        = vsData,
+			.PixelShader         = psData,
+			.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+			.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
+			.RenderTargetFormats = { Format::R8G8B8A8_UNORM },  // This will render onto the swpchain
+			.RenderTargetCount   = 1,
+			.DebugName           = "Tonemap",
+		});
+
 		KOI_LOG_INFO("Initializing renderer");
 	}
 

@@ -4,22 +4,6 @@
     "defines": [],
     "entries": [
         {
-            "source_file": "TriangleVS.hlsl",
-            "output_file": "TriangleVS.cso",
-            "entry": "VSMain",
-            "target": "vs_6_6",
-            "defines": [],
-            "extra_args": []
-        },
-        {
-            "source_file": "TrianglePS.hlsl",
-            "output_file": "TrianglePS.cso",
-            "entry": "PSMain",
-            "target": "ps_6_6",
-            "defines": [],
-            "extra_args": []
-        },
-        {
             "source_file": "MeshVS.hlsl",
             "output_file": "MeshVS.cso",
             "entry": "VSMain",
@@ -30,6 +14,22 @@
         {
             "source_file": "MeshPS.hlsl",
             "output_file": "MeshPS.cso",
+            "entry": "PSMain",
+            "target": "ps_6_6",
+            "defines": [],
+            "extra_args": []
+        },
+        {
+            "source_file": "TonemapVS.hlsl",
+            "output_file": "TonemapVS.cso",
+            "entry": "VSMain",
+            "target": "vs_6_6",
+            "defines": [],
+            "extra_args": []
+        },
+        {
+            "source_file": "TonemapPS.hlsl",
+            "output_file": "TonemapPS.cso",
             "entry": "PSMain",
             "target": "ps_6_6",
             "defines": [],
