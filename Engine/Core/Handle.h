@@ -50,9 +50,17 @@ namespace koi
 
 		HandlePool() = default;
 
-		[[nodiscard]] u64                       GetSize() const noexcept { return m_dense.size(); }
-		[[nodiscard]] inline std::span<T>       GetData() noexcept       { return m_dense;        }
-		[[nodiscard]] inline std::span<const T> GetData() const noexcept { return m_dense;        }
+		[[nodiscard]] u64                       GetSize()     const noexcept { return m_dense.size();     }
+		[[nodiscard]] u64                       GetCapacity() const noexcept { return m_dense.capacity(); }
+		[[nodiscard]] inline std::span<T>       GetData()     noexcept       { return m_dense;            }
+		[[nodiscard]] inline std::span<const T> GetData()     const noexcept { return m_dense;            }
+
+		void Reserve(size_t n)
+		{
+			m_sparse.reserve(n);
+			m_denseToSparse.reserve(n);
+			m_dense.reserve(n);
+		}
 
 		[[nodiscard]] T* Get(HandleType handle) noexcept
 		{
