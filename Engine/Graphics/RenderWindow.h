@@ -22,6 +22,7 @@ namespace koi
 		[[nodiscard]] inline Format GetFormat() const noexcept{ return m_format; }
 		[[nodiscard]] inline bool IsVSyncEnabled() const noexcept{ return m_vsync; }
 		[[nodiscard]] inline TextureHandle CurrentBackBuffer() const noexcept { return m_backBuffers[m_currentBackBuffer]; }
+		[[nodiscard]] inline TextureHandle GetHDRColorBuffer() const noexcept { return m_hdrColorBuffer; }
 
 		void Resize(u32 width, u32 height);
 		void Present();
@@ -32,6 +33,8 @@ namespace koi
 		void CreateSwapChain();
 		void AcquireBackBuffers();
 		void ReleaseBackBuffers();
+		void CreateHDRBuffer();
+		void ReleaseHDRBuffer();
 		void WaitForCurrentBackBuffer();
 
 	private:
@@ -40,6 +43,7 @@ namespace koi
 		HWND                       m_hwnd   = nullptr;
 		ComPtr<dxgi::SwapChain>    m_swapChain;
 		FrameArray<TextureHandle>  m_backBuffers{};
+		TextureHandle              m_hdrColorBuffer{};
 		bool                       m_vsync             = true;
 		bool                       m_tearingAllowed    = false;
 		FrameArray<u64>            m_frameFenceValues{};

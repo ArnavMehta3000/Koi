@@ -1,5 +1,7 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/RHI/Device.h"
+#include "Graphics/RHI/Resources.h"
+#include "Graphics/ShaderLoader.h"
 #include "Runtime/Engine.h"
 #include "Memory/MemoryTracker.h"
 #include "Core/Profiling.h"
@@ -115,9 +117,10 @@ namespace koi
 
 			ctx.List.Begin(m_frameSlot);
 
-			TextureHandle bb = rw.CurrentBackBuffer();
-			ctx.List.TransitionBarrier(bb, D3D12_RESOURCE_STATE_RENDER_TARGET);
-			ctx.List.ClearRenderTarget(bb, DirectX::Colors::Olive.f);
+			// Clear HDR color buffer
+			constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			ctx.List.TransitionBarrier(rw.GetHDRColorBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+			ctx.List.ClearRenderTarget(rw.GetHDRColorBuffer(), kClearColor);
 		});
 	}
 
@@ -126,17 +129,29 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		// Close each window's command list, transition back to PRESENT, submit, then present.
 		m_renderWindows.ForEach([this](RenderWindowHandle h, RenderWindow& rw)
 		{
 			ZoneScoped;
 			FrameContext& ctx = GetOrCreateFrameContext(h);
 
-			ctx.List.TransitionBarrier(rw.CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);
+			// Tone-mapping pass: read from HDR buffer, write to swapchain.
+			ctx.List.TransitionBarrier(rw.GetHDRColorBuffer(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);  // HDR buffer is now readable by shader
+			ctx.List.TransitionBarrier(rw.CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);          // Swapchain is now writable
+
+			ctx.List.SetRenderTarget(rw.CurrentBackBuffer());
+			ctx.List.SetViewportAndScissor(rw.GetWidth(), rw.GetHeight());
+			ctx.List.SetPipeline(m_tonemapPipeline);
+
+			const Texture* hdrTex = m_device->Get(rw.GetHDRColorBuffer());
+			u32 hdrSrvIndex = hdrTex->SRVIndex;
+			ctx.List.SetPushConstants(&hdrSrvIndex, 1);
+			ctx.List.Draw(3);  // Draw fullscreen triangle (TonemapVS)
+
+			ctx.List.TransitionBarrier(rw.CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);  // Swapchain is now presentable
 			ctx.List.End();
 
 			m_graphicsQueue.Submit(ctx.List);
-			rw.Present();  // signals the frame fence internally
+			rw.Present();
 		});
 
 		m_frameSlot = (m_frameSlot + 1) % FRAMES_IN_FLIGHT;
