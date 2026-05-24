@@ -1,7 +1,8 @@
 #pragma once
 #include "Runtime/AppBase.h"
 #include "Graphics/Renderer.h"
-#include "Graphics/RHI/Device.h"  // For upload context
+#include "Graphics/RHI/Device.h"
+#include "Graphics/GPUMesh.h"
 #include "Graphics/Camera.h"
 #include "Graphics/CameraController.h"
 #include <memory>
@@ -13,15 +14,6 @@ struct PushConstants
 	koi::u32 VertexBufferIndex;
 	koi::u32 BaseColorTextureIndex;
 	koi::u32 SamplerIndex;
-};
-
-// One DrawIndexed per submesh into the shared vertex/index buffers.
-struct DrawItem
-{
-	koi::u32 IndexCount;
-	koi::u32 IndexOffset;
-	koi::i32 VertexOffset;
-	koi::u32 BaseColorTextureIndex;
 };
 
 class SandboxApp : public koi::AppBase
@@ -42,28 +34,14 @@ private:
 	void EnsureDepthBuffer(koi::GfxDevice& device, koi::u32 width, koi::u32 height);
 	koi::f32 GetAspect() const;
 
-	// TODO: Cleanup
-	static D3D12_SAMPLER_DESC LinearWrapSampler();
-	static koi::TextureHandle CreateImageTexture(koi::GfxDevice& device, koi::GfxDevice::UploadContext& upload, const koi::ImageAsset& img);
-	static koi::TextureHandle CreateSolidTexture(koi::GfxDevice& device, koi::GfxDevice::UploadContext& upload, koi::u32 rgba);
-
-
 private:
-	std::unique_ptr<koi::ModelAsset>       m_model;
 	koi::PipelineHandle                    m_pipeline;
-	koi::BufferHandle                      m_vertexBuffer;
-	koi::BufferHandle                      m_indexBuffer;
+	koi::GPUMesh                           m_mesh;
 	koi::TextureHandle                     m_depthTexture;
-	koi::u32                               m_depthWidth = 0;
+	koi::u32                               m_depthWidth  = 0;
 	koi::u32                               m_depthHeight = 0;
-	koi::DescriptorIndex                   m_vertexBufferIndex = koi::INVALID_DESCRIPTOR;
-	koi::DescriptorIndex                   m_sampler = koi::INVALID_DESCRIPTOR;
 
-	koi::TextureHandle                     m_whiteTexture;
-	std::vector<koi::TextureHandle>        m_materialTextures;
-
-	std::vector<DrawItem>                  m_draws;
-
+	std::unique_ptr<koi::ModelAsset>       m_model;
 	koi::Camera                            m_camera;
 	std::unique_ptr<koi::CameraController> m_controller;
 };
