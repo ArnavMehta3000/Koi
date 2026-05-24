@@ -5,21 +5,22 @@
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/RHI/PipelineDesc.h"
 #include "Graphics/ShaderLoader.h"
-#include "Graphics/MeshLoader.h"
 #include <toml++/toml.hpp>
 
 namespace koi
 {
 	std::unique_ptr<AppBase> CreateApplication(CommandLine& cmd)
 	{
-		auto projectFile = toml::parse_file(cmd.GetProjectFile().string());
+		auto project = toml::parse_file(cmd.GetProjectFile().string());
 
 		AppCreateDesc desc{};
-		desc.AppName           = projectFile["project"]["name"].value_or("Koi Application");
-		desc.WindowDesc.Title  = projectFile["window"]["title"].value_or("Koi");
-		desc.WindowDesc.Width  = projectFile["window"]["width"].value_or(1280u);
-		desc.WindowDesc.Height = projectFile["window"]["height"].value_or(720u);
-		desc.WindowDesc.VSync  = projectFile["window"]["vsync"].value_or(true);
+		desc.AppName           = project["project"]["name"].value_or("Koi Application");
+		desc.WindowDesc.Title  = project["window"]["title"].value_or("Koi");
+		desc.WindowDesc.Width  = project["window"]["width"].value_or(1280u);
+		desc.WindowDesc.Height = project["window"]["height"].value_or(720u);
+		desc.WindowDesc.VSync  = project["window"]["vsync"].value_or(true);
+		desc.StartupScene      = project["assets"]["startup_scene"].value_or("");
+
 		return std::make_unique<SandboxApp>(std::move(desc));
 	}
 }
@@ -29,7 +30,7 @@ void SandboxApp::OnInit()
 	KOI_LOG_INFO("SandboxApp::OnInit()");
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 	CreatePipeline();
-	LoadMesh();
+	LoadScene();
 	SetupCamera();
 }
 
@@ -38,6 +39,8 @@ void SandboxApp::OnTick(koi::f32 dt)
 	koi::Engine& engine       = *GetEngine();
 	koi::InputManager& input  = engine.GetInputManager();
 	koi::WindowHandle mainWnd = engine.GetWindowManager().GetMainWndowHandle();
+
+	m_scene.Update();
 
 	if (const koi::WindowInput* wi = input.GetWindowInput(mainWnd))
 	{
@@ -71,18 +74,26 @@ void SandboxApp::OnRender()
 	cmd->SetRenderTarget(rw->GetHDRColorBuffer(), m_depthTexture);
 	cmd->SetViewportAndScissor(width, height);
 	cmd->SetPipeline(m_pipeline);
-	cmd->SetIndexBuffer(m_mesh.IndexBuffer);
 
 	PushConstants pc{};
-	koi::math::store(pc.MVP, m_camera.ViewProjection);
-	pc.VertexBufferIndex = m_mesh.VertexBufferSRV;
-	pc.SamplerIndex      = res.LinearWrapSampler;
+	pc.SamplerIndex = res.LinearWrapSampler;
 
-	for (const koi::GPUMeshDraw& d : m_mesh.DrawItems)
+	for (const koi::SceneNode& node : m_scene.GetNodes())
 	{
-		pc.BaseColorTextureIndex = d.BaseColorSRV;
-		cmd->SetPushConstants(&pc, sizeof(pc) / sizeof(koi::u32));
-		cmd->DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
+		if (node.MeshIndex < 0) continue;
+		const koi::GPUMesh& mesh = m_scene.GetMesh(node.MeshIndex);
+
+		koi::math::store(pc.MVP, mul(node.WorldTransform, m_camera.ViewProjection));
+		pc.VertexBufferIndex = mesh.VertexBufferSRV;
+
+		cmd->SetIndexBuffer(mesh.IndexBuffer);
+
+		for (const koi::GPUMeshDraw& d : mesh.DrawItems)
+		{
+			pc.BaseColorTextureIndex = d.BaseColorSRV;
+			cmd->SetPushConstants(&pc, sizeof(pc) / sizeof(koi::u32));
+			cmd->DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
+		}
 	}
 }
 
@@ -91,7 +102,7 @@ void SandboxApp::OnShutdown()
 	KOI_LOG_INFO("SandboxApp::OnShutdown()");
 	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
 	device.Destroy(m_pipeline);
-	m_mesh.Release(device);
+	m_scene.Release(device);
 	if (m_depthTexture)
 		device.Destroy(m_depthTexture);
 }
@@ -120,27 +131,33 @@ void SandboxApp::CreatePipeline()
 	});
 }
 
-void SandboxApp::LoadMesh()
+void SandboxApp::LoadScene()
 {
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
-	KOI_LOG_INFO("SandboxApp::LoadMesh()");
+	KOI_LOG_INFO("SandboxApp::LoadScene()");
 
-	m_model = koi::MeshLoader::Load("Assets/Models/DamagedHelmet.gltf");
-	assert(m_model && !m_model->Meshes.empty() && "Failed to load DamagedHelmet.gltf");
+	const std::string& scenePath = GetDesc().StartupScene;
+	assert(!scenePath.empty() && "No startup_scene set in project TOML");
 
-	koi::Renderer& renderer  = GetEngine()->GetRenderer();
-	koi::GfxDevice& device   = renderer.GetDevice();
-	const koi::DescriptorIndex whiteSRV = device.Get(renderer.GetDefaultResources().WhiteTexture)->SRVIndex;
+	koi::Renderer& renderer = GetEngine()->GetRenderer();
+	koi::GfxDevice& device  = renderer.GetDevice();
+	const koi::DescriptorIndex whiteSRV =
+		device.Get(renderer.GetDefaultResources().WhiteTexture)->SRVIndex;
 
-	m_mesh = koi::GPUMesh::Upload(device, *m_model, whiteSRV);
+	if (auto result = koi::Scene::Load(scenePath, device, whiteSRV))
+	{
+		m_scene = std::move(result.value());
+	}
 }
 
 void SandboxApp::SetupCamera()
 {
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
-	koi::f32 mn[4]{}, mx[4]{};
-	koi::math::store(mn, m_model->Bounds.Min);
-	koi::math::store(mx, m_model->Bounds.Max);
+
+	const koi::math::AABB& bounds = m_scene.GetBounds();
+	koi::f32 mn[3]{}, mx[3]{};
+	koi::math::store(mn, bounds.Min);
+	koi::math::store(mx, bounds.Max);
 
 	const koi::math::float3 center{ 0.5f * (mn[0] + mx[0]), 0.5f * (mn[1] + mx[1]), 0.5f * (mn[2] + mx[2]) };
 	const koi::f32 ex = 0.5f * (mx[0] - mn[0]);
