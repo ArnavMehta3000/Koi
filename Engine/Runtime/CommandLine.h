@@ -25,8 +25,9 @@ namespace koi
 			{
 				CLI::App::parse(argc, argv);
 			}
-			catch (const std::exception&)
+			catch (const std::exception& e)
 			{
+				OutputDebugStringA(std::format("CLI Parse Error: {}\n", e.what()).c_str());
 				return 1;
 			}
 			return 0;
