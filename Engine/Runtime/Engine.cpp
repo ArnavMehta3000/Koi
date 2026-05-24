@@ -33,7 +33,7 @@ namespace koi
 		KOI_LOG_INFO("Engine shut down");
 
 		PrintMemSnapshot(DiffSnapshots(m_initSnapshot, GetMemSnapshot()));
-		KOI_LOG_DEBUG("Engine was active for {:4f}", GetTime());
+		KOI_LOG_DEBUG("Engine was active for {:4f}s", GetTime());
 		Logger::Shutdown();
 
 		s_instance = nullptr;
