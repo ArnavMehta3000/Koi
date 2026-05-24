@@ -1,4 +1,5 @@
 #include "Graphics/Renderer.h"
+#include "Graphics/RendererResources.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RHI/Resources.h"
 #include "Graphics/ShaderLoader.h"
@@ -41,6 +42,7 @@ namespace koi
 			.DebugName           = "Tonemap",
 		});
 
+		m_defaultResources.Init(*m_device);
 		KOI_LOG_INFO("Initializing renderer");
 	}
 
@@ -52,6 +54,7 @@ namespace koi
 		if (m_device)
 			m_device->WaitForIdle();
 
+		m_defaultResources.Shutdown(*m_device);
 		m_frameContexts.clear();
 		m_renderWindows.Clear();
 		m_windowMap.clear();

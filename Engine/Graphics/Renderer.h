@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/RenderWindow.h"
+#include "Graphics/RendererResources.h"
 #include "Graphics/RHI/CommandAllocator.h"
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/RHI/CommandQueue.h"
@@ -25,10 +26,12 @@ namespace koi
 		Renderer();
 		~Renderer();
 
-		[[nodiscard]] inline GfxDevice&          GetDevice() noexcept                                 { return *m_device;              }
-		[[nodiscard]] inline const GfxDevice&    GetDevice() const noexcept                           { return *m_device;              }
-		[[nodiscard]] inline RenderWindow*       GetRenderWindow(RenderWindowHandle h) noexcept       { return m_renderWindows.Get(h); }
-		[[nodiscard]] inline const RenderWindow* GetRenderWindow(RenderWindowHandle h) const noexcept { return m_renderWindows.Get(h); }
+		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                                 { return *m_device;              }
+		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept                           { return *m_device;              }
+		[[nodiscard]] inline RendererResources&       GetDefaultResources() noexcept                       { return m_defaultResources;     }
+		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept                 { return m_defaultResources;     }
+		[[nodiscard]] inline RenderWindow*            GetRenderWindow(RenderWindowHandle h) noexcept       { return m_renderWindows.Get(h); }
+		[[nodiscard]] inline const RenderWindow*      GetRenderWindow(RenderWindowHandle h) const noexcept { return m_renderWindows.Get(h); }
 
 		std::pair<RenderWindowHandle, RenderWindow*> AddWindow(WindowHandle handle, bool vsync);  // NOTE: The pointer is not safe to store, but okay for temporary actions
 		RenderWindowHandle FindWindow(WindowHandle w) const noexcept;
@@ -50,6 +53,7 @@ namespace koi
 		HandlePool<RenderWindow>   m_renderWindows;
 		FrameMap                   m_frameContexts;
 		WindowMap                  m_windowMap;
+		RendererResources          m_defaultResources;
 		PipelineHandle             m_tonemapPipeline{};
 		u32                        m_frameSlot = 0;
 	};
