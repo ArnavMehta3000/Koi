@@ -7,7 +7,11 @@ namespace koi
 	{
 		Untagged = 0,
 		Engine,
+		Logging,
+		Platform,
+		Input,
 		Renderer,
+		RHI,
 		Assets,
 		Scripting,
 		Temp,
@@ -24,7 +28,11 @@ namespace koi
 		{
 			X(Untagged)
 			X(Engine)
+			X(Logging)
+			X(Platform)
+			X(Input)
 			X(Renderer)
+			X(RHI)
 			X(Assets)
 			X(Scripting)
 			X(Temp)

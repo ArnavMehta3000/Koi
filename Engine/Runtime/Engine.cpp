@@ -7,17 +7,14 @@
 
 namespace koi
 {
-	MemTagSnapshotArray onInitSnapshot;
-
 	Engine::Engine()
+		: m_initSnapshot(GetMemSnapshot())
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 
 		assert(s_instance == nullptr && "Engine already initialized");
 		s_instance = this;
-
-		onInitSnapshot = GetMemSnapshot();
 
 		KOI_LOG_INFO("Engine initializing");
 
@@ -35,7 +32,9 @@ namespace koi
 		m_windowManager = nullptr;
 		KOI_LOG_INFO("Engine shut down");
 
-		PrintMemSnapshot(DiffSnapshots(onInitSnapshot, GetMemSnapshot()));
+		PrintMemSnapshot(DiffSnapshots(m_initSnapshot, GetMemSnapshot()));
+		KOI_LOG_DEBUG("Engine was active for {:4f}", GetTime());
+		Logger::Shutdown();
 
 		s_instance = nullptr;
 	}
@@ -97,11 +96,6 @@ namespace koi
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		TimePoint now   = Clock::now();
-		m_deltaTime     = std::chrono::duration<f32>(now - m_lastFrameTime).count();
-		m_elapsed       = std::chrono::duration<f64>(now - m_startTime).count();
-		m_lastFrameTime = now;
-
 		m_inputManager->BeginFrame();
 
 		Window::PollEvents();
@@ -114,7 +108,7 @@ namespace koi
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		app.OnTick(m_deltaTime);
+		m_timer.Tick([&app](f32 dt) { app.OnTick(dt); });
 		app.OnRender();
 	}
 
@@ -123,15 +117,13 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		m_renderer->EndFrame();
-		m_frameCount = m_renderer->GetDevice().GetCurrentFrameIndex();
 	}
 
 	void Engine::MainLoop(AppBase& app)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		m_startTime = Clock::now();
-		m_lastFrameTime = m_startTime;
+		m_timer.Reset();
 
 		while (m_isRunning)
 		{

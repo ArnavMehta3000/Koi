@@ -32,7 +32,7 @@ namespace koi
 	{
 #if KOI_DEBUG
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
 		if (SUCCEEDED(::DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
@@ -60,7 +60,7 @@ namespace koi
 		: m_desc(desc)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		CreateFactory(desc.EnableDebugLayer);
 		PickAdapter();
@@ -80,7 +80,7 @@ namespace koi
 	GfxDevice::~GfxDevice()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Destroying D3D12 device");
 
@@ -120,7 +120,7 @@ namespace koi
 	TextureHandle GfxDevice::RegisterSwapChainImage(ComPtr<dx12::Resource> resource, const TextureDesc& desc)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		Texture tex
 		{
@@ -135,7 +135,7 @@ namespace koi
 	TextureHandle GfxDevice::CreateTexture(const TextureDesc& desc)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		Texture tex{ .Desc = desc, .IsSwapChainImage = false };
 
@@ -212,7 +212,7 @@ namespace koi
 	BufferHandle GfxDevice::CreateBuffer(const BufferDesc& desc)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		Buffer buf{ .Desc = desc };
 
@@ -286,7 +286,7 @@ namespace koi
 	void GfxDevice::Destroy(TextureHandle h)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		if (m_textures.IsValid(h))
 		{
@@ -302,7 +302,7 @@ namespace koi
 	void GfxDevice::Destroy(BufferHandle h)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		if (m_buffers.IsValid(h))
 		{
@@ -318,7 +318,7 @@ namespace koi
 	u64 GfxDevice::SignalFrame()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		/// DevNote: This function tells the GPU to write the current counter value into the fence
 		/// when it finishes all the work so far, then increments the counter.
@@ -334,7 +334,7 @@ namespace koi
 	void GfxDevice::WaitForFence(u64 fenceValue)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		/// DevNote: This function checks if the GPU has already passed that (signalled) value
 		/// If not, then it uses `SetEventOnCompletion` + `WaitForSingleObject` to block the CPU until it has
@@ -348,7 +348,7 @@ namespace koi
 	void GfxDevice::WaitForIdle()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		///DevNote: This is the nuclear option, it signal a new value and immediately waits for it
 		/// draining the entire GPU pipeline. Used before resize and shutdown
@@ -366,7 +366,7 @@ namespace koi
 	void GfxDevice::Destroy(PipelineHandle h)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		if (m_pipelines.IsValid(h))
 		{
@@ -382,7 +382,7 @@ namespace koi
 	void GfxDevice::FreeResource(TextureHandle h)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		if (Texture* t = m_textures.Get(h))
 		{
@@ -396,7 +396,7 @@ namespace koi
 	void GfxDevice::FreeResource(BufferHandle h)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		if (Buffer* b = m_buffers.Get(h))
 		{
@@ -411,7 +411,7 @@ namespace koi
 	PipelineHandle GfxDevice::CreatePipeline(const PipelineDesc& desc)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(!desc.VertexShader.empty() && "PipelineDesc missing vertex shader");
 		assert(!desc.PixelShader.empty() && "PipelineDesc missing pixel shader");
@@ -520,7 +520,7 @@ namespace koi
 	DescriptorIndex GfxDevice::CreateSampler(const D3D12_SAMPLER_DESC& desc)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		const DescriptorIndex index = m_samplerHeap.Allocate();
 		m_device->CreateSampler(&desc, m_samplerHeap.CpuHandle(index));
@@ -530,7 +530,7 @@ namespace koi
 	void GfxDevice::CreateRootSignature()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Creating bindless root signature");
 
@@ -567,7 +567,7 @@ namespace koi
 	void GfxDevice::HandleDeviceLost()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_CRITICAL("D3D12 device lost. Attempting recovery...");
 
@@ -600,7 +600,7 @@ namespace koi
 	void GfxDevice::CreateFactory([[maybe_unused]] bool enableDebug)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Creating D3D12 factory");
 		u32 flags = 0;
@@ -662,7 +662,7 @@ namespace koi
 	void GfxDevice::PickAdapter()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Selecting D3D12 adapter");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
@@ -696,7 +696,7 @@ namespace koi
 	void GfxDevice::CreateDevice()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Creating D3D12 device");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
@@ -730,7 +730,7 @@ namespace koi
 	void GfxDevice::CreateQueues()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Creating D3D12 queues");
 		D3D12_COMMAND_QUEUE_DESC desc
@@ -745,7 +745,7 @@ namespace koi
 	void GfxDevice::CreateFences()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Creating D3D12 fences");
 		DX_CHECK(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_frameFence)));
@@ -758,7 +758,7 @@ namespace koi
 	void GfxDevice::CreateHeaps()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		KOI_LOG_TRACE("Creating D3D12 heaps");
 
@@ -778,7 +778,7 @@ namespace koi
 	void GfxDevice::FlushDeferredDeletions(u64 completedFence)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		while (!m_deletionQueue.empty())
 		{

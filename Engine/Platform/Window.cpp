@@ -1,5 +1,6 @@
 #include "Platform/Window.h"
 #include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 #include <windowsx.h>
 #include <dwmapi.h>
 
@@ -48,6 +49,7 @@ namespace koi
 		, m_height(desc.Height)
 		, m_title(desc.Title)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (s_windowCount == 0)
 		{
 			::glfwSetErrorCallback([](int code, const char* desc)
@@ -91,20 +93,21 @@ namespace koi
 
 	Window& Window::operator=(Window&& other) noexcept
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (this != &other)
 		{
 			Destroy();
 
-			m_window = other.m_window;
-			m_width = other.m_width;
-			m_height = other.m_height;
-			m_mode = other.m_mode;
-			m_title = std::move(other.m_title);
-			m_savedX = other.m_savedX; m_savedY = other.m_savedY;
-			m_savedW = other.m_savedW; m_savedH = other.m_savedH;
+			m_window   = other.m_window;
+			m_width    = other.m_width;
+			m_height   = other.m_height;
+			m_mode     = other.m_mode;
+			m_title    = std::move(other.m_title);
+			m_savedX   = other.m_savedX; m_savedY = other.m_savedY;
+			m_savedW   = other.m_savedW; m_savedH = other.m_savedH;
 			m_onResize = std::move(other.m_onResize);
-			m_onClose = std::move(other.m_onClose);
-			m_onFocus = std::move(other.m_onFocus);
+			m_onClose  = std::move(other.m_onClose);
+			m_onFocus  = std::move(other.m_onFocus);
 
 			other.m_window = nullptr;
 			if (m_window) ::glfwSetWindowUserPointer(m_window, this);
@@ -125,6 +128,8 @@ namespace koi
 
 	void Window::SetMode(WindowMode newMode)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Platform);
+
 		if (newMode == m_mode)
 			return;
 
@@ -187,6 +192,7 @@ namespace koi
 
 	void Window::SetTitle(std::string_view title)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		m_title.assign(title);
 		if (m_window)
 			::glfwSetWindowTitle(m_window, m_title.c_str());
@@ -250,6 +256,7 @@ namespace koi
 
 	void Window::Create(const WindowDesc& desc)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		::glfwWindowHint(GLFW_RESIZABLE, desc.Resizable ? GLFW_TRUE : GLFW_FALSE);
 
@@ -338,6 +345,7 @@ namespace koi
 
 	void Window::Destroy()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (m_window)
 		{
 			::glfwDestroyWindow(m_window);

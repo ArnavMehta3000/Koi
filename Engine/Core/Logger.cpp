@@ -1,6 +1,7 @@
 #include "Core/Logger.h"
 #include "Core/StringUtils.h"
 #include "Platform/Win32.h"
+#include "Memory/MemoryTracker.h"
 #include <cassert>
 #include <filesystem>
 #include <io.h>
@@ -40,6 +41,7 @@ namespace koi
 	void Logger::Init(const LoggerConfig& cfg)
 	{
 		if (g_initialized) return;
+		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 
 		g_loggerData = std::make_unique<LoggerData>();
 
@@ -91,6 +93,8 @@ namespace koi
 		if (!g_initialized)
 			return;
 
+		KOI_MEM_TAG_SCOPE(MemTag::Logging);
+
 		Flush();
 		g_loggerData = nullptr;
 		//spdlog::shutdown();  // This keep crashing, hope that RAII cleanup works
@@ -99,12 +103,14 @@ namespace koi
 
 	std::shared_ptr<spdlog::logger> Logger::GetLogger(std::string_view category)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		auto it = g_loggerData->g_loggers.find(std::string(category));
 		return (it != g_loggerData->g_loggers.end()) ? it->second : nullptr;
 	}
 
 	std::shared_ptr<spdlog::logger> Logger::GetOrCreateLogger(std::string_view category)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		if (auto l = GetLogger(category)) return l;
 		return CreateLogger(category);
 	}
@@ -113,6 +119,8 @@ namespace koi
 	{
 		if (!g_initialized)
 			return nullptr;
+
+		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 
 		try
 		{
@@ -134,6 +142,7 @@ namespace koi
 
 	void Logger::SetLevel(LogLevel level)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		auto lvl = ToSpdlogLevel(level);
 		for (auto& s : g_loggerData->g_sinks) s->set_level(lvl);
 		for (auto& [_, logger] : g_loggerData->g_loggers) logger->set_level(lvl);
@@ -141,6 +150,7 @@ namespace koi
 
 	void Logger::SetCategoryLevel(std::string_view category, LogLevel level)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		if (auto logger = GetOrCreateLogger(category))
 			logger->set_level(ToSpdlogLevel(level));
 	}

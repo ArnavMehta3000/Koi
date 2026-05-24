@@ -1,5 +1,6 @@
 #include "Platform/InputManager.h"
 #include "Platform/Window.h"
+#include "Memory/MemoryTracker.h"
 #include "Core/Logger.h"
 #include <cassert>
 #include <algorithm>
@@ -13,6 +14,7 @@ namespace koi
 {
 	void WindowInput::BeginFrame() noexcept
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		m_keyDownPrev   = m_keyDown;
 		m_mouseDownPrev = m_mouseDown;
 		m_scrollDelta   = m_scrollAccum;
@@ -101,6 +103,7 @@ namespace koi
 
 	InputManager::InputManager()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		assert(s_instance == nullptr && "InputManager already exists");
 		m_windows.reserve(8);
 		s_instance = this;
@@ -113,6 +116,7 @@ namespace koi
 
 	void InputManager::RegisterWindow(WindowHandle handle, Window& window)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		assert(!FindByHandle(handle) && "Window is already registered with InputManager");
 
 		GLFWwindow* glfwWnd = window.GetGLFWWindow();
@@ -148,6 +152,7 @@ namespace koi
 
 	void InputManager::UnregisterWindow(WindowHandle handle)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		auto it = std::ranges::find_if(m_windows,
 			[handle](const Entry& e) { return e.handle == handle; });
 
@@ -165,6 +170,7 @@ namespace koi
 
 	void InputManager::BeginFrame()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		for (Entry& e : m_windows)
 		{
 			e.input.BeginFrame();

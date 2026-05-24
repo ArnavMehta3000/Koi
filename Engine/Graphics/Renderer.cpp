@@ -35,7 +35,7 @@ namespace koi
 			m_device->WaitForIdle();
 
 		m_frameContexts.clear();
-		m_renderWindows.Clear();  // destroys RenderWindows before the device
+		m_renderWindows.Clear();
 		m_windowMap.clear();
 		m_device = nullptr;
 

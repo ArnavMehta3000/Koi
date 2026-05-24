@@ -1,6 +1,7 @@
 #include "Graphics/MeshLoader.h"
 #include "Core/Logger.h"
 #include "Core/Profiling.h"
+#include "Memory/MemoryTracker.h"
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
@@ -27,6 +28,7 @@ namespace koi
 
 	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& path)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		ZoneScoped;
 		KOI_LOG_INFO("Loading mesh: {}", path.string().c_str());
 
