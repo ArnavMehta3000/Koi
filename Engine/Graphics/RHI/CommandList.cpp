@@ -41,6 +41,7 @@ namespace koi
 		{
 			m_device->ResourceHeap().GetHeap(),
 			m_device->SamplerHeap().GetHeap(),
+			// Other heaps are not marked as shader visible
 		};
 		m_cmdList->SetDescriptorHeaps(static_cast<u32>(heaps.size()), heaps.data());
 

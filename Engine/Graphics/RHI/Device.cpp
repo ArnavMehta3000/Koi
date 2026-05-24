@@ -152,17 +152,28 @@ namespace koi
 		CD3DX12_HEAP_PROPERTIES heap(D3D12_HEAP_TYPE_DEFAULT);
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
 
-		const bool isDepth = desc.Usage.Has(TextureUsage::DepthStencil);
+		const bool isDepth        = desc.Usage.Has(TextureUsage::DepthStencil);
+		const bool isRenderTarget = desc.Usage.Has(TextureUsage::RenderTarget);
 
-		// Depth/render targets must be created with an optimized clear value matching later clears.
+		// Debug layer will warn if I pass a different clear value
 		D3D12_CLEAR_VALUE clearValue{};
 		const D3D12_CLEAR_VALUE* pClearValue = nullptr;
+
 		if (isDepth)
 		{
 			clearValue.Format               = ToDXGIFormat(desc.Format);
 			clearValue.DepthStencil.Depth   = 1.0f;
 			clearValue.DepthStencil.Stencil = 0;
 			pClearValue                     = &clearValue;
+		}
+		else if (isRenderTarget)
+		{
+			clearValue.Format   = ToDXGIFormat(desc.Format);
+			clearValue.Color[0] = 0.0f;
+			clearValue.Color[1] = 0.0f;
+			clearValue.Color[2] = 0.0f;
+			clearValue.Color[3] = 1.0f;
+			pClearValue         = &clearValue;
 		}
 
 		DX_CHECK(m_device->CreateCommittedResource(
@@ -202,6 +213,18 @@ namespace koi
 				.Texture2D               = { .MostDetailedMip = 0, .MipLevels = desc.MipLevels },
 			};
 			m_device->CreateShaderResourceView(tex.Resource.Get(), &srvDesc, m_resourceHeap.CpuHandle(tex.SRVIndex));
+		}
+
+		if (isRenderTarget)
+		{
+			tex.RTVIndex = m_rtvHeap.Allocate();
+
+			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc
+			{
+				.Format        = ToDXGIFormat(desc.Format),
+				.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
+			};
+			m_device->CreateRenderTargetView(tex.Resource.Get(), &rtvDesc, m_rtvHeap.CpuHandle(tex.RTVIndex));
 		}
 
 		KOI_LOG_TRACE("Created texture: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
