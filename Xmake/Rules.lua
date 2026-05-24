@@ -1,7 +1,7 @@
 -- Generate RDI file using raddbg/radbin
 rule("GenerateRDI")
 	after_build(function(target)
-		if target:kind() == "binary" then
+		if target:kind() == "binary"  and  (target:get("mode") ~= "release")then
 
 	    	import("lib.detect.find_program")
 
