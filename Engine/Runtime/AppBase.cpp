@@ -1,5 +1,6 @@
 #include "Runtime/AppBase.h"
 #include "Runtime/Engine.h"
+#include "Core/Profiling.h"
 #include <cassert>
 
 namespace koi
@@ -20,12 +21,14 @@ namespace koi
 
 	void AppBase::Init()
 	{
+		ZoneScoped;
 		KOI_LOG_INFO("Initializing application: {}", m_desc.AppName);
 		OnInit();
 	}
 
 	void AppBase::Shutdown()
 	{
+		ZoneScoped;
 		OnShutdown();
 		KOI_LOG_INFO("Shutting down application: {}", m_desc.AppName);
 	}

@@ -1,11 +1,19 @@
 #include "Runtime/AppBase.h"
 #include "Runtime/Engine.h"
 #include "Core/StringUtils.h"
+#include "Core/Profiling.h"
 #include <vector>
 #include <string>
 
 namespace koi::internal
 {
+	static std::unique_ptr<AppBase> CreateApplicationInstance(CommandLine& cmd)
+	{
+		// Custom scoped function for profiling reasons
+		ZoneScoped;
+		return CreateApplication(cmd);
+	}
+
 	int RunApplication(int argc, wchar_t* wargv[])
 	{
 		std::vector<std::string> args(argc);
@@ -39,7 +47,7 @@ namespace koi::internal
 				return -1;
 			}
 
-			if (auto app = CreateApplication(*cmd))
+			if (auto app = CreateApplicationInstance(*cmd))
 			{
 				engine.RunApp(*app);
 				return 0;

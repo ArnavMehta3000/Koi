@@ -1,4 +1,5 @@
 #include "SandboxApp.h"
+#include "Core/Profiling.h"
 #include "Runtime/Engine.h"
 #include "Runtime/CommandLine.h"
 #include "Graphics/RenderWindow.h"
@@ -27,6 +28,7 @@ namespace koi
 
 void SandboxApp::OnInit()
 {
+	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnInit()");
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 	CreatePipeline();
@@ -36,6 +38,7 @@ void SandboxApp::OnInit()
 
 void SandboxApp::OnTick(koi::f32 dt)
 {
+	ZoneScoped;
 	koi::Engine& engine       = *GetEngine();
 	koi::InputManager& input  = engine.GetInputManager();
 	koi::WindowHandle mainWnd = engine.GetWindowManager().GetMainWndowHandle();
@@ -54,6 +57,7 @@ void SandboxApp::OnTick(koi::f32 dt)
 
 void SandboxApp::OnRender()
 {
+	ZoneScoped;
 	koi::Engine& engine     = *GetEngine();
 	koi::Renderer& renderer = engine.GetRenderer();
 	koi::GfxDevice& device  = renderer.GetDevice();
@@ -99,6 +103,7 @@ void SandboxApp::OnRender()
 
 void SandboxApp::OnShutdown()
 {
+	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnShutdown()");
 	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
 	device.Destroy(m_pipeline);
@@ -109,6 +114,8 @@ void SandboxApp::OnShutdown()
 
 void SandboxApp::CreatePipeline()
 {
+	ZoneScopedN("SandboxApp::CreatePipeline() - Load Shader Bytecode");
+
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 	KOI_LOG_INFO("SandboxApp::CreatePipeline()");
 
@@ -133,6 +140,7 @@ void SandboxApp::CreatePipeline()
 
 void SandboxApp::LoadScene()
 {
+	ZoneScoped;
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 	KOI_LOG_INFO("SandboxApp::LoadScene()");
 
@@ -152,6 +160,7 @@ void SandboxApp::LoadScene()
 
 void SandboxApp::SetupCamera()
 {
+	ZoneScoped;
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 
 	const koi::math::AABB& bounds = m_scene.GetBounds();
@@ -172,6 +181,7 @@ void SandboxApp::SetupCamera()
 
 void SandboxApp::EnsureDepthBuffer(koi::GfxDevice& device, koi::u32 width, koi::u32 height)
 {
+	ZoneScoped;
 	if (width == 0 || height == 0) return;
 	if (m_depthTexture && width == m_depthWidth && height == m_depthHeight) return;
 

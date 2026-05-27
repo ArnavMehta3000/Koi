@@ -1,16 +1,19 @@
 #include "Platform/WindowManager.h"
+#include "Core/Profiling.h"
 #include <cassert>
 
 namespace koi
 {
 	std::pair<WindowHandle, Window*> WindowManager::CreateWindow(const WindowDesc& desc)
 	{
+		ZoneScoped;
 		WindowHandle handle = m_pool.Emplace(desc);
 		return { handle, GetWindow(handle) };
 	}
 
 	void WindowManager::DestroyWindow(WindowHandle handle)
 	{
+		ZoneScoped;
 		if (Window* w = GetWindow(handle)) [[likely]]
 		{
 			w->RequestClose();
@@ -20,6 +23,7 @@ namespace koi
 
 	std::pair<WindowHandle, Window*> WindowManager::CreateMainWindow(const WindowDesc& desc)
 	{
+		ZoneScoped;
 		assert(!m_mainWindow && "Main window already created");
 
 		auto [handle, window] = CreateWindow(desc);
@@ -30,6 +34,7 @@ namespace koi
 
 	bool WindowManager::AllClosed() const
 	{
+		ZoneScoped;
 		if (m_pool.GetSize() == 0) return true;
 
 		for (const Window& w : m_pool.GetData())
@@ -41,6 +46,7 @@ namespace koi
 
 	void WindowManager::DestroyClosedWindows()
 	{
+		ZoneScoped;
 		std::vector<WindowHandle> toDestroy;
 		m_pool.ForEach([&](WindowHandle h, Window& w)
 		{

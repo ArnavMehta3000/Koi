@@ -1,5 +1,6 @@
 #include "Scene/Scene.h"
 #include "Core/Logger.h"
+#include "Core/Profiling.h"
 #include "Core/Math.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/MeshLoader.h"
@@ -33,6 +34,7 @@ namespace koi
 
 	std::optional<Scene> Scene::Load(const fs::path& path, GfxDevice& device, DescriptorIndex fallbackAlbedoSRV)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		KOI_LOG_INFO("Loading scene: {}", path.string());
 
@@ -182,6 +184,7 @@ namespace koi
 
 	void Scene::Update()
 	{
+		ZoneScoped;
 		for (SceneNode& node : m_nodes)
 		{
 			if (!node.Dirty) continue;
@@ -202,9 +205,12 @@ namespace koi
 
 	void Scene::Release(GfxDevice& device)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		for (GPUMesh& mesh : m_meshes)
+		{
 			mesh.Release(device);
+		}
 		m_meshes.clear();
 		m_nodes.clear();
 	}

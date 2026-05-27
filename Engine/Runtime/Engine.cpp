@@ -41,7 +41,6 @@ namespace koi
 
 	void Engine::RunApp(AppBase& app)
 	{
-		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		const WindowDesc& mainWndDesc = app.GetDesc().WindowDesc;
 
@@ -121,7 +120,6 @@ namespace koi
 
 	void Engine::MainLoop(AppBase& app)
 	{
-		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		m_timer.Reset();
 

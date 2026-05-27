@@ -1,5 +1,6 @@
 #include "Platform/Window.h"
 #include "Core/Logger.h"
+#include "Core/Profiling.h"
 #include "Memory/MemoryTracker.h"
 #include <windowsx.h>
 #include <dwmapi.h>
@@ -28,6 +29,7 @@ namespace koi
 	{
 		static GLFWmonitor* SelectMonitor(i32 index)
 		{
+			ZoneScoped;
 			i32 count = 0;
 			if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
 			{
@@ -49,6 +51,7 @@ namespace koi
 		, m_height(desc.Height)
 		, m_title(desc.Title)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (s_windowCount == 0)
 		{
@@ -67,6 +70,7 @@ namespace koi
 
 	Window::~Window()
 	{
+		ZoneScoped;
 		if (m_window)
 		{
 			Destroy();
@@ -122,12 +126,14 @@ namespace koi
 
 	void Window::RequestClose()
 	{
+		ZoneScoped;
 		if (m_window)
 			::glfwSetWindowShouldClose(m_window, GLFW_TRUE);
 	}
 
 	void Window::SetMode(WindowMode newMode)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 
 		if (newMode == m_mode)
@@ -192,6 +198,7 @@ namespace koi
 
 	void Window::SetTitle(std::string_view title)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		m_title.assign(title);
 		if (m_window)
@@ -256,6 +263,7 @@ namespace koi
 
 	void Window::Create(const WindowDesc& desc)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		::glfwWindowHint(GLFW_RESIZABLE, desc.Resizable ? GLFW_TRUE : GLFW_FALSE);
@@ -345,6 +353,7 @@ namespace koi
 
 	void Window::Destroy()
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (m_window)
 		{
@@ -358,6 +367,7 @@ namespace koi
 
 	void Window::OnResize(GLFWwindow* w, i32 width, i32 height) noexcept
 	{
+		ZoneScoped;
 		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
 		{
 			self->m_width = static_cast<u32>(width);
@@ -370,6 +380,7 @@ namespace koi
 
 	void Window::OnClose(GLFWwindow* w) noexcept
 	{
+		ZoneScoped;
 		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
 		{
 			if (self->m_onClose)
@@ -379,6 +390,7 @@ namespace koi
 
 	void Window::OnFocus(GLFWwindow* w, i32 focused) noexcept
 	{
+		ZoneScoped;
 		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
 		{
 			if (self->m_onFocus)
