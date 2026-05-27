@@ -11,6 +11,7 @@ target("Koi.Engine")
 		"dxc",
 		"stb",
 		"hlslppmath",
+		"tracy-profiler",
 		"glfw",
 		"fastgltf",
 		"tracy",
