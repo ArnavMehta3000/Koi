@@ -1,4 +1,4 @@
-# Koi Engines
+# Koi Engine
 
 Koi is a work-in-progress DirectX 12 (bindless) game engine, built primarily for learning purposes. Built for Windows only & uses C++23.
 
