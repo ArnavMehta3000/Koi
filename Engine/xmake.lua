@@ -1,7 +1,7 @@
 target("Koi.Engine")
 	set_kind("static")
 
-	add_deps("stb")
+	-- add_deps("stb")
 
 	add_options("LogLevel")
 	add_packages(
@@ -9,6 +9,7 @@ target("Koi.Engine")
 		"spdlog",
 		"toml++",
 		"dxc",
+		"stb",
 		"hlslppmath",
 		"glfw",
 		"fastgltf",

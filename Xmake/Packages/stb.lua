@@ -1,8 +1,0 @@
-target("stb")
-	set_kind("headeronly")
-	set_group("External")
-	local module_dir = "$(projectdir)/External/stb"
-	local include_dir = path.join(module_dir)
-	add_includedirs(include_dir, { public = true })
-	add_headerfiles(path.join(include_dir, "**.h"), { public = true })
-target_end()
