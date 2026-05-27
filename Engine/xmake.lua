@@ -8,6 +8,7 @@ target("Koi.Engine")
 		"cli11",
 		"spdlog",
 		"toml++",
+		"dxc",
 		"glfw",
 		"fastgltf",
 		"tracy",

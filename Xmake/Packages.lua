@@ -1,11 +1,13 @@
 -- Custom packages
 includes("Packages/hlslpp.lua")
 includes("Packages/stb.lua")
+includes("Packages/dxc.lua")
 
 add_requires(
     "glfw",
     "directx-headers",
-    "cli11"
+    "cli11",
+    "dxc"
 )
 
 add_requires("toml++ f22f035fe2d63e2be3d266d8f100e7812a9ab9bd")
