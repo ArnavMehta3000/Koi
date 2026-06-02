@@ -37,9 +37,4 @@ namespace koi
 		ComPtr<dx12::PipelineState> Pso;
 		D3D_PRIMITIVE_TOPOLOGY      Topology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	};
-
-	struct Shader
-	{
-		std::vector<koi::byte> Bytecode;
-	};
 }

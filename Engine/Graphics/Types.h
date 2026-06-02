@@ -28,7 +28,6 @@ namespace koi
 	using TextureHandle  = Handle<Texture>;
 	using BufferHandle   = Handle<Buffer>;
 	using PipelineHandle = Handle<Pipeline>;
-	using ShaderHandle   = Handle<Shader>;
 
 	using DescriptorIndex = u32;
 	inline constexpr DescriptorIndex INVALID_DESCRIPTOR = ~0u;
@@ -65,6 +64,18 @@ namespace koi
 	};
 
 	enum class CommandQueueType : u8 { Graphics, Compute, Copy };
+
+	enum class ShaderType : u8
+	{
+		Vertex,
+		Hull,
+		Domain,
+		Geometry,
+		Pixel,
+		Compute,
+
+		MAX_COUNT
+	};
 
 	struct TextureDesc
 	{
