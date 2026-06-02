@@ -174,7 +174,7 @@
 #undef FindNextVolumeMountPoint
 #undef FindResource
 #undef FindResourceEx
-#undef FormatMessage
+//#undef FormatMessage  // Needed for comdef.hw
 #undef GetAtomName
 #undef GetBinaryType
 #undef GetCompressedFileSizeTransacted
