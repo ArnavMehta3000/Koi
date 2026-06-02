@@ -7,6 +7,8 @@
 #include "Memory/MemoryTracker.h"
 #include <ranges>
 #include <cassert>
+#include <comdef.h>
+
 
 #if KOI_DEBUG
 	#include <dxgidebug.h>
@@ -50,9 +52,12 @@ namespace koi
 	{
 		if (FAILED(hr))
 		{
-			KOI_LOG_ERROR("D3D12 call failed (0x{:08X}): {} at {}:{}",
-				static_cast<u32>(hr), expr, file, line);
-			assert(false && "D3D12 call failed");
+			_com_error err(hr);
+
+			KOI_LOG_ERROR("DX_CHECK failed (0x{:08X} - {}): {} at {}:{}",
+				static_cast<u32>(hr), StringUtils::FromWide(err.ErrorMessage()), expr, file, line);
+
+			assert(false && "D3D12/DXC/DXGI call failed");
 		}
 	}
 
