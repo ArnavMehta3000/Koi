@@ -65,8 +65,9 @@ namespace koi
 
 	enum class CommandQueueType : u8 { Graphics, Compute, Copy };
 
-	enum class ShaderType : u8
+	enum class ShaderType
 	{
+		Unknown = -1,
 		Vertex,
 		Hull,
 		Domain,
