@@ -5,6 +5,9 @@
 #include "Graphics/Renderer.h"
 #include "Memory/MemoryTracker.h"
 #include "Runtime/Timer.h"
+#include "Runtime/EngineHooks.h"
+#include <array>
+#include <vector>
 
 namespace koi
 {
@@ -33,6 +36,12 @@ namespace koi
 		std::pair<WindowHandle, RenderWindowHandle> CreateAndAddRenderWindow(const WindowDesc& desc);
 		RenderWindowHandle RegisterWindowWithRenderer(WindowHandle handle, bool isVsync);
 
+		HookId RegisterHook(EnginePhase phase, EngineHook callback);
+		void UnregisterHook(HookId id);
+
+		// Internal function (public cause renderer calls it)
+		void FireHook(EnginePhase phase);
+
 	private:
 		void BeginFrame();
 		void Tick(AppBase& app);
@@ -40,7 +49,14 @@ namespace koi
 		void MainLoop(AppBase& app);
 
 	private:
+		struct HookEntry { HookId Id; EngineHook Callback; };
+		using HooksArray = std::array<std::vector<HookEntry>, static_cast<size_t>(EnginePhase::MAX_COUNT)>;
+
+	private:
 		static inline Engine* s_instance = nullptr;
+
+		HooksArray m_hooks;
+		HookId     m_nextHookId = 1;  // 0 reserved as INVALID_HOOK_ID
 
 		MemTagSnapshotArray            m_initSnapshot{};
 		std::unique_ptr<WindowManager> m_windowManager;
