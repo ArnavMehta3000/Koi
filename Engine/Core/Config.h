@@ -3,6 +3,7 @@
 #pragma once
 #include "Generated/Engine/Version.h"  // Generated at build time
 #include "Generated/Engine/LogLevel.h"  // Generated at build time
+#include "Generated/Engine/EditorConfig.h"  // Generated at build time
 
 #if defined(NDEBUG)
 	#define KOI_DEBUG 0

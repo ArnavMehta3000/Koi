@@ -1,19 +1,32 @@
-target("koi-runtime")
+local _we = get_config("WithEditor")
+local _with_editor = (_we == 1 or _we == "1" or _we == true)
 
-	set_kind("binary")
-    add_files("Runtime/Main.cpp")
+-- Only one launcher exists per build configuration. The `KoiGame` rule
+-- routes the game target to whichever launcher is active
+if not _with_editor then
 
-	if not is_mode("debug", "releasedbg") then
-		add_rules("win.sdk.application")
-	end
+	-- Runtime/Standalone build
+	target("koi-runtime")
+		set_kind("binary")
+		add_files("Runtime/Main.cpp")
+		add_deps("Koi.Engine")
 
-add_deps("Koi.Engine", "Sandbox")
+		if not is_mode("debug", "releasedbg") then
+			add_rules("win.sdk.application")
+		end
+	target_end()
 
-on_config(function(target)
-    import("core.project.project")
-    local project_dir = project.target("Sandbox"):scriptdir()
-    local project_file = path.join(project_dir, "Sandbox.toml")
+else
 
-    target:set("runargs", "-p", project_file)
-end)
-target_end()
+	-- Editor build
+	target("koi-editor")
+		set_kind("binary")
+		add_files("Editor/Main.cpp")
+		add_deps("Koi.Engine", "Koi.Editor")
+
+		if not is_mode("debug", "releasedbg") then
+			add_rules("win.sdk.application")
+		end
+	target_end()
+
+end

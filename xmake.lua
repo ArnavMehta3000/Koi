@@ -26,5 +26,6 @@ add_defines("NOMINMAX", "UNICODE", "_UNICODE", "NOMCX", "NOSERVICE", "NOHELP", "
 add_rules("GenerateRDI", "Natvis")
 
 includes("Engine")
+includes("Editor")
 includes("Launcher")
 includes("Sandbox")

@@ -1,4 +1,17 @@
 
+option("WithEditor")
+    set_default(0)
+    set_values(0, 1)
+    set_showmenu(true)
+    set_description("Build with editor support (enables koi-editor target, hot-reload, editor subsystem)")
+    set_configvar("WITH_EDITOR", 0)
+    after_check(function(option)
+        if option:enabled() then
+            option:set("configvar", "WITH_EDITOR", option:value())
+        end
+    end)
+option_end()
+
 option("LogLevel")
     set_default(0)
     set_values(0, 1, 2, 3)
