@@ -15,6 +15,8 @@ namespace koi
 			: CLI::App(desc, name)
 		{
 			add_option("-p,--project", m_projectFile, "Project file");
+			add_option("--engine-source",  m_engineSource,  "Engine source-tree root (editor only)");
+			add_option("--project-source", m_projectSource, "Project source-tree root (editor only)");
 		}
 
 		virtual ~CommandLine() = default;
@@ -33,10 +35,17 @@ namespace koi
 			return 0;
 		}
 
-		inline const fs::path& GetProjectFile() const { return m_projectFile; }
+		inline const fs::path& GetProjectFile()   const { return m_projectFile;   }
+		inline const fs::path& GetEngineSource()  const { return m_engineSource;  }
+		inline const fs::path& GetProjectSource() const { return m_projectSource; }
+
+		// Internal function (used by RunApplication to set project file path)
+		inline void OverrideProjectFile(fs::path p) { m_projectFile = std::move(p); }
 
 	private:
 		fs::path m_projectFile;
+		fs::path m_engineSource;
+		fs::path m_projectSource;
 	};
 
 	namespace internal
