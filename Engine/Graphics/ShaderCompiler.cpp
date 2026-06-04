@@ -69,8 +69,7 @@ namespace koi
 			DXC_ARG_ALL_RESOURCES_BOUND,
 #if KOI_DEBUG
 			L"-D", L"KOI_DEBUG=1",
-			L"-Qembed_debug",  // Embed PDB in shader
-			DXC_ARG_DEBUG,
+			DXC_ARG_DEBUG,    // -Zi: emit a separate PDB output (extracted below)
 #else
 			L"-D", L"KOI_DEBUG=0",
 			DXC_ARG_OPTIMIZATION_LEVEL3,
@@ -143,26 +142,24 @@ namespace koi
 				}
 			}
 
-			// Save PDB to file (does not work)
-			//{
-			//	ComPtr<IDxcBlobUtf8> pdb;
-			//	DX_CHECK(results->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(&pdb), nullptr));
-			//	if (pdb && pdb->GetStringLength() != 0)
-			//	{
-			//		fs::path outPath = args.OutDir.value() / (shaderName + L".pdb");
-			//		outPath = outPath.lexically_normal();
+			// Save PDB next to the CSO (prioritizing the hash over shader name for the PDB name)s
+			{
+				ComPtr<IDxcBlob> pdbBlob;
+				ComPtr<IDxcBlobWide> pdbName;
+				DX_CHECK(results->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(&pdbBlob), &pdbName));
+				if (pdbBlob && pdbBlob->GetBufferSize() != 0)
+				{
+					std::wstring pdbFileName;
+					if (pdbName && pdbName->GetStringLength() != 0)
+						pdbFileName = std::wstring(pdbName->GetStringPointer(), pdbName->GetStringLength());
+					else
+						pdbFileName = shaderName + L".pdb";
 
-			//		std::ofstream out(outPath, std::ios::out | std::ios::binary | std::ios::trunc);
-			//		if (out.is_open())
-			//		{
-			//			out.write(reinterpret_cast<const char*>(pdb->GetBufferPointer()), pdb->GetStringLength());
-			//		}
-			//		{
-			//			KOI_LOG_ERROR("Failed to open shader PDB file {}", args.OutDir.value().string() + ".pdb");
-			//		}
-			//		out.close();
-			//	}
-			//}
+					fs::path outPath = (args.OutDir.value() / pdbFileName).lexically_normal();
+					if (!writeFile(outPath, pdbBlob))
+						KOI_LOG_ERROR("Failed to write shader PDB file: {}", outPath.string());
+				}
+			}
 
 			// Print hash information
 			{
