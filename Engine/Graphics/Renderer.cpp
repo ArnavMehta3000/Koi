@@ -27,8 +27,8 @@ namespace koi
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
 		// Tone-mapping pipeline: fullscreen triangle VS + ACES PS, no depth, writes to swapchain format
-		auto vsData = LoadShaderBytecode("Assets/Shaders/TonemapVS.cso");
-		auto psData = LoadShaderBytecode("Assets/Shaders/TonemapPS.cso");
+		auto vsData = LoadShader("engine://Shaders/TonemapVS");
+		auto psData = LoadShader("engine://Shaders/TonemapPS");
 		assert((!vsData.empty() && !psData.empty()) && "Failed to load tonemap shaders");
 
 		m_tonemapPipeline = m_device->CreatePipeline(PipelineDesc
@@ -44,6 +44,28 @@ namespace koi
 
 		m_defaultResources.Init(*m_device);
 		KOI_LOG_INFO("Initializing renderer");
+
+#if KOI_WITH_EDITOR
+		// Rebuild the tonemap pipeline when the editor invalidates the shader cache
+		Engine::Get().RegisterHook(EnginePhase::OnShaderReload, [this]
+		{
+			m_device->WaitForIdle();
+			if (m_tonemapPipeline) m_device->Destroy(m_tonemapPipeline);
+			auto vsData = LoadShader("engine://Shaders/TonemapVS");
+			auto psData = LoadShader("engine://Shaders/TonemapPS");
+			if (vsData.empty() || psData.empty()) return;
+			m_tonemapPipeline = m_device->CreatePipeline(PipelineDesc
+			{
+				.VertexShader        = vsData,
+				.PixelShader         = psData,
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+				.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
+				.RenderTargetFormats = { Format::R8G8B8A8_UNORM },
+				.RenderTargetCount   = 1,
+				.DebugName           = "Tonemap",
+			});
+		});
+#endif
 	}
 
 	Renderer::~Renderer()
@@ -149,6 +171,9 @@ namespace koi
 			u32 hdrSrvIndex = hdrTex->SRVIndex;
 			ctx.List.SetPushConstants(&hdrSrvIndex, 1);
 			ctx.List.Draw(3);  // Draw fullscreen triangle (TonemapVS)
+
+			// Overlay phase: editor / debug UI draws to the swapchain on top of the tonemapped image
+			Engine::Get().FireHook(EnginePhase::OnSwapchainOverlay);
 
 			ctx.List.TransitionBarrier(rw.CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);  // Swapchain is now presentable
 			ctx.List.End();
