@@ -34,6 +34,17 @@ void SandboxApp::OnInit()
 	CreatePipeline();
 	LoadScene();
 	SetupCamera();
+
+#if KOI_WITH_EDITOR
+	// Rebuild the mesh pipeline whenever the editor recompiles shaderss
+	GetEngine()->RegisterHook(koi::EnginePhase::OnShaderReload, [this]
+	{
+		koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
+		device.WaitForIdle();
+		if (m_pipeline) device.Destroy(m_pipeline);
+		CreatePipeline();
+	});
+#endif
 }
 
 void SandboxApp::OnTick(koi::f32 dt)
@@ -121,8 +132,8 @@ void SandboxApp::CreatePipeline()
 
 	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
 
-	std::vector<byte> vsData = koi::LoadShaderBytecode("Assets/Shaders/MeshVS.cso");
-	std::vector<byte> psData = koi::LoadShaderBytecode("Assets/Shaders/MeshPS.cso");
+	std::vector<byte> vsData = koi::LoadShader("project://Assets/Shaders/MeshVS");
+	std::vector<byte> psData = koi::LoadShader("project://Assets/Shaders/MeshPS");
 	assert((!vsData.empty() && !psData.empty()) && "Failed to load mesh shaders");
 
 	m_pipeline = device.CreatePipeline(koi::PipelineDesc
