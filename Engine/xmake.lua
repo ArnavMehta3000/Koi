@@ -1,9 +1,7 @@
 target("Koi.Engine")
 	set_kind("static")
 
-	-- add_deps("stb")
-
-	add_options("LogLevel")
+	add_options("LogLevel", "WithEditor")
 	add_packages(
 		"cli11",
 		"spdlog",
@@ -38,4 +36,6 @@ target("Koi.Engine")
 		"dxguid",
 		"d3dcompiler", { public = true })
 	end
+
+	add_extrafiles("Assets/Shaders/**.hlsl")
 target_end()

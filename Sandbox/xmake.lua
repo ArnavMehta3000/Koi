@@ -1,38 +1,16 @@
+-- Need to 'cook assets' in editor before being able to run in standalone mode
+-- Doing this so that there is no need to precompile shaders, copy assets, etc.
+
 target("Sandbox")
-	set_kind("static")
-	add_deps("Koi.Engine")
+	add_rules("KoiGame")
 
 	add_includedirs("Scripts")
 	add_files("Scripts/**.cpp")
 	add_headerfiles("Scripts/**.h")
 
-	-- Shader files
-	add_extrafiles(
-		"Assets/Shaders/**.hlsl",
-		"ShaderBuild.json"
-	)
-
-	-- Assets
+	-- Use project:// to refer to these assets
+	add_extrafiles("Assets/Shaders/**.hlsl")
 	add_extrafiles("Assets/Models/**.gltf")
 	add_extrafiles("Assets/Scenes/**.toml")
 	add_extrafiles("Sandbox.toml")
-
-	after_build(function(target)
-		import("core.base.task")
-		task.run("compile_shaders",
-		{
-			src_path    = path.join(os.scriptdir(), "Assets/Shaders"),
-			cfg_file    = path.join(os.scriptdir(), "ShaderBuild.json"),
-			out_dir     = path.join(target:targetdir(), "Assets"),
-			target_name = target:name(),
-		})
-
-	-- Copy asset files
-	os.cp(
-		path.join(os.scriptdir(), "Assets/Models"),
-		path.join(target:targetdir(), "Assets/Models"))
-	os.cp(
-		path.join(os.scriptdir(), "Assets/Scenes"),
-		path.join(target:targetdir(), "Assets/Scenes"))
-	end)
 target_end()
