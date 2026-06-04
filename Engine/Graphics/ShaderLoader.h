@@ -1,31 +1,33 @@
 #pragma once
 #include "Core/Types.h"
 #include "Core/Logger.h"
+#include "Core/VirtualFileSystem.h"
+#include "Graphics/Types.h"
 #include <filesystem>
+#include <fstream>
+#include <string_view>
 #include <vector>
 
 namespace koi
 {
-	// Reads a compiled shader bytecode file (.cso) from the given filesystem.
-	// Returns an empty vector and logs an error on failure.
-	[[nodiscard]] inline std::vector<byte> LoadShaderBytecode(const std::filesystem::path& path)
-	{
-		std::vector<byte> result;
-		std::ifstream file(path, std::ios::binary | std::ios::ate);
-		if (file.is_open())
-		{
-			result.resize(file.tellg());
-			file.seekg(0, std::ios::beg);
-			file.read(reinterpret_cast<char*>(result.data()), result.size());
-			file.close();
+	// Reads a CSO, accepts VFS path
+	[[nodiscard]] static std::vector<byte> LoadShaderBytecode(std::string_view path);
 
-			return result;
-		}
-		else
-		{
-			KOI_LOG_ERROR("Failed to load shader '{}'", path.string());
-		}
+	// Infer ShaderType from a virtual path's filename suffix:
+	//   *VS -> Vertex, *PS -> Pixel, *CS -> Compute, *HS -> Hull,
+	//   *DS -> Domain, *GS -> Geometry.
+	[[nodiscard]] static ShaderType InferShaderTypeFromName(std::string_view path);
 
-		return {};
-	}
+	// Mode-agnostic shader load. Pass a virtual path WITHOUT extension:
+	//   auto vs = LoadShader("engine://Shaders/TonemapVS");
+	//
+	// Editor builds:  resolves "<path>.hlsl" via VFS, compiles via DXC,
+	//                 returns DXIL bytes (cached in memory until Invalidate).
+	// Runtime builds: resolves "<path>.cso" via VFS, returns the bytes
+	[[nodiscard]] static std::vector<byte> LoadShader(std::string_view virtualPathNoExt);
+
+	// Drops every in-memory compiled-shader entry, so the next LoadShader
+	// call recompiles from source. Used by the editor's F5 hot-reload.
+	// No-op in runtime builds.
+	void InvalidateShaderCache();
 }
