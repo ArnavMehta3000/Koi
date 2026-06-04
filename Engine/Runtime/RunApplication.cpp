@@ -2,6 +2,8 @@
 #include "Runtime/Engine.h"
 #include "Core/StringUtils.h"
 #include "Core/Profiling.h"
+#include "Core/VirtualFileSystem.h"
+#include <filesystem>
 #include <vector>
 #include <string>
 
@@ -38,14 +40,46 @@ namespace koi::internal
 
 		try
 		{
-			Engine engine;
-
 			auto cmd = internal::InvokeCommandLineFactory();
 			if (cmd->ParseArgs(argc, argv) != 0)
 			{
 				KOI_LOG_CRITICAL("Failed to parse command line arguments");
 				return -1;
 			}
+
+			// In runtime/standalone mode, if '-p' is not specified. Look for a 'Project.toml' next to the cwd
+			// And override the project file arg in the commandline
+			if (cmd->GetProjectFile().empty())
+			{
+				const fs::path defaultProject = fs::current_path() / "Project.toml";
+				if (fs::exists(defaultProject))
+				{
+					KOI_LOG_INFO("No --project specified; defaulting to {}", defaultProject.string());
+					cmd->OverrideProjectFile(defaultProject);
+				}
+			}
+
+			// Set up VFS before engine init
+			//   Runtime: assets are baked next to the exe — project mount is
+			//           the exe dir, engine mount is exe/Engine.
+			//   Editor:  assets live in source — project mount follows the
+			//           --project TOML's parent dir, engine mount follows
+			//           the engine assets shipped next to the editor exe.
+			{
+				const fs::path exeDir = fs::current_path();
+#if KOI_WITH_EDITOR
+				const fs::path projectRoot = cmd->GetProjectFile().empty()
+					? exeDir  // No project file specified, default to current dir
+					: fs::absolute(cmd->GetProjectFile()).parent_path();
+#else
+				const fs::path projectRoot = exeDir;
+#endif
+				auto& vfs = VirtualFileSystem::Get();
+				vfs.Mount("engine", std::make_unique<FilesystemMount>(exeDir / "Engine"));
+				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
+			}
+
+			Engine engine;
 
 			if (auto app = CreateApplicationInstance(*cmd))
 			{
