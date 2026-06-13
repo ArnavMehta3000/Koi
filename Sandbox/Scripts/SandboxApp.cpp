@@ -132,8 +132,8 @@ void SandboxApp::CreatePipeline()
 
 	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
 
-	std::vector<byte> vsData = koi::LoadShader("project://Assets/Shaders/MeshVS");
-	std::vector<byte> psData = koi::LoadShader("project://Assets/Shaders/MeshPS");
+	std::vector<byte> vsData = koi::LoadShader("engine://Assets/Shaders/MeshVS");
+	std::vector<byte> psData = koi::LoadShader("engine://Assets/Shaders/MeshPS");
 	assert((!vsData.empty() && !psData.empty()) && "Failed to load mesh shaders");
 
 	m_pipeline = device.CreatePipeline(koi::PipelineDesc

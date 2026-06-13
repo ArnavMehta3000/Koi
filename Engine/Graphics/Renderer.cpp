@@ -27,8 +27,8 @@ namespace koi
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
 		// Tone-mapping pipeline: fullscreen triangle VS + ACES PS, no depth, writes to swapchain format
-		auto vsData = LoadShader("engine://Shaders/TonemapVS");
-		auto psData = LoadShader("engine://Shaders/TonemapPS");
+		auto vsData = LoadShader("engine://Assets/Shaders/TonemapVS");
+		auto psData = LoadShader("engine://Assets/Shaders/TonemapPS");
 		assert((!vsData.empty() && !psData.empty()) && "Failed to load tonemap shaders");
 
 		m_tonemapPipeline = m_device->CreatePipeline(PipelineDesc

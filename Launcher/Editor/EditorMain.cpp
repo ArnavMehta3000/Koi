@@ -45,7 +45,7 @@ namespace koi::internal_editor
 
 				std::vector<fs::path> engineRoots;
 				if (!cmd->GetEngineSource().empty())
-					engineRoots.push_back(fs::absolute(cmd->GetEngineSource()) / "Assets");
+					engineRoots.push_back(fs::absolute(cmd->GetEngineSource()));
 
 				engineRoots.push_back(exeDir / "Engine");
 
@@ -82,7 +82,7 @@ namespace koi::internal_editor
 			{
 				.EngineSource  = cmd->GetEngineSource().empty()
 				                   ? fs::path{}
-				                   : fs::absolute(cmd->GetEngineSource()) / "Assets",
+				                   : fs::absolute(cmd->GetEngineSource()),
 				.ProjectSource = cmd->GetProjectSource().empty()
 				                   ? fs::path{}
 				                   : fs::absolute(cmd->GetProjectSource()),
