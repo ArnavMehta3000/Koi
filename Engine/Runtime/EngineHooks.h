@@ -1,4 +1,5 @@
 #pragma once
+#include "Core/Config.h"
 #include "Core/Types.h"
 #include <functional>
 
@@ -6,13 +7,15 @@ namespace koi
 {
 	enum class EnginePhase : u8
 	{
-		PostInit,            // after AppBase::Init (game OnInit ran, GPU resources up)
-		PreTick,             // each frame, before app OnTick
-		PostTick,            // each frame, after app OnTick
-		PreRender,           // each frame, before app OnRender
-		PostRender,          // each frame, after app OnRender
+		PostInit,            // after AppBase::Init
+		PreTick,             // before app OnTick
+		PostTick,            // after app OnTick
+		PreRender,           // before app OnRender
+		PostRender,          // after app OnRender
 		OnSwapchainOverlay,  // inside EndFrame, after tonemap to swapchain, before present (editor overlay UI)
-		OnImGuiDraw,         // inside the editor's ImGui frame, between NewFrame and Render — safe to call any ImGui:: API
+#if KOI_WITH_EDITOR
+		OnImGuiDraw,         // inside the editor's ImGui frame (for user ImGui overlays)
+#endif
 		OnShaderReload,      // editor-triggered: shader source recompiled to CSO, subscribers rebuild pipelines
 		PreShutdown,         // before AppBase::Shutdown
 
