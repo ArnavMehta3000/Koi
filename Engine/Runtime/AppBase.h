@@ -25,6 +25,7 @@ namespace koi
 		[[nodiscard]] static AppBase& Get() { return *s_instance; }
 		[[nodiscard]] const AppCreateDesc& GetDesc() const { return m_desc; }
 		[[nodiscard]] Engine* GetEngine() const { return m_engine; }
+		[[nodiscard]] Window& GetWindow() const { assert(m_window); return *m_window; }
 
 		virtual void OnInit() {}
 		virtual void OnShutdown() {}
@@ -37,6 +38,7 @@ namespace koi
 
 		AppCreateDesc m_desc;
 		Engine* m_engine = nullptr;
+		Window* m_window = nullptr;
 
 		static inline AppBase* s_instance = nullptr;
 	};

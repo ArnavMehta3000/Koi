@@ -1,12 +1,13 @@
 #pragma once
 #include "Core/Core.h"
-#include "Platform/WindowManager.h"
+#include "Platform/Window.h"
 #include "Platform/InputManager.h"
 #include "Graphics/Renderer.h"
 #include "Memory/MemoryTracker.h"
 #include "Runtime/Timer.h"
 #include "Runtime/EngineHooks.h"
 #include <array>
+#include <optional>
 #include <vector>
 
 namespace koi
@@ -24,22 +25,19 @@ namespace koi
 		void RunApp(AppBase& app);
 		void RequestExit() { m_isRunning = false; }
 
-		[[nodiscard]] inline WindowManager&     GetWindowManager()                { return *m_windowManager;   }
-		[[nodiscard]] inline Renderer&          GetRenderer()                     { return *m_renderer;        }
-		[[nodiscard]] inline InputManager&      GetInputManager()                 { return *m_inputManager;    }
-		[[nodiscard]] inline f32                GetDeltaTime() const              { return m_timer.GetDeltaTime();  }
-		[[nodiscard]] inline f64                GetTime() const                   { return m_timer.GetTotalTime();  }
-		[[nodiscard]] inline u64                GetFrameCount() const             { return m_timer.GetFrameCount(); }
-		[[nodiscard]] inline Timer&             GetTimer()                        { return m_timer;                 }
-		[[nodiscard]] inline RenderWindowHandle GetMainRenderWindowHandle() const { return m_mainRenderWindow;      }
-
-		std::pair<WindowHandle, RenderWindowHandle> CreateAndAddRenderWindow(const WindowDesc& desc);
-		RenderWindowHandle RegisterWindowWithRenderer(WindowHandle handle, bool isVsync);
+		[[nodiscard]] inline Window&       GetWindow()          { return *m_window;        }
+		[[nodiscard]] inline const Window& GetWindow() const    { return *m_window;        }
+		[[nodiscard]] inline Renderer&     GetRenderer()        { return *m_renderer;      }
+		[[nodiscard]] inline InputManager& GetInputManager()    { return *m_inputManager;  }
+		[[nodiscard]] inline f32           GetDeltaTime() const { return m_timer.GetDeltaTime();  }
+		[[nodiscard]] inline f64           GetTime() const      { return m_timer.GetTotalTime();  }
+		[[nodiscard]] inline u64           GetFrameCount() const{ return m_timer.GetFrameCount(); }
+		[[nodiscard]] inline Timer&        GetTimer()           { return m_timer;                 }
 
 		HookId RegisterHook(EnginePhase phase, EngineHook callback);
 		void UnregisterHook(HookId id);
 
-		// Internal function (public cause renderer calls it)
+		// Internal (public because Renderer fires it)
 		void FireHook(EnginePhase phase);
 
 	private:
@@ -56,15 +54,14 @@ namespace koi
 		static inline Engine* s_instance = nullptr;
 
 		HooksArray m_hooks;
-		HookId     m_nextHookId = 1;  // 0 reserved as INVALID_HOOK_ID
+		HookId     m_nextHookId = 1;
 
-		MemTagSnapshotArray            m_initSnapshot{};
-		std::unique_ptr<WindowManager> m_windowManager;
-		std::unique_ptr<InputManager>  m_inputManager;
-		std::unique_ptr<Renderer>      m_renderer;
+		MemTagSnapshotArray           m_initSnapshot{};
+		std::optional<Window>         m_window;
+		std::unique_ptr<InputManager> m_inputManager;
+		std::unique_ptr<Renderer>     m_renderer;
 
-		Timer              m_timer;
-		bool               m_isRunning  = true;
-		RenderWindowHandle m_mainRenderWindow;
+		Timer m_timer;
+		bool  m_isRunning = true;
 	};
 }

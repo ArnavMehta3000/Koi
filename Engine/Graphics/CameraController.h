@@ -6,7 +6,7 @@
 namespace koi
 {
 	struct Camera;
-	class  WindowInput;
+	class  InputManager;
 
 	enum class CameraMode : u8 { FirstPerson, Orbit };
 
@@ -15,7 +15,7 @@ namespace koi
 	public:
 		explicit CameraController(Camera* camera, CameraMode mode = CameraMode::Orbit);
 
-		void Update(f32 dt, const WindowInput& input);
+		void Update(f32 dt, const InputManager& input);
 
 		void SetMode(CameraMode mode);
 		void ToggleMode();
@@ -32,8 +32,8 @@ namespace koi
 		[[nodiscard]] bool WantsCursorLock() const noexcept { return m_wantsCursorLock; }
 
 	private:
-		void UpdateFirstPerson(f32 dt, const WindowInput& input);
-		void UpdateOrbit(const WindowInput& input);
+		void UpdateFirstPerson(f32 dt, const InputManager& input);
+		void UpdateOrbit(const InputManager& input);
 		void ApplyView();
 
 	public:

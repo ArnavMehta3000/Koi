@@ -87,7 +87,7 @@ namespace koi
 		SetMode(m_mode == CameraMode::FirstPerson ? CameraMode::Orbit : CameraMode::FirstPerson);
 	}
 
-	void CameraController::Update(f32 dt, const WindowInput& input)
+	void CameraController::Update(f32 dt, const InputManager& input)
 	{
 		// Toggle mode (debounced)
 		const bool toggleDown = input.IsKeyDown(ToggleKey);
@@ -104,7 +104,7 @@ namespace koi
 	}
 
 
-	void CameraController::UpdateFirstPerson(f32 dt, const WindowInput& input)
+	void CameraController::UpdateFirstPerson(f32 dt, const InputManager& input)
 	{
 		using namespace math;
 
@@ -151,7 +151,7 @@ namespace koi
 		ApplyView();
 	}
 
-	void CameraController::UpdateOrbit(const WindowInput& input)
+	void CameraController::UpdateOrbit(const InputManager& input)
 	{
 		using namespace math;
 

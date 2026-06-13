@@ -108,13 +108,7 @@ namespace koi::editor
 		Renderer& renderer = engine.GetRenderer();
 		GfxDevice& device  = renderer.GetDevice();
 
-		WindowHandle mainWnd = engine.GetWindowManager().GetMainWndowHandle();
-		Window* window = engine.GetWindowManager().GetWindow(mainWnd);
-		if (!window)
-		{
-			KOI_LOG_ERROR("Editor: main window not available at PostInit");
-			return;
-		}
+		Window& window = engine.GetWindow();
 
 		// Init ImGui
 		IMGUI_CHECKVERSION();
@@ -124,7 +118,7 @@ namespace koi::editor
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		ImGui::StyleColorsDark();
 
-		ImGui_ImplGlfw_InitForOther(window->GetGLFWWindow(), true);
+		ImGui_ImplGlfw_InitForOther(window.GetGLFWWindow(), true);
 
 		ImGui_ImplDX12_InitInfo initInfo{};
 		initInfo.Device               = device.GetNative();
@@ -148,8 +142,7 @@ namespace koi::editor
 		Engine& engine         = Engine::Get();
 		Renderer& renderer     = engine.GetRenderer();
 		GfxDevice& device      = renderer.GetDevice();
-		RenderWindowHandle rwh = engine.GetMainRenderWindowHandle();
-		CommandList* cmd       = renderer.GetCommandList(rwh);
+		CommandList* cmd = renderer.GetCommandList();
 		if (!cmd) return;
 
 		ImGui_ImplDX12_NewFrame();
@@ -157,16 +150,10 @@ namespace koi::editor
 		ImGui::NewFrame();
 
 		// Ask engine and game to recompile shaders and rebuild pipelines
+		if (engine.GetInputManager().IsKeyPressed(KeyCode::F5))
 		{
-			WindowHandle mainWnd = engine.GetWindowManager().GetMainWndowHandle();
-			if (const WindowInput* wi = engine.GetInputManager().GetWindowInput(mainWnd))
-			{
-				if (wi->IsKeyPressed(KeyCode::F5))
-				{
-					InvalidateShaderCache();
-					engine.FireHook(EnginePhase::OnShaderReload);
-				}
-			}
+			InvalidateShaderCache();
+			engine.FireHook(EnginePhase::OnShaderReload);
 		}
 		
 

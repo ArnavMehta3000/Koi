@@ -50,24 +50,20 @@ void SandboxApp::OnInit()
 void SandboxApp::OnTick(koi::f32 dt)
 {
 	ZoneScoped;
-	koi::Engine& engine       = *GetEngine();
-	koi::InputManager& input  = engine.GetInputManager();
-	koi::WindowHandle mainWnd = engine.GetWindowManager().GetMainWndowHandle();
+	koi::Engine& engine      = *GetEngine();
+	koi::InputManager& input = engine.GetInputManager();
 
 	m_scene.Update();
 
-	if (const koi::WindowInput* wi = input.GetWindowInput(mainWnd))
-	{
-		if (wi->IsKeyPressed(koi::KeyCode::Escape))
-			engine.RequestExit();
+	if (input.IsKeyPressed(koi::KeyCode::Escape))
+		engine.RequestExit();
 
 #if KOI_WITH_EDITOR
-		if (m_controller && !ImGui::GetIO().WantCaptureMouse)
+	if (m_controller && !ImGui::GetIO().WantCaptureMouse)
 #else
-		if (m_controller)
+	if (m_controller)
 #endif
-			m_controller->Update(dt, *wi);
-	}
+		m_controller->Update(dt, input);
 }
 
 void SandboxApp::OnRender()
@@ -77,9 +73,8 @@ void SandboxApp::OnRender()
 	koi::Renderer& renderer = engine.GetRenderer();
 	koi::GfxDevice& device  = renderer.GetDevice();
 
-	koi::RenderWindowHandle rwh = engine.GetMainRenderWindowHandle();
-	koi::RenderWindow* rw       = renderer.GetRenderWindow(rwh);
-	koi::CommandList* cmd       = renderer.GetCommandList(rwh);
+	koi::RenderWindow* rw = renderer.GetMainRenderWindow();
+	koi::CommandList* cmd = renderer.GetCommandList();
 
 	if (!rw || !cmd) return;
 

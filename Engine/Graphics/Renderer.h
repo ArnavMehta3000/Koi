@@ -5,40 +5,30 @@
 #include "Graphics/RHI/CommandAllocator.h"
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/RHI/CommandQueue.h"
-#include "Platform/WindowManager.h"
 #include <memory>
-#include <unordered_map>
+#include <optional>
 
 namespace koi
 {
-	using RenderWindowHandle = Handle<RenderWindow>;
+	class Window;
 
 	class Renderer : NonCopyable, NonMovable, public IDeviceNotify
 	{
-		using WindowMap = std::unordered_map<WindowHandle, RenderWindowHandle>;
-		struct FrameContext  // Per-window rendering context
-		{
-			CommandAllocator Allocator;
-			CommandList List;
-		};
-		using FrameMap = std::unordered_map<u64 /*handle id*/, std::unique_ptr<FrameContext>>;
-
 	public:
 		Renderer();
 		~Renderer();
 
-		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                                 { return *m_device;              }
-		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept                           { return *m_device;              }
-		[[nodiscard]] inline RendererResources&       GetDefaultResources() noexcept                       { return m_defaultResources;     }
-		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept                 { return m_defaultResources;     }
-		[[nodiscard]] inline RenderWindow*            GetRenderWindow(RenderWindowHandle h) noexcept       { return m_renderWindows.Get(h); }
-		[[nodiscard]] inline const RenderWindow*      GetRenderWindow(RenderWindowHandle h) const noexcept { return m_renderWindows.Get(h); }
+		// Called once by Engine after the main window is created.
+		void InitMainWindow(Window& window, bool vsync);
 
-		std::pair<RenderWindowHandle, RenderWindow*> AddWindow(WindowHandle handle, bool vsync);  // NOTE: The pointer is not safe to store, but okay for temporary actions
-		RenderWindowHandle FindWindow(WindowHandle w) const noexcept;
-		void RemoveWindow(WindowHandle handle);
+		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                   { return *m_device;              }
+		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept             { return *m_device;              }
+		[[nodiscard]] inline RendererResources&       GetDefaultResources() noexcept         { return m_defaultResources;     }
+		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept   { return m_defaultResources;     }
+		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept         { return m_renderWindow ? &*m_renderWindow : nullptr; }
+		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept   { return m_renderWindow ? &*m_renderWindow : nullptr; }
 
-		[[nodiscard]] CommandList* GetCommandList(RenderWindowHandle h) noexcept;
+		[[nodiscard]] CommandList* GetCommandList() noexcept;
 
 		void BeginFrame();
 		void EndFrame();
@@ -46,16 +36,20 @@ namespace koi
 	private:
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
-		FrameContext& GetOrCreateFrameContext(RenderWindowHandle h);
+
+		struct FrameContext
+		{
+			CommandAllocator Allocator;
+			CommandList      List;
+		};
 
 	private:
-		std::unique_ptr<GfxDevice> m_device;
-		CommandQueue               m_graphicsQueue;
-		HandlePool<RenderWindow>   m_renderWindows;
-		FrameMap                   m_frameContexts;
-		WindowMap                  m_windowMap;
-		RendererResources          m_defaultResources;
-		RenderGraph                m_frameGraph;
-		u32                        m_frameSlot = 0;
+		std::unique_ptr<GfxDevice>    m_device;
+		CommandQueue                  m_graphicsQueue;
+		std::optional<RenderWindow>   m_renderWindow;
+		std::unique_ptr<FrameContext> m_frameContext;
+		RendererResources             m_defaultResources;
+		RenderGraph                   m_frameGraph;
+		u32                           m_frameSlot = 0;
 	};
 }

@@ -20,18 +20,17 @@ namespace koi
 
 		KOI_LOG_INFO("Engine initializing");
 
-		m_windowManager = std::make_unique<WindowManager>();
-		m_inputManager  = std::make_unique<InputManager>();
-		m_renderer      = std::make_unique<Renderer>();
+		m_inputManager = std::make_unique<InputManager>();
+		m_renderer     = std::make_unique<Renderer>();
 	}
 
 	Engine::~Engine()
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		m_renderer      = nullptr;
-		m_inputManager  = nullptr;
-		m_windowManager = nullptr;
+		m_renderer     = nullptr;
+		m_inputManager = nullptr;
+		m_window.reset();
 		KOI_LOG_INFO("Engine shut down");
 
 		PrintMemSnapshot(DiffSnapshots(m_initSnapshot, GetMemSnapshot()));
@@ -46,8 +45,15 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		const WindowDesc& mainWndDesc = app.GetDesc().WindowDesc;
 
-		auto [windowHandle, windowPtr] = m_windowManager->CreateMainWindow(mainWndDesc);
-		m_mainRenderWindow = RegisterWindowWithRenderer(windowHandle, mainWndDesc.VSync);
+		m_window.emplace(mainWndDesc);
+		Window& window = *m_window;
+
+		app.m_window = &window;
+
+		m_inputManager->Init(window);
+		m_renderer->InitMainWindow(window, mainWndDesc.VSync);
+
+		window.SetCloseCallback([this]() { RequestExit(); });
 
 		app.Init();
 		FireHook(EnginePhase::PostInit);
@@ -63,7 +69,7 @@ namespace koi
 		m_hooks[static_cast<size_t>(phase)].push_back(HookEntry{ .Id = id, .Callback = std::move(callback) });
 		return id;
 	}
-#
+
 	void Engine::UnregisterHook(HookId id)
 	{
 		if (id == INVALID_HOOK_ID) return;
@@ -82,50 +88,10 @@ namespace koi
 	{
 		auto& entries = m_hooks[static_cast<size_t>(phase)];
 		const size_t n = entries.size();
-
 		for (size_t i = 0; i < n && i < entries.size(); ++i)
 		{
 			if (entries[i].Callback) entries[i].Callback();
 		}
-	}
-
-	std::pair<WindowHandle, RenderWindowHandle> Engine::CreateAndAddRenderWindow(const WindowDesc& desc)
-	{
-		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		auto&& [windowHandle, windowPtr] = m_windowManager->CreateWindow(desc);
-		RenderWindowHandle renderHandle = RegisterWindowWithRenderer(windowHandle, desc.VSync);
-		return { windowHandle, renderHandle };
-	}
-
-	RenderWindowHandle Engine::RegisterWindowWithRenderer(WindowHandle handle, bool isVsync)
-	{
-		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		RenderWindowHandle renderWndHandle;
-		if (Window* wnd = m_windowManager->GetWindow(handle))
-		{
-			m_inputManager->RegisterWindow(handle, *wnd);
-
-			auto&& [renderHandle, renderWindowPtr] = m_renderer->AddWindow(handle, isVsync);
-			renderWndHandle = renderHandle;
-
-			wnd->SetResizeCallback(
-				[renderHandle = renderHandle, renderer = m_renderer.get()](u32 w, u32 h)
-				{
-					if (RenderWindow* rw = renderer->GetRenderWindow(renderHandle))
-						rw->Resize(w, h);
-				});
-
-			wnd->SetCloseCallback(
-				[window = handle, renderer = m_renderer.get(), input = m_inputManager.get()]()
-				{
-					renderer->RemoveWindow(window);
-					input->UnregisterWindow(window);
-				});
-		}
-
-		return renderWndHandle;
 	}
 
 	void Engine::BeginFrame()
@@ -133,10 +99,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		m_inputManager->BeginFrame();
-
 		Window::PollEvents();
-		m_windowManager->DestroyClosedWindows();
-
 		m_renderer->BeginFrame();
 	}
 
@@ -169,10 +132,6 @@ namespace koi
 			BeginFrame();
 			Tick(app);
 			EndFrame();
-
-			if (m_windowManager->AllClosed())
-				m_isRunning = false;
-
 			FrameMark;
 		}
 	}
