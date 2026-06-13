@@ -7,7 +7,7 @@ author  = "Arnav"
 title  = "Koi - Sandbox"
 width  = 1280
 height = 720
-vsync  = true
+vsync  = false
 
 [assets]
 startup_scene = "project://Assets/Scenes/Main.toml"
