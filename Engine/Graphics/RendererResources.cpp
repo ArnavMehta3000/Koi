@@ -1,6 +1,9 @@
 #include "Graphics/RendererResources.h"
 #include "Graphics/RHI/Device.h"
+#include "Graphics/RHI/PipelineDesc.h"
+#include "Graphics/ShaderLoader.h"
 #include "Memory/MemoryTracker.h"
+#include "Core/Logger.h"
 
 namespace koi
 {
@@ -67,6 +70,8 @@ namespace koi
 		LinearWrapSampler  = device.CreateSampler(MakeLinearWrapDesc());
 		LinearClampSampler = device.CreateSampler(MakeLinearClampDesc());
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
+
+		RebuildPipelines(device);
 	}
 
 	void RendererResources::Shutdown(GfxDevice& device)
@@ -74,8 +79,86 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		device.Destroy(WhiteTexture);
 		device.Destroy(FlatNormalTexture);
-		WhiteTexture      = {};
-		FlatNormalTexture = {};
+		device.Destroy(TonemapPipeline);
+		device.Destroy(MeshOpaquePipeline);
+		device.Destroy(MeshWireframePipeline);
+		WhiteTexture          = {};
+		FlatNormalTexture     = {};
+		TonemapPipeline       = {};
+		MeshOpaquePipeline    = {};
+		MeshWireframePipeline = {};
 		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
+	}
+
+	void RendererResources::RebuildPipelines(GfxDevice& device)
+	{
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
+		auto destroyIfValid = [&](PipelineHandle& h)
+		{
+			if (h) { device.Destroy(h); h = {}; }
+		};
+
+		// --- Tonemap ---
+		{
+			auto vsData = LoadShader("engine://Assets/Shaders/TonemapVS");
+			auto psData = LoadShader("engine://Assets/Shaders/TonemapPS");
+			if (vsData.empty() || psData.empty())
+			{
+				KOI_LOG_ERROR("RendererResources: failed to load tonemap shaders");
+			}
+			else
+			{
+				destroyIfValid(TonemapPipeline);
+				TonemapPipeline = device.CreatePipeline(PipelineDesc
+				{
+					.VertexShader        = vsData,
+					.PixelShader         = psData,
+					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+					.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
+					.RenderTargetFormats = { Format::R8G8B8A8_UNORM },
+					.RenderTargetCount   = 1,
+					.DebugName           = "Tonemap",
+				});
+			}
+		}
+
+		// --- Mesh (opaque + wireframe share the same VS/PS) ---
+		{
+			auto vsData = LoadShader("engine://Assets/Shaders/MeshVS");
+			auto psData = LoadShader("engine://Assets/Shaders/MeshPS");
+			if (vsData.empty() || psData.empty())
+			{
+				KOI_LOG_ERROR("RendererResources: failed to load mesh shaders");
+			}
+			else
+			{
+				destroyIfValid(MeshOpaquePipeline);
+				MeshOpaquePipeline = device.CreatePipeline(PipelineDesc
+				{
+					.VertexShader        = vsData,
+					.PixelShader         = psData,
+					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK },
+					.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+					.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
+					.RenderTargetCount   = 1,
+					.DepthFormat         = Format::D32_FLOAT,
+					.DebugName           = "Mesh.Opaque",
+				});
+
+				destroyIfValid(MeshWireframePipeline);
+				MeshWireframePipeline = device.CreatePipeline(PipelineDesc
+				{
+					.VertexShader        = vsData,
+					.PixelShader         = psData,
+					.Rasterizer          = { .FillMode = D3D12_FILL_MODE_WIREFRAME, .CullMode = D3D12_CULL_MODE_NONE },
+					.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+					.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
+					.RenderTargetCount   = 1,
+					.DepthFormat         = Format::D32_FLOAT,
+					.DebugName           = "Mesh.Wireframe",
+				});
+			}
+		}
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Graphics/RenderWindow.h"
 #include "Graphics/RendererResources.h"
+#include "Graphics/RenderPasses/RenderPass.h"
 #include "Graphics/RHI/CommandAllocator.h"
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/RHI/CommandQueue.h"
@@ -54,7 +55,7 @@ namespace koi
 		FrameMap                   m_frameContexts;
 		WindowMap                  m_windowMap;
 		RendererResources          m_defaultResources;
-		PipelineHandle             m_tonemapPipeline{};
+		RenderGraph                m_frameGraph;
 		u32                        m_frameSlot = 0;
 	};
 }

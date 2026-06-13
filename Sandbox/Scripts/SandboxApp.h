@@ -28,14 +28,12 @@ public:
 	void OnShutdown() override;
 
 private:
-	void CreatePipeline();
 	void LoadScene();
 	void SetupCamera();
 	void EnsureDepthBuffer(koi::GfxDevice& device, koi::u32 width, koi::u32 height);
 	koi::f32 GetAspect() const;
 
 private:
-	koi::PipelineHandle                    m_pipeline;
 	koi::Scene                             m_scene;
 	koi::TextureHandle                     m_depthTexture;
 	koi::u32                               m_depthWidth  = 0;

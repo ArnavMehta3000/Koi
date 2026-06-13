@@ -34,26 +34,16 @@ void SandboxApp::OnInit()
 	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnInit()");
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
-	CreatePipeline();
 	LoadScene();
 	SetupCamera();
 
 #if KOI_WITH_EDITOR
 	koi::Engine& engine = *GetEngine();
-	// Rebuild the mesh pipeline whenever the editor recompiles shaderss
-	std::ignore = engine.RegisterHook(koi::EnginePhase::OnShaderReload, [this]
-	{
-		koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
-		device.WaitForIdle();
-		if (m_pipeline) device.Destroy(m_pipeline);
-		CreatePipeline();
-	});
 
 	std::ignore = engine.RegisterHook(koi::EnginePhase::OnImGuiDraw, [this]
 	{
 		m_scene.DrawImGui();
 	});
-	
 #endif
 }
 
@@ -102,7 +92,7 @@ void SandboxApp::OnRender()
 	cmd->ClearDepthStencil(m_depthTexture);
 	cmd->SetRenderTarget(rw->GetHDRColorBuffer(), m_depthTexture);
 	cmd->SetViewportAndScissor(width, height);
-	cmd->SetPipeline(m_pipeline);
+	cmd->SetPipeline(res.MeshOpaquePipeline);
 
 	PushConstants pc{};
 	pc.SamplerIndex = res.LinearWrapSampler;
@@ -131,36 +121,9 @@ void SandboxApp::OnShutdown()
 	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnShutdown()");
 	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
-	device.Destroy(m_pipeline);
 	m_scene.Release(device);
 	if (m_depthTexture)
 		device.Destroy(m_depthTexture);
-}
-
-void SandboxApp::CreatePipeline()
-{
-	ZoneScopedN("SandboxApp::CreatePipeline() - Load Shader Bytecode");
-
-	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
-	KOI_LOG_INFO("SandboxApp::CreatePipeline()");
-
-	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
-
-	std::vector<byte> vsData = koi::LoadShader("engine://Assets/Shaders/MeshVS");
-	std::vector<byte> psData = koi::LoadShader("engine://Assets/Shaders/MeshPS");
-	assert((!vsData.empty() && !psData.empty()) && "Failed to load mesh shaders");
-
-	m_pipeline = device.CreatePipeline(koi::PipelineDesc
-	{
-		.VertexShader        = vsData,
-		.PixelShader         = psData,
-		.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
-		.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-		.RenderTargetFormats = { koi::Format::R16G16B16A16_FLOAT },
-		.RenderTargetCount   = 1,
-		.DepthFormat         = kDepthFormat,
-		.DebugName           = "MeshOpaque",
-	});
 }
 
 void SandboxApp::LoadScene()
@@ -178,9 +141,7 @@ void SandboxApp::LoadScene()
 		device.Get(renderer.GetDefaultResources().WhiteTexture)->SRVIndex;
 
 	if (auto result = koi::Scene::Load(scenePath, device, whiteSRV))
-	{
 		m_scene = std::move(result.value());
-	}
 }
 
 void SandboxApp::SetupCamera()
