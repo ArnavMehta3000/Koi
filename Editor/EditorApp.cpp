@@ -168,9 +168,13 @@ namespace koi::editor
 				}
 			}
 		}
+		
 
+		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		DrawMenuBar();
 		ImGui::ShowDemoWindow();
+
+		engine.FireHook(EnginePhase::OnImGuiDraw);
 
 		ImGui::Render();
 

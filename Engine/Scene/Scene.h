@@ -37,10 +37,12 @@ namespace koi
 		                                               GfxDevice& device,
 		                                               DescriptorIndex fallbackAlbedoSRV);
 
-		// Recompute dirty world transforms in topological order. Call once per frame.
 		void Update();
-
 		void Release(GfxDevice& device);
+
+#if KOI_WITH_EDITOR
+		void DrawImGui();
+#endif
 
 		[[nodiscard]] std::span<const SceneNode> GetNodes()  const        { return m_nodes;         }
 		[[nodiscard]] std::span<SceneNode>       GetNodes()               { return m_nodes;         }

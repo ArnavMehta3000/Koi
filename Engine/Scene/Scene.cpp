@@ -8,9 +8,11 @@
 #include "Memory/MemoryTracker.h"
 #include <queue>
 #include <unordered_map>
+#include <functional>
 #include <cassert>
 #include <numbers>
 #include <toml++/toml.hpp>
+#include <imgui.h>
 
 namespace koi
 {
@@ -216,4 +218,83 @@ namespace koi
 		m_meshes.clear();
 		m_nodes.clear();
 	}
+
+#if KOI_WITH_EDITOR
+	void Scene::DrawImGui()
+	{
+		static i32 s_selected = -1;
+
+		std::function<void(i32)> DrawNode = [&](i32 idx)
+		{
+			const SceneNode& node = m_nodes[idx];
+
+			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow
+				| ImGuiTreeNodeFlags_SpanAvailWidth
+				| ImGuiTreeNodeFlags_DefaultOpen;
+			if (node.Children.empty())
+				flags |= ImGuiTreeNodeFlags_Leaf;
+			if (s_selected == idx)
+				flags |= ImGuiTreeNodeFlags_Selected;
+
+			const char* label = node.Name.empty() ? "(unnamed)" : node.Name.c_str();
+			bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(idx)), flags, "%s", label);
+
+			if (ImGui::IsItemClicked())
+				s_selected = idx;
+
+			if (open)
+			{
+				for (i32 child : node.Children)
+					DrawNode(child);
+				ImGui::TreePop();
+			}
+		};
+
+		ImGui::Begin("Scene");
+
+		ImGui::BeginChild("##tree", ImVec2(220.0f, 0.0f), ImGuiChildFlags_Borders);
+		for (i32 i = 0; i < static_cast<i32>(m_nodes.size()); ++i)
+		{
+			if (m_nodes[i].Parent == -1)
+				DrawNode(i);
+		}
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		ImGui::BeginChild("##props", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
+		if (s_selected >= 0 && s_selected < static_cast<i32>(m_nodes.size()))
+		{
+			const SceneNode& node = m_nodes[s_selected];
+			ImGui::TextUnformatted(node.Name.empty() ? "(unnamed)" : node.Name.c_str());
+			ImGui::Separator();
+
+			constexpr f32 kRadToDeg = 180.0f / static_cast<f32>(std::numbers::pi);
+			f32 pos[3]{}, rot[3]{}, scl[3]{};
+			math::store(pos, node.LocalTransform.Position);
+			math::store(rot, node.LocalTransform.EulerAngles);
+			math::store(scl, node.LocalTransform.Scale);
+
+			ImGui::Text("Position  % .3f  % .3f  % .3f", pos[0], pos[1], pos[2]);
+			ImGui::Text("Rotation  % .1f  % .1f  % .1f", rot[0] * kRadToDeg, rot[1] * kRadToDeg, rot[2] * kRadToDeg);
+			ImGui::Text("Scale     % .3f  % .3f  % .3f", scl[0], scl[1], scl[2]);
+
+			if (node.MeshIndex >= 0)
+			{
+				ImGui::Separator();
+				const GPUMesh& mesh = m_meshes[node.MeshIndex];
+				ImGui::Text("Mesh index  %d", node.MeshIndex);
+				ImGui::Text("Draw calls  %d", static_cast<i32>(mesh.DrawItems.size()));
+				ImGui::Text("Textures    %d", static_cast<i32>(mesh.Textures.size()));
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("Select a node");
+		}
+		ImGui::EndChild();
+
+		ImGui::End();
+	}
+#endif
 }

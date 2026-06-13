@@ -12,6 +12,7 @@ namespace koi
 		PreRender,           // each frame, before app OnRender
 		PostRender,          // each frame, after app OnRender
 		OnSwapchainOverlay,  // inside EndFrame, after tonemap to swapchain, before present (editor overlay UI)
+		OnImGuiDraw,         // inside the editor's ImGui frame, between NewFrame and Render — safe to call any ImGui:: API
 		OnShaderReload,      // editor-triggered: shader source recompiled to CSO, subscribers rebuild pipelines
 		PreShutdown,         // before AppBase::Shutdown
 

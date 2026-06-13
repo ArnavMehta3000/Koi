@@ -28,6 +28,7 @@ namespace koi::editor
 	private:
 		void OnPostInit();
 		void OnPostRender();
+		void DrawDockspace();
 		void DrawMenuBar();
 		void Cook();
 

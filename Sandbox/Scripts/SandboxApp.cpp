@@ -7,6 +7,9 @@
 #include "Graphics/RHI/PipelineDesc.h"
 #include "Graphics/ShaderLoader.h"
 #include <toml++/toml.hpp>
+#if KOI_WITH_EDITOR
+#include <imgui.h>
+#endif
 
 namespace koi
 {
@@ -36,14 +39,21 @@ void SandboxApp::OnInit()
 	SetupCamera();
 
 #if KOI_WITH_EDITOR
+	koi::Engine& engine = *GetEngine();
 	// Rebuild the mesh pipeline whenever the editor recompiles shaderss
-	GetEngine()->RegisterHook(koi::EnginePhase::OnShaderReload, [this]
+	std::ignore = engine.RegisterHook(koi::EnginePhase::OnShaderReload, [this]
 	{
 		koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
 		device.WaitForIdle();
 		if (m_pipeline) device.Destroy(m_pipeline);
 		CreatePipeline();
 	});
+
+	std::ignore = engine.RegisterHook(koi::EnginePhase::OnImGuiDraw, [this]
+	{
+		m_scene.DrawImGui();
+	});
+	
 #endif
 }
 
@@ -61,7 +71,11 @@ void SandboxApp::OnTick(koi::f32 dt)
 		if (wi->IsKeyPressed(koi::KeyCode::Escape))
 			engine.RequestExit();
 
+#if KOI_WITH_EDITOR
+		if (m_controller && !ImGui::GetIO().WantCaptureMouse)
+#else
 		if (m_controller)
+#endif
 			m_controller->Update(dt, *wi);
 	}
 }
