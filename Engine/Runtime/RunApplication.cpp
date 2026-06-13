@@ -63,17 +63,18 @@ namespace koi::internal
 					: fs::absolute(cmd->GetProjectFile()).parent_path();
 				const fs::path engineRoot = exeDir / "Engine";
 #else
-				// Locate the cooked content root: prefer <exe>/, fall back to <exe>/Cooked/
+				// Locate the cooked content root: prefer <exe>/, fall back to <exe>/Cooked/.
+				// Either way, content is laid out as <root>/Engine/ and <root>/Project/
 				fs::path contentRoot = exeDir;
-				if (!fs::exists(contentRoot / "Project.toml") &&
-				     fs::exists(exeDir / "Cooked" / "Project.toml"))
+				if (!fs::exists(contentRoot / "Project" / "Project.toml") &&
+				     fs::exists(exeDir / "Cooked" / "Project" / "Project.toml"))
 				{
 					contentRoot = exeDir / "Cooked";
 				}
 
 				if (cmd->GetProjectFile().empty())
 				{
-					const fs::path defaultProject = contentRoot / "Project.toml";
+					const fs::path defaultProject = contentRoot / "Project" / "Project.toml";
 					if (fs::exists(defaultProject))
 					{
 						KOI_LOG_INFO("No --project specified; defaulting to {}", defaultProject.string());
@@ -81,8 +82,15 @@ namespace koi::internal
 					}
 				}
 
-				const fs::path projectRoot = contentRoot;
+				const fs::path projectRoot = contentRoot / "Project";
 				const fs::path engineRoot  = contentRoot / "Engine";
+#endif
+#if KOI_DEBUG
+				KOI_LOG_DEBUG("Setting up runtime VFS mounts");
+				KOI_LOG_DEBUG("\tWorking directory : {}", exeDir.string());
+				KOI_LOG_DEBUG("\tProject file      : {}", cmd->GetProjectFile().string());
+				KOI_LOG_DEBUG("\tEngine root       : {}", engineRoot.string());
+				KOI_LOG_DEBUG("\tProject root      : {}", projectRoot.string());
 #endif
 				auto& vfs = VirtualFileSystem::Get();
 				vfs.Mount("engine", std::make_unique<FilesystemMount>(engineRoot));

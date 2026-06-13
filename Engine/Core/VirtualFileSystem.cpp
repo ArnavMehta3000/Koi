@@ -74,16 +74,19 @@ namespace koi
 		return std::make_pair(virtualPath.substr(0, pos), virtualPath.substr(pos + 3));
 	}
 
+	// Paths without a scheme are implicitly project://. Assets in user-authored
+	// TOMLs are project assets all the time, so the prefix is noise; engine://
+	// stays opt-in for the rare cross-reference.
+	static std::pair<std::string_view, std::string_view> ResolveScheme(std::string_view virtualPath)
+	{
+		if (auto split = VirtualFileSystem::SplitVirtualPath(virtualPath))
+			return *split;
+		return { std::string_view{"project"}, virtualPath };
+	}
+
 	std::optional<std::vector<byte>> VirtualFileSystem::Read(std::string_view virtualPath)
 	{
-		auto split = SplitVirtualPath(virtualPath);
-		if (!split)
-		{
-			KOI_LOG_ERROR("VFS Read: '{}' has no scheme prefix", virtualPath);
-			return std::nullopt;
-		}
-
-		const auto& [scheme, path] = *split;
+		const auto [scheme, path] = ResolveScheme(virtualPath);
 
 		auto it = m_mounts.find(std::string(scheme));
 		if (it == m_mounts.end())
@@ -92,15 +95,12 @@ namespace koi
 			return std::nullopt;
 		}
 
-		return it->second->Read(split->second);
+		return it->second->Read(path);
 	}
 
 	std::optional<fs::path> VirtualFileSystem::TryResolveToDisk(std::string_view virtualPath)
 	{
-		auto split = SplitVirtualPath(virtualPath);
-		if (!split) return std::nullopt;
-
-		const auto& [scheme, path] = *split;
+		const auto [scheme, path] = ResolveScheme(virtualPath);
 
 		auto it = m_mounts.find(std::string(scheme));
 		if (it == m_mounts.end()) return std::nullopt;

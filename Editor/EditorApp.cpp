@@ -211,14 +211,18 @@ namespace koi::editor
 		std::error_code ec;
 		fs::create_directories(outRoot, ec);
 
-		// Compile engine shaders → <out>/Engine/Shaders/*.cso
+		// Cook layout: <out>/Engine/... and <out>/Project/... — clean split so
+		// runtime can mount engine:// and project:// at sibling roots.
+		const fs::path projRoot = outRoot / "Project";
+
+		// Compile engine shaders -> <out>/Engine/Shaders/*.cso
 		const fs::path engineShaderSrc = m_config.EngineSource / "Shaders";
 		const fs::path engineShaderOut = outRoot / "Engine" / "Shaders";
 		fs::create_directories(engineShaderOut, ec);
 
-		// Compile project shaders → <out>/Assets/Shaders/*.cso
+		// Compile project shaders -> <out>/Project/Assets/Shaders/*.cso
 		const fs::path projShaderSrc = m_config.ProjectSource / "Assets" / "Shaders";
-		const fs::path projShaderOut = outRoot / "Assets" / "Shaders";
+		const fs::path projShaderOut = projRoot / "Assets" / "Shaders";
 		fs::create_directories(projShaderOut, ec);
 
 		u32 shaderOk = 0, shaderTotal = 0;
@@ -266,14 +270,15 @@ namespace koi::editor
 			if (cec)
 				KOI_LOG_WARN("Cook: copy {} -> {} failed: {}", src.string(), dst.string(), cec.message());
 		};
-		copyDir(m_config.ProjectSource / "Assets" / "Models", outRoot / "Assets" / "Models");
-		copyDir(m_config.ProjectSource / "Assets" / "Scenes", outRoot / "Assets" / "Scenes");
+		copyDir(m_config.ProjectSource / "Assets" / "Models", projRoot / "Assets" / "Models");
+		copyDir(m_config.ProjectSource / "Assets" / "Scenes", projRoot / "Assets" / "Scenes");
 
-		// Copy the project TOML as Project.toml
+		// Copy the project TOML as <out>/Project/Project.toml
 		if (fs::exists(m_config.ProjectFile))
 		{
+			fs::create_directories(projRoot, ec);
 			std::error_code cec;
-			fs::copy_file(m_config.ProjectFile, outRoot / "Project.toml",
+			fs::copy_file(m_config.ProjectFile, projRoot / "Project.toml",
 				fs::copy_options::overwrite_existing, cec);
 			if (cec)
 				KOI_LOG_WARN("Cook: copy project TOML failed: {}", cec.message());
