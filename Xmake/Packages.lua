@@ -2,6 +2,7 @@
 includes("Packages/hlslpp.lua")
 includes("Packages/Tracy.lua")
 includes("Packages/dxc.lua")
+includes("Packages/ImGui.lua")
 
 add_requires(
     "glfw",
@@ -15,4 +16,3 @@ add_requires("stb 31c1ad37456438565541f4919958214b6e762fb4")
 add_requires("toml++ f22f035fe2d63e2be3d266d8f100e7812a9ab9bd")
 add_requires("fastgltf", { configs = { cxx_standard = "20" }})
 add_requires("spdlog", { configs = { wchar = true, std_format = false, fmt_external = false }})
-add_requires("imgui docking", { configs = { dx12 = true, glfw = true }})

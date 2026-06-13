@@ -217,9 +217,9 @@ namespace koi
 			}
 
 			mesh.VertexCount = static_cast<u32>(allVertices.size());
-			mesh.IndexCount = static_cast<u32>(allIndices.size());
-			mesh.Vertices = std::move(allVertices);
-			mesh.Indices = std::move(allIndices);
+			mesh.IndexCount  = static_cast<u32>(allIndices.size());
+			mesh.Vertices    = std::move(allVertices);
+			mesh.Indices     = std::move(allIndices);
 
 			model.Bounds.Expand(mesh.Bounds);
 			model.Meshes.push_back(std::move(mesh));
