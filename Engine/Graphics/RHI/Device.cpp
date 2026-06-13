@@ -8,11 +8,19 @@
 #include <ranges>
 #include <cassert>
 #include <comdef.h>
-
-
 #if KOI_DEBUG
 	#include <dxgidebug.h>
 #endif
+
+// Enable to log handle deletion logs
+#define KOI_LOG_HANDLE_INFO 0
+#if KOI_LOG_HANDLE_INFO
+	#define LOG_HANDLE_TRACE(msg, h) KOI_LOG_TRACE(msg, h.GetIndex(), h.GetGeneration());
+#else
+	#define LOG_HANDLE_TRACE(msg, h) void(0);
+#endif
+
+
 
 namespace koi
 {
@@ -319,7 +327,7 @@ namespace koi
 		if (m_textures.IsValid(h))
 		{
 			m_deletionQueue.push({ m_nextFenceValue, h });
-			KOI_LOG_TRACE("Marked texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+			LOG_HANDLE_TRACE("Marked texture for deletion (Handle: idx={}, gen={})", h);
 		}
 		else
 		{
@@ -335,11 +343,11 @@ namespace koi
 		if (m_buffers.IsValid(h))
 		{
 			m_deletionQueue.push({ m_nextFenceValue, h });
-			KOI_LOG_TRACE("Marked buffer for deletion: {}", h.GetId());
+			LOG_HANDLE_TRACE("Marked buffer for deletion (Handle: idx={}, gen={})", h);
 		}
 		else
 		{
-			KOI_LOG_WARN("Trying to mark invalid buffer for deletion (Hanlde: {})", h.GetId());
+			KOI_LOG_WARN("Trying to mark invalid buffer for deletion (Handle: {})", h.GetId());
 		}
 	}
 
@@ -399,7 +407,7 @@ namespace koi
 		if (m_pipelines.IsValid(h))
 		{
 			m_deletionQueue.push({ m_nextFenceValue, h });
-			KOI_LOG_TRACE("Marked pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+			LOG_HANDLE_TRACE("Marked pipeline for deletion (Handle: idx={}, gen={})", h);
 		}
 		else
 		{
@@ -822,18 +830,18 @@ namespace koi
 					// The pool erase below will drop the ref, but since the swapchain also holds
 					// one it stays alive.
 					FreeResource(h);
-					KOI_LOG_TRACE("Texture resource deleted (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+					LOG_HANDLE_TRACE("Texture resource deleted (Handle: idx={}, gen={})", h);
 					m_textures.Erase(h);
 				},
 				[this](BufferHandle h)
 				{
 					FreeResource(h);
-					KOI_LOG_TRACE("Buffer resource deleted (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+					LOG_HANDLE_TRACE("Buffer resource deleted (Handle: idx={}, gen={})", h);
 					m_buffers.Erase(h);
 				},
 				[this](PipelineHandle h)
 				{
-					KOI_LOG_TRACE("Pipeline resource deleted (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+					LOG_HANDLE_TRACE("Pipeline resource deleted (Handle: idx={}, gen={})", h);
 					m_pipelines.Erase(h);
 				},
 			}, p.Handle);
