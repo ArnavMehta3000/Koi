@@ -56,7 +56,14 @@ namespace koi
 		if (s_windowCount == 0)
 		{
 			::glfwSetErrorCallback([](int code, const char* desc)
-				{ KOI_LOG_ERROR("GLFW Error {}: {}", code, desc); });
+				{
+#if KOI_WITH_EDITOR
+					// Ignore 'Library not initialized error: 65537' when with editor
+					// This error is fired with editor when ImGui is shutting down
+					if (code == 65537) return;
+#endif
+					KOI_LOG_ERROR("GLFW Error {}: {}", code, desc);
+				});
 
 			if (!::glfwInit())
 			{

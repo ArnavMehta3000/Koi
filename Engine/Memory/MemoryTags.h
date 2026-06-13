@@ -7,6 +7,7 @@ namespace koi
 	{
 		Untagged = 0,
 		Engine,
+		Editor,
 		Logging,
 		Platform,
 		Input,
@@ -29,6 +30,7 @@ namespace koi
 		{
 			X(Untagged)
 			X(Engine)
+			X(Editor)
 			X(Logging)
 			X(Platform)
 			X(Input)

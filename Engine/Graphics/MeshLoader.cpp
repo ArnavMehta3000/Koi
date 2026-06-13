@@ -1,6 +1,7 @@
 #include "Graphics/MeshLoader.h"
 #include "Core/Logger.h"
 #include "Core/Profiling.h"
+#include "Core/VirtualFileSystem.h"
 #include "Memory/MemoryTracker.h"
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
@@ -26,10 +27,22 @@ namespace koi
 		};
 	}
 
-	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& path)
+	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& modelPath)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		ZoneScoped;
+
+		fs::path path;
+		if (std::optional<fs::path> resolveResult = VirtualFileSystem::Get().TryResolveToDisk(modelPath.string()))
+		{
+			path = *resolveResult;
+		}
+		else
+		{
+			KOI_LOG_ERROR("Failed to resolve path: {}", modelPath.string().c_str());
+			return nullptr;
+		}
+
 		KOI_LOG_INFO("Loading mesh: {}", path.string().c_str());
 
 		fastgltf::Parser parser(fastgltf::Extensions::KHR_materials_variants

@@ -2,6 +2,7 @@
 #include "Core/Logger.h"
 #include "Core/Profiling.h"
 #include "Core/Math.h"
+#include "Core/VirtualFileSystem.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/MeshLoader.h"
 #include "Memory/MemoryTracker.h"
@@ -44,7 +45,8 @@ namespace koi
 
 		try
 		{
-			auto toml = toml::parse_file(path.string());
+			std::optional<fs::path> resolveResult = VirtualFileSystem::Get().TryResolveToDisk(path.string());
+			auto toml = toml::parse_file(resolveResult.value_or("").string());
 
 			struct NodeDesc
 			{

@@ -1,0 +1,23 @@
+CompileFlags:
+  Add:
+    - /std:c++23
+    - -std=c++latest
+    - -fms-extensions
+    - -fms-compatibility
+    - -fdelayed-template-parsing
+  # Remove:
+    # - /std:c++23preview
+    # - /std:*
+    # - /W*
+    # - /w*
+    # - /EH*
+    # - /MD*
+    # - /MT*
+    # - /FS
+    # - /nologo
+    # - /Fd*
+    # - /Fo*
+    # - /Zi
+    # - /utf-8
+  Compiler: cl
+  CompilationDatabase: vsxmake2026/

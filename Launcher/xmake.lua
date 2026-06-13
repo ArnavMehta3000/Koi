@@ -8,7 +8,7 @@ if not _with_editor then
 	-- Runtime/Standalone build
 	target("koi-runtime")
 		set_kind("binary")
-		add_files("Runtime/Main.cpp")
+		add_files("Runtime/RuntimeMain.cpp")
 		add_deps("Koi.Engine")
 
 		if not is_mode("debug", "releasedbg") then
@@ -21,7 +21,7 @@ else
 	-- Editor build
 	target("koi-editor")
 		set_kind("binary")
-		add_files("Editor/Main.cpp")
+		add_files("Editor/EditorMain.cpp")
 		add_deps("Koi.Engine", "Koi.Editor")
 
 		if not is_mode("debug", "releasedbg") then

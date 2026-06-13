@@ -73,8 +73,12 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
+		// Destroy device resources
 		if (m_device)
+		{
+			m_device->Destroy(m_tonemapPipeline);
 			m_device->WaitForIdle();
+		}
 
 		m_defaultResources.Shutdown(*m_device);
 		m_frameContexts.clear();

@@ -10,4 +10,4 @@ height = 720
 vsync  = true
 
 [assets]
-startup_scene = "Assets/Scenes/Main.toml"
+startup_scene = "project://Assets/Scenes/Main.toml"

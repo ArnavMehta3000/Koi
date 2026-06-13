@@ -11,12 +11,12 @@
 namespace koi
 {
 	// Reads a CSO, accepts VFS path
-	[[nodiscard]] static std::vector<byte> LoadShaderBytecode(std::string_view path);
+	[[nodiscard]] std::vector<byte> LoadShaderBytecode(std::string_view path);
 
 	// Infer ShaderType from a virtual path's filename suffix:
 	//   *VS -> Vertex, *PS -> Pixel, *CS -> Compute, *HS -> Hull,
 	//   *DS -> Domain, *GS -> Geometry.
-	[[nodiscard]] static ShaderType InferShaderTypeFromName(std::string_view path);
+	[[nodiscard]] ShaderType InferShaderTypeFromName(std::string_view path);
 
 	// Mode-agnostic shader load. Pass a virtual path WITHOUT extension:
 	//   auto vs = LoadShader("engine://Shaders/TonemapVS");
@@ -24,7 +24,7 @@ namespace koi
 	// Editor builds:  resolves "<path>.hlsl" via VFS, compiles via DXC,
 	//                 returns DXIL bytes (cached in memory until Invalidate).
 	// Runtime builds: resolves "<path>.cso" via VFS, returns the bytes
-	[[nodiscard]] static std::vector<byte> LoadShader(std::string_view virtualPathNoExt);
+	[[nodiscard]] std::vector<byte> LoadShader(std::string_view virtualPathNoExt);
 
 	// Drops every in-memory compiled-shader entry, so the next LoadShader
 	// call recompiles from source. Used by the editor's F5 hot-reload.

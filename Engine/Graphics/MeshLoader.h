@@ -10,6 +10,6 @@ namespace koi
 	class MeshLoader
 	{
 	public:
-		static std::unique_ptr<ModelAsset> Load(const fs::path& path);
+		static std::unique_ptr<ModelAsset> Load(const fs::path& modelPath);
 	};
 }

@@ -78,7 +78,7 @@ namespace koi
 		[[nodiscard]] inline DescriptorHeap&      DSVHeap()              noexcept       { return m_dsvHeap;             }
 		[[nodiscard]] inline DescriptorHeap&      ResourceHeap()         noexcept       { return m_resourceHeap;        }
 		[[nodiscard]] inline DescriptorHeap&      SamplerHeap()          noexcept       { return m_samplerHeap;         }
-		[[nodiscard]] inline UploadContext&       GetUploadContext()      noexcept       { return m_uploadContext;       }
+		[[nodiscard]] inline UploadContext&       GetUploadContext()      noexcept      { return m_uploadContext;       }
 
 		[[nodiscard]] u64 GetCompletedFenceValue () const noexcept;
 
