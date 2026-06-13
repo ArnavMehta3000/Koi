@@ -12,7 +12,9 @@ namespace koi
 		if (VirtualFileSystem::SplitVirtualPath(path))
 		{
 			if (auto data = VirtualFileSystem::Get().Read(path))
+			{
 				return std::move(*data);
+			}
 			KOI_LOG_ERROR("Failed to load shader '{}'", path);
 			return {};
 		}
