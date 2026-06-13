@@ -3,9 +3,9 @@
 #include "Runtime/Engine.h"
 #include "Runtime/CommandLine.h"
 #include "Graphics/RenderWindow.h"
-#include "Graphics/RHI/CommandList.h"
-#include "Graphics/RHI/PipelineDesc.h"
-#include "Graphics/ShaderLoader.h"
+#include "Graphics/RHI/Device.h"
+#include "Graphics/RenderPasses/ScenePass.h"
+#include "Graphics/RenderPasses/TonemapPass.h"
 #include <toml++/toml.hpp>
 #if KOI_WITH_EDITOR
 #include <imgui.h>
@@ -55,6 +55,10 @@ void SandboxApp::OnTick(koi::f32 dt)
 
 	m_scene.Update();
 
+	// Keep camera aspect in sync with the current render window size
+	if (const koi::RenderWindow* rw = engine.GetRenderer().GetMainRenderWindow())
+		m_camera.SetAspect(static_cast<koi::f32>(rw->GetWidth()) / static_cast<koi::f32>(rw->GetHeight()));
+
 	if (input.IsKeyPressed(koi::KeyCode::Escape))
 		engine.RequestExit();
 
@@ -71,44 +75,25 @@ void SandboxApp::OnRender()
 	ZoneScoped;
 	koi::Engine& engine     = *GetEngine();
 	koi::Renderer& renderer = engine.GetRenderer();
-	koi::GfxDevice& device  = renderer.GetDevice();
 
 	koi::RenderWindow* rw = renderer.GetMainRenderWindow();
-	koi::CommandList* cmd = renderer.GetCommandList();
 
-	if (!rw || !cmd) return;
-
-	const koi::u32 width  = rw->GetWidth();
-	const koi::u32 height = rw->GetHeight();
-	EnsureDepthBuffer(device, width, height);
-
-	const koi::RendererResources& res = renderer.GetDefaultResources();
-
-	cmd->ClearDepthStencil(m_depthTexture);
-	cmd->SetRenderTarget(rw->GetHDRColorBuffer(), m_depthTexture);
-	cmd->SetViewportAndScissor(width, height);
-	cmd->SetPipeline(res.MeshOpaquePipeline);
-
-	PushConstants pc{};
-	pc.SamplerIndex = res.LinearWrapSampler;
-
-	for (const koi::SceneNode& node : m_scene.GetNodes())
+	renderer.GetFrameGraph().AddPass<koi::ScenePass>(koi::ScenePass::Desc
 	{
-		if (node.MeshIndex < 0) continue;
-		const koi::GPUMesh& mesh = m_scene.GetMesh(node.MeshIndex);
+		.Scene        = &m_scene,
+		.Camera       = &m_camera,
+		.Resources    = &renderer.GetDefaultResources(),
+		.RenderWindow = rw,
+		.DepthBuffer  = renderer.GetDepthBuffer(),
+	});
 
-		koi::math::store(pc.MVP, mul(node.WorldTransform, m_camera.ViewProjection));
-		pc.VertexBufferIndex = mesh.VertexBufferSRV;
-
-		cmd->SetIndexBuffer(mesh.IndexBuffer);
-
-		for (const koi::GPUMeshDraw& d : mesh.DrawItems)
-		{
-			pc.BaseColorTextureIndex = d.BaseColorSRV;
-			cmd->SetPushConstants(&pc, sizeof(pc) / sizeof(koi::u32));
-			cmd->DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
-		}
-	}
+	renderer.GetFrameGraph().AddPass<koi::TonemapPass>(koi::TonemapPass::Desc
+	{
+		.Device       = &renderer.GetDevice(),
+		.Pipeline     = renderer.GetDefaultResources().TonemapPipeline,
+		.HdrInput     = rw ? rw->GetHDRColorBuffer() : koi::TextureHandle{},
+		.TargetWindow = rw,
+	});
 }
 
 void SandboxApp::OnShutdown()
@@ -117,8 +102,6 @@ void SandboxApp::OnShutdown()
 	KOI_LOG_INFO("SandboxApp::OnShutdown()");
 	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
 	m_scene.Release(device);
-	if (m_depthTexture)
-		device.Destroy(m_depthTexture);
 }
 
 void SandboxApp::LoadScene()
@@ -155,36 +138,7 @@ void SandboxApp::SetupCamera()
 	const koi::f32 ez = 0.5f * (mx[2] - mn[2]);
 	const koi::f32 radius = std::max(std::sqrt(ex * ex + ey * ey + ez * ez), 0.001f);
 
-	m_camera.SetProjection(0.8f, GetAspect(), 0.05f, 1000.0f);
+	m_camera.SetProjection(0.8f, GetWindow().AspectRatio(), 0.05f, 1000.0f);
 	m_controller = std::make_unique<koi::CameraController>(&m_camera, koi::CameraMode::Orbit);
 	m_controller->SetOrbitTarget(center, radius * 2.5f, 0.0f, 0.3f);
-}
-
-void SandboxApp::EnsureDepthBuffer(koi::GfxDevice& device, koi::u32 width, koi::u32 height)
-{
-	ZoneScoped;
-	if (width == 0 || height == 0) return;
-	if (m_depthTexture && width == m_depthWidth && height == m_depthHeight) return;
-
-	if (m_depthTexture)
-		device.Destroy(m_depthTexture);
-
-	m_depthTexture = device.CreateTexture(koi::TextureDesc
-	{
-		.Width     = width,
-		.Height    = height,
-		.Format    = kDepthFormat,
-		.Usage     = koi::TextureUsage::DepthStencil,
-		.DebugName = "Scene Depth",
-	});
-
-	m_depthWidth  = width;
-	m_depthHeight = height;
-	m_camera.SetAspect(static_cast<koi::f32>(width) / static_cast<koi::f32>(height));
-}
-
-koi::f32 SandboxApp::GetAspect() const
-{
-	const koi::WindowDesc& w = GetDesc().WindowDesc;
-	return w.Height > 0 ? static_cast<koi::f32>(w.Width) / static_cast<koi::f32>(w.Height) : 16.0f / 9.0f;
 }

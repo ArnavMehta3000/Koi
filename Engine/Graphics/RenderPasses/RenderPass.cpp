@@ -14,7 +14,7 @@ namespace koi
 			for (const RenderPassAttachment& input : pass->GetInputs())
 			{
 				if (input.Texture && !written.count(static_cast<u64>(input.Texture.GetId())))
-					KOI_LOG_TRACE("RenderGraph: '{}' reads '{}' — externally produced (no prior pass writes it)",
+					KOI_LOG_TRACE("RenderGraph: '{}' reads '{}' - externally produced (no prior pass writes it)",
 					              pass->GetName(), input.Name);
 			}
 			for (const RenderPassAttachment& output : pass->GetOutputs())

@@ -1,4 +1,5 @@
 #pragma once
+#include "Graphics/Format.h"
 #include "Graphics/RenderWindow.h"
 #include "Graphics/RendererResources.h"
 #include "Graphics/RenderPasses/RenderPass.h"
@@ -19,14 +20,16 @@ namespace koi
 		~Renderer();
 
 		// Called once by Engine after the main window is created.
-		void InitMainWindow(Window& window, bool vsync);
+		void InitMainWindow(Window& window, bool vsync, Format depthFormat = Format::D32_FLOAT);
 
-		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                   { return *m_device;              }
-		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept             { return *m_device;              }
-		[[nodiscard]] inline RendererResources&       GetDefaultResources() noexcept         { return m_defaultResources;     }
-		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept   { return m_defaultResources;     }
-		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept         { return m_renderWindow ? &*m_renderWindow : nullptr; }
-		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept   { return m_renderWindow ? &*m_renderWindow : nullptr; }
+		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                 { return *m_device;              }
+		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept           { return *m_device;              }
+		[[nodiscard]] inline RendererResources&       GetDefaultResources() noexcept       { return m_defaultResources;     }
+		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept { return m_defaultResources;     }
+		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
+		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
+		[[nodiscard]] inline TextureHandle            GetDepthBuffer() const noexcept      { return m_depthTexture;         }
+		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_frameGraph;           }
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
 
@@ -36,6 +39,8 @@ namespace koi
 	private:
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
+
+		void RebuildDepthBuffer(u32 w, u32 h);
 
 		struct FrameContext
 		{
@@ -50,6 +55,8 @@ namespace koi
 		std::unique_ptr<FrameContext> m_frameContext;
 		RendererResources             m_defaultResources;
 		RenderGraph                   m_frameGraph;
-		u32                           m_frameSlot = 0;
+		TextureHandle                 m_depthTexture;
+		Format                        m_depthFormat = Format::UNKNOWN;
+		u32                           m_frameSlot   = 0;
 	};
 }

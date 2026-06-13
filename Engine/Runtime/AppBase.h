@@ -7,12 +7,23 @@ namespace koi
 {
 	class Engine;
 
+	// Platform-agnostic depth buffer format option for AppCreateDesc.
+	// Maps to the corresponding Format::D* value internally.
+	enum class DepthBufferFormat : u8
+	{
+		None,   // No depth buffer
+		D16,    // D16_UNORM
+		D32,    // D32_FLOAT (default)
+		D24S8,  // D24_UNORM_S8_UINT
+	};
+
 	struct AppCreateDesc
 	{
-		WindowDesc   WindowDesc{};
-		LoggerConfig LogConfig{};
-		std::string  AppName      = "Koi Application";
-		std::string  StartupScene;  // path relative to executable, empty = none
+		WindowDesc        WindowDesc{};
+		LoggerConfig      LogConfig{};
+		std::string       AppName      = "Koi Application";
+		std::string       StartupScene;  // path relative to executable, empty = none
+		DepthBufferFormat DepthBuffer  = DepthBufferFormat::D32;
 	};
 
 	class AppBase : public NonCopyable

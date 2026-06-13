@@ -1,6 +1,7 @@
 #include "Runtime/Engine.h"
 #include "Runtime/AppBase.h"
 #include "Graphics/RHI/Device.h"
+#include "Graphics/Format.h"
 #include "Memory/MemoryDebug.h"
 #include "Core/Profiling.h"
 #include <algorithm>
@@ -51,7 +52,18 @@ namespace koi
 		app.m_window = &window;
 
 		m_inputManager->Init(window);
-		m_renderer->InitMainWindow(window, mainWndDesc.VSync);
+
+		const Format depthFmt = [&]() -> Format {
+			switch (app.GetDesc().DepthBuffer)
+			{
+				case DepthBufferFormat::D16:   return Format::D16_UNORM;
+				case DepthBufferFormat::D24S8:  return Format::D24_UNORM_S8_UINT;
+				case DepthBufferFormat::None:   return Format::UNKNOWN;
+				default:                        return Format::D32_FLOAT;
+			}
+		}();
+
+		m_renderer->InitMainWindow(window, mainWndDesc.VSync, depthFmt);
 
 		window.SetCloseCallback([this]() { RequestExit(); });
 

@@ -1,6 +1,5 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/RendererResources.h"
-#include "Graphics/RenderPasses/TonemapPass.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RHI/Resources.h"
 #include "Platform/Window.h"
@@ -47,6 +46,8 @@ namespace koi
 			m_device->WaitForIdle();
 
 		m_frameContext.reset();
+		if (m_depthTexture)
+			m_device->Destroy(m_depthTexture);
 		m_renderWindow.reset();
 		m_defaultResources.Shutdown(*m_device);
 		m_device = nullptr;
@@ -54,23 +55,43 @@ namespace koi
 		KOI_LOG_INFO("Shutdown renderer");
 	}
 
-	void Renderer::InitMainWindow(Window& window, bool vsync)
+	void Renderer::InitMainWindow(Window& window, bool vsync, Format depthFormat)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
+		m_depthFormat = depthFormat;
 		m_renderWindow.emplace(*m_device, window, vsync);
 
 		window.SetResizeCallback([this](u32 w, u32 h)
 		{
 			if (m_renderWindow) m_renderWindow->Resize(w, h);
+			RebuildDepthBuffer(w, h);
 		});
 
 		m_frameContext = std::make_unique<FrameContext>();
 		m_frameContext->Allocator.Init(*m_device, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer Allocator");
 		m_frameContext->List.Init(*m_device, m_frameContext->Allocator, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer CmdList");
 
+		RebuildDepthBuffer(window.GetWidth(), window.GetHeight());
+
 		KOI_LOG_TRACE("Renderer: main window initialized");
+	}
+
+	void Renderer::RebuildDepthBuffer(u32 w, u32 h)
+	{
+		if (m_depthFormat == Format::UNKNOWN) return;
+		if (m_depthTexture) m_device->Destroy(m_depthTexture);
+		if (w == 0 || h == 0) return;
+
+		m_depthTexture = m_device->CreateTexture(TextureDesc
+		{
+			.Width     = w,
+			.Height    = h,
+			.Format    = m_depthFormat,
+			.Usage     = TextureUsage::DepthStencil,
+			.DebugName = "SceneDepth",
+		});
 	}
 
 	void Renderer::BeginFrame()
@@ -79,6 +100,7 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_renderWindow || !m_frameContext) return;
 
+		m_frameGraph.Clear();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_frameSlot);
@@ -86,6 +108,9 @@ namespace koi
 		constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_frameContext->List.TransitionBarrier(m_renderWindow->GetHDRColorBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 		m_frameContext->List.ClearRenderTarget(m_renderWindow->GetHDRColorBuffer(), kClearColor);
+
+		if (m_depthTexture)
+			m_frameContext->List.ClearDepthStencil(m_depthTexture);
 	}
 
 	void Renderer::EndFrame()
@@ -96,14 +121,6 @@ namespace koi
 
 		CommandList& cmd = m_frameContext->List;
 
-		m_frameGraph.Clear();
-		m_frameGraph.AddPass<TonemapPass>(TonemapPass::Desc
-		{
-			.Device       = m_device.get(),
-			.Pipeline     = m_defaultResources.TonemapPipeline,
-			.HdrInput     = m_renderWindow->GetHDRColorBuffer(),
-			.TargetWindow = &*m_renderWindow,
-		});
 		m_frameGraph.Execute(cmd);
 
 		Engine::Get().FireHook(EnginePhase::OnSwapchainOverlay);
