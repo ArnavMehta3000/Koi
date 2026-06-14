@@ -21,6 +21,11 @@ namespace koi
 
 		void BeginFrame();
 
+		// Returns true if ImGui wants to capture the input
+		[[nodiscard]] bool ImGuiWantsCaptureMouse() const noexcept;
+		[[nodiscard]] bool ImGuiWantsCaptureKeyboard() const noexcept;
+		[[nodiscard]] bool ImGuiWantsCaptureInput() const noexcept;  // Either mouse or keyboard
+
 		[[nodiscard]] bool IsKeyDown(KeyCode key)     const noexcept;
 		[[nodiscard]] bool IsKeyPressed(KeyCode key)  const noexcept;
 		[[nodiscard]] bool IsKeyReleased(KeyCode key) const noexcept;

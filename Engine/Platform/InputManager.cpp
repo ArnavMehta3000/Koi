@@ -5,9 +5,13 @@
 #include <cassert>
 
 #ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
+	#define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
+
+#if KOI_WITH_EDITOR
+	#include <imgui.h>
+#endif
 
 namespace koi
 {
@@ -70,6 +74,30 @@ namespace koi
 		m_scrollDelta   = m_scrollAccum;
 		m_scrollAccum   = {};
 		m_mouseDelta    = {};
+	}
+
+	bool InputManager::ImGuiWantsCaptureMouse() const noexcept
+	{
+#if KOI_WITH_EDITOR
+		return ImGui::GetIO().WantCaptureMouse;
+#endif
+		return false;
+	}
+
+	bool InputManager::ImGuiWantsCaptureKeyboard() const noexcept
+	{
+#if KOI_WITH_EDITOR
+		return ImGui::GetIO().WantCaptureKeyboard;
+#endif
+		return false;
+	}
+
+	bool InputManager::ImGuiWantsCaptureInput() const noexcept
+	{
+#if KOI_WITH_EDITOR
+		return ImGuiWantsCaptureMouse() || ImGuiWantsCaptureKeyboard();
+#endif
+		return false;
 	}
 
 	bool InputManager::IsKeyDown(KeyCode key) const noexcept
