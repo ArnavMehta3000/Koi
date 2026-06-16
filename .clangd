@@ -1,23 +1,25 @@
 CompileFlags:
   Add:
-    - /std:c++23
-    - -std=c++latest
+    - /std:c++latest
     - -fms-extensions
     - -fms-compatibility
+    - -fms-compatibility-version=19.30
     - -fdelayed-template-parsing
-  # Remove:
-    # - /std:c++23preview
-    # - /std:*
-    # - /W*
-    # - /w*
-    # - /EH*
-    # - /MD*
-    # - /MT*
-    # - /FS
-    # - /nologo
-    # - /Fd*
-    # - /Fo*
-    # - /Zi
-    # - /utf-8
-  Compiler: cl
-  CompilationDatabase: vsxmake2026/
+    - -fexceptions
+    - -fcxx-exceptions
+  Remove:
+    - /W*
+    - /w*
+    - /MD*
+    - /MT*
+    - /FS
+    - /nologo
+    - /Fd*
+    - /Fo*
+    - /Zi
+
+Diagnostics:
+  UnusedIncludes: None
+  Suppress:
+    - typename_nested_not_found
+    - default_member_initializer_not_yet_parsed
