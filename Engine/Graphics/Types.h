@@ -42,6 +42,13 @@ namespace koi
 		Present      = KOI_BIT(4),
 	};
 	using TextureUsageFlag = EnumFlag<TextureUsage>;
+	KOI_ENUM_FLAG_NAMES(koi::TextureUsage,
+		KOI_FLAG_ENTRY(ShaderRead)
+		KOI_FLAG_ENTRY(ShaderWrite)
+		KOI_FLAG_ENTRY(RenderTarget)
+		KOI_FLAG_ENTRY(DepthStencil)
+		KOI_FLAG_ENTRY(Present)
+	);
 
 	enum class BufferUsage : u32
 	{
@@ -55,6 +62,15 @@ namespace koi
 		CopyDest   = KOI_BIT(6),
 	};
 	using BufferUsageFlag = EnumFlag<BufferUsage>;
+	KOI_ENUM_FLAG_NAMES(koi::BufferUsage,
+		KOI_FLAG_ENTRY(Vertex)
+		KOI_FLAG_ENTRY(Index)
+		KOI_FLAG_ENTRY(Constant)
+		KOI_FLAG_ENTRY(Storage)
+		KOI_FLAG_ENTRY(Indirect)
+		KOI_FLAG_ENTRY(CopySource)
+		KOI_FLAG_ENTRY(CopyDest)
+);
 
 	enum class MemoryUsage : u8
 	{
