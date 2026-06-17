@@ -23,3 +23,8 @@ Diagnostics:
   Suppress:
     - typename_nested_not_found
     - default_member_initializer_not_yet_parsed
+
+Completion:
+  AllScopes: Yes
+  ArgumentLists: None
+  HeaderInsertion: Never
