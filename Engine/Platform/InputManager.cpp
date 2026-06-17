@@ -80,24 +80,27 @@ namespace koi
 	{
 #if KOI_WITH_EDITOR
 		return ImGui::GetIO().WantCaptureMouse;
-#endif
+#else
 		return false;
+#endif
 	}
 
 	bool InputManager::ImGuiWantsCaptureKeyboard() const noexcept
 	{
 #if KOI_WITH_EDITOR
 		return ImGui::GetIO().WantCaptureKeyboard;
-#endif
+#else
 		return false;
+#endif
 	}
 
 	bool InputManager::ImGuiWantsCaptureInput() const noexcept
 	{
 #if KOI_WITH_EDITOR
 		return ImGuiWantsCaptureMouse() || ImGuiWantsCaptureKeyboard();
-#endif
+#else
 		return false;
+#endif
 	}
 
 	bool InputManager::IsKeyDown(KeyCode key) const noexcept

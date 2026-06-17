@@ -92,15 +92,18 @@ namespace koi
 		// Toggle mode (debounced)
 		const bool toggleDown = input.IsKeyDown(ToggleKey);
 
-		if (toggleDown && !m_prevToggleKey)
+		if (toggleDown && !m_prevToggleKey && !input.ImGuiWantsCaptureMouse())
 			ToggleMode();
 
 		m_prevToggleKey = toggleDown;
 
-		if (m_mode == CameraMode::FirstPerson)
-			UpdateFirstPerson(dt, input);
-		else
-			UpdateOrbit(input);
+		if (!input.ImGuiWantsCaptureMouse())
+		{
+			if (m_mode == CameraMode::FirstPerson)
+				UpdateFirstPerson(dt, input);
+			else
+				UpdateOrbit(input);
+		}
 	}
 
 

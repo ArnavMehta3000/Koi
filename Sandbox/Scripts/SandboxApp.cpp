@@ -62,7 +62,7 @@ void SandboxApp::OnTick(koi::f32 dt)
 	if (input.IsKeyPressed(koi::KeyCode::Escape))
 		engine.RequestExit();
 
-	if (m_controller && !input.ImGuiWantsCaptureMouse())
+	if (m_controller)
 		m_controller->Update(dt, input);
 }
 
