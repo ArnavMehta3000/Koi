@@ -71,7 +71,7 @@ namespace koi::editor
 
 		// Configure engine hooks
 		m_postInitHook    = engine.RegisterHook(EnginePhase::PostInit          , [this] { OnPostInit();   });
-		m_postRenderHook  = engine.RegisterHook(EnginePhase::OnSwapchainOverlay, [this] { OnPostRender(); }); 
+		m_postRenderHook  = engine.RegisterHook(EnginePhase::OnSwapchainOverlay, [this] { OnPostRender(); });
 
 		m_initialized = true;
 		KOI_LOG_INFO("Editor initialized");
@@ -155,11 +155,11 @@ namespace koi::editor
 			InvalidateShaderCache();
 			engine.FireHook(EnginePhase::OnShaderReload);
 		}
-		
+
 
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		DrawMenuBar();
-		ImGui::ShowDemoWindow();
+
 
 		engine.FireHook(EnginePhase::OnImGuiDraw);
 

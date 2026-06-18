@@ -29,6 +29,8 @@ namespace koi::internal_editor
 
 		try
 		{
+			KOI_LOG_INFO("Starting Koi Editor");
+
 			auto cmd = internal::InvokeCommandLineFactory();
 			if (cmd->ParseArgs(argc, argv) != 0)
 			{
