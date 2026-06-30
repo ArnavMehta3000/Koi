@@ -1,26 +1,34 @@
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/Resources.h"
-#include "Core/Logger.h"
-#include "Core/StringUtils.h"
-#include "Core/Profiling.h"
-#include "Core/Patterns/Match.h"
-#include "Memory/MemoryTracker.h"
-#include <ranges>
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
 #include <cassert>
+#include <ranges>
 #include <comdef.h>
 #if KOI_DEBUG
 	#include <dxgidebug.h>
 #endif
+module Koi.Graphics.RHI.Device;
 
-// Enable to log handle deletion logs
+import Koi.Core.Logger;
+import Koi.Core.StringUtils;
+import Koi.Core.Match;
+import Koi.Graphics.Format;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.Resources;
+import Koi.Graphics.RHI.DescriptorHeap;
+import Koi.Graphics.RHI.PipelineDesc;
+import Koi.Memory.MemoryTracker;
+#include "Core/Profiling.h"
+#include "Core/Logger.h"
+#include "Core/Types.h"
+#include "Memory/MemoryTracker.h"
+
 #define KOI_LOG_HANDLE_INFO 0
 #if KOI_LOG_HANDLE_INFO
 	#define LOG_HANDLE_TRACE(msg, h) KOI_LOG_TRACE(msg, h.GetIndex(), h.GetGeneration());
 #else
 	#define LOG_HANDLE_TRACE(msg, h) void(0);
 #endif
-
-
 
 namespace koi
 {
@@ -55,7 +63,6 @@ namespace koi
 #endif
 	}
 
-	// From DX12Common.h
 	void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line)
 	{
 		if (FAILED(hr))
@@ -121,7 +128,6 @@ namespace koi
 
 		ReportLiveObjects();
 
-		// [NOTE]: Not clearing resource pool here
 		KOI_LOG_TRACE("Finished destroying D3D12 device");
 	}
 
@@ -157,7 +163,7 @@ namespace koi
 			desc.Width, desc.Height,
 			static_cast<u16>(desc.DepthOrArray),
 			static_cast<u16>(desc.MipLevels),
-			desc.SampleCount, 0U,  // [NOTE]: Sample quality is 0
+			desc.SampleCount, 0U,
 			ToD3DFlags(desc.Usage),
 			D3D12_TEXTURE_LAYOUT_UNKNOWN
 		);
@@ -168,7 +174,6 @@ namespace koi
 		const bool isDepth        = desc.Usage.Has(TextureUsage::DepthStencil);
 		const bool isRenderTarget = desc.Usage.Has(TextureUsage::RenderTarget);
 
-		// Debug layer will warn if I pass a different clear value
 		D3D12_CLEAR_VALUE clearValue{};
 		const D3D12_CLEAR_VALUE* pClearValue = nullptr;
 
@@ -213,7 +218,6 @@ namespace koi
 			m_device->CreateDepthStencilView(tex.Resource.Get(), &dsvDesc, m_dsvHeap.CpuHandle(tex.DSVIndex));
 		}
 
-		// Bindless: sampled textures get an SRV addressable via ResourceDescriptorHeap[].
 		if (desc.Usage.Has(TextureUsage::ShaderRead))
 		{
 			tex.SRVIndex = m_resourceHeap.Allocate();
@@ -287,7 +291,6 @@ namespace koi
 			DX_CHECK(buf.Resource->Map(0, &readRange, &buf.MappedPtr));
 		}
 
-		// Bindless: structured-buffer SRV so the buffer is addressable via ResourceDescriptorHeap[].
 		if (desc.Usage.Has(BufferUsage::Storage) && desc.Stride > 0)
 		{
 			buf.SRVIndex = m_resourceHeap.Allocate();
@@ -356,10 +359,6 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		/// DevNote: This function tells the GPU to write the current counter value into the fence
-		/// when it finishes all the work so far, then increments the counter.
-		/// It also flushes the defferred deltion queue
-
 		const u64 value = m_nextFenceValue++;
 		DX_CHECK(m_graphicsQueue->Signal(m_frameFence.Get(), value));
 		++m_frameIndex;
@@ -372,10 +371,6 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		/// DevNote: This function checks if the GPU has already passed that (signalled) value
-		/// If not, then it uses `SetEventOnCompletion` + `WaitForSingleObject` to block the CPU until it has
-		/// This is the DX12 equivalent of DX11' `Flush()` stall, except I have the control here
-
 		if (m_frameFence->GetCompletedValue() >= fenceValue) return;
 		DX_CHECK(m_frameFence->SetEventOnCompletion(fenceValue, m_fenceEvent));
 		::WaitForSingleObject(m_fenceEvent, INFINITE);
@@ -385,9 +380,6 @@ namespace koi
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
-
-		///DevNote: This is the nuclear option, it signal a new value and immediately waits for it
-		/// draining the entire GPU pipeline. Used before resize and shutdown
 
 		const u64 value = m_nextFenceValue++;
 		DX_CHECK(m_graphicsQueue->Signal(m_frameFence.Get(), value));
@@ -454,7 +446,6 @@ namespace koi
 		assert(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN &&
 			"PipelineDesc has neither render targets nor a depth target");
 
-		// Vertex input layout
 		std::array<D3D12_INPUT_ELEMENT_DESC, MAX_VERTEX_ATTRIBUTES> inputElements;
 
 		for (const auto& [index, attr] : std::views::enumerate(desc.VertexLayout) | std::views::as_const)
@@ -474,7 +465,6 @@ namespace koi
 			};
 		}
 
-		// Rasterizer
 		D3D12_RASTERIZER_DESC rasterDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		rasterDesc.FillMode              = desc.Rasterizer.FillMode;
 		rasterDesc.CullMode              = desc.Rasterizer.CullMode;
@@ -487,23 +477,21 @@ namespace koi
 		rasterDesc.DepthBiasClamp        = desc.Rasterizer.DepthBiasClamp;
 		rasterDesc.SlopeScaledDepthBias  = desc.Rasterizer.SlopeScaledDepthBias;
 
-		// Blend state
 		D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		for (u32 i = 0; i < desc.RenderTargetCount; i++)
 		{
-			const BlendTargetDesc& src    = desc.BlendTargets[i];
-			auto& dst                     = blendDesc.RenderTarget[i];
-			dst.BlendEnable               = src.BlendEnable;
-			dst.SrcBlend                  = src.SrcBlend;
-			dst.DestBlend                 = src.DstBlend;
-			dst.BlendOp                   = src.BlendOp;
-			dst.SrcBlendAlpha             = src.SrcBlendAlpha;
-			dst.DestBlendAlpha            = src.DstBlendAlpha;
-			dst.BlendOpAlpha              = src.BlendOpAlpha;
-			dst.RenderTargetWriteMask     = src.WriteMask;
+			const BlendTargetDesc& src = desc.BlendTargets[i];
+			auto& dst                  = blendDesc.RenderTarget[i];
+			dst.BlendEnable            = src.BlendEnable;
+			dst.SrcBlend               = src.SrcBlend;
+			dst.DestBlend              = src.DstBlend;
+			dst.BlendOp                = src.BlendOp;
+			dst.SrcBlendAlpha          = src.SrcBlendAlpha;
+			dst.DestBlendAlpha         = src.DstBlendAlpha;
+			dst.BlendOpAlpha           = src.BlendOpAlpha;
+			dst.RenderTargetWriteMask  = src.WriteMask;
 		}
 
-		// Depth-stencil
 		D3D12_DEPTH_STENCIL_DESC depthDesc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		depthDesc.DepthEnable              = desc.DepthStencil.DepthEnable;
 		depthDesc.DepthWriteMask           = desc.DepthStencil.DepthWrite
@@ -512,24 +500,22 @@ namespace koi
 		depthDesc.DepthFunc                = desc.DepthStencil.DepthFunc;
 		depthDesc.StencilEnable            = desc.DepthStencil.StencilEnable;
 
-		// Create PSO desc
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc
 		{
 				.pRootSignature        = m_rootSignature.Get(),
 				.VS                    = { desc.VertexShader.data(), desc.VertexShader.size() },
 				.PS                    = { desc.PixelShader.data(), desc.PixelShader.size() },
 				.BlendState            = blendDesc,
-				.SampleMask            = 0xffffffff , // Same as UINT_MAX
+				.SampleMask            = 0xffffffff,
 				.RasterizerState       = rasterDesc,
 				.DepthStencilState     = depthDesc,
-				.InputLayout           = { inputElements.data(), static_cast<u32>(desc.VertexLayout.size())},
+				.InputLayout           = { inputElements.data(), static_cast<u32>(desc.VertexLayout.size()) },
 				.PrimitiveTopologyType = desc.TopologyType,
 				.NumRenderTargets      = desc.RenderTargetCount,
 				.DSVFormat             = ToDXGIFormat(desc.DepthFormat),
-				.SampleDesc            = { desc.SampleCount , 0 },
+				.SampleDesc            = { desc.SampleCount, 0 },
 		};
 
-		// Add optional shaders
 		if (!desc.GeometryShader.empty()) psoDesc.GS = { desc.GeometryShader.data(), desc.GeometryShader.size() };
 		if (!desc.HullShader.empty())     psoDesc.HS = { desc.HullShader.data(), desc.HullShader.size()         };
 		if (!desc.DomainShader.empty())   psoDesc.DS = { desc.DomainShader.data(), desc.DomainShader.size()     };
@@ -539,7 +525,6 @@ namespace koi
 			psoDesc.RTVFormats[i] = ToDXGIFormat(desc.RenderTargetFormats[i]);
 		}
 
-		// Create pipeline/PSO
 		Pipeline pipeline{ .Topology = desc.Topology };
 		DX_CHECK(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline.Pso)));
 
@@ -580,8 +565,8 @@ namespace koi
 			1, &rootParam,
 			0, nullptr,
 			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED  |  // For bindless
-			D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED			// For bindless
+			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED  |
+			D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED
 		);
 
 		ComPtr<ID3DBlob> blob, error;
@@ -609,7 +594,6 @@ namespace koi
 
 		if (m_notify) m_notify->OnDeviceLost();
 
-		// Drop all GPU resources and rebuild.
 		FlushDeferredDeletions(~0ull);
 		m_textures.Clear();
 		m_buffers.Clear();
@@ -668,9 +652,9 @@ namespace koi
 				dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, TRUE);
 				dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 
-				DXGI_INFO_QUEUE_MESSAGE_ID hide[] = { 80 /* swapchain output not controlled */ };
+				DXGI_INFO_QUEUE_MESSAGE_ID hide[] = { 80 };
 				DXGI_INFO_QUEUE_FILTER filter{};
-				filter.DenyList.NumIDs = static_cast<UINT>(std::size(hide));
+				filter.DenyList.NumIDs  = static_cast<UINT>(std::size(hide));
 				filter.DenyList.pIDList = hide;
 				dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
 			}
@@ -679,7 +663,6 @@ namespace koi
 
 		DX_CHECK(::CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgiFactory)));
 
-		// Tearing support
 		BOOL allowTearing = FALSE;
 		ComPtr<IDXGIFactory5> factory5;
 		if (SUCCEEDED(m_dxgiFactory.As(&factory5)))
@@ -754,7 +737,7 @@ namespace koi
 				D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE,
 			};
 			D3D12_INFO_QUEUE_FILTER filter{};
-			filter.DenyList.NumIDs = static_cast<UINT>(std::size(hide));
+			filter.DenyList.NumIDs  = static_cast<UINT>(std::size(hide));
 			filter.DenyList.pIDList = hide;
 			infoQueue->AddStorageFilterEntries(&filter);
 		}
@@ -771,7 +754,7 @@ namespace koi
 		KOI_LOG_TRACE("Creating D3D12 queues");
 		D3D12_COMMAND_QUEUE_DESC desc
 		{
-			.Type = D3D12_COMMAND_LIST_TYPE_DIRECT,
+			.Type  = D3D12_COMMAND_LIST_TYPE_DIRECT,
 			.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE
 		};
 		DX_CHECK(m_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_graphicsQueue)));
@@ -826,9 +809,6 @@ namespace koi
 			{
 				[this](TextureHandle h)
 				{
-					// IsSwapChainImage: we must NOT release the ComPtr here — swapchain owns it.
-					// The pool erase below will drop the ref, but since the swapchain also holds
-					// one it stays alive.
 					FreeResource(h);
 					LOG_HANDLE_TRACE("Texture resource deleted (Handle: idx={}, gen={})", h);
 					m_textures.Erase(h);

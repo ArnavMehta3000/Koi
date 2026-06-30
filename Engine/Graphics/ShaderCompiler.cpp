@@ -1,13 +1,21 @@
-#include "Graphics/ShaderCompiler.h"
-#include "Core/Profiling.h"
-#include "Core/Logger.h"
-#include "Core/StringUtils.h"
-#include "Memory/MemoryTracker.h"
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
+#include <dxcapi.h>
 #include <d3d12shader.h>
-#include <unordered_map>
+#include <filesystem>
 #include <fstream>
+#include <unordered_map>
 #include <string_view>
 #include <span>
+module Koi.Graphics.ShaderCompiler;
+
+import Koi.Core.Types;
+import Koi.Core.StringUtils;
+import Koi.Memory.MemoryTracker;
+#include "Core/Profiling.h"
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -69,16 +77,15 @@ namespace koi
 			DXC_ARG_ALL_RESOURCES_BOUND,
 #if KOI_DEBUG
 			L"-D", L"KOI_DEBUG=1",
-			DXC_ARG_DEBUG,    // -Zi: emit a separate PDB output (extracted below)
+			DXC_ARG_DEBUG,
 #else
 			L"-D", L"KOI_DEBUG=0",
 			DXC_ARG_OPTIMIZATION_LEVEL3,
 #endif
-			L"-Qstrip_reflect"  // Strip reflection into a separate blob
+			L"-Qstrip_reflect"
 		};
 		std::span argsSpan(defaultArgs);
 
-		// Build args
 		ComPtr<IDxcCompilerArgs> compilerArgs;
 		DX_CHECK(m_dxcUtils->BuildArguments(
 			shaderName.c_str(),
@@ -90,7 +97,6 @@ namespace koi
 			static_cast<u32>(args.Defines.size()),
 			&compilerArgs));
 
-		// Compile
 		ComPtr<IDxcResult> results;
 		DX_CHECK(m_dxcCompiler->Compile(
 			&source,
@@ -99,7 +105,6 @@ namespace koi
 			m_dxcIncludeHandler.Get(),
 			IID_PPV_ARGS(&results)));
 
-		// Print errors or warnings
 		ComPtr<IDxcBlobUtf8> errors;
 		DX_CHECK(results->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr));
 		if (errors && errors->GetStringLength() != 0)
@@ -132,7 +137,6 @@ namespace koi
 		DX_CHECK(results->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shader), nullptr));
 		if (shader && args.OutDir)
 		{
-			// Save CSO to file
 			{
 				fs::path outPath = args.OutDir.value() / (shaderName + L".cso");
 				outPath = outPath.lexically_normal();
@@ -142,7 +146,6 @@ namespace koi
 				}
 			}
 
-			// Save PDB next to the CSO (prioritizing the hash over shader name for the PDB name)s
 			{
 				ComPtr<IDxcBlob> pdbBlob;
 				ComPtr<IDxcBlobWide> pdbName;
@@ -161,7 +164,6 @@ namespace koi
 				}
 			}
 
-			// Print hash information
 			{
 				ComPtr<IDxcBlob> hash;
 				DX_CHECK(results->GetOutput(DXC_OUT_SHADER_HASH, IID_PPV_ARGS(&hash), nullptr));
@@ -175,7 +177,7 @@ namespace koi
 					{
 						hashStr += fmt::format(L"{:02x}", hashDigest[i]);
 					}
-					
+
 					KOI_LOG_INFO("Compiled shader ({}) hash: {}", StringUtils::FromWide(shaderName), StringUtils::FromWide(hashStr));
 				}
 			}
@@ -189,7 +191,6 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
-		// Ensure the map size is correct.
 		assert(s_shaderProfile.size() == (size_t)ShaderType::MAX_COUNT);
 		assert(s_entryPoint.size() == (size_t)ShaderType::MAX_COUNT);
 

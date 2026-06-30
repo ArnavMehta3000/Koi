@@ -1,21 +1,20 @@
-#include "Runtime/EntryPoint.h"
-#include "Runtime/Engine.h"
-#include "Runtime/AppBase.h"
-#include "Core/VirtualFileSystem.h"
-#include "Core/StringUtils.h"
-#include "EditorApp.h"
+import Koi.Core.Logger;
+import Koi.Core.StringUtils;
+import Koi.Core.VirtualFileSystem;
+import Koi.Runtime.AppBase;
+import Koi.Runtime.Engine;
+import Koi.Runtime.CommandLine;
+import Koi.Editor.App;
+#include "Core/Config.h"
+#include "Platform/Win32.h"
+#include "Core/Logger.h"
 #include <filesystem>
 #include <vector>
 #include <string>
-
+#include <cassert>
 #if KOI_DEBUG
 	#include <ranges>
 #endif
-
-// koi-editor: same engine + game lifecycle as koi-runtime, with the
-// editor subsystem (ImGui overlay, hot-reload, future tools) attached as
-// hooks. The game runs as the only AppBase — the editor is NOT a wrapper
-// app; it sits alongside the game and broadcasts via engine hooks.
 
 namespace koi::internal_editor
 {
@@ -38,7 +37,6 @@ namespace koi::internal_editor
 				return -1;
 			}
 
-			// Setup VFS mounts
 			{
 				KOI_LOG_DEBUG("Setting up editor VFS mounts");
 				const fs::path exeDir = fs::current_path();

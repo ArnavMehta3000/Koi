@@ -1,7 +1,15 @@
-#include "Graphics/RenderPasses/TonemapPass.h"
-#include "Graphics/RenderWindow.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/CommandList.h"
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
+module Koi.Graphics.RenderPasses.TonemapPass;
+
+import Koi.Core.Types;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.Resources;
+import Koi.Graphics.RHI.CommandList;
+import Koi.Graphics.RHI.Device;
+import Koi.Graphics.RenderWindow;
+import Koi.Graphics.RenderPass;
 
 namespace koi
 {

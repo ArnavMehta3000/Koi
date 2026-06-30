@@ -1,17 +1,26 @@
-#include "Platform/InputManager.h"
-#include "Platform/Window.h"
-#include "Memory/MemoryTracker.h"
-#include "Core/Logger.h"
-#include <cassert>
-
+module;
+#include "Core/Config.h"
 #ifndef GLFW_INCLUDE_NONE
 	#define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
-
 #if KOI_WITH_EDITOR
-	#include <imgui.h>
+#include <imgui.h>
 #endif
+#include <cassert>
+#include <hlsl++.h>
+module Koi.Platform.InputManager;
+
+import Koi.Core.Math;
+import Koi.Core.Logger;
+import Koi.Core.EnumFlags;
+import Koi.Platform.Window;
+import Koi.Platform.InputCodes;
+import Koi.Memory.MemoryTracker;
+#include "Core/Config.h"
+#include "Core/Types.h"
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -42,13 +51,12 @@ namespace koi
 		assert(glfwWnd && "Window has a null GLFWwindow");
 		m_glfwWindow = glfwWnd;
 
-		// Seed cursor position so the first frame's delta is zero.
 		f64 x, y;
 		::glfwGetCursorPos(glfwWnd, &x, &y);
 		m_mousePos = { static_cast<f32>(x), static_cast<f32>(y) };
 
 		::glfwSetKeyCallback(glfwWnd,
-			[](GLFWwindow*, int key, int /*scancode*/, int action, int mods) noexcept
+			[](GLFWwindow*, int key, int, int action, int mods) noexcept
 			{ InputManager::Get().OnKey(key, action, mods); });
 
 		::glfwSetMouseButtonCallback(glfwWnd,

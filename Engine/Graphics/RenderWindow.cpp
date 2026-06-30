@@ -1,11 +1,20 @@
-#include "Graphics/RenderWindow.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/Resources.h"
-#include "Memory/MemoryTracker.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
-#include "Platform/Window.h"
-#include "Core/Logger.h"
+#include "Graphics/RHI/DX12Common.h"
 #include <cassert>
+module Koi.Graphics.RenderWindow;
+
+import Koi.Core.Logger;
+import Koi.Graphics.Format;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.Resources;
+import Koi.Graphics.RHI.DescriptorHeap;
+import Koi.Graphics.RHI.Device;
+import Koi.Platform.Window;
+import Koi.Memory.MemoryTracker;
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -39,7 +48,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		if (!m_device) return;   // moved-from
+		if (!m_device) return;
 
 		m_device->WaitForIdle();
 		ReleaseHDRBuffer();
@@ -80,7 +89,6 @@ namespace koi
 
 		if (this != &other)
 		{
-			// Release our resources first
 			if (m_device)
 			{
 				m_device->WaitForIdle();
@@ -161,12 +169,6 @@ namespace koi
 		}
 		DX_CHECK(hr);
 
-		/// DevNote: Here are the steps done regarding synchronization
-		/// - After presenting buffer N, record the fence value at that moment
-		/// - Rotate to the next buffer the swapchain gives
-		/// - Before writing to 'that' buffer, wait for the fence value recorded the 'last time' that slot was used
-		/// This guarantees I never start writing to a backbuffer the GPU is still presenting too
-
 		m_frameFenceValues[m_currentBackBuffer] = m_device->SignalFrame();
 		m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 		WaitForCurrentBackBuffer();
@@ -191,16 +193,12 @@ namespace koi
 			.Flags       = m_tearingAllowed ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0u,
 		};
 
-		// [TODO]: Handle fullscreen description
-
 		dxgi::Factory* factory = m_device->GetDXGIFactory();
-
 
 		ComPtr<IDXGISwapChain1> sc1;
 		DX_CHECK(factory->CreateSwapChainForHwnd(
 			m_device->GetGraphicsQueue(), m_hwnd, &desc, nullptr, nullptr, sc1.GetAddressOf()));
 
-		// No Alt+Enter to fullscreen
 		DX_CHECK(factory->MakeWindowAssociation(m_hwnd, DXGI_MWA_NO_ALT_ENTER));
 
 		DX_CHECK(sc1.As(&m_swapChain));
@@ -225,12 +223,11 @@ namespace koi
 			ComPtr<dx12::Resource> buffer;
 			DX_CHECK(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
 
-			buffer->SetName(fmt::format(L"Backbuffer {}", i).c_str());
+			buffer->SetName(std::format(L"Backbuffer {}", i).c_str());
 
 			TextureHandle h = m_device->RegisterSwapChainImage(buffer, desc);
 			m_backBuffers[i] = h;
 
-			// Create RTV
 			if (Texture* tex = m_device->Get(h))
 			{
 				DescriptorHeap& rtvHeap = m_device->RTVHeap();
@@ -263,19 +260,9 @@ namespace koi
 			{
 				m_device->RTVHeap().Free(tex->RTVIndex);
 				tex->RTVIndex = INVALID_DESCRIPTOR;
-
-				// Release ref here since, Device also holds a ref
-				// So when we call GfxDevice::Destroy() to remove from pool -> eventually destroying the resource
 				tex->Resource.Reset();
 			}
 
-			// Erase immediately (we already waited for idle in the caller)
-			// NOTE: bypassing the deferred-deletion queue is safe here because
-			// we WaitForIdle() before calling ReleaseBackBuffers().
-			// Accessing Destroy() would defer and that's also OK, but iterating
-			// is cleaner.
-			// However, to keep things simple + consistent, we go through Destroy
-			// and flush via WaitForIdle in Resize.
 			m_device->Destroy(m_backBuffers[i]);
 			m_backBuffers[i] = TextureHandle{};
 		}

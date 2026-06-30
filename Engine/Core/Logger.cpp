@@ -1,21 +1,35 @@
-#include "Core/Logger.h"
-#include "Core/StringUtils.h"
+module;
 #include "Platform/Win32.h"
-#include "Memory/MemoryTracker.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/msvc_sink.h>
 #include <cassert>
 #include <filesystem>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
 #include <io.h>
 #include <fcntl.h>
+module Koi.Core.Logger;
+
+import Koi.Core.LogLevel;
+import Koi.Core.Types;
+import Koi.Memory.MemoryTracker;
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
 	namespace fs = std::filesystem;
+
 	namespace
 	{
 		struct LoggerData
 		{
 			std::unordered_map<std::string, std::shared_ptr<spdlog::logger>> g_loggers;
-			std::vector<spdlog::sink_ptr> g_sinks;
+			std::vector<spdlog::sink_ptr>                                    g_sinks;
 		};
 
 		std::unique_ptr<LoggerData> g_loggerData;
@@ -45,9 +59,7 @@ namespace koi
 
 		g_loggerData = std::make_unique<LoggerData>();
 
-		// [NOTE]: Log file is Logs/Koi.log
 		constexpr auto logDir = "Logs";
-
 		fs::create_directories(logDir);
 
 		try
@@ -70,7 +82,6 @@ namespace koi
 			if (cfg.SpawnConsole)
 				SpawnConsole();
 
-			// Console sink only if a console is actually attached to process
 			if (HasConsoleAttached())
 			{
 				auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -84,20 +95,16 @@ namespace koi
 		catch (const spdlog::spdlog_ex& ex)
 		{
 			assert(false);
-			throw ex;  // Catch and throw
+			throw ex;
 		}
 	}
 
 	void Logger::Shutdown()
 	{
-		if (!g_initialized)
-			return;
-
+		if (!g_initialized) return;
 		KOI_MEM_TAG_SCOPE(MemTag::Logging);
-
 		Flush();
-		g_loggerData = nullptr;
-		//spdlog::shutdown();  // This keep crashing, hope that RAII cleanup works
+		g_loggerData  = nullptr;
 		g_initialized = false;
 	}
 
@@ -117,9 +124,7 @@ namespace koi
 
 	std::shared_ptr<spdlog::logger> Logger::CreateLogger(std::string_view category)
 	{
-		if (!g_initialized)
-			return nullptr;
-
+		if (!g_initialized) return nullptr;
 		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 
 		try
@@ -128,7 +133,6 @@ namespace koi
 			auto logger = std::make_shared<spdlog::logger>(name, g_loggerData->g_sinks.begin(), g_loggerData->g_sinks.end());
 			logger->set_level(spdlog::level::trace);
 			logger->flush_on(spdlog::level::err);
-
 			g_loggerData->g_loggers[name] = logger;
 			spdlog::register_logger(logger);
 			return logger;
@@ -163,9 +167,7 @@ namespace koi
 	void Logger::Flush()
 	{
 		for (auto& [_, logger] : g_loggerData->g_loggers)
-		{
 			logger->flush();
-		}
 	}
 
 	spdlog::level::level_enum Logger::ToSpdlogLevel(LogLevel level)

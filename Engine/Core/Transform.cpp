@@ -1,5 +1,8 @@
-#include "Core/Transform.h"
-#include "Core/Math.h"
+module;
+#include <hlsl++.h>
+module Koi.Core.Transform;
+
+import Koi.Core.Math;
 
 namespace koi
 {
@@ -9,7 +12,6 @@ namespace koi
 
 		float4x4 S = float4x4::scale(Scale);
 
-		// Extract radian components for the individual rotation calls
 		float r[3]{};
 		store(r, EulerAngles);
 

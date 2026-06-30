@@ -1,13 +1,27 @@
-#include "Graphics/Renderer.h"
-#include "Graphics/RendererResources.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/Resources.h"
-#include "Platform/Window.h"
-#include "Runtime/Engine.h"
-#include "Memory/MemoryTracker.h"
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
+#include <cassert>
+#include <memory>
+module Koi.Graphics.Renderer;
+
+import Koi.Core.Types;
+import Koi.Graphics.Format;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.CommandAllocator;
+import Koi.Graphics.RHI.CommandList;
+import Koi.Graphics.RHI.CommandQueue;
+import Koi.Graphics.RHI.Device;
+import Koi.Graphics.RenderWindow;
+import Koi.Graphics.RendererResources;
+import Koi.Graphics.RenderPass;
+import Koi.Platform.Window;
+import Koi.Runtime.EngineHooks;
+import Koi.Runtime.Engine;
+import Koi.Memory.MemoryTracker;
 #include "Core/Profiling.h"
 #include "Core/Logger.h"
-#include <cassert>
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {

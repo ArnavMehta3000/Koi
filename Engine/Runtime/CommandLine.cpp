@@ -1,16 +1,40 @@
-#include "Runtime/CommandLine.h"
+module;
+#include "Platform/Win32.h"
+#include <CLI/CLI.hpp>
+#include <filesystem>
+#include <functional>
+#include <memory>
+#include <format>
+module Koi.Runtime.CommandLine;
 
-namespace koi::internal
+namespace koi
 {
-	static CommandLineFactory s_factory = [] { return std::make_unique<CommandLine>(); };
-
-	void RegisterCommandLineFactory(CommandLineFactory factory)
+	int CommandLine::ParseArgs(int argc, char* argv[])
 	{
-		s_factory = std::move(factory);
+		try
+		{
+			CLI::App::parse(argc, argv);
+		}
+		catch (const std::exception& e)
+		{
+			OutputDebugStringA(std::format("CLI Parse Error: {}\n", e.what()).c_str());
+			return 1;
+		}
+		return 0;
 	}
 
-	std::unique_ptr<CommandLine> InvokeCommandLineFactory()
+	namespace internal
 	{
-		return s_factory();
+		static CommandLineFactory s_factory = [] { return std::make_unique<CommandLine>(); };
+
+		void RegisterCommandLineFactory(CommandLineFactory factory)
+		{
+			s_factory = std::move(factory);
+		}
+
+		std::unique_ptr<CommandLine> InvokeCommandLineFactory()
+		{
+			return s_factory();
+		}
 	}
 }

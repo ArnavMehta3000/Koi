@@ -1,11 +1,18 @@
-#include "Core/VirtualFileSystem.h"
-#include "Core/Logger.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
-#include <fstream>
+#include <filesystem>
+module Koi.Core.VirtualFileSystem;
+
+import Koi.Core.Logger;
+#include "Core/Types.h"
+#include "Core/Logger.h"
 
 namespace koi
 {
-	FilesystemMount::FilesystemMount(const fs::path& root) : m_roots{ std::move(root) } { }
+	namespace fs = std::filesystem;
+
+	FilesystemMount::FilesystemMount(const fs::path& root) : m_roots{ std::move(root) } {}
 
 	FilesystemMount::FilesystemMount(std::span<fs::path> roots)
 	{
@@ -34,7 +41,6 @@ namespace koi
 	{
 		ZoneScoped;
 
-		// Return the first root that actually contains the file
 		for (const fs::path& root : m_roots)
 		{
 			fs::path full = root / fs::path(relativePath);
@@ -42,7 +48,7 @@ namespace koi
 		}
 
 		return m_roots.empty()
-			? std::optional<fs::path>{}  // No roots, no file
+			? std::optional<fs::path>{}
 			: (m_roots.front() / fs::path(relativePath));
 	}
 
@@ -67,16 +73,11 @@ namespace koi
 		VirtualFileSystem::SplitVirtualPath(std::string_view virtualPath)
 	{
 		const auto pos = virtualPath.find("://");
-
 		if (pos == std::string_view::npos)
 			return std::nullopt;
-
 		return std::make_pair(virtualPath.substr(0, pos), virtualPath.substr(pos + 3));
 	}
 
-	// Paths without a scheme are implicitly project://. Assets in user-authored
-	// TOMLs are project assets all the time, so the prefix is noise; engine://
-	// stays opt-in for the rare cross-reference.
 	static std::pair<std::string_view, std::string_view> ResolveScheme(std::string_view virtualPath)
 	{
 		if (auto split = VirtualFileSystem::SplitVirtualPath(virtualPath))
@@ -87,24 +88,20 @@ namespace koi
 	std::optional<std::vector<byte>> VirtualFileSystem::Read(std::string_view virtualPath)
 	{
 		const auto [scheme, path] = ResolveScheme(virtualPath);
-
 		auto it = m_mounts.find(std::string(scheme));
 		if (it == m_mounts.end())
 		{
 			KOI_LOG_ERROR("VFS Read: scheme '{}://' not mounted (path '{}')", scheme, virtualPath);
 			return std::nullopt;
 		}
-
 		return it->second->Read(path);
 	}
 
 	std::optional<fs::path> VirtualFileSystem::TryResolveToDisk(std::string_view virtualPath)
 	{
 		const auto [scheme, path] = ResolveScheme(virtualPath);
-
 		auto it = m_mounts.find(std::string(scheme));
 		if (it == m_mounts.end()) return std::nullopt;
-
 		return it->second->TryResolveToDisk(path);
 	}
 }

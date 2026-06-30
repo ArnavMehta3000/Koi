@@ -1,7 +1,13 @@
-#include "Graphics/RHI/CommandQueue.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/CommandList.h"
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
 #include <cassert>
+#include <span>
+#include <vector>
+module Koi.Graphics.RHI.CommandQueue;
+
+import Koi.Core.Types;
+import Koi.Graphics.RHI.CommandList;
 
 namespace koi
 {

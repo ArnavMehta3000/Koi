@@ -1,9 +1,17 @@
-#include "Graphics/RendererResources.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/PipelineDesc.h"
-#include "Graphics/ShaderLoader.h"
-#include "Memory/MemoryTracker.h"
+module;
+#include "Core/Config.h"
+#include "Graphics/RHI/DX12Common.h"
+module Koi.Graphics.RendererResources;
+
+import Koi.Core.Logger;
+import Koi.Graphics.Format;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.Device;
+import Koi.Graphics.RHI.PipelineDesc;
+import Koi.Graphics.ShaderLoader;
+import Koi.Memory.MemoryTracker;
 #include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -56,10 +64,8 @@ namespace koi
 			.DebugName = "Default Flat Normal 1x1",
 		});
 
-		// R8G8B8A8_UNORM: byte[0]=R, byte[1]=G, byte[2]=B, byte[3]=A
-		// As a little-endian u32: bits[7:0]=R, bits[15:8]=G, bits[23:16]=B, bits[31:24]=A
 		constexpr u32 kWhite      = 0xFFFFFFFFu;
-		constexpr u32 kFlatNormal = 0xFFFF8080u;  // R=0x80, G=0x80, B=0xFF, A=0xFF
+		constexpr u32 kFlatNormal = 0xFFFF8080u;
 
 		GfxDevice::UploadContext& upload = device.GetUploadContext();
 		upload.Begin();
@@ -87,7 +93,6 @@ namespace koi
 		TonemapPipeline       = {};
 		MeshOpaquePipeline    = {};
 		MeshWireframePipeline = {};
-		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
 	}
 
 	void RendererResources::RebuildPipelines(GfxDevice& device)
@@ -99,7 +104,6 @@ namespace koi
 			if (h) { device.Destroy(h); h = {}; }
 		};
 
-		// --- Tonemap ---
 		{
 			auto vsData = LoadShader("engine://Assets/Shaders/TonemapVS");
 			auto psData = LoadShader("engine://Assets/Shaders/TonemapPS");
@@ -123,7 +127,6 @@ namespace koi
 			}
 		}
 
-		// --- Mesh (opaque + wireframe share the same VS/PS) ---
 		{
 			auto vsData = LoadShader("engine://Assets/Shaders/MeshVS");
 			auto psData = LoadShader("engine://Assets/Shaders/MeshPS");

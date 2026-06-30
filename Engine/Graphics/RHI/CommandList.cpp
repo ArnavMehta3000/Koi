@@ -1,25 +1,32 @@
-#include "Graphics/RHI/CommandList.h"
-#include "Graphics/RHI/CommandAllocator.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/Resources.h"
-#include "Graphics/RHI/DescriptorHeap.h"
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
 #include <cassert>
+#include <array>
+#include <vector>
 
 #pragma warning(push)
-#pragma warning(disable: 6011)  // warning C6011: Dereferencing NULL pointer (I handle this with asserts instead)
+#pragma warning(disable: 6011)
+module Koi.Graphics.RHI.CommandList;
+
+import Koi.Core.Types;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.Resources;
+import Koi.Graphics.RHI.DescriptorHeap;
+import Koi.Graphics.RHI.CommandAllocator;
+import Koi.Graphics.RHI.Device;
 
 namespace koi
 {
 	void CommandList::Init(GfxDevice& device, CommandAllocator& allocator, D3D12_COMMAND_LIST_TYPE type, std::wstring_view debugName)
 	{
-		m_device = &device;
+		m_device    = &device;
 		m_allocator = &allocator;
-		m_type = type;
+		m_type      = type;
 
 		DX_CHECK(device.GetNative()->CreateCommandList(
 			0, type, allocator.Get(0), nullptr, IID_PPV_ARGS(&m_cmdList)));
 
-		// Created in the recording state; close it so Begin() can reopen uniformly.
 		DX_CHECK(m_cmdList->Close());
 
 		if (!debugName.empty())
@@ -36,12 +43,10 @@ namespace koi
 		m_allocator->Reset(frameSlot);
 		DX_CHECK(m_cmdList->Reset(m_allocator->Get(frameSlot), nullptr));
 
-		// Bind shader-visible heaps so SRV/UAV/CBV and sampler descriptors are usable.
 		const std::array heaps =
 		{
 			m_device->ResourceHeap().GetHeap(),
 			m_device->SamplerHeap().GetHeap(),
-			// Other heaps are not marked as shader visible
 		};
 		m_cmdList->SetDescriptorHeaps(static_cast<u32>(heaps.size()), heaps.data());
 
@@ -70,7 +75,6 @@ namespace koi
 				newState,
 				D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES,
 				D3D12_RESOURCE_BARRIER_FLAG_NONE));
-
 
 		tex->CurrentState = newState;
 	}

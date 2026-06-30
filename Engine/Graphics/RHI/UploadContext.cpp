@@ -1,10 +1,18 @@
-#include "Graphics/RHI/Device.h"
-#include "Core/Logger.h"
+module;
+#include "Core/Config.h"
+#include "Graphics/RHI/DX12Common.h"
 #include "Core/Profiling.h"
-#include "Core/Patterns/Match.h"
-#include "Memory/MemoryTracker.h"
+#include <spdlog/spdlog.h>
 #include <cassert>
-#include <cstring>
+module Koi.Graphics.RHI.Device;
+
+import Koi.Core.Logger;
+import Koi.Core.Match;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.Resources;
+import Koi.Memory.MemoryTracker;
+#include "Memory/MemoryTracker.h"
+#include "Core/Logger.h"
 
 namespace koi
 {
@@ -49,8 +57,6 @@ namespace koi
 
 		assert(!m_isRecording && "UploadContext::Shutdown called while a Begin/End block is still open");
 
-		// If there are staging buffers pending from the last FlushQueued, wait for the
-		// copy fence to pass so we can safely destroy them.
 		if (!m_pendingStagingFree.empty())
 		{
 			if (m_copyFence->GetCompletedValue() < m_pendingFreeFenceValue)
@@ -88,7 +94,7 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		assert(m_device                       && "UploadContext::Begin called before Init");
-		assert(!m_isRecording                 && "UploadContext::Begin called while already recording — missing End()?");
+		assert(!m_isRecording                 && "UploadContext::Begin called while already recording");
 		assert(m_activeStagingBuffers.empty() && "Staging buffers leaked from a previous Begin/End block");
 
 		DX_CHECK(m_allocator->Reset());
@@ -121,8 +127,8 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		assert(m_isRecording                    && "UploadContext::End called without a matching Begin()");
-		assert(!m_activeStagingBuffers.empty()  && "UploadContext::End called with no uploads recorded");
+		assert(m_isRecording                   && "UploadContext::End called without a matching Begin()");
+		assert(!m_activeStagingBuffers.empty() && "UploadContext::End called with no uploads recorded");
 
 		DX_CHECK(m_cmdList->Close());
 
@@ -170,12 +176,10 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		assert(m_device        && "UploadContext::FlushQueued called before Init");
-		assert(!m_isRecording  && "FlushQueued called while a synchronous Begin/End block is open");
-		assert(graphicsQueue   && "FlushQueued: graphicsQueue is null");
+		assert(m_device       && "UploadContext::FlushQueued called before Init");
+		assert(!m_isRecording && "FlushQueued called while a synchronous Begin/End block is open");
+		assert(graphicsQueue  && "FlushQueued: graphicsQueue is null");
 
-		// Ensure previous flush's staging buffers are freed before submitting new work.
-		// The copy queue is fast relative to frame rate, so the poll branch is almost always taken.
 		if (!m_pendingStagingFree.empty())
 		{
 			if (m_copyFence->GetCompletedValue() < m_pendingFreeFenceValue)
@@ -221,7 +225,6 @@ namespace koi
 		m_pendingFreeFenceValue = signalValue;
 		m_pendingStagingFree    = std::move(stagingThisFlush);
 
-		// GPU-side ordering: graphics queue will not begin until the copy queue signals
 		DX_CHECK(graphicsQueue->Wait(m_copyFence.Get(), signalValue));
 	}
 
@@ -245,7 +248,6 @@ namespace koi
 
 		std::memcpy(stagingBuf->MappedPtr, data, size);
 
-		// Both resources are in COMMON/GENERIC_READ which copy queue accepts implicitly
 		m_cmdList->CopyBufferRegion(dstBuf->Resource.Get(), 0, stagingBuf->Resource.Get(), 0, size);
 		return staging;
 	}
@@ -277,7 +279,6 @@ namespace koi
 		assert((tex && tex->Resource)                && "RecordTextureUpload: destination texture is not alive after staging alloc");
 		assert((stagingBuf && stagingBuf->MappedPtr) && "RecordTextureUpload: staging buffer mapping failed");
 
-		// Row-by-row copy: source is tightly packed, destination pitch is aligned to D3D12 requirements
 		byte* dstBytes       = static_cast<byte*>(stagingBuf->MappedPtr) + footprint.Offset;
 		const byte* srcBytes = static_cast<const byte*>(data);
 

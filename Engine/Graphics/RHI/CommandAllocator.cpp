@@ -1,9 +1,17 @@
-#include "Graphics/RHI/CommandAllocator.h"
-#include "Graphics/RHI/Device.h"
-#include "Core/Logger.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
-#include "Memory/MemoryTracker.h"
+#include "Graphics/RHI/DX12Common.h"
 #include <cassert>
+#include <string>
+#include <format>
+module Koi.Graphics.RHI.CommandAllocator;
+
+import Koi.Core.Logger;
+import Koi.Graphics.RHI.Device;
+import Koi.Memory.MemoryTracker;
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -19,7 +27,7 @@ namespace koi
 
 			if (!debugName.empty())
 			{
-				m_allocators[i]->SetName(fmt::format(L"{} [Frame {}]", debugName.data(), i).c_str());
+				m_allocators[i]->SetName(std::format(L"{} [Frame {}]", debugName.data(), i).c_str());
 			}
 		}
 	}

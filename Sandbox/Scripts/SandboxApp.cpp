@@ -1,15 +1,29 @@
-#include "SandboxApp.h"
-#include "Core/Profiling.h"
-#include "Runtime/Engine.h"
-#include "Runtime/CommandLine.h"
-#include "Graphics/RenderWindow.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RenderPasses/ScenePass.h"
-#include "Graphics/RenderPasses/TonemapPass.h"
+module;
+#include "Core/Config.h"
 #include <toml++/toml.hpp>
-#if KOI_WITH_EDITOR
-#include <imgui.h>
-#endif
+#include <cassert>
+#include <cmath>
+#include <algorithm>
+module Koi.Sandbox.App;
+
+import Koi.Core.Math;
+import Koi.Core.Logger;
+import Koi.Runtime.AppBase;
+import Koi.Runtime.Engine;
+import Koi.Runtime.CommandLine;
+import Koi.Graphics.Renderer;
+import Koi.Graphics.RenderWindow;
+import Koi.Graphics.RHI.Device;
+import Koi.Graphics.RendererResources;
+import Koi.Graphics.RenderPasses.ScenePass;
+import Koi.Graphics.RenderPasses.TonemapPass;
+import Koi.Platform.InputManager;
+import Koi.Platform.InputCodes;
+import Koi.Memory.MemoryTracker;
+import Koi.Scene;
+#include "Core/Profiling.h"
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -55,7 +69,6 @@ void SandboxApp::OnTick(koi::f32 dt)
 
 	m_scene.Update();
 
-	// Keep camera aspect in sync with the current render window size
 	if (const koi::RenderWindow* rw = engine.GetRenderer().GetMainRenderWindow())
 		m_camera.SetAspect(static_cast<koi::f32>(rw->GetWidth()) / static_cast<koi::f32>(rw->GetHeight()));
 

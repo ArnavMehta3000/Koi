@@ -1,15 +1,20 @@
-#include "Graphics/MeshLoader.h"
-#include "Core/Logger.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
-#include "Core/VirtualFileSystem.h"
-#include "Memory/MemoryTracker.h"
 #include <fastgltf/core.hpp>
 #include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <vector>
-#include <string>
+#include <cassert>
+module Koi.Graphics.MeshLoader;
+
+import Koi.Core.Logger;
+import Koi.Core.Math;
+import Koi.Core.VirtualFileSystem;
+import Koi.Memory.MemoryTracker;
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -74,27 +79,23 @@ namespace koi
 
 		model->SourcPath = path.string();
 
-
 		return model;
 	}
 
-	std::unique_ptr<ModelAsset>Loader::BuildModelAsset()
+	std::unique_ptr<ModelAsset> Loader::BuildModelAsset()
 	{
 		ZoneScoped;
 		auto model = std::make_unique<ModelAsset>();
 
 		LoadMaterials(*model);
 		LoadMeshes(*model);
-		// Todo create samplers
 
-		return model;
 		return model;
 	}
 
 	void Loader::LoadMeshes(ModelAsset& model)
 	{
 		ZoneScoped;
-		// For-each mesh
 		for (fastgltf::Mesh& gltfMesh : Asset->meshes)
 		{
 			Mesh mesh;
@@ -103,12 +104,11 @@ namespace koi
 			std::vector<Vertex> allVertices;
 			std::vector<u32> allIndices;
 
-			// For-each primitive
 			for (fastgltf::Primitive& primitive : gltfMesh.primitives)
 			{
 				SubMesh sub;
-				sub.VertexOffset = static_cast<u32>(allVertices.size());
-				sub.IndexOffset = static_cast<u32>(allIndices.size());
+				sub.VertexOffset  = static_cast<u32>(allVertices.size());
+				sub.IndexOffset   = static_cast<u32>(allIndices.size());
 				sub.MaterialIndex = static_cast<i32>(primitive.materialIndex.value_or(-1));
 
 				fastgltf::Attribute* posAccessor = primitive.findAttribute("POSITION");
@@ -124,7 +124,6 @@ namespace koi
 				allVertices.resize(allVertices.size() + vertexCount);
 				Vertex* vertices = &allVertices[sub.VertexOffset];
 
-				// Read positions
 				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, posAcc,
 					[&](const fastgltf::math::fvec3& pos, std::size_t i)
 					{
@@ -132,7 +131,6 @@ namespace koi
 						sub.Bounds.Expand(vertices[i].Position);
 					});
 
-				// Normals
 				if (fastgltf::Attribute* normAttr = primitive.findAttribute("NORMAL"); normAttr != primitive.attributes.end())
 				{
 					fastgltf::Accessor& acc = Asset->accessors[normAttr->accessorIndex];
@@ -147,7 +145,6 @@ namespace koi
 					KOI_LOG_WARN("Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
 				}
 
-				// UV
 				if (fastgltf::Attribute* uvAttr = primitive.findAttribute("TEXCOORD_0"); uvAttr != primitive.attributes.end())
 				{
 					fastgltf::Accessor& acc = Asset->accessors[uvAttr->accessorIndex];
@@ -162,7 +159,6 @@ namespace koi
 					KOI_LOG_WARN("Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
 				}
 
-				// Tangent
 				bool hasTangent = false;
 				if (fastgltf::Attribute* tanAttr = primitive.findAttribute("TANGENT"); tanAttr != primitive.attributes.end())
 				{
@@ -179,7 +175,6 @@ namespace koi
 					KOI_LOG_WARN("Primitive in mesh '{}' has no TANGENT attribute", mesh.Name);
 				}
 
-				// Indices
 				if (primitive.indicesAccessor.has_value())
 				{
 					fastgltf::Accessor& idxAcc = Asset->accessors[*primitive.indicesAccessor];
@@ -187,29 +182,19 @@ namespace koi
 					allIndices.reserve(allIndices.size() + sub.IndexCount);
 
 					fastgltf::iterateAccessor<u32>(*Asset, idxAcc,
-						[&](u32 idx)
-						{
-							allIndices.push_back(idx);
-						});
+						[&](u32 idx) { allIndices.push_back(idx); });
 				}
 				else
 				{
-					// Non-indexed: generate sequential indices
 					sub.IndexCount = vertexCount;
 					for (u32 i = 0; i < vertexCount; ++i)
-					{
 						allIndices.push_back(i);
-					}
 				}
 
 				if (!hasTangent)
 				{
-					// Since no tangents were found, generate them
-					//TODO: MikkTSpace tangent generation
 					for (u32 i = 0; i < vertexCount; ++i)
-					{
 						vertices[i].Tangent = math::float4(1.0f, 0.0f, 0.0f, 0.0f);
-					}
 				}
 
 				mesh.Bounds.Expand(sub.Bounds);
@@ -232,7 +217,7 @@ namespace koi
 		for (fastgltf::Material& gltfMat : Asset->materials)
 		{
 			Material mat;
-			mat.Name = gltfMat.name;
+			mat.Name       = gltfMat.name;
 			mat.DoubleSided = gltfMat.doubleSided;
 
 			switch (gltfMat.alphaMode)
@@ -245,40 +230,30 @@ namespace koi
 
 			mat.MaterialConstants.AlphaCutoff = gltfMat.alphaCutoff;
 
-			// PBR
 			auto& pbr = gltfMat.pbrData;
 			mat.MaterialConstants.BaseColorFactor = math::float4(
 				pbr.baseColorFactor[0], pbr.baseColorFactor[1],
 				pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
 
-			mat.MaterialConstants.MetallicFactor = pbr.metallicFactor;
+			mat.MaterialConstants.MetallicFactor  = pbr.metallicFactor;
 			mat.MaterialConstants.RoughnessFactor = pbr.roughnessFactor;
 
 			if (pbr.baseColorTexture)
-			{
 				mat.BaseColorTextureIdx = LoadTexture(model, static_cast<u32>(pbr.baseColorTexture->textureIndex));
-			}
-
 			if (pbr.metallicRoughnessTexture)
-			{
 				mat.MetallicRoughnessTextureIdx = LoadTexture(model, static_cast<u32>(pbr.metallicRoughnessTexture->textureIndex));
-			}
-
 			if (gltfMat.normalTexture)
-			{
 				mat.NormalTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.normalTexture->textureIndex));
-			}
-
 			if (gltfMat.occlusionTexture)
 			{
 				mat.OcclusionTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.occlusionTexture->textureIndex));
 				mat.MaterialConstants.OcclusionStrength = gltfMat.occlusionTexture->strength;
 			}
-
 			if (gltfMat.emissiveTexture)
 			{
 				mat.EmissiveTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.emissiveTexture->textureIndex));
-				mat.MaterialConstants.EmissiveFactor = math::float3(gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
+				mat.MaterialConstants.EmissiveFactor = math::float3(
+					gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
 			}
 
 			model.Materials.push_back(std::move(mat));
@@ -292,9 +267,7 @@ namespace koi
 
 		fastgltf::Texture& gltfTexture = Asset->textures[textureIndex];
 		if (!gltfTexture.imageIndex.has_value())
-		{
 			return u32(-1);
-		}
 
 		fastgltf::Image& gltfImage = Asset->images[*gltfTexture.imageIndex];
 
@@ -302,15 +275,15 @@ namespace koi
 		stbi_uc* pixels = nullptr;
 		if (std::holds_alternative<fastgltf::sources::URI>(gltfImage.data))
 		{
-			auto& uri = std::get<fastgltf::sources::URI>(gltfImage.data);  // Load from filename
+			auto& uri = std::get<fastgltf::sources::URI>(gltfImage.data);
 
 			assert(uri.fileByteOffset == 0);
-			assert(uri.uri.isLocalPath());  // Needs to be a local file to be loaded
+			assert(uri.uri.isLocalPath());
 
 			fs::path fullPath = BasePath / uri.uri.fspath();
 			pixels = stbi_load(fullPath.string().c_str(), &img.Width, &img.Height, &img.Channels, 4);
 		}
-		else if (std::holds_alternative<fastgltf::sources::Array>(gltfImage.data))  // Load from memory
+		else if (std::holds_alternative<fastgltf::sources::Array>(gltfImage.data))
 		{
 			auto& array = std::get<fastgltf::sources::Array>(gltfImage.data);
 			pixels = stbi_load_from_memory(
@@ -318,12 +291,12 @@ namespace koi
 				static_cast<i32>(array.bytes.size()),
 				&img.Width, &img.Height, &img.Channels, 4);
 		}
-		else if (std::holds_alternative<fastgltf::sources::BufferView>(gltfImage.data))  // Load from buffer view
+		else if (std::holds_alternative<fastgltf::sources::BufferView>(gltfImage.data))
 		{
 			auto& bufferView = std::get<fastgltf::sources::BufferView>(gltfImage.data);
 
-			fastgltf::BufferView& view = Asset->bufferViews[bufferView.bufferViewIndex];
-			fastgltf::Buffer& buffer = Asset->buffers[view.bufferIndex];
+			fastgltf::BufferView& view   = Asset->bufferViews[bufferView.bufferViewIndex];
+			fastgltf::Buffer& buffer     = Asset->buffers[view.bufferIndex];
 
 			if (std::holds_alternative<fastgltf::sources::Array>(buffer.data))
 			{
@@ -344,21 +317,17 @@ namespace koi
 			KOI_LOG_WARN("Failed to load texture image index {}", *gltfTexture.imageIndex);
 			return u32(-1);
 		}
-		else
-		{
-			assert(img.Width > 0 && img.Height > 0);
 
-			// stbi was asked for 4 components, so the returned data is always RGBA
-			// regardless of the file's native channel count.
-			img.Channels = 4;
-			const size_t byteCount = static_cast<size_t>(img.Width) * img.Height * 4;
-			img.Pixels.resize(byteCount);
-			std::copy(pixels, pixels + byteCount, img.Pixels.data());
+		assert(img.Width > 0 && img.Height > 0);
 
-			stbi_image_free(pixels);
-		}
+		img.Channels = 4;
+		const size_t byteCount = static_cast<size_t>(img.Width) * img.Height * 4;
+		img.Pixels.resize(byteCount);
+		std::copy(pixels, pixels + byteCount, img.Pixels.data());
 
-		img.Name = (gltfTexture.name.empty()) ? fmt::format("Texture_{}", idx) : gltfTexture.name.data();
+		stbi_image_free(pixels);
+
+		img.Name = (gltfTexture.name.empty()) ? std::format("Texture_{}", idx) : gltfTexture.name.data();
 		model.Images.push_back(std::move(img));
 		return idx;
 	}

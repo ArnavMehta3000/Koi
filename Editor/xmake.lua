@@ -7,7 +7,8 @@ target("Koi.Editor")
 
 	add_includedirs(".", { public = true })
 	add_headerfiles("**.h", { public = true })
-	add_files("**.ixx", "**.cpp", { public = true })
+	add_files("**.ixx", { public = true })
+	add_files("**.cpp")
 target_end()
 
 end

@@ -1,18 +1,24 @@
-#include "Scene/Scene.h"
-#include "Core/Logger.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
-#include "Core/Math.h"
-#include "Core/VirtualFileSystem.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/MeshLoader.h"
-#include "Memory/MemoryTracker.h"
-#include <queue>
-#include <unordered_map>
-#include <functional>
-#include <cassert>
-#include <numbers>
 #include <toml++/toml.hpp>
-#include <imgui.h>
+#include <hlsl++.h>
+#if KOI_WITH_EDITOR
+	#include <imgui.h>
+#endif
+#include <cassert>
+module Koi.Scene;
+
+import Koi.Core.Logger;
+import Koi.Core.Math;
+import Koi.Core.VirtualFileSystem;
+import Koi.Graphics.Types;
+import Koi.Graphics.GPUMesh;
+import Koi.Graphics.MeshLoader;
+import Koi.Graphics.RHI.Device;
+import Koi.Memory.MemoryTracker;
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -20,7 +26,7 @@ namespace koi
 	{
 		static constexpr f32 kDegToRad = static_cast<f32>(std::numbers::pi) / 180.0f;
 
-		float ToFloat(const toml::array* arr, size_t i, f32 def)
+		f32 ToFloat(const toml::array* arr, size_t i, f32 def)
 		{
 			if (!arr || i >= arr->size()) return def;
 			const auto* v = arr->get_as<f64>(i);
@@ -58,7 +64,6 @@ namespace koi
 				Transform    transform;
 			};
 
-			// Parse node descriptors
 			std::vector<NodeDesc> descs;
 			if (auto* nodes = toml.get_as<toml::array>("nodes"))
 			{
@@ -69,14 +74,13 @@ namespace koi
 					if (!tbl) continue;
 
 					NodeDesc d;
-					d.name   = tbl->get_as<std::string>("name") ? **tbl->get_as<std::string>("name") : "";
+					d.name   = tbl->get_as<std::string>("name")   ? **tbl->get_as<std::string>("name")   : "";
 					d.parent = tbl->get_as<std::string>("parent") ? **tbl->get_as<std::string>("parent") : "";
-					d.mesh   = tbl->get_as<std::string>("mesh") ? **tbl->get_as<std::string>("mesh") : "";
+					d.mesh   = tbl->get_as<std::string>("mesh")   ? **tbl->get_as<std::string>("mesh")   : "";
 
-					d.transform.Position    = ReadFloat3(tbl->get_as<toml::array>("position"), { 0.0f, 0.0f, 0.0f });
-					d.transform.Scale       = ReadFloat3(tbl->get_as<toml::array>("scale"),    { 1.0f, 1.0f, 1.0f });
+					d.transform.Position = ReadFloat3(tbl->get_as<toml::array>("position"), { 0.0f, 0.0f, 0.0f });
+					d.transform.Scale    = ReadFloat3(tbl->get_as<toml::array>("scale"),    { 1.0f, 1.0f, 1.0f });
 
-					// Rotation is authored in degrees, stored as radians
 					math::float3 deg = ReadFloat3(tbl->get_as<toml::array>("rotation"), { 0.0f, 0.0f, 0.0f });
 					f32 degArr[3]{};
 					math::store(degArr, deg);
@@ -91,7 +95,6 @@ namespace koi
 				}
 			}
 
-			// Load unique meshes (deduplicated by path)
 			std::unordered_map<std::string, i32> meshPathToIndex;
 			for (const NodeDesc& d : descs)
 			{
@@ -106,7 +109,6 @@ namespace koi
 				}
 			}
 
-			// Build node list + name→index map
 			std::vector<SceneNode> tempNodes;
 			std::unordered_map<std::string, i32> nameToIdx;
 			tempNodes.reserve(descs.size());
@@ -125,7 +127,6 @@ namespace koi
 				tempNodes.push_back(std::move(node));
 			}
 
-			// Link parent-child relationships
 			for (i32 i = 0; i < (i32)descs.size(); ++i)
 			{
 				const std::string& parentName = descs[i].parent;
@@ -137,8 +138,6 @@ namespace koi
 				tempNodes[parentIdx].Children.push_back(i);
 			}
 
-			// BFS topological sort so parent index < child index.
-			// This enables a single forward pass in Update().
 			std::vector<i32> oldToNew(tempNodes.size(), -1);
 			std::vector<SceneNode> sorted;
 			sorted.reserve(tempNodes.size());
@@ -157,9 +156,7 @@ namespace koi
 				oldToNew[old] = next;
 
 				for (i32 child : tempNodes[old].Children)
-				{
 					q.push(child);
-				}
 
 				sorted.push_back(std::move(tempNodes[old]));
 			}
@@ -170,9 +167,7 @@ namespace koi
 					n.Parent = oldToNew[n.Parent];
 
 				for (i32& c : n.Children)
-				{
 					c = oldToNew[c];
-				}
 			}
 
 			scene.m_nodes = std::move(sorted);
@@ -201,7 +196,6 @@ namespace koi
 
 			node.Dirty = false;
 
-			// Propagate dirtiness to children
 			for (i32 child : node.Children)
 				m_nodes[child].Dirty = true;
 		}

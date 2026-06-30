@@ -1,7 +1,12 @@
-#include "Runtime/AppBase.h"
-#include "Runtime/Engine.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
 #include <cassert>
+module Koi.Runtime.AppBase;
+
+import Koi.Core.Types;
+import Koi.Runtime.Engine;
+#include "Core/Logger.h"
 
 namespace koi
 {
@@ -16,7 +21,7 @@ namespace koi
 	AppBase::~AppBase()
 	{
 		s_instance = nullptr;
-		m_engine = nullptr;
+		m_engine   = nullptr;
 	}
 
 	void AppBase::Init()

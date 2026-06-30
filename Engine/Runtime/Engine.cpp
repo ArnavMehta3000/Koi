@@ -1,12 +1,17 @@
-#include "Runtime/Engine.h"
-#include "Runtime/AppBase.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/Format.h"
-#include "Memory/MemoryDebug.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
-#include <algorithm>
 #include <cassert>
-#include <ranges>
+module Koi.Runtime.Engine;
+
+import Koi.Core.Logger;
+import Koi.Graphics.Format;
+import Koi.Graphics.RHI.Device;
+import Koi.Memory.MemoryDebug;
+import Koi.Memory.MemoryTracker;
+import Koi.Runtime.AppBase;
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -56,10 +61,10 @@ namespace koi
 		const Format depthFmt = [&]() -> Format {
 			switch (app.GetDesc().DepthBuffer)
 			{
-				case DepthBufferFormat::D16:    return Format::D16_UNORM;
-				case DepthBufferFormat::D24S8:  return Format::D24_UNORM_S8_UINT;
-				case DepthBufferFormat::None:   return Format::UNKNOWN;
-				default:                        return Format::D32_FLOAT;
+				case DepthBufferFormat::D16:   return Format::D16_UNORM;
+				case DepthBufferFormat::D24S8: return Format::D24_UNORM_S8_UINT;
+				case DepthBufferFormat::None:  return Format::UNKNOWN;
+				default:                       return Format::D32_FLOAT;
 			}
 		}();
 

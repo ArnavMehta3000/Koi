@@ -1,9 +1,16 @@
-#include "Graphics/ShaderLoader.h"
-#include "Graphics/ShaderCompiler.h"
+module;
 #include "Core/Config.h"
-#include <mutex>
-#include <string>
+#include <string_view>
 #include <unordered_map>
+module Koi.Graphics.ShaderLoader;
+
+import Koi.Core.Logger;
+import Koi.Core.VirtualFileSystem;
+
+#if KOI_WITH_EDITOR
+	import Koi.Graphics.ShaderCompiler;
+#endif
+#include "Core/Logger.h"
 
 namespace koi
 {
@@ -34,7 +41,6 @@ namespace koi
 
 	ShaderType InferShaderTypeFromName(std::string_view path)
 	{
-		// Strip directory + (optional) extension to get the stem.
 		auto slash = path.find_last_of("/\\");
 		std::string_view stem = slash == std::string_view::npos ? path : path.substr(slash + 1);
 		auto dot = stem.find_last_of('.');
@@ -56,12 +62,10 @@ namespace koi
 	{
 		std::mutex g_shaderCacheMutex;
 		std::unordered_map<std::string, std::vector<byte>> g_shaderCache;
-		// TODO: Make a dedicated shader cache system?
 	}
 
 	std::vector<byte> LoadShader(std::string_view virtualPathNoExt)
 	{
-		// Cache hit: return bytes copied out under the lock.
 		{
 			std::lock_guard lock(g_shaderCacheMutex);
 			if (auto it = g_shaderCache.find(std::string(virtualPathNoExt)); it != g_shaderCache.end())
@@ -83,7 +87,6 @@ namespace koi
 			return {};
 		}
 
-		// OutDir intentionally left empty - editor compiles in-memory only
 		ShaderCompiler::Args args{ .Type = type };
 
 		auto blob = ShaderCompiler::Get().CompileFromFile(*resolved, args);
@@ -97,7 +100,6 @@ namespace koi
 			static_cast<const byte*>(blob->GetBufferPointer()),
 			static_cast<const byte*>(blob->GetBufferPointer()) + blob->GetBufferSize());
 
-		// Add to cache
 		{
 			std::lock_guard lock(g_shaderCacheMutex);
 			g_shaderCache[std::string(virtualPathNoExt)] = bytes;
@@ -114,11 +116,10 @@ namespace koi
 #else
 	std::vector<byte> LoadShader(std::string_view virtualPathNoExt)
 	{
-		// Simply load the CSO
 		const std::string csoPath = std::string(virtualPathNoExt) + ".cso";
 		return LoadShaderBytecode(csoPath);
 	}
 
-	void InvalidateShaderCache() { /* no-op */ }
+	void InvalidateShaderCache() {}
 #endif
 }

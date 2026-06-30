@@ -1,17 +1,23 @@
-#include "Runtime/AppBase.h"
-#include "Runtime/Engine.h"
-#include "Core/StringUtils.h"
-#include "Core/Profiling.h"
-#include "Core/VirtualFileSystem.h"
+module;
+#include "Core/Config.h"
 #include <filesystem>
 #include <vector>
 #include <string>
+#include <cassert>
+module Koi.Runtime.AppBase;
+
+import Koi.Core.Logger;
+import Koi.Core.StringUtils;
+import Koi.Core.VirtualFileSystem;
+import Koi.Runtime.Engine;
+import Koi.Runtime.CommandLine;
+#include "Core/Profiling.h"
+#include "Core/Logger.h"
 
 namespace koi::internal
 {
 	static std::unique_ptr<AppBase> CreateApplicationInstance(CommandLine& cmd)
 	{
-		// Custom scoped function for profiling reasons
 		ZoneScoped;
 		return CreateApplication(cmd);
 	}
@@ -33,9 +39,6 @@ namespace koi::internal
 		assert(argc > 0 && "argc must be > 0");
 		assert(argv != nullptr && "argv must not be nullptr");
 
-		// Initialize the logger before the Engine so it outlives it during
-		// stack unwinding — Engine::~Engine calls Logger::Shutdown(), which
-		// would otherwise make IsInitialized() return false in catch blocks.
 		Logger::Init();
 
 		try
@@ -47,24 +50,14 @@ namespace koi::internal
 				return -1;
 			}
 
-			// Set up VFS before engine init
-			//   Runtime: cooked assets live next to the exe, either directly
-			//           or under a 'Cooked/' subdir. The content root is
-			//           wherever Project.toml is found; engine mount is
-			//           <contentRoot>/Engine, project mount is <contentRoot>
-			//   Editor:  assets live in source — project mount follows the
-			//           --project TOML's parent dir, engine mount follows
-			//           the engine assets shipped next to the editor exe
 			{
 				const fs::path exeDir = fs::current_path();
 #if KOI_WITH_EDITOR
 				const fs::path projectRoot = cmd->GetProjectFile().empty()
-					? exeDir  // No project file specified, default to current dir
+					? exeDir
 					: fs::absolute(cmd->GetProjectFile()).parent_path();
 				const fs::path engineRoot = exeDir / "Engine";
 #else
-				// Locate the cooked content root: prefer <exe>/, fall back to <exe>/Cooked/.
-				// Either way, content is laid out as <root>/Engine/ and <root>/Project/
 				fs::path contentRoot = exeDir;
 				if (!fs::exists(contentRoot / "Project" / "Project.toml") &&
 				     fs::exists(exeDir / "Cooked" / "Project" / "Project.toml"))

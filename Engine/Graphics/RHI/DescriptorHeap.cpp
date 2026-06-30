@@ -1,7 +1,15 @@
-#include "Graphics/RHI/DescriptorHeap.h"
+module;
+#include "Core/Config.h"
 #include "Core/Profiling.h"
-#include "Memory/MemoryTracker.h"
+#include "Graphics/RHI/DX12Common.h"
 #include <cassert>
+#include <mutex>
+#include <vector>
+module Koi.Graphics.RHI.DescriptorHeap;
+
+import Koi.Core.Types;
+import Koi.Memory.MemoryTracker;
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -37,7 +45,7 @@ namespace koi
 		}
 
 		m_freeList.clear();
-		m_freeList.reserve(64);  // Maybe reserve capccity instead?
+		m_freeList.reserve(64);
 	}
 
 	void DescriptorHeap::Reset()
@@ -59,7 +67,7 @@ namespace koi
 
 		std::scoped_lock lock(m_mutex);
 
-		if (!m_freeList.empty())  // Get from free list
+		if (!m_freeList.empty())
 		{
 			DescriptorIndex idx = m_freeList.back();
 			m_freeList.pop_back();
@@ -75,7 +83,6 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		// Add index to free list
 		if (index == INVALID_DESCRIPTOR)
 			return;
 
@@ -86,8 +93,6 @@ namespace koi
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE DescriptorHeap::CpuHandle(DescriptorIndex i) const noexcept
 	{
-		// CD3DX12 multiplies the offset by the increment size, so pass the descriptor
-		// index directly (not index * stride) or the offset gets squared by the stride.
 		return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cpuStart, static_cast<INT>(i), m_stride);
 	}
 

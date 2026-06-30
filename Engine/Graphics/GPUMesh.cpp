@@ -1,8 +1,13 @@
-#include "Graphics/GPUMesh.h"
-#include "Graphics/RHI/Device.h"
-#include "Memory/MemoryTracker.h"
+module;
+#include "Core/Config.h"
+module Koi.Graphics.GPUMesh;
+
+import Koi.Core.Logger;
+import Koi.Graphics.Types;
+import Koi.Graphics.RHI.Device;
+import Koi.Memory.MemoryTracker;
 #include "Core/Logger.h"
-#include <cassert>
+#include "Memory/MemoryTracker.h"
 
 namespace koi
 {
@@ -13,7 +18,6 @@ namespace koi
 
 		GPUMesh mesh;
 
-		// Upload all images and collect their SRV indices.
 		std::vector<DescriptorIndex> imageSRVs;
 		imageSRVs.reserve(model.Images.size());
 
@@ -34,7 +38,6 @@ namespace koi
 			mesh.Textures.push_back(tex);
 		}
 
-		// Flatten all mesh vertices and indices into a single pair of buffers.
 		std::vector<Vertex> vertices;
 		std::vector<u32>    indices;
 

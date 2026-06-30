@@ -1,22 +1,15 @@
-#include "EditorApp.h"
-#include "Runtime/Engine.h"
-#include "Graphics/Renderer.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RHI/CommandList.h"
-#include "Graphics/ShaderCompiler.h"
-#include "Graphics/ShaderLoader.h"
-#include "Platform/Window.h"
-#include "Platform/InputManager.h"
-#include "Platform/InputCodes.h"
-#include "Memory/MemoryTracker.h"
-#include "Core/Logger.h"
-#include <filesystem>
-#include <fstream>
-#include <system_error>
-
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_dx12.h>
+#include <filesystem>
+#include <fstream>
+#include <system_error>
+module Koi.Editor.App;
+#include "Core/Logger.h"
+#include "Memory/MemoryTracker.h"
 
 namespace koi::editor
 {
@@ -69,9 +62,8 @@ namespace koi::editor
 		KOI_LOG_DEBUG("\tCook output path: {}"   , m_config.CookedOutput.string());
 #endif
 
-		// Configure engine hooks
-		m_postInitHook    = engine.RegisterHook(EnginePhase::PostInit          , [this] { OnPostInit();   });
-		m_postRenderHook  = engine.RegisterHook(EnginePhase::OnSwapchainOverlay, [this] { OnPostRender(); });
+		m_postInitHook   = engine.RegisterHook(EnginePhase::PostInit          , [this] { OnPostInit();   });
+		m_postRenderHook = engine.RegisterHook(EnginePhase::OnSwapchainOverlay, [this] { OnPostRender(); });
 
 		m_initialized = true;
 		KOI_LOG_INFO("Editor initialized");
@@ -110,7 +102,6 @@ namespace koi::editor
 
 		Window& window = engine.GetWindow();
 
-		// Init ImGui
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
@@ -124,7 +115,7 @@ namespace koi::editor
 		initInfo.Device               = device.GetNative();
 		initInfo.CommandQueue         = device.GetGraphicsQueue();
 		initInfo.NumFramesInFlight    = FRAMES_IN_FLIGHT;
-		initInfo.RTVFormat            = DXGI_FORMAT_R8G8B8A8_UNORM;  // using swapchain format
+		initInfo.RTVFormat            = DXGI_FORMAT_R8G8B8A8_UNORM;
 		initInfo.SrvDescriptorHeap    = device.ResourceHeap().GetHeap();
 		initInfo.SrvDescriptorAllocFn = &ImGuiSrvAlloc;
 		initInfo.SrvDescriptorFreeFn  = &ImGuiSrvFree;
@@ -149,17 +140,14 @@ namespace koi::editor
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		// Ask engine and game to recompile shaders and rebuild pipelines
 		if (engine.GetInputManager().IsKeyPressed(KeyCode::F5))
 		{
 			InvalidateShaderCache();
 			engine.FireHook(EnginePhase::OnShaderReload);
 		}
 
-
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		DrawMenuBar();
-
 
 		engine.FireHook(EnginePhase::OnImGuiDraw);
 
@@ -202,16 +190,12 @@ namespace koi::editor
 		std::error_code ec;
 		fs::create_directories(outRoot, ec);
 
-		// Cook layout: <out>/Engine/... and <out>/Project/... — clean split so
-		// runtime can mount engine:// and project:// at sibling roots.
 		const fs::path projRoot = outRoot / "Project";
 
-		// Compile engine shaders -> <out>/Engine/Shaders/*.cso
 		const fs::path engineShaderSrc = m_config.EngineSource / "Shaders";
 		const fs::path engineShaderOut = outRoot / "Engine" / "Shaders";
 		fs::create_directories(engineShaderOut, ec);
 
-		// Compile project shaders -> <out>/Project/Assets/Shaders/*.cso
 		const fs::path projShaderSrc = m_config.ProjectSource / "Assets" / "Shaders";
 		const fs::path projShaderOut = projRoot / "Assets" / "Shaders";
 		fs::create_directories(projShaderOut, ec);
@@ -251,7 +235,6 @@ namespace koi::editor
 		compileDir(engineShaderSrc, engineShaderOut, "engine");
 		compileDir(projShaderSrc,   projShaderOut,   "project");
 
-		// non-shader project assets
 		auto copyDir = [&](const fs::path& src, const fs::path& dst)
 		{
 			if (!fs::exists(src)) return;
@@ -264,7 +247,6 @@ namespace koi::editor
 		copyDir(m_config.ProjectSource / "Assets" / "Models", projRoot / "Assets" / "Models");
 		copyDir(m_config.ProjectSource / "Assets" / "Scenes", projRoot / "Assets" / "Scenes");
 
-		// Copy the project TOML as <out>/Project/Project.toml
 		if (fs::exists(m_config.ProjectFile))
 		{
 			fs::create_directories(projRoot, ec);

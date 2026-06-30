@@ -1,7 +1,11 @@
-#include "Graphics/RenderPasses/RenderPass.h"
-#include "Graphics/RHI/CommandList.h"
-#include "Core/Logger.h"
+module;
+#include "Core/Config.h"
 #include <unordered_set>
+module Koi.Graphics.RenderPass;
+
+import Koi.Core.Types;
+import Koi.Graphics.RHI.CommandList;
+#include "Core/Logger.h"
 
 namespace koi
 {

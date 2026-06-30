@@ -1,14 +1,23 @@
-#include "Graphics/RenderPasses/ScenePass.h"
-#include "Graphics/RenderWindow.h"
-#include "Graphics/RendererResources.h"
-#include "Graphics/RHI/CommandList.h"
-#include "Graphics/Camera.h"
-#include "Scene/Scene.h"
-#include "Core/Math.h"
+module;
+#include "Graphics/RHI/DX12Common.h"
+#include "Core/Config.h"
+#include <array>
+#include <hlsl++.h>
+module Koi.Graphics.RenderPasses.ScenePass;
+
+import Koi.Core.Types;
+import Koi.Core.Math;
+import Koi.Graphics.Types;
+import Koi.Graphics.GPUMesh;
+import Koi.Graphics.Camera;
+import Koi.Graphics.RHI.CommandList;
+import Koi.Graphics.RenderWindow;
+import Koi.Graphics.RendererResources;
+import Koi.Graphics.RenderPass;
+import Koi.Scene;
 
 namespace koi
 {
-	// Mirrors the HLSL b0 root-constant layout used by the default mesh shaders.
 	struct MeshPushConstants
 	{
 		f32 MVP[16];
