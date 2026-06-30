@@ -18,7 +18,7 @@ target("Koi.Engine")
 
 	add_includedirs(".", { public = true })
 	add_headerfiles("**.h", { public = true })
-	add_files("**.cpp", { public = true })
+	add_files("**.ixx", "**.cpp", { public = true })
 
 	local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)"
 	local config_dir = path.join(base_config_dir, "Generated/Engine")

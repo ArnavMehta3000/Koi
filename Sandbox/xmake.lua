@@ -5,7 +5,7 @@ target("Sandbox")
 	add_rules("KoiGame")
 
 	add_includedirs("Scripts")
-	add_files("Scripts/**.cpp")
+	add_files("Scripts/**.ixx", "Scripts/**.cpp")
 	add_headerfiles("Scripts/**.h")
 
 	-- Use project:// to refer to these assets
