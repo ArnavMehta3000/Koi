@@ -11,10 +11,16 @@ namespace koi
 	// Mirrors the HLSL b0 root-constant layout used by the default mesh shaders.
 	struct MeshPushConstants
 	{
-		f32 MVP[16];
+		math::float4x4 MVP;
 		u32 VertexBufferIndex;
-		u32 BaseColorTextureIndex;
-		u32 SamplerIndex;
+		DescriptorIndex BaseColorIndex;
+		//DescriptorIndex MetallicRoughnessIndex;
+		//DescriptorIndex NormalIndex;
+		//DescriptorIndex OcclusionIndex;
+		//DescriptorIndex EmissiveIndex;
+		DescriptorIndex SamplerIndex;
+
+		// Maybe the root constant is not big enough for all of these
 	};
 
 	ScenePass::ScenePass(const Desc& desc)
@@ -36,22 +42,27 @@ namespace koi
 		cmd.SetViewportAndScissor(rw->GetWidth(), rw->GetHeight());
 		cmd.SetPipeline(pipeline);
 
-		MeshPushConstants pc{};
-		pc.SamplerIndex = m_desc.Resources->LinearWrapSampler;
+		MeshPushConstants pc{ .SamplerIndex = m_desc.Resources->LinearWrapSampler };
 
 		for (const SceneNode& node : m_desc.Scene->GetNodes())
 		{
 			if (node.MeshIndex < 0) continue;
 			const GPUMesh& mesh = m_desc.Scene->GetMesh(node.MeshIndex);
 
-			math::store(pc.MVP, mul(node.WorldTransform, m_desc.Camera->ViewProjection));
+			pc.MVP = math::mul(node.WorldTransform, m_desc.Camera->ViewProjection);
+			pc.MVP = math::transpose(pc.MVP);
 			pc.VertexBufferIndex = mesh.VertexBufferSRV;
 
 			cmd.SetIndexBuffer(mesh.IndexBuffer);
 
 			for (const GPUMeshDraw& d : mesh.DrawItems)
 			{
-				pc.BaseColorTextureIndex = d.BaseColorSRV;
+				pc.BaseColorIndex         = d.BaseColorSRV;
+				// pc.MetallicRoughnessIndex = d.MetallicRoughnessSRV;
+				// pc.NormalIndex            = d.NormalSRV;
+				// pc.OcclusionIndex         = d.OcclusionSRV;
+				// pc.EmissiveIndex          = d.EmissiveSRV;
+
 				cmd.SetPushConstants(&pc, sizeof(pc) / sizeof(u32));
 				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
 			}
