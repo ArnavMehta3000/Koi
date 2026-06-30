@@ -16,10 +16,14 @@ struct VSOutput
 // Root 32-bit constants (b0). hlslpp stores matrices row-major.
 cbuffer PushConstants : register(b0)
 {
-	row_major float4x4 MVP;
-	uint               VertexBufferIndex;
-	uint               BaseColorTextureIndex;
-	uint               SamplerIndex;
+	float4x4 MVP;
+	uint VertexBufferIndex;
+	uint BaseColorIndex;
+	//uint MetallicRoughnessIndex;
+	//uint NormalIndex;
+	//uint OcclusionIndex;
+	//uint EmissiveIndex;
+	uint SamplerIndex;
 };
 
 VSOutput VSMain(uint vertexId : SV_VertexID)
