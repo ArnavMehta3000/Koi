@@ -4,6 +4,7 @@
 #include "Core/Math.h"
 #include <algorithm>
 #include <numbers>
+#include <cassert>
 
 namespace koi
 {

@@ -25,7 +25,7 @@ namespace koi
 		explicit ScenePass(const Desc& desc);
 
 		std::string_view GetName() const override { return "Scene"; }
-		std::span<const RenderPassAttachment> GetOutputs() const override;
+		std::span<const RenderPassAttachment> GetOutputs() const override { return m_outputs; }
 		void Execute(CommandList& cmd) override;
 
 	private:

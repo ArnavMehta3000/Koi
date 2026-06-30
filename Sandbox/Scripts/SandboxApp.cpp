@@ -8,7 +8,7 @@
 #include "Graphics/RenderPasses/TonemapPass.h"
 #include <toml++/toml.hpp>
 #if KOI_WITH_EDITOR
-#include <imgui.h>
+	#include <imgui.h>
 #endif
 
 namespace koi
@@ -73,8 +73,9 @@ void SandboxApp::OnRender()
 	koi::Renderer& renderer = engine.GetRenderer();
 
 	koi::RenderWindow* rw = renderer.GetMainRenderWindow();
+	koi::RenderGraph& graph = renderer.GetFrameGraph();
 
-	renderer.GetFrameGraph().AddPass<koi::ScenePass>(koi::ScenePass::Desc
+	graph.AddPass<koi::ScenePass>(koi::ScenePass::Desc
 	{
 		.Scene        = &m_scene,
 		.Camera       = &m_camera,
@@ -83,7 +84,7 @@ void SandboxApp::OnRender()
 		.DepthBuffer  = renderer.GetDepthBuffer(),
 	});
 
-	renderer.GetFrameGraph().AddPass<koi::TonemapPass>(koi::TonemapPass::Desc
+	graph.AddPass<koi::TonemapPass>(koi::TonemapPass::Desc
 	{
 		.Device       = &renderer.GetDevice(),
 		.Pipeline     = renderer.GetDefaultResources().TonemapPipeline,

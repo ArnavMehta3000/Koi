@@ -28,9 +28,9 @@ namespace koi
 	public:
 		Scene() = default;
 		~Scene() = default;
-		Scene(const Scene&)            = delete;
+		Scene(const Scene&) = delete;
 		Scene& operator=(const Scene&) = delete;
-		Scene(Scene&&) noexcept            = default;
+		Scene(Scene&&) noexcept = default;
 		Scene& operator=(Scene&&) noexcept = default;
 
 		[[nodiscard]] static std::optional<Scene> Load(const fs::path& path,

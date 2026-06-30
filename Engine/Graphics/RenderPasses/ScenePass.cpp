@@ -25,11 +25,6 @@ namespace koi
 		m_outputs[1] = { m_desc.DepthBuffer, "Depth" };
 	}
 
-	std::span<const RenderPassAttachment> ScenePass::GetOutputs() const
-	{
-		return m_outputs;
-	}
-
 	void ScenePass::Execute(CommandList& cmd)
 	{
 		RenderWindow* rw = m_desc.RenderWindow;
