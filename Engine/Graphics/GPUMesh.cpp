@@ -19,8 +19,10 @@ namespace koi
 
 		upload.Begin();
 
+		// --- Create GPU textures --- 
 		for (const ImageAsset& img : model.Images)
 		{
+			// Create & upload a GPU texture
 			TextureHandle tex = device.CreateTexture(TextureDesc
 			{
 				.Width     = static_cast<u32>(img.Width),
@@ -30,14 +32,22 @@ namespace koi
 				.DebugName = img.Name.empty() ? "Mesh Texture" : std::string_view(img.Name),
 			});
 			upload.UploadTexture(tex, img.Pixels.data(), img.Pixels.size());
-			imageSRVs.push_back(device.Get(tex)->SRVIndex);
-			mesh.Textures.push_back(tex);
+
+			// Use the handle to get the underlying GPU texture, then its SRV index
+			if (Texture* texture = device.Get(tex); texture->Resource)
+			{
+				imageSRVs.push_back(texture->SRVIndex);
+
+				// Cache the texture handle for this image
+				mesh.Textures.push_back(tex);
+			}
 		}
 
 		// Flatten all mesh vertices and indices into a single pair of buffers.
 		std::vector<Vertex> vertices;
 		std::vector<u32>    indices;
 
+		// --- Create GPU buffers ---
 		for (const Mesh& m : model.Meshes)
 		{
 			const u32 baseVertex = static_cast<u32>(vertices.size());
@@ -46,22 +56,83 @@ namespace koi
 			vertices.insert(vertices.end(), m.Vertices.begin(), m.Vertices.end());
 			indices.insert(indices.end(),   m.Indices.begin(),  m.Indices.end());
 
+			// Get sub mesh data
 			for (const SubMesh& sub : m.SubMeshes)
 			{
-				DescriptorIndex albedoSRV = fallbackAlbedoSRV;
-				if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
+#pragma region Get SubMesh Material/Texture Data
+				std::optional<DescriptorIndex> albedoSRV = [&]() -> std::optional<DescriptorIndex>
 				{
-					const u32 imgIdx = model.Materials[sub.MaterialIndex].BaseColorTextureIdx;
-					if (imgIdx < imageSRVs.size())
-						albedoSRV = imageSRVs[imgIdx];
-				}
+					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
+					{
+						const Material& mat = model.Materials[sub.MaterialIndex];
+						const u32 imgIdx = mat.BaseColorTextureIdx;
+						if (imgIdx < imageSRVs.size())
+							return imageSRVs[imgIdx];
+					}
+					return std::nullopt;
+				}();
+
+				std::optional<DescriptorIndex> metallicRoughnessSRV = [&]() -> std::optional<DescriptorIndex>
+				{
+					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
+					{
+						const Material& mat = model.Materials[sub.MaterialIndex];
+						const u32 imgIdx = mat.MetallicRoughnessTextureIdx;
+						if (imgIdx < imageSRVs.size())
+							return imageSRVs[imgIdx];
+					}
+					return std::nullopt;
+				}();
+
+				std::optional<DescriptorIndex> normalSRV = [&]() -> std::optional<DescriptorIndex>
+				{
+					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
+					{
+						const Material& mat = model.Materials[sub.MaterialIndex];
+						const u32 imgIdx = mat.NormalTextureIdx;
+						if (imgIdx < imageSRVs.size())
+							return imageSRVs[imgIdx];
+					}
+					return std::nullopt;
+				}();
+
+				std::optional<DescriptorIndex> occlusionSRV = [&]() -> std::optional<DescriptorIndex>
+				{
+					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
+					{
+						const Material& mat = model.Materials[sub.MaterialIndex];
+						const u32 imgIdx = mat.OcclusionTextureIdx;
+						if (imgIdx < imageSRVs.size())
+							return imageSRVs[imgIdx];
+					}
+					return std::nullopt;
+				}();
+
+				std::optional<DescriptorIndex> emissiveSRV = [&]() -> std::optional<DescriptorIndex>
+				{
+					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
+					{
+						const Material& mat = model.Materials[sub.MaterialIndex];
+						const u32 imgIdx = mat.EmissiveTextureIdx;
+						if (imgIdx < imageSRVs.size())
+							return imageSRVs[imgIdx];
+					}
+					return std::nullopt;
+				}();
+#pragma endregion
+
+
 
 				mesh.DrawItems.push_back(GPUMeshDraw
 				{
-					.IndexCount   = sub.IndexCount,
-					.IndexOffset  = baseIndex  + sub.IndexOffset,
-					.VertexOffset = static_cast<i32>(baseVertex + sub.VertexOffset),
-					.BaseColorSRV = albedoSRV,
+					.IndexCount           = sub.IndexCount,
+					.IndexOffset          = baseIndex  + sub.IndexOffset,
+					.VertexOffset         = static_cast<i32>(baseVertex + sub.VertexOffset),
+					.BaseColorSRV         = albedoSRV.value_or(fallbackAlbedoSRV),
+					.MetallicRoughnessSRV = metallicRoughnessSRV.value_or(INVALID_DESCRIPTOR),
+					.NormalSRV            = normalSRV.value_or(INVALID_DESCRIPTOR),
+					.OcclusionSRV         = occlusionSRV.value_or(INVALID_DESCRIPTOR),
+					.EmissiveSRV          = emissiveSRV.value_or(INVALID_DESCRIPTOR),
 				});
 			}
 		}

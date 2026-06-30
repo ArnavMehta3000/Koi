@@ -156,7 +156,7 @@ namespace koi
 		enum class AlphaMode { Opaque, Mask, Blend };
 		struct Constants
 		{
-			math::float4 BaseColorFactor  = math::float4(1.0f, 1.0f, 1.0, 1.0f);
+			math::float4 BaseColorFactor   = math::float4(1.0f, 1.0f, 1.0, 1.0f);
 			f32          MetallicFactor    = 1.0f;
 			f32          RoughnessFactor   = 1.0f;
 			f32          NormalScale       = 1.0f;
@@ -170,21 +170,21 @@ namespace koi
 		bool DoubleSided = false;
 		AlphaMode Mode;
 
-		u32 BaseColorTextureIdx         = u32(-1);
-		u32 MetallicRoughnessTextureIdx = u32(-1);
-		u32 NormalTextureIdx            = u32(-1);
-		u32 OcclusionTextureIdx         = u32(-1);
-		u32 EmissiveTextureIdx          = u32(-1);
+		DescriptorIndex BaseColorTextureIdx         = INVALID_DESCRIPTOR;
+		DescriptorIndex MetallicRoughnessTextureIdx = INVALID_DESCRIPTOR;
+		DescriptorIndex NormalTextureIdx            = INVALID_DESCRIPTOR;
+		DescriptorIndex OcclusionTextureIdx         = INVALID_DESCRIPTOR;
+		DescriptorIndex EmissiveTextureIdx          = INVALID_DESCRIPTOR;
 	};
 
 	struct SubMesh
-    {
-        u32 IndexOffset   = 0;
-        u32 IndexCount    = 0;
-        u32 VertexOffset  = 0;
-        i32 MaterialIndex = -1;   // index into Scene::Materials, -1 = default
-        math::AABB Bounds;
-    };
+	{
+		u32 IndexOffset   = 0;
+		u32 IndexCount    = 0;
+		u32 VertexOffset  = 0;
+		i32 MaterialIndex = -1;   // index into Scene::Materials, -1 = default
+		math::AABB Bounds;
+	};
 
 	struct Mesh
 	{

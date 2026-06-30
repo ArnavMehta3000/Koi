@@ -12,7 +12,12 @@ namespace koi
 		u32 IndexCount;
 		u32 IndexOffset;
 		i32 VertexOffset;
-		u32 BaseColorSRV;
+
+		DescriptorIndex BaseColorSRV;
+		DescriptorIndex MetallicRoughnessSRV;
+		DescriptorIndex NormalSRV;
+		DescriptorIndex OcclusionSRV;
+		DescriptorIndex EmissiveSRV;
 	};
 
 	// Owns the GPU buffers and textures for a loaded model.
