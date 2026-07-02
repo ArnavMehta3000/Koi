@@ -7,9 +7,6 @@
 #include "Graphics/RenderPasses/ScenePass.h"
 #include "Graphics/RenderPasses/TonemapPass.h"
 #include <toml++/toml.hpp>
-#if KOI_WITH_EDITOR
-	#include <imgui.h>
-#endif
 
 namespace koi
 {
@@ -36,15 +33,6 @@ void SandboxApp::OnInit()
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 	LoadScene();
 	SetupCamera();
-
-#if KOI_WITH_EDITOR
-	koi::Engine& engine = *GetEngine();
-
-	std::ignore = engine.RegisterHook(koi::EnginePhase::OnImGuiDraw, [this]
-	{
-		m_scene.DrawImGui();
-	});
-#endif
 }
 
 void SandboxApp::OnTick(koi::f32 dt)
@@ -115,8 +103,10 @@ void SandboxApp::LoadScene()
 	const koi::DescriptorIndex whiteSRV =
 		device.Get(renderer.GetDefaultResources().WhiteTexture)->SRVIndex;
 
-	if (auto result = koi::Scene::Load(scenePath, device, whiteSRV))
-		m_scene = std::move(result.value());
+	if (std::optional<koi::Scene> result = koi::Scene::Load(scenePath, device, whiteSRV))
+	{
+		m_scene = std::move(*result);
+	}
 }
 
 void SandboxApp::SetupCamera()

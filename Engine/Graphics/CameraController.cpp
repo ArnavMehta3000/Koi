@@ -115,7 +115,7 @@ namespace koi
 		const bool rmb    = input.IsMouseButtonDown(kFPVMoveButton);
 		m_wantsCursorLock = rmb;
 
-		// Mouse look — only while right mouse is held
+		// Mouse look - only while right mouse is held
 		if (rmb)
 		{
 			const float2 delta = input.GetMouseDelta();
@@ -163,7 +163,7 @@ namespace koi
 
 		const float2 delta = input.GetMouseDelta();
 
-		// LMB drag — orbit (yaw / pitch)
+		// LMB drag - orbit (yaw / pitch)
 		if (input.IsMouseButtonDown(kORBMoveButton))
 		{
 			m_yaw   += delta.x * OrbitSensitivity;
@@ -172,7 +172,7 @@ namespace koi
 			m_yaw    = fmodf(m_yaw, kTwoPi);
 		}
 
-		// MMB drag — pan (translate target in the camera's local XY plane)
+		// MMB drag - pan (translate target in the camera's local XY plane)
 		if (input.IsMouseButtonDown(kORBPanButton))
 		{
 			// Recompute right/up vectors from view basis
@@ -183,7 +183,7 @@ namespace koi
 			m_orbitTarget = m_orbitTarget + upDir  * (delta.y * panScale);
 		}
 
-		// Scroll — zoom by adjusting orbit radius
+		// Scroll - zoom by adjusting orbit radius
 		if (const f32 scroll = input.GetScrollDelta().y; scroll != 0.0f)
 		{
 			m_orbitRadius -= scroll * m_orbitRadius * OrbitZoomSpeed;

@@ -826,7 +826,7 @@ namespace koi
 			{
 				[this](TextureHandle h)
 				{
-					// IsSwapChainImage: we must NOT release the ComPtr here — swapchain owns it.
+					// IsSwapChainImage: we must NOT release the ComPtr here - swapchain owns it.
 					// The pool erase below will drop the ref, but since the swapchain also holds
 					// one it stays alive.
 					FreeResource(h);

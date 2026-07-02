@@ -1,4 +1,6 @@
 #include "EditorApp.h"
+#include "Panels/ScenePanel.h"
+#include "Runtime/AppBase.h"
 #include "Runtime/Engine.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/RHI/Device.h"
@@ -45,21 +47,11 @@ namespace koi::editor
 		heap.Free(idx);
 	}
 
-	EditorApp::EditorApp() = default;
-
-	EditorApp::~EditorApp()
-	{
-		Shutdown();
-	}
-
-	void EditorApp::Initialize(EditorConfig config)
+	EditorApp::EditorApp(std::unique_ptr<AppBase> game, const EditorConfig& config)
+		: m_game(std::move(game))
+		, m_config(std::move(config))
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
-		if (m_initialized) return;
-		Engine& engine = Engine::Get();
-
-		m_config = std::move(config);
 
 #if KOI_DEBUG
 		KOI_LOG_DEBUG("Initializing Editor");
@@ -68,40 +60,58 @@ namespace koi::editor
 		KOI_LOG_DEBUG("\tProject file path: {}"  , m_config.ProjectFile.string());
 		KOI_LOG_DEBUG("\tCook output path: {}"   , m_config.CookedOutput.string());
 #endif
+	}
 
-		// Configure engine hooks
-		m_postInitHook    = engine.RegisterHook(EnginePhase::PostInit          , [this] { OnPostInit();   });
-		m_postRenderHook  = engine.RegisterHook(EnginePhase::OnSwapchainOverlay, [this] { OnPostRender(); });
+	const AppCreateDesc& EditorApp::GetDesc() const
+	{
+		return m_game->GetDesc();
+	}
 
-		m_initialized = true;
+	void EditorApp::SetWindow(Window& window)
+	{
+		m_game->SetWindow(window);
+	}
+
+	void EditorApp::AttachTo(Engine& engine)
+	{
+		Renderer& renderer = engine.GetRenderer();
+		renderer.SetOverlay(this);
+		RegisterReloadable(&renderer);
+
+		m_game->SetEditorContext(this);
+		RegisterPanel<ScenePanel>(*m_game);
+	}
+
+	void EditorApp::HostInit()
+	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
+
+		AttachTo(Engine::Get());
+		m_game->HostInit();
+		InitImGui();
+
 		KOI_LOG_INFO("Editor initialized");
 	}
 
-	void EditorApp::Shutdown()
+	void EditorApp::HostTick(f32 dt)
+	{
+		m_game->HostTick(dt);
+	}
+
+	void EditorApp::HostRender()
+	{
+		m_game->HostRender();
+	}
+
+	void EditorApp::HostShutdown()
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-		if (!m_initialized) return;
-
-		Engine& engine = Engine::Get();
-		engine.UnregisterHook(m_postInitHook);
-		engine.UnregisterHook(m_postRenderHook);
-		m_postInitHook   = INVALID_HOOK_ID;
-		m_postRenderHook = INVALID_HOOK_ID;
-
-		if (m_imguiInitialized)
-		{
-			engine.GetRenderer().GetDevice().WaitForIdle();
-			ImGui_ImplDX12_Shutdown();
-			ImGui_ImplGlfw_Shutdown();
-			ImGui::DestroyContext();
-			m_imguiInitialized = false;
-		}
-
-		m_initialized = false;
+		m_game->HostShutdown();
+		ShutdownImGui();
 		KOI_LOG_INFO("Editor shut down");
 	}
 
-	void EditorApp::OnPostInit()
+	void EditorApp::InitImGui()
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		Engine& engine     = Engine::Get();
@@ -110,7 +120,6 @@ namespace koi::editor
 
 		Window& window = engine.GetWindow();
 
-		// Init ImGui
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
@@ -134,16 +143,43 @@ namespace koi::editor
 		KOI_LOG_INFO("ImGui (DX12 + GLFW) initialized");
 	}
 
-	void EditorApp::OnPostRender()
+	void EditorApp::ShutdownImGui()
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (!m_imguiInitialized) return;
 
-		Engine& engine         = Engine::Get();
-		Renderer& renderer     = engine.GetRenderer();
-		GfxDevice& device      = renderer.GetDevice();
-		CommandList* cmd = renderer.GetCommandList();
-		if (!cmd) return;
+		Engine::Get().GetRenderer().GetDevice().WaitForIdle();
+		ImGui_ImplDX12_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		m_imguiInitialized = false;
+	}
+
+	void EditorApp::RegisterReloadable(IReloadable* reloadable)
+	{
+		m_reloadables.push_back(reloadable);
+	}
+
+	void EditorApp::RegisterPanel(std::unique_ptr<IEditorPanel> panel)
+	{
+		m_panels.push_back(std::move(panel));
+	}
+
+	void EditorApp::ReloadAll()
+	{
+		for (IReloadable* reloadable : m_reloadables)
+		{
+			reloadable->Reload();
+		}
+	}
+
+	void EditorApp::OnOverlayRender(CommandList& cmd)
+	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
+
+		Engine& engine     = Engine::Get();
+		Renderer& renderer = engine.GetRenderer();
+		GfxDevice& device  = renderer.GetDevice();
 
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -152,20 +188,22 @@ namespace koi::editor
 		// Ask engine and game to recompile shaders and rebuild pipelines
 		if (engine.GetInputManager().IsKeyPressed(KeyCode::F5))
 		{
+			// TODO: Add proper hotreloading logic instead of reloading everything
 			InvalidateShaderCache();
-			engine.FireHook(EnginePhase::OnShaderReload);
+			ReloadAll();
 		}
-
 
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		DrawMenuBar();
 
-
-		engine.FireHook(EnginePhase::OnImGuiDraw);
+		for (auto& panel : m_panels)
+		{
+			panel->OnDraw();
+		}
 
 		ImGui::Render();
 
-		auto* native = cmd->GetNative();
+		auto* native = cmd.GetNative();
 		ID3D12DescriptorHeap* heaps[] = { device.ResourceHeap().GetHeap() };
 		native->SetDescriptorHeaps(1, heaps);
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), native);
@@ -202,8 +240,7 @@ namespace koi::editor
 		std::error_code ec;
 		fs::create_directories(outRoot, ec);
 
-		// Cook layout: <out>/Engine/... and <out>/Project/... — clean split so
-		// runtime can mount engine:// and project:// at sibling roots.
+		// Cook layout: <out>/Engine/... and <out>/Project/
 		const fs::path projRoot = outRoot / "Project";
 
 		// Compile engine shaders -> <out>/Engine/Shaders/*.cso

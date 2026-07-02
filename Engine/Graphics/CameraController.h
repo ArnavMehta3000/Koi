@@ -52,7 +52,7 @@ namespace koi
 		f32 OrbitMinRadius     = 0.5f;
 		f32 OrbitMaxRadius     = 500.0f;
 
-		// Shared pitch clamp (radians) — prevents gimbal lock at the poles
+		// Shared pitch clamp (radians) - prevents gimbal lock at the poles
 		f32 PitchLimit         = 1.5533f; // ~89 degrees
 
 	private:

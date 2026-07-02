@@ -34,7 +34,7 @@ namespace koi::internal
 		assert(argv != nullptr && "argv must not be nullptr");
 
 		// Initialize the logger before the Engine so it outlives it during
-		// stack unwinding — Engine::~Engine calls Logger::Shutdown(), which
+		// stack unwinding - Engine::~Engine calls Logger::Shutdown(), which
 		// would otherwise make IsInitialized() return false in catch blocks.
 		Logger::Init();
 
@@ -52,7 +52,7 @@ namespace koi::internal
 			//           or under a 'Cooked/' subdir. The content root is
 			//           wherever Project.toml is found; engine mount is
 			//           <contentRoot>/Engine, project mount is <contentRoot>
-			//   Editor:  assets live in source — project mount follows the
+			//   Editor:  assets live in source - project mount follows the
 			//           --project TOML's parent dir, engine mount follows
 			//           the engine assets shipped next to the editor exe
 			{

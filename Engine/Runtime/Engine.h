@@ -5,15 +5,11 @@
 #include "Graphics/Renderer.h"
 #include "Memory/MemoryTracker.h"
 #include "Runtime/Timer.h"
-#include "Runtime/EngineHooks.h"
-#include <array>
+#include "Editor/AppHost.h"
 #include <optional>
-#include <vector>
 
 namespace koi
 {
-	class AppBase;
-
 	class Engine : public NonCopyable
 	{
 	public:
@@ -22,7 +18,7 @@ namespace koi
 
 		[[nodiscard]] static Engine& Get() { return *s_instance; }
 
-		void RunApp(AppBase& app);
+		void RunApp(IAppHost& host);
 		void RequestExit() { m_isRunning = false; }
 
 		[[nodiscard]] inline Window&       GetWindow()          { return *m_window;        }
@@ -34,27 +30,14 @@ namespace koi
 		[[nodiscard]] inline u64           GetFrameCount() const{ return m_timer.GetFrameCount(); }
 		[[nodiscard]] inline Timer&        GetTimer()           { return m_timer;                 }
 
-		HookId RegisterHook(EnginePhase phase, EngineHook callback);
-		void UnregisterHook(HookId id);
-
-		// Internal (public because Renderer fires it)
-		void FireHook(EnginePhase phase);
-
 	private:
 		void BeginFrame();
-		void Tick(AppBase& app);
+		void Tick(IAppHost& host);
 		void EndFrame();
-		void MainLoop(AppBase& app);
-
-	private:
-		struct HookEntry { HookId Id; EngineHook Callback; };
-		using HooksArray = std::array<std::vector<HookEntry>, static_cast<size_t>(EnginePhase::MAX_COUNT)>;
+		void MainLoop(IAppHost& host);
 
 	private:
 		static inline Engine* s_instance = nullptr;
-
-		HooksArray m_hooks;
-		HookId     m_nextHookId = 1;
 
 		MemTagSnapshotArray           m_initSnapshot{};
 		std::optional<Window>         m_window;

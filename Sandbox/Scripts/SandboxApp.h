@@ -16,6 +16,8 @@ public:
 	void OnRender() override;
 	void OnShutdown() override;
 
+	koi::Scene* GetEditorScene() override { return &m_scene; }
+
 private:
 	void LoadScene();
 	void SetupCamera();

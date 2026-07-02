@@ -19,7 +19,6 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 {
 	Texture2D<float4> hdrTex = ResourceDescriptorHeap[HDRTextureIndex];
 
-	// Integer texel fetch — no sampler needed for a 1:1 fullscreen pass.
 	float3 hdr = hdrTex.Load(int3(pos.xy, 0)).rgb;
 
 	float3 ldr = ACES(hdr);

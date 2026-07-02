@@ -12,26 +12,19 @@
 	#include <ranges>
 #endif
 
-// koi-editor: same engine + game lifecycle as koi-runtime, with the
-// editor subsystem (ImGui overlay, hot-reload, future tools) attached as
-// hooks. The game runs as the only AppBase — the editor is NOT a wrapper
-// app; it sits alongside the game and broadcasts via engine hooks.
-
-namespace koi::internal_editor
+namespace koi::editor::internal
 {
 	namespace fs = std::filesystem;
 
 	static int RunEditor(int argc, char* argv[])
 	{
-		assert(argc > 0 && argv);
-
 		Logger::Init();
 
 		try
 		{
 			KOI_LOG_INFO("Starting Koi Editor");
 
-			auto cmd = internal::InvokeCommandLineFactory();
+			auto cmd = koi::internal::InvokeCommandLineFactory();
 			if (cmd->ParseArgs(argc, argv) != 0)
 			{
 				KOI_LOG_CRITICAL("Failed to parse command line arguments");
@@ -79,8 +72,15 @@ namespace koi::internal_editor
 			}
 
 			Engine engine;
-			editor::EditorApp editorApp;
-			editor::EditorConfig editorCfg
+
+			std::unique_ptr<AppBase> gameApp = CreateApplication(*cmd);
+			if (!gameApp)
+			{
+				KOI_LOG_CRITICAL("Failed to create application");
+				return -1;
+			}
+
+			const EditorConfig editorCfg
 			{
 				.EngineSource  = cmd->GetEngineSource().empty()
 				                   ? fs::path{}
@@ -91,16 +91,10 @@ namespace koi::internal_editor
 				.ProjectFile   = fs::absolute(cmd->GetProjectFile()),
 				.CookedOutput  = fs::current_path() / "Cooked",
 			};
-			editorApp.Initialize(std::move(editorCfg));
 
-			if (auto app = CreateApplication(*cmd))
-			{
-				engine.RunApp(*app);
-				return 0;
-			}
-
-			KOI_LOG_CRITICAL("Failed to create application");
-			return -1;
+			EditorApp editorApp(std::move(gameApp), editorCfg);
+			engine.RunApp(editorApp);
+			return 0;
 		}
 		catch (const std::exception& e)
 		{
@@ -114,7 +108,7 @@ namespace koi::internal_editor
 #if KOI_DEBUG
 int main(int argc, char* argv[])
 {
-	return koi::internal_editor::RunEditor(argc, argv);
+	return koi::editor::internal::RunEditor(argc, argv);
 }
 #else
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
@@ -126,6 +120,6 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 		args[i] = koi::StringUtils::FromWide(__wargv[i]);
 		argv[i] = args[i].data();
 	}
-	return koi::internal_editor::RunEditor(__argc, argv.data());
+	return koi::editor::internal::RunEditor(__argc, argv.data());
 }
 #endif

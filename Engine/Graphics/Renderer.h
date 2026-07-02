@@ -6,6 +6,8 @@
 #include "Graphics/RHI/CommandAllocator.h"
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/RHI/CommandQueue.h"
+#include "Editor/RendererOverlay.h"
+#include "Editor/Reloadable.h"
 #include <memory>
 #include <optional>
 
@@ -13,7 +15,11 @@ namespace koi
 {
 	class Window;
 
-	class Renderer : NonCopyable, NonMovable, public IDeviceNotify
+	class Renderer
+		: NonCopyable
+		, NonMovable
+		, public IDeviceNotify
+		, public IReloadable
 	{
 	public:
 		Renderer();
@@ -33,12 +39,15 @@ namespace koi
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
 
+		void SetOverlay(IRendererOverlay* overlay) noexcept { m_overlay = overlay; }
+
 		void BeginFrame();
 		void EndFrame();
 
 	private:
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
+		void Reload() override;
 
 		void RebuildDepthBuffer(u32 w, u32 h);
 
@@ -58,5 +67,6 @@ namespace koi
 		TextureHandle                 m_depthTexture;
 		Format                        m_depthFormat = Format::UNKNOWN;
 		u32                           m_frameSlot   = 0;
+		IRendererOverlay*             m_overlay     = nullptr;
 	};
 }

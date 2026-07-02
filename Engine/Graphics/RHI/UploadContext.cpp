@@ -88,7 +88,7 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		assert(m_device                       && "UploadContext::Begin called before Init");
-		assert(!m_isRecording                 && "UploadContext::Begin called while already recording — missing End()?");
+		assert(!m_isRecording                 && "UploadContext::Begin called while already recording - missing End()?");
 		assert(m_activeStagingBuffers.empty() && "Staging buffers leaked from a previous Begin/End block");
 
 		DX_CHECK(m_allocator->Reset());

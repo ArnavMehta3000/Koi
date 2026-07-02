@@ -19,16 +19,24 @@ namespace koi
 		m_engine = nullptr;
 	}
 
-	void AppBase::Init()
+	void AppBase::HostInit()
 	{
-		ZoneScoped;
 		KOI_LOG_INFO("Initializing application: {}", m_desc.AppName);
 		OnInit();
 	}
 
-	void AppBase::Shutdown()
+	void AppBase::HostTick(f32 dt) 
 	{
-		ZoneScoped;
+		OnTick(dt);
+	}
+
+	void AppBase::HostRender() 
+	{
+		OnRender();
+	}
+
+	void AppBase::HostShutdown()
+	{
 		OnShutdown();
 		KOI_LOG_INFO("Shutting down application: {}", m_desc.AppName);
 	}

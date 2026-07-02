@@ -24,7 +24,7 @@ namespace koi
 		void Init(GfxDevice& device);
 		void Shutdown(GfxDevice& device);
 
-		// Reloads all pipelines from disk — call from OnShaderReload hook.
+		// Reloads all pipelines from disk - call from OnShaderReload hook.
 		void RebuildPipelines(GfxDevice& device);
 	};
 }

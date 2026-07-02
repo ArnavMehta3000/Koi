@@ -2,10 +2,13 @@
 #include "Platform/Window.h"
 #include "Core/Logger.h"
 #include "Runtime/CommandLine.h"
+#include "Editor/AppHost.h"
 
 namespace koi
 {
 	class Engine;
+	class Scene;
+	class IEditorContext;
 
 	// Platform-agnostic depth buffer format option for AppCreateDesc.
 	// Maps to the corresponding Format::D* value internally.
@@ -26,30 +29,39 @@ namespace koi
 		DepthBufferFormat DepthBuffer  = DepthBufferFormat::D32;
 	};
 
-	class AppBase : public NonCopyable
+	class AppBase : public NonCopyable, public IAppHost
 	{
-		friend class Engine;
 	public:
 		explicit AppBase(const AppCreateDesc& desc);
 		virtual ~AppBase();
 
 		[[nodiscard]] static AppBase& Get() { return *s_instance; }
-		[[nodiscard]] const AppCreateDesc& GetDesc() const { return m_desc; }
+		[[nodiscard]] const AppCreateDesc& GetDesc() const override { return m_desc; }
 		[[nodiscard]] Engine* GetEngine() const { return m_engine; }
 		[[nodiscard]] Window& GetWindow() const { assert(m_window); return *m_window; }
+
+		void SetWindow(Window& window) override { m_window = &window; }
+
+		void HostInit() override;
+		void HostTick(f32 dt) override;
+		void HostRender() override;
+		void HostShutdown() override;
 
 		virtual void OnInit() {}
 		virtual void OnShutdown() {}
 		virtual void OnTick(f32 /*dt*/) {}
 		virtual void OnRender() {}
 
-	private:
-		void Init();       // called by Engine::RunApp
-		void Shutdown();   // called by Engine::RunApp
+		[[nodiscard]] IEditorContext* GetEditorContext() const { return m_editorContext; }
+		void SetEditorContext(IEditorContext* context) { m_editorContext = context; }
 
-		AppCreateDesc m_desc;
-		Engine* m_engine = nullptr;
-		Window* m_window = nullptr;
+		[[nodiscard]] virtual Scene* GetEditorScene() { return nullptr; }
+
+	private:
+		AppCreateDesc   m_desc;
+		Engine*         m_engine        = nullptr;
+		Window*         m_window        = nullptr;
+		IEditorContext* m_editorContext = nullptr;
 
 		static inline AppBase* s_instance = nullptr;
 	};

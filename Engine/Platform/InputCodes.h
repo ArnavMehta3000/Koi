@@ -93,7 +93,7 @@ namespace koi
 		Count  = 8,
 	};
 
-	// Modifier values match GLFW_MOD_* internally — do not rely on the numeric values in game code.
+	// Modifier values match GLFW_MOD_* internally - do not rely on the numeric values in game code.
 	enum class Modifier : u8
 	{
 		None     = 0x00,

@@ -3,7 +3,6 @@
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RHI/Resources.h"
 #include "Platform/Window.h"
-#include "Runtime/Engine.h"
 #include "Memory/MemoryTracker.h"
 #include "Core/Profiling.h"
 #include "Core/Logger.h"
@@ -27,14 +26,6 @@ namespace koi
 
 		m_defaultResources.Init(*m_device);
 		KOI_LOG_INFO("Initializing renderer");
-
-#if KOI_WITH_EDITOR
-		Engine::Get().RegisterHook(EnginePhase::OnShaderReload, [this]
-		{
-			m_device->WaitForIdle();
-			m_defaultResources.RebuildPipelines(*m_device);
-		});
-#endif
 	}
 
 	Renderer::~Renderer()
@@ -123,7 +114,7 @@ namespace koi
 
 		m_frameGraph.Execute(cmd);
 
-		Engine::Get().FireHook(EnginePhase::OnSwapchainOverlay);
+		if (m_overlay) m_overlay->OnOverlayRender(cmd);
 
 		cmd.TransitionBarrier(m_renderWindow->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);
 		cmd.End();
@@ -147,5 +138,11 @@ namespace koi
 	void Renderer::OnDeviceRestored()
 	{
 		KOI_LOG_INFO("Graphics device restored");
+	}
+
+	void Renderer::Reload()
+	{
+		m_device->WaitForIdle();
+		m_defaultResources.RebuildPipelines(*m_device);
 	}
 }
