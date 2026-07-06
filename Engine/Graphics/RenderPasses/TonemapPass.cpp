@@ -4,30 +4,42 @@
 
 namespace koi
 {
-	TonemapPass::TonemapPass(const Desc& desc)
-		: m_desc(desc)
-		, m_input{ desc.HdrInput, "HDRColor" }
+	TonemapPass::TonemapPass(const Config& config)
+		: m_config(config)
+		, m_input{ {}, "HDRColor" }
 	{
 	}
 
-	std::span<const RenderPassAttachment> TonemapPass::GetInputs() const
+	void TonemapPass::Reset()
 	{
-		return { &m_input, 1 };
+		m_input.Texture = {};
+		m_colorTarget   = {};
+		m_width         = 0;
+		m_height        = 0;
+	}
+
+	TonemapPass& TonemapPass::SetTarget(TextureHandle colorTarget, u32 width, u32 height)
+	{
+		m_colorTarget = colorTarget;
+		m_width       = width;
+		m_height      = height;
+		return *this;
 	}
 
 	void TonemapPass::Execute(CommandList& cmd)
 	{
-		if (!m_desc.ColorTarget || !m_desc.Pipeline || !m_desc.Device) return;
+		if (!m_colorTarget || !m_config.Pipeline || !m_config.Device) return;
 
-		cmd.TransitionBarrier(m_desc.HdrInput, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		cmd.TransitionBarrier(m_desc.ColorTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
+		cmd.TransitionBarrier(m_input.Texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cmd.TransitionBarrier(m_colorTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		cmd.SetRenderTarget(m_desc.ColorTarget);
-		cmd.SetViewportAndScissor(m_desc.Width, m_desc.Height);
-		cmd.SetPipeline(m_desc.Pipeline);
+		cmd.SetRenderTarget(m_colorTarget);
+		cmd.SetViewportAndScissor(m_width, m_height);
+		cmd.SetPipeline(m_config.Pipeline);
 
-		const Texture* hdrTex = m_desc.Device->Get(m_desc.HdrInput);
-		u32 hdrSrvIndex = hdrTex ? hdrTex->SRVIndex : INVALID_DESCRIPTOR;
+		const Texture* hdrTex = m_config.Device->Get(m_input.Texture);
+		u32 hdrSrvIndex       = hdrTex ? hdrTex->SRVIndex : INVALID_DESCRIPTOR;
+
 		cmd.SetPushConstants(&hdrSrvIndex, 1);
 		cmd.Draw(3);
 	}

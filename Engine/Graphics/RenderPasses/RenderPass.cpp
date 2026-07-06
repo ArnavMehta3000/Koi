@@ -7,20 +7,23 @@ namespace koi
 {
 	void RenderGraph::Compile()
 	{
-		std::unordered_set<u64> written;
+		// Check connectivity using names of attachments
+		std::unordered_set<std::string_view> written;
 
 		for (const auto& pass : m_passes)
 		{
 			for (const RenderPassAttachment& input : pass->GetInputs())
 			{
-				if (input.Texture && !written.count(static_cast<u64>(input.Texture.GetId())))
+				if (!written.count(input.Name))
+				{
 					KOI_LOG_TRACE("RenderGraph: '{}' reads '{}' - externally produced (no prior pass writes it)",
-					              pass->GetName(), input.Name);
+						pass->GetName(), input.Name);
+				}
 			}
+
 			for (const RenderPassAttachment& output : pass->GetOutputs())
 			{
-				if (output.Texture)
-					written.insert(static_cast<u64>(output.Texture.GetId()));
+				written.insert(output.Name);
 			}
 		}
 
@@ -29,10 +32,20 @@ namespace koi
 
 	void RenderGraph::Execute(CommandList& cmd)
 	{
-		if (m_dirty)
-			Compile();
+		if (m_dirty) Compile();
+
 		for (auto& pass : m_passes)
+		{
 			pass->Execute(cmd);
+		}
+	}
+
+	void RenderGraph::ResetAll()
+	{
+		for (auto& pass : m_passes)
+		{
+			pass->Reset();
+		}
 	}
 
 	void RenderGraph::Clear()

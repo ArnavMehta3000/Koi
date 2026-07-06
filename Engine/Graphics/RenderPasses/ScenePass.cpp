@@ -22,31 +22,52 @@ namespace koi
 		// Maybe the root constant is not big enough for all of these
 	};
 
-	ScenePass::ScenePass(const Desc& desc)
-		: m_desc(desc)
+	ScenePass::ScenePass(const Config& config)
+		: m_config(config)
 	{
-		m_outputs[0] = { m_desc.ColorTarget, "HDRColor" };
-		m_outputs[1] = { m_desc.DepthBuffer, "Depth" };
+		m_outputs[0] = { {}, "HDRColor" };
+		m_outputs[1] = { {}, "Depth" };
+	}
+
+	void ScenePass::Reset()
+	{
+		m_scene  = nullptr;
+		m_camera = nullptr;
+		m_width  = 0;
+		m_height = 0;
+		m_outputs[0].Texture = {};
+		m_outputs[1].Texture = {};
+	}
+
+	ScenePass& ScenePass::SetTarget(TextureHandle colorTarget, TextureHandle depthTarget, u32 width, u32 height)
+	{
+		m_outputs[0].Texture = colorTarget;
+		m_outputs[1].Texture = depthTarget;
+		m_width              = width;
+		m_height             = height;
+		return *this;
 	}
 
 	void ScenePass::Execute(CommandList& cmd)
 	{
-		if (!m_desc.ColorTarget || !m_desc.Scene || !m_desc.Camera || !m_desc.Resources) return;
+		const TextureHandle colorTarget = m_outputs[0].Texture;
+		const TextureHandle depthTarget = m_outputs[1].Texture;
+		if (!colorTarget || !m_scene || !m_camera || !m_config.Resources) return;
 
-		const PipelineHandle pipeline = m_desc.Pipeline ? m_desc.Pipeline : m_desc.Resources->MeshOpaquePipeline;
+		const PipelineHandle pipeline = m_config.Pipeline ? m_config.Pipeline : m_config.Resources->MeshOpaquePipeline;
 
-		cmd.SetRenderTarget(m_desc.ColorTarget, m_desc.DepthBuffer);
-		cmd.SetViewportAndScissor(m_desc.Width, m_desc.Height);
+		cmd.SetRenderTarget(colorTarget, depthTarget);
+		cmd.SetViewportAndScissor(m_width, m_height);
 		cmd.SetPipeline(pipeline);
 
-		MeshPushConstants pc{ .SamplerIndex = m_desc.Resources->LinearWrapSampler };
+		MeshPushConstants pc{ .SamplerIndex = m_config.Resources->LinearWrapSampler };
 
-		for (const SceneNode& node : m_desc.Scene->GetNodes())
+		for (const SceneNode& node : m_scene->GetNodes())
 		{
 			if (node.MeshIndex < 0) continue;
-			const GPUMesh& mesh = m_desc.Scene->GetMesh(node.MeshIndex);
+			const GPUMesh& mesh = m_scene->GetMesh(node.MeshIndex);
 
-			pc.MVP = math::mul(node.WorldTransform, m_desc.Camera->ViewProjection);
+			pc.MVP = math::mul(node.WorldTransform, m_camera->ViewProjection);
 			pc.MVP = math::transpose(pc.MVP);
 			pc.VertexBufferIndex = mesh.VertexBufferSRV;
 

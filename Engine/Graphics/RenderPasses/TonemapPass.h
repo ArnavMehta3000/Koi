@@ -8,24 +8,28 @@ namespace koi
 	class TonemapPass : public RenderPass
 	{
 	public:
-		struct Desc
+		// Stable for the pass's lifetime - set once at construction.
+		struct Config
 		{
-			GfxDevice*     Device      = nullptr;
+			GfxDevice*     Device = nullptr;
 			PipelineHandle Pipeline;
-			TextureHandle  HdrInput;
-			TextureHandle  ColorTarget;
-			u32            Width       = 0;
-			u32            Height      = 0;
 		};
 
-		explicit TonemapPass(const Desc& desc);
+		explicit TonemapPass(const Config& config);
 
-		std::string_view GetName() const override { return "Tonemap"; }
-		std::span<const RenderPassAttachment> GetInputs() const override;
+		inline std::string_view GetName() const override { return "Tonemap"; }
+		inline std::span<const RenderPassAttachment> GetInputs() const override { return { &m_input, 1 }; }
+		void Reset() override;
 		void Execute(CommandList& cmd) override;
 
+		inline TonemapPass& SetInput(TextureHandle hdrInput) { m_input.Texture = hdrInput; return *this; }
+		TonemapPass& SetTarget(TextureHandle colorTarget, u32 width, u32 height);
+
 	private:
-		Desc               m_desc;
+		Config               m_config;
 		RenderPassAttachment m_input;
+		TextureHandle        m_colorTarget;
+		u32                  m_width  = 0;
+		u32                  m_height = 0;
 	};
 }

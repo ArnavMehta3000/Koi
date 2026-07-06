@@ -3,12 +3,15 @@
 #include "Core/Logger.h"
 #include "Runtime/CommandLine.h"
 #include "Editor/AppHost.h"
+#include "Editor/ViewportTarget.h"
+#include <optional>
 
 namespace koi
 {
 	class Engine;
 	class Scene;
 	class IEditorContext;
+	struct Camera;
 
 	// Platform-agnostic depth buffer format option for AppCreateDesc.
 	// Maps to the corresponding Format::D* value internally.
@@ -56,6 +59,9 @@ namespace koi
 		void SetEditorContext(IEditorContext* context) { m_editorContext = context; }
 
 		[[nodiscard]] virtual Scene* GetEditorScene() { return nullptr; }
+
+		[[nodiscard]] std::optional<ViewportTarget> GetFrameTarget() const;
+		[[nodiscard]] const Camera* ResolveCamera(const Camera* fallback) const;
 
 	private:
 		AppCreateDesc   m_desc;

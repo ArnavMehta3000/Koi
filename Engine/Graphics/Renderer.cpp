@@ -91,7 +91,7 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_renderWindow || !m_frameContext) return;
 
-		m_frameGraph.Clear();
+		m_frameGraph.ResetAll();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_frameSlot);

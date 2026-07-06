@@ -2,11 +2,9 @@
 #include "Core/Profiling.h"
 #include "Runtime/Engine.h"
 #include "Runtime/CommandLine.h"
-#include "Graphics/RenderWindow.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RenderPasses/ScenePass.h"
 #include "Graphics/RenderPasses/TonemapPass.h"
-#include "Editor/EditorContext.h"
 #include <toml++/toml.hpp>
 
 namespace koi
@@ -32,6 +30,21 @@ void SandboxApp::OnInit()
 	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnInit()");
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
+
+	koi::Renderer& renderer = GetEngine()->GetRenderer();
+	koi::RenderGraph& graph = renderer.GetFrameGraph();
+
+	m_scenePass = &graph.AddPass<koi::ScenePass>(koi::ScenePass::Config
+	{
+		.Resources = &renderer.GetDefaultResources(),
+	});
+
+	m_tonemapPass = &graph.AddPass<koi::TonemapPass>(koi::TonemapPass::Config
+	{
+		.Device   = &renderer.GetDevice(),
+		.Pipeline = renderer.GetDefaultResources().TonemapPipeline,
+	});
+
 	LoadScene();
 }
 
@@ -51,59 +64,18 @@ void SandboxApp::OnTick(koi::f32 /*dt*/)
 void SandboxApp::OnRender()
 {
 	ZoneScoped;
-	koi::Engine& engine     = *GetEngine();
-	koi::Renderer& renderer = engine.GetRenderer();
-	koi::RenderGraph& graph = renderer.GetFrameGraph();
 
-	koi::TextureHandle colorTarget, depthTarget, presentTarget;
-	koi::u32 width = 0, height = 0;
+	const std::optional<koi::ViewportTarget> target = GetFrameTarget();
+	if (!target) return;  // Nothing valid to render into yet this frame
 
-	koi::IEditorContext* ctx = GetEditorContext();
-	if (ctx)
-	{
-		const koi::ViewportTarget* vp = ctx->GetViewportTarget();
-		if (!vp) return;  // Viewport panel not laid out with a valid size yet this frame
+	const koi::Camera* camera = ResolveCamera(&m_scene.GetCamera());
 
-		colorTarget   = vp->HDRColorBuffer;
-		depthTarget   = vp->DepthBuffer;
-		presentTarget = vp->ResolvedColorBuffer;
-		width  = vp->Width;
-		height = vp->Height;
-	}
-	else
-	{
-		koi::RenderWindow* rw = renderer.GetMainRenderWindow();
-		if (!rw) return;
+	m_scenePass->SetScene(&m_scene)
+		.SetCamera(camera)
+		.SetTarget(target->HDRColorBuffer, target->DepthBuffer, target->Width, target->Height);
 
-		colorTarget   = rw->GetHDRColorBuffer();
-		depthTarget   = renderer.GetDepthBuffer();
-		presentTarget = rw->CurrentBackBuffer();
-		width         = rw->GetWidth();
-		height        = rw->GetHeight();
-	}
-
-	const koi::Camera* camera = ctx ? ctx->GetEditorCamera() : &m_scene.GetCamera();
-
-	graph.AddPass<koi::ScenePass>(koi::ScenePass::Desc
-	{
-		.Scene       = &m_scene,
-		.Camera      = camera,
-		.Resources   = &renderer.GetDefaultResources(),
-		.ColorTarget = colorTarget,
-		.DepthBuffer = depthTarget,
-		.Width       = width,
-		.Height      = height,
-	});
-
-	graph.AddPass<koi::TonemapPass>(koi::TonemapPass::Desc
-	{
-		.Device      = &renderer.GetDevice(),
-		.Pipeline    = renderer.GetDefaultResources().TonemapPipeline,
-		.HdrInput    = colorTarget,
-		.ColorTarget = presentTarget,
-		.Width       = width,
-		.Height      = height,
-	});
+	m_tonemapPass->SetInput(m_scenePass->GetColorOutput())
+		.SetTarget(target->ResolvedColorBuffer, target->Width, target->Height);
 }
 
 void SandboxApp::OnShutdown()

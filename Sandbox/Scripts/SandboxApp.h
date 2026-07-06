@@ -3,6 +3,12 @@
 #include "Graphics/Renderer.h"
 #include "Scene/Scene.h"
 
+namespace koi
+{
+	class ScenePass;
+	class TonemapPass;
+}
+
 class SandboxApp : public koi::AppBase
 {
 public:
@@ -20,4 +26,7 @@ private:
 
 private:
 	koi::Scene m_scene;
+
+	koi::ScenePass*   m_scenePass   = nullptr;
+	koi::TonemapPass* m_tonemapPass = nullptr;
 };
