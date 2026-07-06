@@ -3,6 +3,7 @@
 #include "Panels/ViewportPanel.h"
 #include "Runtime/AppBase.h"
 #include "Runtime/Engine.h"
+#include "Scene/Scene.h"
 #include "Graphics/Renderer.h"
 #include "Graphics/RenderWindow.h"
 #include "Graphics/RHI/Device.h"
@@ -93,11 +94,15 @@ namespace koi::editor
 		m_game->HostInit();
 		InitImGui();
 
+		if (Scene* scene = m_game->GetEditorScene())
+			m_viewportPanel->FrameBounds(scene->GetBounds());
+
 		KOI_LOG_INFO("Editor initialized");
 	}
 
 	void EditorApp::HostTick(f32 dt)
 	{
+		m_viewportPanel->Update(dt, Engine::Get().GetInputManager());
 		m_game->HostTick(dt);
 	}
 
@@ -131,6 +136,7 @@ namespace koi::editor
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigWindowsMoveFromTitleBarOnly = true;
 		ImGui::StyleColorsDark();
 
 		ImGui_ImplGlfw_InitForOther(window.GetGLFWWindow(), true);
@@ -174,6 +180,11 @@ namespace koi::editor
 	const ViewportTarget* EditorApp::GetViewportTarget() const
 	{
 		return m_viewportPanel->GetTarget();
+	}
+
+	const Camera* EditorApp::GetEditorCamera() const
+	{
+		return &m_viewportPanel->GetCamera();
 	}
 
 	void EditorApp::ReloadAll()

@@ -177,6 +177,38 @@ namespace koi
 
 			scene.m_nodes = std::move(sorted);
 			KOI_LOG_INFO("Scene loaded: {} nodes, {} meshes", scene.m_nodes.size(), scene.m_meshes.size());
+
+			if (auto* cam = toml.get_as<toml::table>("camera"))
+			{
+				Transform transform;
+				transform.Position = ReadFloat3(cam->get_as<toml::array>("position"), { 0.0f, 0.0f, 0.0f });
+
+				math::float3 deg = ReadFloat3(cam->get_as<toml::array>("rotation"), { 0.0f, 0.0f, 0.0f });
+				f32 degArr[3]{};
+				math::store(degArr, deg);
+				transform.EulerAngles = math::float3
+				{
+					degArr[0] * kDegToRad,
+					degArr[1] * kDegToRad,
+					degArr[2] * kDegToRad,
+				};
+
+				const f32 fovDeg = static_cast<f32>(cam->get_as<f64>("fov") ? **cam->get_as<f64>("fov") : 60.0);
+				const f32 nearZ  = static_cast<f32>(cam->get_as<f64>("near") ? **cam->get_as<f64>("near") : 0.05);
+				const f32 farZ   = static_cast<f32>(cam->get_as<f64>("far") ? **cam->get_as<f64>("far") : 1000.0);
+
+				scene.m_camera.SetProjection(fovDeg * kDegToRad, 16.0f / 9.0f, nearZ, farZ);
+				scene.m_camera.SetTransform(transform);
+			}
+			else
+			{
+				const math::float3 center = scene.m_bounds.Center();
+				const f32 radius = scene.m_bounds.Radius();
+
+				scene.m_camera.SetProjection(0.8f, 16.0f / 9.0f, 0.05f, 1000.0f);
+				scene.m_camera.SetView(center + math::float3(0.0f, 0.0f, -radius * 2.5f), center);
+			}
+
 			return scene;
 		}
 		catch (const std::exception& e)

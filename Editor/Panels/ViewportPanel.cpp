@@ -2,6 +2,9 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RHI/CommandList.h"
+#include "Core/Math.h"
+#include "Platform/InputManager.h"
+#include "Platform/InputCodes.h"
 
 #include <imgui.h>
 
@@ -13,6 +16,7 @@ namespace koi
 
 	ViewportPanel::ViewportPanel(Renderer& renderer)
 		: m_renderer(&renderer)
+		, m_controller(&m_camera, CameraMode::Orbit)
 	{
 	}
 
@@ -71,6 +75,8 @@ namespace koi
 		m_target.Width  = width;
 		m_target.Height = height;
 		m_valid = true;
+
+		m_camera.SetAspect(static_cast<f32>(width) / static_cast<f32>(height));
 	}
 
 	const ViewportTarget* ViewportPanel::PrepareFrame(CommandList& cmd)
@@ -111,10 +117,40 @@ namespace koi
 				{
 					const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
 					ImGui::Image(static_cast<ImTextureID>(gpu.ptr), avail);
+
+					m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
 				}
 			}
 		}
+		else
+		{
+			m_isHovered = false;
+		}
 		ImGui::End();
 		ImGui::PopStyleVar();
+	}
+
+	void ViewportPanel::FrameBounds(const math::AABB& bounds)
+	{
+		const math::float3 center = bounds.Center();
+		const f32 radius = bounds.Radius();
+
+		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
+		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, 0.3f);
+	}
+
+	void ViewportPanel::Update(f32 dt, const InputManager& input)
+	{
+		const bool anyMouseDown = input.IsMouseButtonDown(MouseButton::Left)
+			|| input.IsMouseButtonDown(MouseButton::Right)
+			|| input.IsMouseButtonDown(MouseButton::Middle);
+
+		if (m_isHovered && anyMouseDown) m_isCapturingInput = true;
+		else if (!anyMouseDown) m_isCapturingInput = false;
+
+		if (m_isHovered || m_isCapturingInput)
+		{
+			m_controller.Update(dt, input);
+		}
 	}
 }

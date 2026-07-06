@@ -1,10 +1,7 @@
 #pragma once
 #include "Runtime/AppBase.h"
 #include "Graphics/Renderer.h"
-#include "Graphics/Camera.h"
-#include "Graphics/CameraController.h"
 #include "Scene/Scene.h"
-#include <memory>
 
 class SandboxApp : public koi::AppBase
 {
@@ -20,10 +17,7 @@ public:
 
 private:
 	void LoadScene();
-	void SetupCamera();
 
 private:
-	koi::Scene                             m_scene;
-	koi::Camera                            m_camera;
-	std::unique_ptr<koi::CameraController> m_controller;
+	koi::Scene m_scene;
 };

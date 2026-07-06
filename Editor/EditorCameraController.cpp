@@ -1,4 +1,4 @@
-#include "Graphics/CameraController.h"
+#include "EditorCameraController.h"
 #include "Graphics/Camera.h"
 #include "Platform/InputManager.h"
 #include "Core/Math.h"
@@ -65,17 +65,13 @@ namespace koi
 	{
 		if (m_mode == mode) return;
 
-		// Carry over yaw/pitch so the view doesn't snap on switch.
-		// In FP→Orbit, seed the orbit target at the FP camera's forward look point.
 		if (mode == CameraMode::Orbit)
 		{
-			using namespace math;
-			const float3 forward = normalize(m_camera->Forward);
+			const math::float3 forward = math::normalize(m_camera->Forward);
 			m_orbitTarget = m_fpPosition + forward * m_orbitRadius;
 		}
 		else
 		{
-			// In Orbit→FP, seed the FP position to the current camera position.
 			m_fpPosition = m_camera->Position;
 		}
 
@@ -90,21 +86,17 @@ namespace koi
 
 	void CameraController::Update(f32 dt, const InputManager& input)
 	{
-		// Toggle mode (debounced)
 		const bool toggleDown = input.IsKeyDown(ToggleKey);
 
-		if (toggleDown && !m_prevToggleKey && !input.ImGuiWantsCaptureMouse())
+		if (toggleDown && !m_prevToggleKey)
 			ToggleMode();
 
 		m_prevToggleKey = toggleDown;
 
-		if (!input.ImGuiWantsCaptureMouse())
-		{
-			if (m_mode == CameraMode::FirstPerson)
-				UpdateFirstPerson(dt, input);
-			else
-				UpdateOrbit(input);
-		}
+		if (m_mode == CameraMode::FirstPerson)
+			UpdateFirstPerson(dt, input);
+		else
+			UpdateOrbit(input);
 	}
 
 

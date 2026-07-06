@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Types.h"
 #include "Core/MathTypes.h"
+#include "Core/Transform.h"
 
 namespace koi
 {
@@ -24,6 +25,8 @@ namespace koi
 		// Recomputes View, basis vectors, and ViewProjection
 		void SetView(math::float3 position, math::float3 target,
 		             math::float3 worldUp = { 0.0f, 1.0f, 0.0f });
+
+		void SetTransform(const Transform& transform, math::float3 worldUp = { 0.0f, 1.0f, 0.0f });
 
 		// Recomputes Projection and ViewProjection. D3D depth range [0,1]
 		void SetProjection(f32 fovYRad, f32 aspect, f32 nearZ, f32 farZ);

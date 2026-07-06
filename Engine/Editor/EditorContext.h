@@ -7,6 +7,7 @@
 namespace koi
 {
 	class IReloadable;
+	struct Camera;
 
 	class IEditorContext
 	{
@@ -17,6 +18,7 @@ namespace koi
 		virtual void RegisterPanel(std::unique_ptr<IEditorPanel> panel) = 0;
 
 		[[nodiscard]] virtual const ViewportTarget* GetViewportTarget() const = 0;
+		[[nodiscard]] virtual const Camera* GetEditorCamera() const = 0;
 
 		template<typename T, typename... Args>
 		T& RegisterPanel(Args&&... args)

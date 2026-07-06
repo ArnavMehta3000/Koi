@@ -2,6 +2,7 @@
 #include "Core/Math.h"
 #include "Core/Transform.h"
 #include "Graphics/GPUMesh.h"
+#include "Graphics/Camera.h"
 #include <string>
 #include <span>
 #include <optional>
@@ -49,9 +50,13 @@ namespace koi
 		[[nodiscard]] const GPUMesh&             GetMesh(i32 index) const { return m_meshes[index]; }
 		[[nodiscard]] const math::AABB&          GetBounds() const        { return m_bounds;        }
 
+		[[nodiscard]] Camera&       GetCamera()       { return m_camera; }
+		[[nodiscard]] const Camera& GetCamera() const { return m_camera; }
+
 	private:
 		std::vector<SceneNode> m_nodes;
 		std::vector<GPUMesh>   m_meshes;
 		math::AABB             m_bounds;
+		Camera                 m_camera;
 	};
 }

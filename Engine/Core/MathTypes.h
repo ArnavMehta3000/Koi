@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Core/Config.h"
+#include "Core/Types.h"
 
 #if KOI_DEBUG
 	#define HLSLPP_ASSERT
