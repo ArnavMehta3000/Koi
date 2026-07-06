@@ -4,17 +4,18 @@
 namespace koi
 {
 	class GfxDevice;
-	class RenderWindow;
 
 	class TonemapPass : public RenderPass
 	{
 	public:
 		struct Desc
 		{
-			GfxDevice*     Device       = nullptr;
+			GfxDevice*     Device      = nullptr;
 			PipelineHandle Pipeline;
 			TextureHandle  HdrInput;
-			RenderWindow*  TargetWindow = nullptr;
+			TextureHandle  ColorTarget;
+			u32            Width       = 0;
+			u32            Height      = 0;
 		};
 
 		explicit TonemapPass(const Desc& desc);

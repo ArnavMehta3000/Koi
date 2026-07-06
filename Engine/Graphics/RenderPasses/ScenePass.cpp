@@ -1,5 +1,4 @@
 #include "Graphics/RenderPasses/ScenePass.h"
-#include "Graphics/RenderWindow.h"
 #include "Graphics/RendererResources.h"
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/Camera.h"
@@ -26,20 +25,18 @@ namespace koi
 	ScenePass::ScenePass(const Desc& desc)
 		: m_desc(desc)
 	{
-		RenderWindow* rw = m_desc.RenderWindow;
-		m_outputs[0] = { rw ? rw->GetHDRColorBuffer() : TextureHandle{}, "HDRColor" };
+		m_outputs[0] = { m_desc.ColorTarget, "HDRColor" };
 		m_outputs[1] = { m_desc.DepthBuffer, "Depth" };
 	}
 
 	void ScenePass::Execute(CommandList& cmd)
 	{
-		RenderWindow* rw = m_desc.RenderWindow;
-		if (!rw || !m_desc.Scene || !m_desc.Camera || !m_desc.Resources) return;
+		if (!m_desc.ColorTarget || !m_desc.Scene || !m_desc.Camera || !m_desc.Resources) return;
 
 		const PipelineHandle pipeline = m_desc.Pipeline ? m_desc.Pipeline : m_desc.Resources->MeshOpaquePipeline;
 
-		cmd.SetRenderTarget(rw->GetHDRColorBuffer(), m_desc.DepthBuffer);
-		cmd.SetViewportAndScissor(rw->GetWidth(), rw->GetHeight());
+		cmd.SetRenderTarget(m_desc.ColorTarget, m_desc.DepthBuffer);
+		cmd.SetViewportAndScissor(m_desc.Width, m_desc.Height);
 		cmd.SetPipeline(pipeline);
 
 		MeshPushConstants pc{ .SamplerIndex = m_desc.Resources->LinearWrapSampler };

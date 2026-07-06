@@ -1,5 +1,4 @@
 #include "Graphics/RenderPasses/TonemapPass.h"
-#include "Graphics/RenderWindow.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RHI/CommandList.h"
 
@@ -18,14 +17,13 @@ namespace koi
 
 	void TonemapPass::Execute(CommandList& cmd)
 	{
-		RenderWindow* rw = m_desc.TargetWindow;
-		if (!rw || !m_desc.Pipeline || !m_desc.Device) return;
+		if (!m_desc.ColorTarget || !m_desc.Pipeline || !m_desc.Device) return;
 
 		cmd.TransitionBarrier(m_desc.HdrInput, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		cmd.TransitionBarrier(rw->CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+		cmd.TransitionBarrier(m_desc.ColorTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		cmd.SetRenderTarget(rw->CurrentBackBuffer());
-		cmd.SetViewportAndScissor(rw->GetWidth(), rw->GetHeight());
+		cmd.SetRenderTarget(m_desc.ColorTarget);
+		cmd.SetViewportAndScissor(m_desc.Width, m_desc.Height);
 		cmd.SetPipeline(m_desc.Pipeline);
 
 		const Texture* hdrTex = m_desc.Device->Get(m_desc.HdrInput);

@@ -1,8 +1,10 @@
 #include "EditorApp.h"
 #include "Panels/ScenePanel.h"
+#include "Panels/ViewportPanel.h"
 #include "Runtime/AppBase.h"
 #include "Runtime/Engine.h"
 #include "Graphics/Renderer.h"
+#include "Graphics/RenderWindow.h"
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RHI/CommandList.h"
 #include "Graphics/ShaderCompiler.h"
@@ -80,6 +82,7 @@ namespace koi::editor
 
 		m_game->SetEditorContext(this);
 		RegisterPanel<ScenePanel>(*m_game);
+		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer);
 	}
 
 	void EditorApp::HostInit()
@@ -100,6 +103,9 @@ namespace koi::editor
 
 	void EditorApp::HostRender()
 	{
+		if (CommandList* cmd = Engine::Get().GetRenderer().GetCommandList())
+			m_viewportPanel->PrepareFrame(*cmd);
+
 		m_game->HostRender();
 	}
 
@@ -165,6 +171,11 @@ namespace koi::editor
 		m_panels.push_back(std::move(panel));
 	}
 
+	const ViewportTarget* EditorApp::GetViewportTarget() const
+	{
+		return m_viewportPanel->GetTarget();
+	}
+
 	void EditorApp::ReloadAll()
 	{
 		for (IReloadable* reloadable : m_reloadables)
@@ -202,6 +213,21 @@ namespace koi::editor
 		}
 
 		ImGui::Render();
+
+		// ScenePass/TonemapPass render into the Viewport panel's offscreen target rather than
+		// the swapchain back buffer, so the back buffer needs to be bound/cleared explicitly here
+		// before ImGui draws, and the resolved viewport texture needs to be readable by ImGui::Image
+		if (const ViewportTarget* vp = m_viewportPanel->GetTarget())
+			cmd.TransitionBarrier(vp->ResolvedColorBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+		if (RenderWindow* rw = renderer.GetMainRenderWindow())
+		{
+			static constexpr f32 kClearColor[4] = { 0.05f, 0.05f, 0.05f, 1.0f };
+			cmd.TransitionBarrier(rw->CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
+			cmd.SetRenderTarget(rw->CurrentBackBuffer());
+			cmd.ClearRenderTarget(rw->CurrentBackBuffer(), kClearColor);
+			cmd.SetViewportAndScissor(rw->GetWidth(), rw->GetHeight());
+		}
 
 		auto* native = cmd.GetNative();
 		ID3D12DescriptorHeap* heaps[] = { device.ResourceHeap().GetHeap() };

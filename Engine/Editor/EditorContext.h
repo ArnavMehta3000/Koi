@@ -1,5 +1,6 @@
 #pragma once
 #include "Editor/EditorPanel.h"
+#include "Editor/ViewportTarget.h"
 #include <memory>
 #include <utility>
 
@@ -14,6 +15,8 @@ namespace koi
 
 		virtual void RegisterReloadable(IReloadable* reloadable) = 0;
 		virtual void RegisterPanel(std::unique_ptr<IEditorPanel> panel) = 0;
+
+		[[nodiscard]] virtual const ViewportTarget* GetViewportTarget() const = 0;
 
 		template<typename T, typename... Args>
 		T& RegisterPanel(Args&&... args)

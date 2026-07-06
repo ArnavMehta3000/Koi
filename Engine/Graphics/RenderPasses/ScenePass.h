@@ -5,7 +5,6 @@
 namespace koi
 {
 	class  Scene;
-	class  RenderWindow;
 	struct Camera;
 	struct RendererResources;
 
@@ -14,11 +13,13 @@ namespace koi
 	public:
 		struct Desc
 		{
-			Scene*                   Scene        = nullptr;
-			const Camera*            Camera       = nullptr;
-			const RendererResources* Resources    = nullptr;
-			RenderWindow*            RenderWindow = nullptr;
+			Scene*                   Scene       = nullptr;
+			const Camera*            Camera      = nullptr;
+			const RendererResources* Resources   = nullptr;
+			TextureHandle            ColorTarget;
 			TextureHandle            DepthBuffer;
+			u32                      Width       = 0;
+			u32                      Height      = 0;
 			PipelineHandle           Pipeline;  // Optional override (falls back to Resources->MeshOpaquePipeline)
 		};
 

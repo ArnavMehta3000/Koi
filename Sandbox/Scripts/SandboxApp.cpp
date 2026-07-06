@@ -6,6 +6,7 @@
 #include "Graphics/RHI/Device.h"
 #include "Graphics/RenderPasses/ScenePass.h"
 #include "Graphics/RenderPasses/TonemapPass.h"
+#include "Editor/EditorContext.h"
 #include <toml++/toml.hpp>
 
 namespace koi
@@ -43,9 +44,25 @@ void SandboxApp::OnTick(koi::f32 dt)
 
 	m_scene.Update();
 
-	// Keep camera aspect in sync with the current render window size
-	if (const koi::RenderWindow* rw = engine.GetRenderer().GetMainRenderWindow())
-		m_camera.SetAspect(static_cast<koi::f32>(rw->GetWidth()) / static_cast<koi::f32>(rw->GetHeight()));
+	// Keep camera aspect in sync with the current render target size (the editor's Viewport
+	// panel when present, otherwise the main window).
+	koi::f32 width = 0.0f, height = 0.0f;
+	if (const koi::IEditorContext* ctx = GetEditorContext())
+	{
+		if (const koi::ViewportTarget* vp = ctx->GetViewportTarget())
+		{
+			width  = static_cast<koi::f32>(vp->Width);
+			height = static_cast<koi::f32>(vp->Height);
+		}
+	}
+	else if (const koi::RenderWindow* rw = engine.GetRenderer().GetMainRenderWindow())
+	{
+		width  = static_cast<koi::f32>(rw->GetWidth());
+		height = static_cast<koi::f32>(rw->GetHeight());
+	}
+
+	if (width > 0.0f && height > 0.0f)
+		m_camera.SetAspect(width / height);
 
 	if (input.IsKeyPressed(koi::KeyCode::Escape))
 		engine.RequestExit();
@@ -59,25 +76,53 @@ void SandboxApp::OnRender()
 	ZoneScoped;
 	koi::Engine& engine     = *GetEngine();
 	koi::Renderer& renderer = engine.GetRenderer();
-
-	koi::RenderWindow* rw = renderer.GetMainRenderWindow();
 	koi::RenderGraph& graph = renderer.GetFrameGraph();
+
+	koi::TextureHandle colorTarget, depthTarget, presentTarget;
+	koi::u32 width = 0, height = 0;
+
+	if (koi::IEditorContext* ctx = GetEditorContext())
+	{
+		const koi::ViewportTarget* vp = ctx->GetViewportTarget();
+		if (!vp) return;  // Viewport panel not laid out with a valid size yet this frame
+
+		colorTarget   = vp->HDRColorBuffer;
+		depthTarget   = vp->DepthBuffer;
+		presentTarget = vp->ResolvedColorBuffer;
+		width  = vp->Width;
+		height = vp->Height;
+	}
+	else
+	{
+		koi::RenderWindow* rw = renderer.GetMainRenderWindow();
+		if (!rw) return;
+
+		colorTarget   = rw->GetHDRColorBuffer();
+		depthTarget   = renderer.GetDepthBuffer();
+		presentTarget = rw->CurrentBackBuffer();
+		width         = rw->GetWidth();
+		height        = rw->GetHeight();
+	}
 
 	graph.AddPass<koi::ScenePass>(koi::ScenePass::Desc
 	{
-		.Scene        = &m_scene,
-		.Camera       = &m_camera,
-		.Resources    = &renderer.GetDefaultResources(),
-		.RenderWindow = rw,
-		.DepthBuffer  = renderer.GetDepthBuffer(),
+		.Scene       = &m_scene,
+		.Camera      = &m_camera,
+		.Resources   = &renderer.GetDefaultResources(),
+		.ColorTarget = colorTarget,
+		.DepthBuffer = depthTarget,
+		.Width       = width,
+		.Height      = height,
 	});
 
 	graph.AddPass<koi::TonemapPass>(koi::TonemapPass::Desc
 	{
-		.Device       = &renderer.GetDevice(),
-		.Pipeline     = renderer.GetDefaultResources().TonemapPipeline,
-		.HdrInput     = rw ? rw->GetHDRColorBuffer() : koi::TextureHandle{},
-		.TargetWindow = rw,
+		.Device      = &renderer.GetDevice(),
+		.Pipeline    = renderer.GetDefaultResources().TonemapPipeline,
+		.HdrInput    = colorTarget,
+		.ColorTarget = presentTarget,
+		.Width       = width,
+		.Height      = height,
 	});
 }
 

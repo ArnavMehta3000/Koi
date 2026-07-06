@@ -13,6 +13,7 @@ namespace koi
 	class AppBase;
 	class Engine;
 	class CommandList;
+	class ViewportPanel;
 }
 
 namespace koi::editor
@@ -50,6 +51,8 @@ namespace koi::editor
 		void RegisterPanel(std::unique_ptr<IEditorPanel> panel) override;
 		using IEditorContext::RegisterPanel;
 
+		[[nodiscard]] const ViewportTarget* GetViewportTarget() const override;
+
 	private:
 		void AttachTo(Engine& engine);
 		void InitImGui();
@@ -63,7 +66,8 @@ namespace koi::editor
 		EditorConfig                                m_config{};
 		std::vector<std::unique_ptr<IEditorPanel>>  m_panels;
 		std::vector<IReloadable*>                   m_reloadables;
-		bool                                        m_imguiInitialized = false;
-		std::string                                 m_lastCookStatus;  // shown in menubar after Cook click
+		ViewportPanel*                               m_viewportPanel    = nullptr;
+		bool                                         m_imguiInitialized = false;
+		std::string                                  m_lastCookStatus;  // shown in menubar after Cook click
 	};
 }

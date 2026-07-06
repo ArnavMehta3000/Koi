@@ -35,6 +35,7 @@ namespace koi
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline TextureHandle            GetDepthBuffer() const noexcept      { return m_depthTexture;         }
+		[[nodiscard]] inline Format                   GetDepthFormat() const noexcept      { return m_depthFormat;          }
 		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_frameGraph;           }
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
