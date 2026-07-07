@@ -4,12 +4,14 @@ includes("Packages/Tracy.lua")
 includes("Packages/dxc.lua")
 includes("Packages/ImGui.lua")
 includes("Packages/AngelScript.lua")
+includes("Packages/Flecs.lua")
 
 add_requires(
     "glfw",
     "directx-headers",
     "cli11",
-    "dxc" -- custom package
+    "dxc", -- custom package
+	"Flecs" -- custom package
 )
 
 add_requires("tracy-profiler", { configs = { tracy_enable = is_mode("profile") } })  -- custom package
