@@ -1,9 +1,9 @@
-#include "Runtime/EntryPoint.h"
-#include "Runtime/Engine.h"
-#include "Runtime/AppBase.h"
-#include "Core/VirtualFileSystem.h"
-#include "Core/StringUtils.h"
-#include "EditorApp.h"
+#include "Koi/Engine/Runtime/EntryPoint.h"
+#include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/IO/VirtualFileSystem.h"
+#include "Koi/Engine/Text/StringUtils.h"
+#include "Koi/Editor/EditorApp.h"
 #include <filesystem>
 #include <vector>
 #include <string>

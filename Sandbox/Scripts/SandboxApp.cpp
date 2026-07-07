@@ -1,10 +1,10 @@
 #include "SandboxApp.h"
-#include "Core/Profiling.h"
-#include "Runtime/Engine.h"
-#include "Runtime/CommandLine.h"
-#include "Graphics/RHI/Device.h"
-#include "Graphics/RenderPasses/ScenePass.h"
-#include "Graphics/RenderPasses/TonemapPass.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Runtime/CommandLine.h"
+#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Graphics/RenderPasses/ScenePass.h"
+#include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
 #include <toml++/toml.hpp>
 
 namespace koi

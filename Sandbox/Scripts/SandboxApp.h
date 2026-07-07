@@ -1,7 +1,7 @@
 #pragma once
-#include "Runtime/AppBase.h"
-#include "Graphics/Renderer.h"
-#include "Scene/Scene.h"
+#include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Scene/Scene.h"
 
 namespace koi
 {
