@@ -5,6 +5,7 @@
 #include "Koi/Engine/Memory/MemoryDebug.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include <cassert>
+#include <angelscript.h>
 
 namespace koi
 {
@@ -18,6 +19,7 @@ namespace koi
 		s_instance = this;
 
 		KOI_LOG_INFO("Engine initializing");
+		KOI_LOG_INFO("Angelscript version: {} - {}", ::asGetLibraryVersion(), asGetLibraryOptions());
 
 		m_inputManager = std::make_unique<InputManager>();
 		m_renderer     = std::make_unique<Renderer>();

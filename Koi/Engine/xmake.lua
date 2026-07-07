@@ -2,7 +2,7 @@ target("Koi.Engine")
 	set_kind("static")
 
 	add_options("LogLevel", "WithEditor")
-	add_deps("ImGui", { public = true })
+	add_deps("ImGui", "AngelScript", { public = true })
 	add_packages(
 		"cli11",
 		"spdlog",

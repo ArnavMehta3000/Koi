@@ -3,6 +3,7 @@ includes("Packages/hlslpp.lua")
 includes("Packages/Tracy.lua")
 includes("Packages/dxc.lua")
 includes("Packages/ImGui.lua")
+includes("Packages/AngelScript.lua")
 
 add_requires(
     "glfw",
