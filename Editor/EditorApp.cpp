@@ -50,7 +50,7 @@ namespace koi::editor
 		heap.Free(idx);
 	}
 
-	EditorApp::EditorApp(std::unique_ptr<AppBase> game, const EditorConfig& config)
+	EditorApp::EditorApp(std::unique_ptr<AppBase> game, EditorConfig config)
 		: m_game(std::move(game))
 		, m_config(std::move(config))
 	{
@@ -65,23 +65,25 @@ namespace koi::editor
 #endif
 	}
 
-	const AppCreateDesc& EditorApp::GetDesc() const
-	{
-		return m_game->GetDesc();
-	}
+	const AppCreateDesc& EditorApp::GetDesc() const { return m_game->GetDesc(); }
 
-	void EditorApp::SetWindow(Window& window)
-	{
-		m_game->SetWindow(window);
-	}
+	void EditorApp::SetWindow(Window& window) { m_game->SetWindow(window); }
 
-	void EditorApp::AttachTo(Engine& engine)
+	void EditorApp::Setup()
 	{
-		Renderer& renderer = engine.GetRenderer();
+		// Hook the editor with the engine/renderer
+		Renderer& renderer = Engine::Get().GetRenderer();
+
+		// Set editor as overlay (ImGui)
 		renderer.SetOverlay(this);
+
+		// Register the renderer as reloadable so that it can recompile shaders and rebuild pipelines
 		RegisterReloadable(&renderer);
 
+		// Register the editor context with the game so that it can register panels and reloadables
 		m_game->SetEditorContext(this);
+
+		// Register default editor panels
 		RegisterPanel<ScenePanel>(*m_game);
 		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer);
 	}
@@ -90,7 +92,7 @@ namespace koi::editor
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
-		AttachTo(Engine::Get());
+		Setup();
 		m_game->HostInit();
 		InitImGui();
 
@@ -167,25 +169,13 @@ namespace koi::editor
 		m_imguiInitialized = false;
 	}
 
-	void EditorApp::RegisterReloadable(IReloadable* reloadable)
-	{
-		m_reloadables.push_back(reloadable);
-	}
+	void EditorApp::RegisterReloadable(IReloadable* reloadable) { m_reloadables.push_back(reloadable); }
 
-	void EditorApp::RegisterPanel(std::unique_ptr<IEditorPanel> panel)
-	{
-		m_panels.push_back(std::move(panel));
-	}
+	void EditorApp::RegisterPanel(std::unique_ptr<IEditorPanel> panel) { m_panels.push_back(std::move(panel)); }
 
-	const ViewportTarget* EditorApp::GetViewportTarget() const
-	{
-		return m_viewportPanel->GetTarget();
-	}
+	const ViewportTarget* EditorApp::GetViewportTarget() const { return m_viewportPanel->GetTarget(); }
 
-	const Camera* EditorApp::GetEditorCamera() const
-	{
-		return &m_viewportPanel->GetCamera();
-	}
+	const Camera* EditorApp::GetEditorCamera() const { return &m_viewportPanel->GetCamera(); }
 
 	void EditorApp::ReloadAll()
 	{
@@ -218,11 +208,13 @@ namespace koi::editor
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		DrawMenuBar();
 
+		// Draw the panels
 		for (auto& panel : m_panels)
 		{
 			panel->OnDraw();
 		}
 
+		// Render ImGui
 		ImGui::Render();
 
 		// ScenePass/TonemapPass render into the Viewport panel's offscreen target rather than
@@ -233,10 +225,10 @@ namespace koi::editor
 
 		if (RenderWindow* rw = renderer.GetMainRenderWindow())
 		{
-			static constexpr f32 kClearColor[4] = { 0.05f, 0.05f, 0.05f, 1.0f };
+			static constexpr std::array kClearColor = { 0.05f, 0.05f, 0.05f, 1.0f };
 			cmd.TransitionBarrier(rw->CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 			cmd.SetRenderTarget(rw->CurrentBackBuffer());
-			cmd.ClearRenderTarget(rw->CurrentBackBuffer(), kClearColor);
+			cmd.ClearRenderTarget(rw->CurrentBackBuffer(), kClearColor.data());
 			cmd.SetViewportAndScissor(rw->GetWidth(), rw->GetHeight());
 		}
 

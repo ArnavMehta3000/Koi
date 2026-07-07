@@ -36,7 +36,7 @@ namespace koi::editor
 		, public IEditorContext
 	{
 	public:
-		EditorApp(std::unique_ptr<AppBase> game, const EditorConfig& config);
+		EditorApp(std::unique_ptr<AppBase> game, EditorConfig config);
 		~EditorApp() override = default;
 
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override;
@@ -56,7 +56,7 @@ namespace koi::editor
 		[[nodiscard]] const Camera* GetEditorCamera() const override;
 
 	private:
-		void AttachTo(Engine& engine);
+		void Setup();
 		void InitImGui();
 		void ShutdownImGui();
 		void DrawMenuBar();

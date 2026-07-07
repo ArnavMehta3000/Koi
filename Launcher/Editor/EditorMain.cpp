@@ -71,29 +71,33 @@ namespace koi::editor::internal
 				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
 			}
 
-			Engine engine;
-
-			std::unique_ptr<AppBase> gameApp = CreateApplication(*cmd);
-			if (!gameApp)
+			// Engine/Editor scope
 			{
-				KOI_LOG_CRITICAL("Failed to create application");
-				return -1;
+				const EditorConfig editorCfg
+				{
+					.EngineSource = cmd->GetEngineSource().empty()
+									   ? fs::path{}
+									   : fs::absolute(cmd->GetEngineSource()),
+					.ProjectSource = cmd->GetProjectSource().empty()
+									   ? fs::path{}
+									   : fs::absolute(cmd->GetProjectSource()),
+					.ProjectFile = fs::absolute(cmd->GetProjectFile()),
+					.CookedOutput = fs::current_path() / "Cooked",
+				};
+
+				// Create the engine and run the editor app
+				Engine engine;
+				std::unique_ptr<AppBase> gameApp = CreateApplication(*cmd);
+
+				if (!gameApp)
+				{
+					KOI_LOG_CRITICAL("Failed to create application");
+					return -1;
+				}
+
+				EditorApp editorApp(std::move(gameApp), editorCfg);
+				engine.RunApp(editorApp);
 			}
-
-			const EditorConfig editorCfg
-			{
-				.EngineSource  = cmd->GetEngineSource().empty()
-				                   ? fs::path{}
-				                   : fs::absolute(cmd->GetEngineSource()),
-				.ProjectSource = cmd->GetProjectSource().empty()
-				                   ? fs::path{}
-				                   : fs::absolute(cmd->GetProjectSource()),
-				.ProjectFile   = fs::absolute(cmd->GetProjectFile()),
-				.CookedOutput  = fs::current_path() / "Cooked",
-			};
-
-			EditorApp editorApp(std::move(gameApp), editorCfg);
-			engine.RunApp(editorApp);
 			return 0;
 		}
 		catch (const std::exception& e)

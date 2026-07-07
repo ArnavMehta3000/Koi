@@ -67,6 +67,7 @@ namespace koi
 
 		window.SetCloseCallback([this]() { RequestExit(); });
 
+		// Init application
 		host.HostInit();
 		m_renderer->GetFrameGraph().Compile(); // One time compile to ensure user-defined render pass succeeds post-init
 		MainLoop(host);
