@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Scene/Scene.h"
+#include "Koi/Engine/ECS/World.h"
 
 namespace koi
 {
@@ -19,13 +19,13 @@ public:
 	void OnRender() override;
 	void OnShutdown() override;
 
-	koi::Scene* GetEditorScene() override { return &m_scene; }
+	koi::World* GetEditorWorld() override { return &m_world; }
 
 private:
 	void LoadScene();
 
 private:
-	koi::Scene m_scene;
+	koi::World m_world;
 
 	koi::ScenePass*   m_scenePass   = nullptr;
 	koi::TonemapPass* m_tonemapPass = nullptr;

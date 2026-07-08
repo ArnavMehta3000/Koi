@@ -2,7 +2,7 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/Camera.h"
-#include "Koi/Engine/Scene/Scene.h"
+#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
 
 namespace koi
@@ -31,7 +31,7 @@ namespace koi
 
 	void ScenePass::Reset()
 	{
-		m_scene  = nullptr;
+		m_world  = nullptr;
 		m_camera = nullptr;
 		m_width  = 0;
 		m_height = 0;
@@ -52,7 +52,43 @@ namespace koi
 	{
 		const TextureHandle colorTarget = m_outputs[0].Texture;
 		const TextureHandle depthTarget = m_outputs[1].Texture;
-		if (!colorTarget || !m_scene || !m_camera || !m_config.Resources) return;
+		if (!colorTarget || !m_world || !m_camera || !m_config.Resources) return;
+
+		flecs::world_t* ecsWorld = m_world->GetECS().c_ptr();
+		if (m_queryWorld != ecsWorld)
+		{
+			// `this` is captured (not per-frame data like the CommandList) since the ScenePass
+			// itself outlives every frame; per-frame state comes in through it.param() below.
+			m_renderSystem = m_world->GetECS().system<const WorldTransform, const MeshRef>("SceneMeshRenderSystem")
+				.kind(0)  // never auto-scheduled by world.progress(); only invoked via run() below
+				.each([this](flecs::iter& it, size_t, const WorldTransform& worldXform, const MeshRef& meshRef)
+				{
+					const GPUMesh* mesh = m_world->GetMesh(meshRef.Handle);
+					if (!mesh) return;
+
+					RenderContext* ctx = it.param<RenderContext>();
+
+					MeshPushConstants pc{ .SamplerIndex = ctx->Resources->LinearWrapSampler };
+					pc.MVP = math::mul(worldXform.Value, ctx->Camera->ViewProjection);
+					pc.MVP = math::transpose(pc.MVP);
+					pc.VertexBufferIndex = mesh->VertexBufferSRV;
+
+					ctx->Cmd->SetIndexBuffer(mesh->IndexBuffer);
+
+					for (const GPUMeshDraw& d : mesh->DrawItems)
+					{
+						pc.BaseColorIndex         = d.BaseColorSRV;
+						// pc.MetallicRoughnessIndex = d.MetallicRoughnessSRV;
+						// pc.NormalIndex            = d.NormalSRV;
+						// pc.OcclusionIndex         = d.OcclusionSRV;
+						// pc.EmissiveIndex          = d.EmissiveSRV;
+
+						ctx->Cmd->SetPushConstants(&pc, sizeof(pc) / sizeof(u32));
+						ctx->Cmd->DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
+					}
+				});
+			m_queryWorld = ecsWorld;
+		}
 
 		const PipelineHandle pipeline = m_config.Pipeline ? m_config.Pipeline : m_config.Resources->MeshOpaquePipeline;
 
@@ -60,30 +96,7 @@ namespace koi
 		cmd.SetViewportAndScissor(m_width, m_height);
 		cmd.SetPipeline(pipeline);
 
-		MeshPushConstants pc{ .SamplerIndex = m_config.Resources->LinearWrapSampler };
-
-		for (const SceneNode& node : m_scene->GetNodes())
-		{
-			if (node.MeshIndex < 0) continue;
-			const GPUMesh& mesh = m_scene->GetMesh(node.MeshIndex);
-
-			pc.MVP = math::mul(node.WorldTransform, m_camera->ViewProjection);
-			pc.MVP = math::transpose(pc.MVP);
-			pc.VertexBufferIndex = mesh.VertexBufferSRV;
-
-			cmd.SetIndexBuffer(mesh.IndexBuffer);
-
-			for (const GPUMeshDraw& d : mesh.DrawItems)
-			{
-				pc.BaseColorIndex         = d.BaseColorSRV;
-				// pc.MetallicRoughnessIndex = d.MetallicRoughnessSRV;
-				// pc.NormalIndex            = d.NormalSRV;
-				// pc.OcclusionIndex         = d.OcclusionSRV;
-				// pc.EmissiveIndex          = d.EmissiveSRV;
-
-				cmd.SetPushConstants(&pc, sizeof(pc) / sizeof(u32));
-				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
-			}
-		}
+		RenderContext ctx{ &cmd, m_camera, m_config.Resources, pipeline };
+		m_renderSystem.run(0.0f, &ctx);
 	}
 }

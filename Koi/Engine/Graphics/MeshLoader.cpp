@@ -88,7 +88,6 @@ namespace koi
 		// Todo create samplers
 
 		return model;
-		return model;
 	}
 
 	void Loader::LoadMeshes(ModelAsset& model)

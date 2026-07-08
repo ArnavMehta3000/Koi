@@ -9,7 +9,7 @@
 namespace koi
 {
 	class Engine;
-	class Scene;
+	class World;
 	class IEditorContext;
 	struct Camera;
 
@@ -58,7 +58,7 @@ namespace koi
 		[[nodiscard]] IEditorContext* GetEditorContext() const { return m_editorContext; }
 		void SetEditorContext(IEditorContext* context) { m_editorContext = context; }
 
-		[[nodiscard]] virtual Scene* GetEditorScene() { return nullptr; }
+		[[nodiscard]] virtual World* GetEditorWorld() { return nullptr; }
 
 		[[nodiscard]] std::optional<ViewportTarget> GetFrameTarget() const;
 		[[nodiscard]] const Camera* ResolveCamera(const Camera* fallback) const;

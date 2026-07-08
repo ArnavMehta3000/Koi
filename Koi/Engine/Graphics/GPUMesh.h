@@ -33,10 +33,10 @@ namespace koi
 		BufferHandle IndexBuffer;
 		DescriptorIndex VertexBufferSRV = INVALID_DESCRIPTOR;
 		std::vector<TextureHandle> Textures;   // per-image GPU textures (not fallback)
-		std::vector<GPUMeshDraw>  DrawItems;
+		std::vector<GPUMeshDraw> DrawItems;
 
 		// Synchronous upload
-		[[nodiscard]] static GPUMesh Upload(GfxDevice& device, const ModelAsset& model, DescriptorIndex fallbackAlbedoSRV);
+		[[nodiscard]] static GPUMesh Upload(GfxDevice& device, const ModelAsset& model);
 
 		void Release(GfxDevice& device);
 	};

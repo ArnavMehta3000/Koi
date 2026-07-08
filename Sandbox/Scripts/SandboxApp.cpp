@@ -48,14 +48,14 @@ void SandboxApp::OnInit()
 	LoadScene();
 }
 
-void SandboxApp::OnTick(koi::f32 /*dt*/)
+void SandboxApp::OnTick(koi::f32 dt)
 {
 	ZoneScoped;
 	koi::Engine& engine      = *GetEngine();
 	koi::InputManager& input = engine.GetInputManager();
 
-	m_scene.Update();
-	m_scene.GetCamera().SetAspect(GetWindow().AspectRatio());
+	m_world.Update(dt);
+	m_world.GetCamera().SetAspect(GetWindow().AspectRatio());
 
 	if (input.IsKeyPressed(koi::KeyCode::Escape))
 		engine.RequestExit();
@@ -68,9 +68,9 @@ void SandboxApp::OnRender()
 	const std::optional<koi::ViewportTarget> target = GetFrameTarget();
 	if (!target) return;  // Nothing valid to render into yet this frame
 
-	const koi::Camera* camera = ResolveCamera(&m_scene.GetCamera());
+	const koi::Camera* camera = ResolveCamera(&m_world.GetCamera());
 
-	m_scenePass->SetScene(&m_scene)
+	m_scenePass->SetWorld(&m_world)
 		.SetCamera(camera)
 		.SetTarget(target->HDRColorBuffer, target->DepthBuffer, target->Width, target->Height);
 
@@ -83,7 +83,7 @@ void SandboxApp::OnShutdown()
 	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnShutdown()");
 	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
-	m_scene.Release(device);
+	m_world.Release(device);
 }
 
 void SandboxApp::LoadScene()
@@ -97,13 +97,11 @@ void SandboxApp::LoadScene()
 
 	koi::Renderer& renderer = GetEngine()->GetRenderer();
 	koi::GfxDevice& device  = renderer.GetDevice();
-	const koi::DescriptorIndex whiteSRV =
-		device.Get(renderer.GetDefaultResources().WhiteTexture)->SRVIndex;
 
-	if (std::optional<koi::Scene> result = koi::Scene::Load(scenePath, device, whiteSRV))
+	if (std::optional<koi::World> result = koi::World::Load(scenePath, device))
 	{
-		m_scene = std::move(*result);
+		m_world = std::move(*result);
 	}
 
-	m_scene.GetCamera().SetAspect(GetWindow().AspectRatio());
+	m_world.GetCamera().SetAspect(GetWindow().AspectRatio());
 }

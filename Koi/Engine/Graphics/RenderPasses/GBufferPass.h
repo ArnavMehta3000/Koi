@@ -4,7 +4,7 @@
 
 namespace koi
 {
-	class  Scene;
+	class  World;
 	class  RenderWindow;
 	struct Camera;
 	struct RendererResources;
@@ -14,7 +14,7 @@ namespace koi
 	public:
 		struct Desc
 		{
-			Scene*                   Scene        = nullptr;
+			World*                   World        = nullptr;
 			const Camera*            Camera       = nullptr;
 			const RendererResources* Resources    = nullptr;
 			RenderWindow*            RenderWindow = nullptr;

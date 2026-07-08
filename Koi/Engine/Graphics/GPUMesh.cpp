@@ -1,19 +1,29 @@
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <cassert>
 
 namespace koi
 {
-	GPUMesh GPUMesh::Upload(GfxDevice& device, const ModelAsset& model, DescriptorIndex fallbackAlbedoSRV)
+	GPUMesh GPUMesh::Upload(GfxDevice& device, const ModelAsset& model)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		GfxDevice::UploadContext& upload = device.GetUploadContext();
 
+		const DescriptorIndex fallbackAlbedoSRV = [&device]()
+		{
+			auto handle = Engine::Get().GetRenderer().GetDefaultResources().WhiteTexture;
+			Texture* tex = device.Get(handle);
+			assert(tex && tex->Resource && "Default white texture is missing");
+			return tex->SRVIndex;
+		}();
+
 		GPUMesh mesh;
 
-		// Upload all images and collect their SRV indices.
+		// Upload all images and collect their SRV indices
 		std::vector<DescriptorIndex> imageSRVs;
 		imageSRVs.reserve(model.Images.size());
 
@@ -59,69 +69,23 @@ namespace koi
 			// Get sub mesh data
 			for (const SubMesh& sub : m.SubMeshes)
 			{
-#pragma region Get SubMesh Material/Texture Data
-				std::optional<DescriptorIndex> albedoSRV = [&]() -> std::optional<DescriptorIndex>
+				// Args mean: Pointer to a DescriptorIndex member of Material
+				auto lookupSRV = [&](DescriptorIndex Material::* textureIdxMember) -> std::optional<DescriptorIndex>
 				{
-					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
-					{
-						const Material& mat = model.Materials[sub.MaterialIndex];
-						const u32 imgIdx = mat.BaseColorTextureIdx;
-						if (imgIdx < imageSRVs.size())
-							return imageSRVs[imgIdx];
-					}
-					return std::nullopt;
-				}();
-
-				std::optional<DescriptorIndex> metallicRoughnessSRV = [&]() -> std::optional<DescriptorIndex>
-				{
-					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
-					{
-						const Material& mat = model.Materials[sub.MaterialIndex];
-						const u32 imgIdx = mat.MetallicRoughnessTextureIdx;
-						if (imgIdx < imageSRVs.size())
-							return imageSRVs[imgIdx];
-					}
-					return std::nullopt;
-				}();
-
-				std::optional<DescriptorIndex> normalSRV = [&]() -> std::optional<DescriptorIndex>
-				{
-					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
-					{
-						const Material& mat = model.Materials[sub.MaterialIndex];
-						const u32 imgIdx = mat.NormalTextureIdx;
-						if (imgIdx < imageSRVs.size())
-							return imageSRVs[imgIdx];
-					}
-					return std::nullopt;
-				}();
-
-				std::optional<DescriptorIndex> occlusionSRV = [&]() -> std::optional<DescriptorIndex>
-				{
-					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
-					{
-						const Material& mat = model.Materials[sub.MaterialIndex];
-						const u32 imgIdx = mat.OcclusionTextureIdx;
-						if (imgIdx < imageSRVs.size())
-							return imageSRVs[imgIdx];
-					}
-					return std::nullopt;
-				}();
-
-				std::optional<DescriptorIndex> emissiveSRV = [&]() -> std::optional<DescriptorIndex>
-				{
-					if (sub.MaterialIndex >= 0 && static_cast<size_t>(sub.MaterialIndex) < model.Materials.size())
-					{
-						const Material& mat = model.Materials[sub.MaterialIndex];
-						const u32 imgIdx = mat.EmissiveTextureIdx;
-						if (imgIdx < imageSRVs.size())
-							return imageSRVs[imgIdx];
-					}
-					return std::nullopt;
-				}();
-#pragma endregion
+					if (sub.MaterialIndex < 0 || static_cast<size_t>(sub.MaterialIndex) >= model.Materials.size())
+						return std::nullopt;
 
 
+					// .* dereferences pointer to member, giving the value of the member for this material
+					const u32 imgIdx = model.Materials[sub.MaterialIndex].*textureIdxMember;
+					return imgIdx < imageSRVs.size() ? std::optional(imageSRVs[imgIdx]) : std::nullopt;
+				};
+
+				std::optional<DescriptorIndex> albedoSRV             = lookupSRV(&Material::BaseColorTextureIdx);
+				std::optional<DescriptorIndex> metallicRoughnessSRV  = lookupSRV(&Material::MetallicRoughnessTextureIdx);
+				std::optional<DescriptorIndex> normalSRV             = lookupSRV(&Material::NormalTextureIdx);
+				std::optional<DescriptorIndex> occlusionSRV          = lookupSRV(&Material::OcclusionTextureIdx);
+				std::optional<DescriptorIndex> emissiveSRV           = lookupSRV(&Material::EmissiveTextureIdx);
 
 				mesh.DrawItems.push_back(GPUMeshDraw
 				{

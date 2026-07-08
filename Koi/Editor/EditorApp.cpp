@@ -3,7 +3,7 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Scene/Scene.h"
+#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -96,8 +96,8 @@ namespace koi::editor
 		m_game->HostInit();
 		InitImGui();
 
-		if (Scene* scene = m_game->GetEditorScene())
-			m_viewportPanel->FrameBounds(scene->GetBounds());
+		if (World* world = m_game->GetEditorWorld())
+			m_viewportPanel->FrameBounds(world->GetBounds());
 
 		KOI_LOG_INFO("Editor initialized");
 	}
