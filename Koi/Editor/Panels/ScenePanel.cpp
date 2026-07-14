@@ -120,9 +120,9 @@ namespace koi
 			Transform& local = m_selected.get_mut<Transform>();
 
 			f32 pos[3]{}, rot[3]{}, scl[3]{};
-			math::store(pos, local.Position);
-			math::store(rot, local.EulerAngles);
-			math::store(scl, local.Scale);
+			store(pos, local.Position);
+			store(rot, local.EulerAngles);
+			store(scl, local.Scale);
 			rot[0] *= kRadToDeg; rot[1] *= kRadToDeg; rot[2] *= kRadToDeg;
 
 			bool changed = false;
@@ -132,9 +132,9 @@ namespace koi
 
 			if (changed)
 			{
-				local.Position    = math::float3{ pos[0], pos[1], pos[2] };
-				local.EulerAngles = math::float3{ rot[0] * kDegToRad, rot[1] * kDegToRad, rot[2] * kDegToRad };
-				local.Scale       = math::float3{ scl[0], scl[1], scl[2] };
+				local.Position    = float3{ pos[0], pos[1], pos[2] };
+				local.EulerAngles = float3{ rot[0] * kDegToRad, rot[1] * kDegToRad, rot[2] * kDegToRad };
+				local.Scale       = float3{ scl[0], scl[1], scl[2] };
 			}
 
 			if (const MeshRef* meshRef = m_selected.try_get<MeshRef>())

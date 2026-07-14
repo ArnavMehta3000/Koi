@@ -3,23 +3,19 @@
 
 namespace koi
 {
-	void Camera::SetView(math::float3 position, math::float3 target, math::float3 worldUp)
+	void Camera::SetView(float3 position, float3 target, float3 worldUp)
 	{
-		using namespace math;
-
 		Position = position;
 		Forward  = normalize(target - position);
 		Right    = normalize(cross(worldUp, Forward)); // left-handed: right = up × forward
 		Up       = cross(Forward, Right);
 
-		View           = math::float4x4::look_at(position, target, worldUp);
+		View           = float4x4::look_at(position, target, worldUp);
 		ViewProjection = mul(View, Projection);
 	}
 
-	void Camera::SetTransform(const Transform& transform, math::float3 worldUp)
+	void Camera::SetTransform(const Transform& transform, float3 worldUp)
 	{
-		using namespace math;
-
 		float r[3]{};
 		store(r, transform.EulerAngles);
 
@@ -38,7 +34,7 @@ namespace koi
 		Near   = nearZ;
 		Far    = farZ;
 
-		Projection = math::float4x4::perspective(projection(
+		Projection = float4x4::perspective(projection(
 			frustum::field_of_view_y(fovYRad, aspect, nearZ, farZ),
 			zclip::zero  // D3D depth range [0, 1]
 		));

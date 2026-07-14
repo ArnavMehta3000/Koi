@@ -8,8 +8,8 @@ namespace koi
 {
 	World::World()
 	{
-		m_bounds.Min = math::float3(FLT_MAX, FLT_MAX, FLT_MAX);
-		m_bounds.Max = math::float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		m_bounds.Min = float3(FLT_MAX, FLT_MAX, FLT_MAX);
+		m_bounds.Max = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		// Cascade query: parents are recomputed before their children, so a single
 		// pass produces correct world transforms with no manual dirty tracking
@@ -41,11 +41,11 @@ namespace koi
 		MeshHandle handle = world.m_meshRegistry.GetOrLoad(kMeshPath, device, &world.m_bounds);
 		e.set<MeshRef>({ kMeshPath, handle });
 
-		const math::float3 center = world.m_bounds.Center();
+		const float3 center = world.m_bounds.Center();
 		const f32 radius = world.m_bounds.Radius();
 
 		world.m_camera.SetProjection(0.8f, 16.0f / 9.0f, 0.05f, 1000.0f);
-		world.m_camera.SetView(center + math::float3(0.0f, 0.0f, -radius * 2.5f), center);
+		world.m_camera.SetView(center + float3(0.0f, 0.0f, -radius * 2.5f), center);
 
 		return world;
 	}
@@ -57,7 +57,7 @@ namespace koi
 
 		m_transformQuery.each([](const Transform& local, const WorldTransform* parentWorld, WorldTransform& worldXform)
 		{
-			math::float4x4 localMat = local.ToMatrix();
+			float4x4 localMat = local.ToMatrix();
 			worldXform.Value = parentWorld ? localMat * parentWorld->Value : localMat;
 		});
 	}

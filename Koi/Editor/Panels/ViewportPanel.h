@@ -24,7 +24,7 @@ namespace koi
 		[[nodiscard]] inline const Camera& GetCamera() const { return m_camera; }
 
 		const ViewportTarget* PrepareFrame(CommandList& cmd);
-		void FrameBounds(const math::AABB& bounds);
+		void FrameBounds(const AABB& bounds);
 		void Update(f32 dt, const InputManager& input);
 
 	private:

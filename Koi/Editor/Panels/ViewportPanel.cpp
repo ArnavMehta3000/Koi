@@ -130,9 +130,9 @@ namespace koi
 		ImGui::PopStyleVar();
 	}
 
-	void ViewportPanel::FrameBounds(const math::AABB& bounds)
+	void ViewportPanel::FrameBounds(const AABB& bounds)
 	{
-		const math::float3 center = bounds.Center();
+		const float3 center = bounds.Center();
 		const f32 radius = bounds.Radius();
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);

@@ -10,7 +10,7 @@ namespace koi
 	// Mirrors the HLSL b0 root-constant layout used by the default mesh shaders.
 	struct MeshPushConstants
 	{
-		math::float4x4 MVP;
+		float4x4 MVP;
 		u32 VertexBufferIndex;
 		DescriptorIndex BaseColorIndex;
 		//DescriptorIndex MetallicRoughnessIndex;
@@ -69,8 +69,8 @@ namespace koi
 					RenderContext* ctx = it.param<RenderContext>();
 
 					MeshPushConstants pc{ .SamplerIndex = ctx->Resources->LinearWrapSampler };
-					pc.MVP = math::mul(worldXform.Value, ctx->Camera->ViewProjection);
-					pc.MVP = math::transpose(pc.MVP);
+					pc.MVP = mul(worldXform.Value, ctx->Camera->ViewProjection);
+					pc.MVP = transpose(pc.MVP);
 					pc.VertexBufferIndex = mesh->VertexBufferSRV;
 
 					ctx->Cmd->SetIndexBuffer(mesh->IndexBuffer);

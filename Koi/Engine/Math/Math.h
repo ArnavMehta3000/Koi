@@ -12,9 +12,9 @@
 #include <algorithm>
 #include <cmath>
 
-namespace koi::math
+namespace koi
 {
-	// Pull hlslpp types into Koi's math namespace
+	// Pull hlslpp types into Koi's namespace
 	using namespace hlslpp;
 
 	struct AABB

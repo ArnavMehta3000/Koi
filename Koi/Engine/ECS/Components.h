@@ -7,7 +7,7 @@ namespace koi
 {
 	struct WorldTransform
 	{
-		math::float4x4 Value = math::float4x4::identity();
+		float4x4 Value = float4x4::identity();
 	};
 
 	struct MeshRef

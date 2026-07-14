@@ -127,7 +127,7 @@ namespace koi
 				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, posAcc,
 					[&](const fastgltf::math::fvec3& pos, std::size_t i)
 					{
-						vertices[i].Position = math::float3(pos.x(), pos.y(), pos.z());
+						vertices[i].Position = float3(pos.x(), pos.y(), pos.z());
 						sub.Bounds.Expand(vertices[i].Position);
 					});
 
@@ -138,7 +138,7 @@ namespace koi
 					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, acc,
 						[&](const fastgltf::math::fvec3& n, std::size_t i)
 						{
-							vertices[i].Normal = math::float3(n.x(), n.y(), n.z());
+							vertices[i].Normal = float3(n.x(), n.y(), n.z());
 						});
 				}
 				else
@@ -153,7 +153,7 @@ namespace koi
 					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(*Asset, acc,
 						[&](const fastgltf::math::fvec2& uv, std::size_t i)
 						{
-							vertices[i].UV = math::float2(uv.x(), uv.y());
+							vertices[i].UV = float2(uv.x(), uv.y());
 						});
 				}
 				else
@@ -169,7 +169,7 @@ namespace koi
 					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec4>(*Asset, acc,
 						[&](const fastgltf::math::fvec4& t, std::size_t i)
 						{
-							vertices[i].Tangent = math::float4(t.x(), t.y(), t.z(), t.w());
+							vertices[i].Tangent = float4(t.x(), t.y(), t.z(), t.w());
 						});
 					hasTangent = true;
 				}
@@ -207,7 +207,7 @@ namespace koi
 					//TODO: MikkTSpace tangent generation
 					for (u32 i = 0; i < vertexCount; ++i)
 					{
-						vertices[i].Tangent = math::float4(1.0f, 0.0f, 0.0f, 0.0f);
+						vertices[i].Tangent = float4(1.0f, 0.0f, 0.0f, 0.0f);
 					}
 				}
 
@@ -246,7 +246,7 @@ namespace koi
 
 			// PBR
 			auto& pbr = gltfMat.pbrData;
-			mat.MaterialConstants.BaseColorFactor = math::float4(
+			mat.MaterialConstants.BaseColorFactor = float4(
 				pbr.baseColorFactor[0], pbr.baseColorFactor[1],
 				pbr.baseColorFactor[2], pbr.baseColorFactor[3]);
 
@@ -277,7 +277,7 @@ namespace koi
 			if (gltfMat.emissiveTexture)
 			{
 				mat.EmissiveTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.emissiveTexture->textureIndex));
-				mat.MaterialConstants.EmissiveFactor = math::float3(gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
+				mat.MaterialConstants.EmissiveFactor = float3(gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
 			}
 
 			model.Materials.push_back(std::move(mat));

@@ -6,7 +6,7 @@
 
 namespace koi
 {
-	MeshHandle MeshRegistry::GetOrLoad(const std::string& path, GfxDevice& device, math::AABB* outBoundsIfNew)
+	MeshHandle MeshRegistry::GetOrLoad(const std::string& path, GfxDevice& device, AABB* outBoundsIfNew)
 	{
 		if (auto it = m_pathToHandle.find(path); it != m_pathToHandle.end())
 			return it->second;

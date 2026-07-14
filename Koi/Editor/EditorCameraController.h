@@ -21,11 +21,11 @@ namespace koi
 		void ToggleMode();
 
 		// Set initial first-person position and look angles (yaw/pitch in radians)
-		void SetFirstPersonPosition(math::float3 position, f32 yaw = 0.0f, f32 pitch = 0.0f);
-		void SetOrbitTarget(math::float3 target, f32 radius = 5.0f, f32 yaw = 0.0f, f32 pitch = 0.3f);
+		void SetFirstPersonPosition(float3 position, f32 yaw = 0.0f, f32 pitch = 0.0f);
+		void SetOrbitTarget(float3 target, f32 radius = 5.0f, f32 yaw = 0.0f, f32 pitch = 0.3f);
 
 		[[nodiscard]] CameraMode    GetMode()        const noexcept { return m_mode; }
-		[[nodiscard]] math::float3  GetOrbitTarget() const noexcept { return m_orbitTarget; }
+		[[nodiscard]] float3  GetOrbitTarget() const noexcept { return m_orbitTarget; }
 		[[nodiscard]] f32           GetOrbitRadius() const noexcept { return m_orbitRadius; }
 
 		// Returns true when the controller wants the cursor to be locked (FP mode + RMB)
@@ -58,12 +58,12 @@ namespace koi
 	private:
 		Camera*      m_camera          = nullptr;
 		CameraMode   m_mode            = CameraMode::Orbit;
-		f32          m_yaw             = 0.0f;
-		f32          m_pitch           = 0.0f;
-		math::float3 m_fpPosition{};
-		math::float3 m_orbitTarget{};
-		f32          m_orbitRadius     = 5.0f;
-		bool         m_prevToggleKey   = false;
-		bool         m_wantsCursorLock = false;
+		f32   m_yaw             = 0.0f;
+		f32   m_pitch           = 0.0f;
+		float3 m_fpPosition{};
+		float3 m_orbitTarget{};
+		f32   m_orbitRadius     = 5.0f;
+		bool  m_prevToggleKey   = false;
+		bool  m_wantsCursorLock = false;
 	};
 }

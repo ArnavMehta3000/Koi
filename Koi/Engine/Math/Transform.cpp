@@ -3,10 +3,8 @@
 
 namespace koi
 {
-	math::float4x4 Transform::ToMatrix() const
+	float4x4 Transform::ToMatrix() const
 	{
-		using namespace math;
-
 		float4x4 S = float4x4::scale(Scale);
 
 		// Extract radian components for the individual rotation calls

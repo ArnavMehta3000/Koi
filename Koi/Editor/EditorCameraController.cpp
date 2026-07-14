@@ -25,10 +25,10 @@ namespace koi
 	static constexpr MouseButton kORBPanButton = MouseButton::Middle;
 
 	// Spherical → cartesian offset for the orbit camera (left-handed, Y-up)
-	static math::float3 SphericalOffset(f32 yaw, f32 pitch, f32 radius)
+	static float3 SphericalOffset(f32 yaw, f32 pitch, f32 radius)
 	{
 		const f32 cp = cosf(pitch);
-		return math::float3(
+		return float3(
 			radius * sinf(yaw) * cp,
 			radius * sinf(pitch),
 			radius * cosf(yaw) * cp
@@ -42,7 +42,7 @@ namespace koi
 		assert(m_camera && "Null camera passed to CameraController");
 	}
 
-	void CameraController::SetFirstPersonPosition(math::float3 position, f32 yaw, f32 pitch)
+	void CameraController::SetFirstPersonPosition(float3 position, f32 yaw, f32 pitch)
 	{
 		m_fpPosition = position;
 		m_yaw        = yaw;
@@ -51,7 +51,7 @@ namespace koi
 			ApplyView();
 	}
 
-	void CameraController::SetOrbitTarget(math::float3 target, f32 radius, f32 yaw, f32 pitch)
+	void CameraController::SetOrbitTarget(float3 target, f32 radius, f32 yaw, f32 pitch)
 	{
 		m_orbitTarget = target;
 		m_orbitRadius = std::clamp(radius, OrbitMinRadius, OrbitMaxRadius);
@@ -67,7 +67,7 @@ namespace koi
 
 		if (mode == CameraMode::Orbit)
 		{
-			const math::float3 forward = math::normalize(m_camera->Forward);
+			const float3 forward = normalize(m_camera->Forward);
 			m_orbitTarget = m_fpPosition + forward * m_orbitRadius;
 		}
 		else
@@ -102,8 +102,6 @@ namespace koi
 
 	void CameraController::UpdateFirstPerson(f32 dt, const InputManager& input)
 	{
-		using namespace math;
-
 		const bool rmb    = input.IsMouseButtonDown(kFPVMoveButton);
 		m_wantsCursorLock = rmb;
 
@@ -149,8 +147,6 @@ namespace koi
 
 	void CameraController::UpdateOrbit(const InputManager& input)
 	{
-		using namespace math;
-
 		m_wantsCursorLock = false;
 
 		const float2 delta = input.GetMouseDelta();
@@ -189,14 +185,14 @@ namespace koi
 	{
 		if (!m_camera) return;
 
-		math::float3 position;
-		math::float3 target;
+		float3 position;
+		float3 target;
 
 		if (m_mode == CameraMode::FirstPerson)
 		{
 			const f32 cp = cosf(m_pitch), sp = sinf(m_pitch);
 			const f32 cy = cosf(m_yaw),   sy = sinf(m_yaw);
-			const math::float3 forward = math::normalize(math::float3(sy * cp, sp, cy * cp));
+			const float3 forward = normalize(float3(sy * cp, sp, cy * cp));
 
 			position = m_fpPosition;
 			target   = m_fpPosition + forward;

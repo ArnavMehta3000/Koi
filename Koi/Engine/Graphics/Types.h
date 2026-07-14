@@ -134,10 +134,10 @@ namespace koi
 
 	struct Vertex
 	{
-		math::float3 Position;
-		math::float3 Normal;
-		math::float4 Tangent;
-		math::float2 UV;
+		float3 Position;
+		float3 Normal;
+		float4 Tangent;
+		float2 UV;
 	};
 
 	struct ImageAsset
@@ -156,12 +156,12 @@ namespace koi
 		enum class AlphaMode { Opaque, Mask, Blend };
 		struct Constants
 		{
-			math::float4 BaseColorFactor   = math::float4(1.0f, 1.0f, 1.0, 1.0f);
+			float4 BaseColorFactor         = float4(1.0f, 1.0f, 1.0, 1.0f);
 			f32          MetallicFactor    = 1.0f;
 			f32          RoughnessFactor   = 1.0f;
 			f32          NormalScale       = 1.0f;
 			f32          OcclusionStrength = 1.0f;
-			math::float3 EmissiveFactor    = math::float3(0.0f, 0.0f, 0.0f);
+			float3 EmissiveFactor          = float3(0.0f, 0.0f, 0.0f);
 			f32          AlphaCutoff       = 0.5f;
 		};
 
@@ -183,7 +183,7 @@ namespace koi
 		u32 IndexCount    = 0;
 		u32 VertexOffset  = 0;
 		i32 MaterialIndex = -1;   // index into Scene::Materials, -1 = default
-		math::AABB Bounds;
+		AABB Bounds;
 	};
 
 	struct Mesh
@@ -192,7 +192,7 @@ namespace koi
 		std::vector<SubMesh> SubMeshes;
 		std::vector<Vertex> Vertices;
 		std::vector<u32> Indices;
-		math::AABB Bounds;
+		AABB Bounds;
 		u32 VertexCount = 0;
 		u32 IndexCount = 0;
 	};
@@ -203,7 +203,7 @@ namespace koi
 		std::vector<Mesh> Meshes;
 		std::vector<Material> Materials;
 		std::vector<ImageAsset> Images;
-		math::AABB Bounds;
+		AABB Bounds;
 	};
 }
 KOI_ENABLE_ENUM_FLAGS(koi::TextureUsage);

@@ -22,7 +22,7 @@ namespace koi
 		MeshRegistry& operator=(MeshRegistry&&) noexcept = default;
 
 		// Returns the existing handle if `path` was already loaded, otherwise loads + uploads it
-		[[nodiscard]] MeshHandle GetOrLoad(const std::string& path, GfxDevice& device, math::AABB* outBoundsIfNew = nullptr);
+		[[nodiscard]] MeshHandle GetOrLoad(const std::string& path, GfxDevice& device, AABB* outBoundsIfNew = nullptr);
 
 		[[nodiscard]] const GPUMesh* Get(MeshHandle handle) const { return m_meshes.Get(handle); }
 
