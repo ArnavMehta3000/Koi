@@ -1,6 +1,5 @@
 #include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
-#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
 #include <imgui.h>
 #include <functional>
@@ -20,27 +19,28 @@ namespace koi
 		World* world = m_game->GetEditorWorld();
 		if (!world) return;
 
-		flecs::world& ecs = world->GetECS();
+		ECS& ecs = world->GetECS();
 
-		// Reparent requests are collected while drawing the tree and applied
-		// afterwards, so we never mutate hierarchy relationships mid-iteration.
-		flecs::entity pendingChild{};
-		flecs::entity pendingParent{};
+		// Make modifications at end of draw
+		Entity pendingChild;
+		Entity pendingParent;
 
-		std::function<void(flecs::entity)> DrawNode = [&](flecs::entity entity)
+		auto DrawNode = [&](this auto&& self, Entity entity)
 		{
 			bool hasChildren = false;
-			entity.children([&](flecs::entity) { hasChildren = true; });
+			entity.children([&](Entity) { hasChildren = true; });
 
 			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow
-				| ImGuiTreeNodeFlags_SpanAvailWidth
-				| ImGuiTreeNodeFlags_DefaultOpen;
+										| ImGuiTreeNodeFlags_SpanAvailWidth
+										| ImGuiTreeNodeFlags_DefaultOpen;
+
 			if (!hasChildren)
 				flags |= ImGuiTreeNodeFlags_Leaf;
+
 			if (m_selected.is_alive() && m_selected.id() == entity.id())
 				flags |= ImGuiTreeNodeFlags_Selected;
 
-			const char* label = entity.name().length() > 0 ? entity.name().c_str() : "(unnamed)";
+			const char* label = entity.name().length() > 0 ? entity.name().c_str() : "<unnamed>";
 			bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(entity.id())), flags, "%s", label);
 
 			if (ImGui::IsItemClicked())
@@ -48,7 +48,7 @@ namespace koi
 
 			if (ImGui::BeginDragDropSource())
 			{
-				flecs::entity_t id = entity.id();
+				EntityID id = entity.id();
 				ImGui::SetDragDropPayload(kDragDropPayloadType, &id, sizeof(id));
 				ImGui::TextUnformatted(label);
 				ImGui::EndDragDropSource();
@@ -58,8 +58,8 @@ namespace koi
 			{
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kDragDropPayloadType))
 				{
-					flecs::entity_t draggedId = *static_cast<const flecs::entity_t*>(payload->Data);
-					flecs::entity dragged = ecs.entity(draggedId);
+					EntityID draggedId = *static_cast<EntityID*>(payload->Data);
+					Entity dragged = ecs.entity(draggedId);
 					if (dragged.is_alive() && draggedId != entity.id())
 					{
 						pendingChild  = dragged;
@@ -71,7 +71,8 @@ namespace koi
 
 			if (open)
 			{
-				entity.children([&](flecs::entity child) { DrawNode(child); });
+				// Recurse
+				entity.children(self);
 				ImGui::TreePop();
 			}
 		};
@@ -80,7 +81,8 @@ namespace koi
 
 		if (ImGui::Button("Add"))
 		{
-			flecs::entity e = ecs.entity();
+			// TODO: Replace with create function from the world
+			Entity e = ecs.entity();
 			e.set<Transform>({});
 			if (m_selected.is_alive())
 				e.child_of(m_selected);
@@ -91,12 +93,12 @@ namespace koi
 		if (ImGui::Button("Remove"))
 		{
 			m_selected.destruct();
-			m_selected = flecs::entity{};
+			m_selected = Entity{};
 		}
 		ImGui::EndDisabled();
 
 		ImGui::BeginChild("##tree", ImVec2(220.0f, 0.0f), ImGuiChildFlags_Borders);
-		ecs.each<Transform>([&](flecs::entity e, Transform&)
+		ecs.each<Transform>([&](Entity e, Transform&)
 		{
 			if (!e.parent())
 				DrawNode(e);

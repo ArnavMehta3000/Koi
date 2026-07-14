@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Engine/Interop/EditorPanel.h"
-#include <flecs.h>
+#include "Koi/Engine/ECS/World.h"
 
 namespace koi
 {
@@ -15,7 +15,7 @@ namespace koi
 		void OnDraw() override;
 
 	private:
-		AppBase*      m_game;
-		flecs::entity m_selected{};
+		AppBase* m_game = nullptr;
+		Entity   m_selected;
 	};
 }

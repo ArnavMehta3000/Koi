@@ -48,7 +48,7 @@ namespace koi::editor::internal
 				KOI_LOG_DEBUG("Configured engine roots:");
 				for (const auto& [i, path] : std::views::enumerate(engineRoots) | std::views::as_const)
 				{
-					KOI_LOG_DEBUG("\t{} : {}", i, path.string());
+					KOI_LOG_DEBUG("\t{}: {}", i, path.string());
 				}
 #endif
 

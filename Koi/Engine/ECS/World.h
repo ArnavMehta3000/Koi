@@ -13,6 +13,10 @@ namespace koi
 	class GfxDevice;
 	namespace fs = std::filesystem;
 
+	using ECS      = flecs::world;
+	using Entity   = flecs::entity;
+	using EntityID = flecs::entity_t;
+
 	class World
 	{
 	public:
@@ -34,14 +38,17 @@ namespace koi
 
 		[[nodiscard]] const GPUMesh* GetMesh(MeshHandle handle) const { return m_meshRegistry.Get(handle); }
 
-		[[nodiscard]] flecs::world&       GetECS()       { return m_ecs; }
-		[[nodiscard]] const flecs::world& GetECS() const { return m_ecs; }
+		[[nodiscard]] ECS&       GetECS()       { return m_ecs; }
+		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
 
 	private:
-		flecs::world m_ecs;
-		flecs::query<const Transform, const WorldTransform*, WorldTransform> m_transformQuery;
-		MeshRegistry m_meshRegistry;
-		math::AABB   m_bounds;
-		Camera       m_camera;
+		using TransformQuery = flecs::query<const Transform, const WorldTransform*, WorldTransform>;
+
+		ECS            m_ecs;
+		Entity         m_root;
+		TransformQuery m_transformQuery;
+		MeshRegistry   m_meshRegistry;
+		math::AABB     m_bounds;
+		Camera         m_camera;
 	};
 }

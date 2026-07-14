@@ -12,10 +12,13 @@ namespace koi
 		m_bounds.Max = math::float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		// Cascade query: parents are recomputed before their children, so a single
-		// pass produces correct world transforms with no manual dirty tracking.
+		// pass produces correct world transforms with no manual dirty tracking
 		m_transformQuery = m_ecs.query_builder<const Transform, const WorldTransform*, WorldTransform>()
 			.term_at(1).parent().cascade()
 			.build();
+
+		// Add root entity, disabled by default. Every other entity is parented to this
+		m_root = m_ecs.entity("WorldRoot");
 	}
 
 	std::optional<World> World::Load(const fs::path& /*path*/, GfxDevice& device)
@@ -30,9 +33,10 @@ namespace koi
 
 		KOI_LOG_INFO("Loading world (hardcoded): {}", kMeshPath);
 
-		flecs::entity e = world.m_ecs.entity("DamagedHelmet");
-		e.set<Transform>({});
-		e.set<WorldTransform>({});
+		Entity e = world.m_ecs.entity("DamagedHelmet")
+			// .child_of(world.m_root)
+			.set<Transform>({})
+			.set<WorldTransform>({});
 
 		MeshHandle handle = world.m_meshRegistry.GetOrLoad(kMeshPath, device, &world.m_bounds);
 		e.set<MeshRef>({ kMeshPath, handle });
