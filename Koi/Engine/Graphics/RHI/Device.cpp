@@ -734,6 +734,12 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
+		ComPtr<ID3D12DeviceRemovedExtendedDataSettings2> dredSettings;
+		DX_CHECK(::D3D12GetDebugInterface(IID_PPV_ARGS(&dredSettings)));
+
+		dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+		dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+
 		KOI_LOG_TRACE("Creating D3D12 device");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 		DX_CHECK(::D3D12CreateDevice(m_adapter.Get(), MIN_FEATURE_LEVEL, IID_PPV_ARGS(&m_device)));
