@@ -138,6 +138,7 @@ namespace koi::editor
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.ConfigWindowsMoveFromTitleBarOnly = true;
 		ImGui::StyleColorsDark();
 
@@ -216,6 +217,9 @@ namespace koi::editor
 
 		// Render ImGui
 		ImGui::Render();
+
+		ImGui::UpdatePlatformWindows();
+		ImGui::RenderPlatformWindowsDefault();
 
 		// ScenePass/TonemapPass render into the Viewport panel's offscreen target rather than
 		// the swapchain back buffer, so the back buffer needs to be bound/cleared explicitly here
