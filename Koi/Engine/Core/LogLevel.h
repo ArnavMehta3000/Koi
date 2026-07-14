@@ -5,7 +5,7 @@
 
 namespace koi
 {
-    enum class LogLevel
+	enum class LogLevel
 	{
 		Trace,
 		Debug,

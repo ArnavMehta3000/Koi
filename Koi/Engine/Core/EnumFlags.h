@@ -122,15 +122,15 @@ template <EnumFlagType E>
 #define KOI_FLAG_ENTRY(Name) ::koi::EnumFlagEntry{ Name, #Name },
 
 #define KOI_ENUM_FLAG_NAMES(EnumType, ...)                        \
-    template <>                                                   \
-    struct ::koi::EnumFlagNameTable<EnumType>                     \
-    {                                                             \
-        [[nodiscard]] static constexpr auto Entries() noexcept    \
-        {                                                         \
-            using enum EnumType;                                  \
-            return std::array{ __VA_ARGS__ };                     \
-        }                                                         \
-    }
+	template <>                                                   \
+	struct ::koi::EnumFlagNameTable<EnumType>                     \
+	{                                                             \
+		[[nodiscard]] static constexpr auto Entries() noexcept    \
+		{                                                         \
+			using enum EnumType;                                  \
+			return std::array{ __VA_ARGS__ };                     \
+		}                                                         \
+	}
 
 template <::koi::EnumFlagType E>
 [[nodiscard]] constexpr ::koi::EnumFlag<E> operator|(E lhs, E rhs) noexcept { return ::koi::EnumFlag<E>(lhs) | ::koi::EnumFlag<E>(rhs); }
