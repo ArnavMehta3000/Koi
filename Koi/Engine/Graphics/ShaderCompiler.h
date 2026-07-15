@@ -31,6 +31,5 @@ namespace koi
 	private:
 		ComPtr<IDxcUtils> m_dxcUtils;
 		ComPtr<IDxcCompiler3> m_dxcCompiler;
-		ComPtr<IDxcIncludeHandler> m_dxcIncludeHandler;
 	};
 }

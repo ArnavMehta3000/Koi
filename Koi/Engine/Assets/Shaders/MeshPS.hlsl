@@ -1,3 +1,8 @@
+﻿#ifndef _MESH_PS_HLSL_
+#define _MESH_PS_HLSL_
+
+#include "MeshPushConstants.hlsl"
+
 struct PSInput
 {
 	float4 Position    : SV_Position;
@@ -5,20 +10,32 @@ struct PSInput
 	float2 UV          : TEXCOORD0;
 };
 
-cbuffer PushConstants : register(b0)
+struct GPUMaterialData
 {
-	row_major float4x4 MVP;
-	uint               VertexBufferIndex;
-	uint               BaseColorTextureIndex;
-	uint               SamplerIndex;
+	float4 BaseColorFactor;
+	float4 EmissiveFactor;
+	float  MetallicFactor;
+	float  RoughnessFactor;
+	float  NormalScale;
+	float  OcclusionStrength;
+	float  AlphaCutoff;
+	uint   BaseColorIndex;
+	uint   MetallicRoughnessIndex;
+	uint   NormalIndex;
+	uint   OcclusionIndex;
+	uint   EmissiveIndex;
+	uint2  _Pad;
 };
 
 float4 PSMain(PSInput input) : SV_Target
 {
-	Texture2D    baseColorTex = ResourceDescriptorHeap[BaseColorTextureIndex];
+	StructuredBuffer<GPUMaterialData> materials = ResourceDescriptorHeap[MaterialBufferIndex];
+	GPUMaterialData mat = materials[MaterialIndex];
+
+	Texture2D    baseColorTex = ResourceDescriptorHeap[mat.BaseColorIndex];
 	SamplerState samp         = SamplerDescriptorHeap[SamplerIndex];
 
-	float3 albedo = baseColorTex.Sample(samp, input.UV).rgb;
+	float3 albedo = baseColorTex.Sample(samp, input.UV).rgb * mat.BaseColorFactor.rgb;
 
 	float3 N = normalize(input.WorldNormal);
 	float3 L = normalize(float3(0.4f, 0.8f, 0.3f));
@@ -29,3 +46,4 @@ float4 PSMain(PSInput input) : SV_Target
 
 	return float4(color, 1.0f);
 }
+#endif // _MESH_PS_HLSL_

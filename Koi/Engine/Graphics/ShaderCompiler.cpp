@@ -3,6 +3,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <d3d12shader.h>
 #include <unordered_map>
 #include <fstream>
@@ -31,6 +32,101 @@ namespace koi
 			{ ShaderType::Geometry, L"GSMain" },
 			{ ShaderType::Pixel   , L"PSMain" },
 			{ ShaderType::Compute , L"CSMain" },
+		};
+
+		class ShaderIncludeHandler final : public IDxcIncludeHandler
+		{
+		public:
+			ShaderIncludeHandler(ComPtr<IDxcUtils> utils, const fs::path& baseDir)
+				: m_utils(std::move(utils))
+			{
+				m_searchDirs.push_back(baseDir);
+			}
+
+			HRESULT STDMETHODCALLTYPE LoadSource(LPCWSTR fileName, IDxcBlob** includeSource) override
+			{
+				fs::path requested(fileName);
+
+				std::optional<fs::path> resolved;
+				if (requested.is_absolute() && fs::exists(requested))
+				{
+					resolved = requested;
+				}
+				else
+				{
+					// Shader-relative dirs then fall back to the project:// and engine:// VFS mounts
+					for (const fs::path& dir : m_searchDirs)
+					{
+						fs::path candidate = (dir / requested).lexically_normal();
+						if (fs::exists(candidate))
+						{
+							resolved = candidate;
+							break;
+						}
+					}
+
+					if (!resolved)
+					{
+						const std::string relative = requested.generic_string();
+						for (const std::string_view scheme : { "project", "engine" })
+						{
+							using namespace std::string_literals;
+							const std::string resolvePath = scheme.data() + "://"s + relative;
+
+							auto candidate = VirtualFileSystem::Get().TryResolveToDisk(resolvePath);
+							if (candidate && fs::exists(*candidate))
+							{
+								resolved = *candidate;
+								break;
+							}
+						}
+					}
+				}
+
+				if (!resolved)
+				{
+					KOI_LOG_ERROR("Shader include not found: {}", StringUtils::FromWide(fileName));
+					return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
+				}
+
+				ComPtr<IDxcBlobEncoding> blob;
+				HRESULT hr = m_utils->LoadFile(resolved->wstring().c_str(), nullptr, &blob);
+				if (FAILED(hr)) return hr;
+
+				m_searchDirs.push_back(resolved->parent_path());
+
+				*includeSource = blob.Detach();
+				return S_OK;
+			}
+
+			HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** object) override
+			{
+				if (riid == __uuidof(IDxcIncludeHandler) || riid == __uuidof(IUnknown))
+				{
+					*object = static_cast<IDxcIncludeHandler*>(this);
+					AddRef();
+					return S_OK;
+				}
+				*object = nullptr;
+				return E_NOINTERFACE;
+			}
+
+			ULONG STDMETHODCALLTYPE AddRef() override
+			{
+				return ++m_refCount;
+			}
+
+			ULONG STDMETHODCALLTYPE Release() override
+			{
+				const ULONG count = --m_refCount;
+				if (count == 0) delete this;
+				return count;
+			}
+
+		private:
+			ComPtr<IDxcUtils>     m_utils;
+			std::vector<fs::path> m_searchDirs;
+			std::atomic<ULONG>    m_refCount = 1;
 		};
 	}
 
@@ -91,12 +187,15 @@ namespace koi
 			&compilerArgs));
 
 		// Compile
+		ComPtr<IDxcIncludeHandler> includeHandler;
+		includeHandler.Attach(new ShaderIncludeHandler(m_dxcUtils, filePath.parent_path()));
+
 		ComPtr<IDxcResult> results;
 		DX_CHECK(m_dxcCompiler->Compile(
 			&source,
 			compilerArgs->GetArguments(),
 			compilerArgs->GetCount(),
-			m_dxcIncludeHandler.Get(),
+			includeHandler.Get(),
 			IID_PPV_ARGS(&results)));
 
 		// Print errors or warnings
@@ -195,6 +294,5 @@ namespace koi
 
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils)));
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler)));
-		DX_CHECK(m_dxcUtils->CreateDefaultIncludeHandler(&m_dxcIncludeHandler));
 	}
 }

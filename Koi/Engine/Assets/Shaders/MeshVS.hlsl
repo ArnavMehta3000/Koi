@@ -1,3 +1,8 @@
+﻿#ifndef _MESH_VS_HLSL_
+#define _MESH_VS_HLSL_
+
+#include "MeshPushConstants.hlsl"
+
 struct Vertex
 {
 	float4 Position; // .xyz
@@ -13,28 +18,34 @@ struct VSOutput
 	float2 UV          : TEXCOORD0;
 };
 
-// Root 32-bit constants (b0). hlslpp stores matrices row-major.
-cbuffer PushConstants : register(b0)
+struct FrameConstants
 {
-	float4x4 MVP;
-	uint VertexBufferIndex;
-	uint BaseColorIndex;
-	//uint MetallicRoughnessIndex;
-	//uint NormalIndex;
-	//uint OcclusionIndex;
-	//uint EmissiveIndex;
-	uint SamplerIndex;
+	row_major float4x4 ViewProjection;
+	float4             CameraPosition;
+};
+
+struct PerObjectData
+{
+	row_major float4x4 World;
+	row_major float4x4 NormalMatrix; // transpose(inverse(World)) - only the upper 3x3 is used
 };
 
 VSOutput VSMain(uint vertexId : SV_VertexID)
 {
-	StructuredBuffer<Vertex> vertices = ResourceDescriptorHeap[VertexBufferIndex];
+	StructuredBuffer<Vertex>        vertices = ResourceDescriptorHeap[VertexBufferIndex];
+	ConstantBuffer<FrameConstants>  frame    = ResourceDescriptorHeap[FrameConstantsIndex];
+	StructuredBuffer<PerObjectData> objects  = ResourceDescriptorHeap[ObjectBufferIndex];
+
 	Vertex v = vertices[vertexId];
+	PerObjectData obj = objects[ObjectIndex];
+
+	float4 worldPos = mul(float4(v.Position.xyz, 1.0f), obj.World);
 
 	VSOutput output;
-	output.Position    = mul(float4(v.Position.xyz, 1.0f), MVP);
-	output.WorldNormal = normalize(v.Normal.xyz);
+	output.Position    = mul(worldPos, frame.ViewProjection);
+	output.WorldNormal = normalize(mul(v.Normal.xyz, (float3x3)obj.NormalMatrix));
 	output.UV          = v.UV.xy;
 
 	return output;
 }
+#endif // _MESH_VS_HLSL_
