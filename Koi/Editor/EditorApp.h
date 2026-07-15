@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Interop/RendererOverlay.h"

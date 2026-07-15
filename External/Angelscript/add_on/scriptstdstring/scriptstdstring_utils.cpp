@@ -1,4 +1,4 @@
-#include <assert.h>
+﻿#include <assert.h>
 #include "scriptstdstring.h"
 #include "../scriptarray/scriptarray.h"
 #include <stdio.h>

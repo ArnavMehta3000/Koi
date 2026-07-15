@@ -1,4 +1,4 @@
-package("hlslppmath")  -- Using name hlslppmath instead of hlslpp to prevent xmake package conflict
+﻿package("hlslppmath")  -- Using name hlslppmath instead of hlslpp to prevent xmake package conflict
 	set_kind("library", { headeronly = true })
 	set_homepage("https://github.com/redorav/hlslpp")
     set_description("Math library using hlsl syntax with SSE/NEON support")

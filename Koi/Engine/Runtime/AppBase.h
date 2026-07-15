@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/CommandLine.h"

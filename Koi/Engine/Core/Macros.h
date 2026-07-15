@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define KOI_INTERNAL_STRINGIFY(x) #x
 #define KOI_STRINGIFY(x) KOI_INTERNAL_STRINGIFY(x)

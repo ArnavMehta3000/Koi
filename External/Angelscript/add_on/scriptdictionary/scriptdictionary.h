@@ -1,4 +1,4 @@
-#ifndef SCRIPTDICTIONARY_H
+﻿#ifndef SCRIPTDICTIONARY_H
 #define SCRIPTDICTIONARY_H
 
 // The dictionary class relies on the script string object, thus the script

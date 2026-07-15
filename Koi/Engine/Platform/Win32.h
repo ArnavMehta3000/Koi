@@ -1,4 +1,4 @@
-// Custom & cleaner Windows.h
+﻿// Custom & cleaner Windows.h
 #pragma once
 
 #include <SdkDdkVer.h>

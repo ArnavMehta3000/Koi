@@ -1,4 +1,4 @@
-#ifndef SCRIPTHANDLE_H
+﻿#ifndef SCRIPTHANDLE_H
 #define SCRIPTHANDLE_H
 
 #ifndef ANGELSCRIPT_H

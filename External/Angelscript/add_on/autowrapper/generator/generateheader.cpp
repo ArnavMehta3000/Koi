@@ -1,4 +1,4 @@
-//
+﻿//
 // This generator creates a header file that implements automatic
 // wrapper functions for the generic calling convention.
 //

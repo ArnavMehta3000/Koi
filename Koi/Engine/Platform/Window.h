@@ -1,4 +1,4 @@
-// Contains GLFW wrapper window class
+﻿// Contains GLFW wrapper window class
 
 #pragma once
 #include "Koi/Engine/Core/Core.h"

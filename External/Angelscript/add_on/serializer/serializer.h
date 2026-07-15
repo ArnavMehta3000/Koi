@@ -1,4 +1,4 @@
-//
+﻿//
 // CSerializer
 //
 // This code was based on the CScriptReloader written by FDsagizi

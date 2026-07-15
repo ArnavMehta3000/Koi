@@ -1,4 +1,4 @@
-#include "Koi/Engine/Runtime/Timer.h"
+﻿#include "Koi/Engine/Runtime/Timer.h"
 
 namespace koi
 {

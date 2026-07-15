@@ -1,4 +1,4 @@
-#include "scriptfile.h"
+﻿#include "scriptfile.h"
 #include <new>
 #include <assert.h>
 #include <string>

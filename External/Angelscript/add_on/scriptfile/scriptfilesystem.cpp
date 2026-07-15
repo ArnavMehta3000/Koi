@@ -1,4 +1,4 @@
-#include "scriptfilesystem.h"
+﻿#include "scriptfilesystem.h"
 #include "../autowrapper/aswrappedcall.h"
 #include <string.h> // strstr()
 

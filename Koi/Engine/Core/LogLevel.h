@@ -1,4 +1,4 @@
-// This file contains the LogLevel generated config and the LogLevel enum  + string conversion
+﻿// This file contains the LogLevel generated config and the LogLevel enum  + string conversion
 #pragma once
 #include "Generated/Engine/LogLevel.h"  // Xmake generated config file
 #include <string_view>

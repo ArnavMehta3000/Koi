@@ -1,4 +1,4 @@
-#include "Koi/Engine/IO/VirtualFileSystem.h"
+﻿#include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include <fstream>

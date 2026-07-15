@@ -1,4 +1,4 @@
-import("core.base.option")
+﻿import("core.base.option")
 import("lib.detect.find_tool")
 import("core.base.json")
 import("core.base.process")

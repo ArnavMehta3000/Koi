@@ -1,4 +1,4 @@
-cbuffer PushConstants : register(b0)
+﻿cbuffer PushConstants : register(b0)
 {
 	uint HDRTextureIndex;
 };

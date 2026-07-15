@@ -1,4 +1,4 @@
-// Includes common headers that are used throughout the engine
+﻿// Includes common headers that are used throughout the engine
 
 #pragma once
 #include "Koi/Engine/Core/Config.h"

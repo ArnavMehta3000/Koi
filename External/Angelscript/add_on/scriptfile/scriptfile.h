@@ -1,4 +1,4 @@
-//
+﻿//
 // CScriptFile
 //
 // This class encapsulates a FILE pointer in a reference counted class for

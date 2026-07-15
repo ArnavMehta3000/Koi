@@ -1,4 +1,4 @@
-// Includes auto-generated headers acting as global configuration
+﻿// Includes auto-generated headers acting as global configuration
 
 #pragma once
 #include "Generated/Engine/Version.h"  // Generated at build time

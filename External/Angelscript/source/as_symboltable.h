@@ -1,4 +1,4 @@
-/*
+﻿/*
    AngelCode Scripting Library
    Copyright (c) 2012-2021 Andreas Jonsson
 

@@ -1,4 +1,4 @@
-#include "Koi/Engine/Graphics/MeshRegistry.h"
+﻿#include "Koi/Engine/Graphics/MeshRegistry.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Graphics/MeshLoader.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"

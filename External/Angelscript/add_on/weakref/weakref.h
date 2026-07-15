@@ -1,4 +1,4 @@
-#ifndef SCRIPTWEAKREF_H
+﻿#ifndef SCRIPTWEAKREF_H
 #define SCRIPTWEAKREF_H
 
 // The CScriptWeakRef class was originally implemented by vroad in March 2013

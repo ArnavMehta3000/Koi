@@ -1,4 +1,4 @@
--- Shader compilation task
+﻿-- Shader compilation task
 task("compile_shaders")
 	set_category("plugin")
 	set_menu(

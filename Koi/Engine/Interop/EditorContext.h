@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include "Koi/Engine/Interop/ViewportTarget.h"
 #include <memory>

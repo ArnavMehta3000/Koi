@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <CLI/CLI.hpp>
 #include <filesystem>
 #include <functional>

@@ -1,4 +1,4 @@
-#include "Koi/Engine/Runtime/EntryPoint.h"
+﻿#include "Koi/Engine/Runtime/EntryPoint.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"

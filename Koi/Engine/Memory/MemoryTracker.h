@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Memory/MemoryTags.h"
 #include <array>
 #include <atomic>

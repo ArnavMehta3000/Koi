@@ -1,4 +1,4 @@
-#include "scriptsocket.h"
+﻿#include "scriptsocket.h"
 #include <assert.h>
 #include "../autowrapper/aswrappedcall.h"
 

@@ -1,4 +1,4 @@
-// Lightweight object wrapper
+﻿// Lightweight object wrapper
 #pragma once
 #include "Koi/Engine/Core/Types.h"
 

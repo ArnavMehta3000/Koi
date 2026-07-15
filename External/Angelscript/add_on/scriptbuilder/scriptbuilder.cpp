@@ -1,4 +1,4 @@
-#include "scriptbuilder.h"
+﻿#include "scriptbuilder.h"
 #include <vector>
 #include <assert.h>
 #ifdef _WIN32

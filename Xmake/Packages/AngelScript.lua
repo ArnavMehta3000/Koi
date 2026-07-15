@@ -1,4 +1,4 @@
-target("AngelScript")
+﻿target("AngelScript")
 	set_kind("static")
 	set_group("External")
 

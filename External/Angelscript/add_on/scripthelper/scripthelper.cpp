@@ -1,4 +1,4 @@
-#include <string.h>
+﻿#include <string.h>
 #include "scripthelper.h"
 #include <assert.h>
 #include <stdio.h>

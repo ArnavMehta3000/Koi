@@ -1,4 +1,4 @@
-set_xmakever("3.0.8")
+﻿set_xmakever("3.0.8")
 add_rules("mode.debug", "mode.release", "mode.releasedbg", "mode.profile")
 add_rules("plugin.compile_commands.autoupdate")
 

@@ -1,4 +1,4 @@
-#include <assert.h>
+﻿#include <assert.h>
 #include <string.h> // strstr
 #include <new> // new()
 #include <math.h>

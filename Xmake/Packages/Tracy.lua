@@ -1,4 +1,4 @@
-package("tracy-profiler")  -- xrepo package had broken hash, so copied it over and fixed hash
+﻿package("tracy-profiler")  -- xrepo package had broken hash, so copied it over and fixed hash
     set_homepage("https://github.com/wolfpld/tracy")
     set_description("C++ frame profiler")
     set_license("BSD-3-Clause")

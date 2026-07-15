@@ -1,4 +1,4 @@
-[[nodes]]
+﻿[[nodes]]
 name     = "DamagedHelmet"
 mesh     = "Assets/Models/DamagedHelmet.gltf"
 position = [0.0, 0.0, 0.0]

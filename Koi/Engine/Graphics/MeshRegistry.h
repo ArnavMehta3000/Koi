@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Core/Handle.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Math/Math.h"

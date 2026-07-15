@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <span>
