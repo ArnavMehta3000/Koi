@@ -1,4 +1,4 @@
-#include "Koi/Engine/ECS/World.h"
+﻿#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
@@ -58,7 +58,7 @@ namespace koi
 		m_transformQuery.each([](const Transform& local, const WorldTransform* parentWorld, WorldTransform& worldXform)
 		{
 			float4x4 localMat = local.ToMatrix();
-			worldXform.Value = parentWorld ? localMat * parentWorld->Value : localMat;
+			worldXform.Value = parentWorld ? mul(localMat, parentWorld->Value) : localMat;
 		});
 	}
 

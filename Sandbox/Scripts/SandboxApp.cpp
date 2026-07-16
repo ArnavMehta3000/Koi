@@ -1,4 +1,4 @@
-#include "SandboxApp.h"
+﻿#include "SandboxApp.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Runtime/CommandLine.h"
@@ -36,6 +36,7 @@ void SandboxApp::OnInit()
 
 	m_scenePass = &graph.AddPass<koi::ScenePass>(koi::ScenePass::Config
 	{
+		.Device    = &renderer.GetDevice(),
 		.Resources = &renderer.GetDefaultResources(),
 	});
 

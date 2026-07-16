@@ -1,4 +1,4 @@
-#include "Koi/Engine/Graphics/RHI/Device.h"
+﻿#include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
@@ -268,10 +268,18 @@ namespace koi
 		default: break;
 		}
 
-		CD3DX12_HEAP_PROPERTIES heap(heapType);
-		CD3DX12_RESOURCE_DESC rd = CD3DX12_RESOURCE_DESC::Buffer(desc.Size);
+		// Align 256 if its a constant buffer
+		const u64 allocSize = desc.Usage.Has(BufferUsage::Constant)
+			? MathUtils::AlignGPU256(desc.Size)
+			: desc.Size;
 
-		if (desc.Usage.Has(BufferUsage::Storage))
+		CD3DX12_HEAP_PROPERTIES heap(heapType);
+		CD3DX12_RESOURCE_DESC rd = CD3DX12_RESOURCE_DESC::Buffer(allocSize);
+
+		// UPLOAD/READBACK heaps cannot host UAV (or RTV) resources - only add the UAV flag for
+		// GPU-local Storage buffers; CPU-mapped Storage buffers (e.g. per-frame upload buffers) still
+		// get their SRV below without it, since a UAV isn't needed for read-only structured-buffer access
+		if (desc.Usage.Has(BufferUsage::Storage) && desc.Memory == MemoryUsage::GpuOnly)
 			rd.Flags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		DX_CHECK(m_device->CreateCommittedResource(
@@ -287,7 +295,7 @@ namespace koi
 			DX_CHECK(buf.Resource->Map(0, &readRange, &buf.MappedPtr));
 		}
 
-		// Bindless: structured-buffer SRV so the buffer is addressable via ResourceDescriptorHeap[].
+		// Bindless: structured-buffer SRV so the buffer is addressable via ResourceDescriptorHeap[]
 		if (desc.Usage.Has(BufferUsage::Storage) && desc.Stride > 0)
 		{
 			buf.SRVIndex = m_resourceHeap.Allocate();
@@ -306,6 +314,19 @@ namespace koi
 				},
 			};
 			m_device->CreateShaderResourceView(buf.Resource.Get(), &srvDesc, m_resourceHeap.CpuHandle(buf.SRVIndex));
+		}
+
+		// Bindless: CBV so the buffer is addressable via ResourceDescriptorHeap[] as ConstantBuffer<T>.
+		if (desc.Usage.Has(BufferUsage::Constant))
+		{
+			buf.CBVIndex = m_resourceHeap.Allocate();
+
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc
+			{
+				.BufferLocation = buf.GPUAddress,
+				.SizeInBytes    = static_cast<u32>(allocSize),
+			};
+			m_device->CreateConstantBufferView(&cbvDesc, m_resourceHeap.CpuHandle(buf.CBVIndex));
 		}
 
 		if (!desc.DebugName.empty())

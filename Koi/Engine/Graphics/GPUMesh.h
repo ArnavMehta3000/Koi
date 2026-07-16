@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Graphics/Types.h"
 #include <vector>
 
@@ -13,14 +13,9 @@ namespace koi
 		u32 IndexOffset;
 		i32 VertexOffset;
 
-		DescriptorIndex BaseColorSRV;
-		DescriptorIndex MetallicRoughnessSRV;
-		DescriptorIndex NormalSRV;
-		DescriptorIndex OcclusionSRV;
-		DescriptorIndex EmissiveSRV;
+		u32 MaterialIndex; // element index into the owning GPUMesh's MaterialBuffer
 	};
 
-	// Owns the GPU buffers and textures for a loaded model.
 	struct GPUMesh
 	{
 		GPUMesh() = default;
@@ -31,7 +26,9 @@ namespace koi
 
 		BufferHandle VertexBuffer;
 		BufferHandle IndexBuffer;
-		DescriptorIndex VertexBufferSRV = INVALID_DESCRIPTOR;
+		BufferHandle MaterialBuffer;
+		DescriptorIndex VertexBufferSRV   = INVALID_DESCRIPTOR;
+		DescriptorIndex MaterialBufferSRV = INVALID_DESCRIPTOR;
 		std::vector<TextureHandle> Textures;   // per-image GPU textures (not fallback)
 		std::vector<GPUMeshDraw> DrawItems;
 

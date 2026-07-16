@@ -1,4 +1,4 @@
-// hlslpp math types + engine math helpers
+﻿// hlslpp math types + engine math helpers
 #pragma once
 
 #include "Koi/Engine/Core/Config.h"
@@ -9,8 +9,7 @@
 #endif
 
 #include <hlsl++.h>
-#include <algorithm>
-#include <cmath>
+
 
 namespace koi
 {
@@ -22,30 +21,24 @@ namespace koi
 		float3 Min{};
 		float3 Max{};
 
-		void Expand(const float3 point)
-		{
-			Min = min(Min, point);
-			Max = max(Max, point);
-		}
+		void Expand(const float3 point);
+		void Expand(const AABB& other);
 
-		void Expand(const AABB& other)
-		{
-			Expand(other.Min);
-			Expand(other.Max);
-		}
-
-		[[nodiscard]] float3 Center() const
-		{
-			return (Min + Max) * 0.5f;
-		}
+		[[nodiscard]] float3 Center() const;
 
 		// Radius of a sphere that encloses this AABB, centered at Center()
-		[[nodiscard]] float Radius() const
-		{
-			const float3 extent = (Max - Min) * 0.5f;
-			f32 e[3]{};
-			store(e, extent);
-			return std::max(std::sqrt(e[0] * e[0] + e[1] * e[1] + e[2] * e[2]), 0.001f);
-		}
+		[[nodiscard]] f32 Radius() const;
+	};
+
+	using DecomposedTransform = std::tuple<float3, quaternion, float3>;  // pos, rot, scale
+
+	class MathUtils
+	{
+	public:
+		static DecomposedTransform DecomposeTransform(const float4x4& m);
+
+		// Aligns a value to the nearest multiple of 256
+		template <typename T>
+		static T AlignGPU256(T value) { return (value + static_cast<T>(255)) & ~static_cast<T>(255); }
 	};
 }

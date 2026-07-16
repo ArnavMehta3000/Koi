@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/ECS/Components.h"
 #include <flecs.h>
@@ -7,6 +7,7 @@
 namespace koi
 {
 	class  World;
+	class  GfxDevice;
 	struct Camera;
 	struct RendererResources;
 
@@ -15,11 +16,13 @@ namespace koi
 	public:
 		struct Config
 		{
-			const RendererResources* Resources = nullptr;
-			PipelineHandle           Pipeline;  // Optional override (falls back to Resources->MeshOpaquePipeline)
+			GfxDevice*                Device    = nullptr;
+			const RendererResources*  Resources = nullptr;
+			PipelineHandle            Pipeline;  // Optional override (falls back to Resources->MeshOpaquePipeline)
 		};
 
 		explicit ScenePass(const Config& config);
+		~ScenePass() override;
 
 		inline std::string_view GetName() const override { return "Scene"; }
 		inline std::span<const RenderPassAttachment> GetOutputs() const override { return m_outputs; }
@@ -34,15 +37,7 @@ namespace koi
 		[[nodiscard]] inline TextureHandle GetDepthOutput() const { return m_outputs[1].Texture; }
 
 	private:
-		// Per-frame context passed to the mesh render system via system::run()'s param,
-		// retrieved inside the system callback with it.param<RenderContext>().
-		struct RenderContext
-		{
-			CommandList*             Cmd;
-			const Camera*            Camera;
-			const RendererResources* Resources;
-			PipelineHandle           Pipeline;
-		};
+		void EnsureObjectCapacity(u32 frameSlot, u32 requiredCount);
 
 		Config        m_config;
 		World*        m_world  = nullptr;
@@ -51,7 +46,12 @@ namespace koi
 		u32           m_height = 0;
 		std::array<RenderPassAttachment, 2> m_outputs;
 
-		flecs::world_t* m_queryWorld = nullptr;  // raw ecs world the cached system below was built against
+		// Per-frame-in-flight, CPU-mapped (MemoryUsage::CpuToGpu) GPU buffers
+		FrameArray<BufferHandle> m_frameConstantsBuffers{};  // CBV, fixed size (sizeof(FrameConstants))
+		FrameArray<BufferHandle> m_objectBuffers{};          // SRV, grown on demand
+		FrameArray<u32>          m_objectCapacity{};         // element capacity of m_objectBuffers[i]
+
+		flecs::world_t* m_queryWorld = nullptr;
 		flecs::system m_renderSystem;
 	};
 }

@@ -10,23 +10,6 @@ struct PSInput
 	float2 UV          : TEXCOORD0;
 };
 
-struct GPUMaterialData
-{
-	float4 BaseColorFactor;
-	float4 EmissiveFactor;
-	float  MetallicFactor;
-	float  RoughnessFactor;
-	float  NormalScale;
-	float  OcclusionStrength;
-	float  AlphaCutoff;
-	uint   BaseColorIndex;
-	uint   MetallicRoughnessIndex;
-	uint   NormalIndex;
-	uint   OcclusionIndex;
-	uint   EmissiveIndex;
-	uint2  _Pad;
-};
-
 float4 PSMain(PSInput input) : SV_Target
 {
 	StructuredBuffer<GPUMaterialData> materials = ResourceDescriptorHeap[MaterialBufferIndex];

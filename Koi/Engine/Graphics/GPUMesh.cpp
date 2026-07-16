@@ -1,8 +1,10 @@
-#include "Koi/Engine/Graphics/GPUMesh.h"
+﻿#include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <cassert>
 
@@ -10,8 +12,8 @@ namespace koi
 {
 	GPUMesh GPUMesh::Upload(GfxDevice& device, const ModelAsset& model)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-		GfxDevice::UploadContext& upload = device.GetUploadContext();
 
 		const DescriptorIndex fallbackAlbedoSRV = [&device]()
 		{
@@ -27,6 +29,7 @@ namespace koi
 		std::vector<DescriptorIndex> imageSRVs;
 		imageSRVs.reserve(model.Images.size());
 
+		GfxDevice::UploadContext& upload = device.GetUploadContext();
 		upload.Begin();
 
 		// --- Create GPU textures --- 
@@ -53,6 +56,54 @@ namespace koi
 			}
 		}
 
+		// --- Build one GPUMaterialData per model material (shared across however many submeshes use it) ---
+		auto lookupSRV = [&](const Material& mat, DescriptorIndex Material::* textureIdxMember) -> DescriptorIndex
+		{
+			// .* dereferences pointer to member, giving the value of the member for this material
+			const u32 imgIdx = mat.*textureIdxMember;
+			return imgIdx < imageSRVs.size() ? imageSRVs[imgIdx] : INVALID_DESCRIPTOR;
+		};
+
+		std::vector<GPUMaterialData> materials;
+		materials.reserve(model.Materials.size() + 1);
+		for (const Material& mat : model.Materials)
+		{
+			const DescriptorIndex albedoSRV = lookupSRV(mat, &Material::BaseColorTextureIdx);
+			materials.emplace_back(GPUMaterialData
+			{
+				.BaseColorFactor        = mat.MaterialConstants.BaseColorFactor,
+				.EmissiveFactor         = float4(mat.MaterialConstants.EmissiveFactor, 0.0f),
+				.MetallicFactor         = mat.MaterialConstants.MetallicFactor,
+				.RoughnessFactor        = mat.MaterialConstants.RoughnessFactor,
+				.NormalScale            = mat.MaterialConstants.NormalScale,
+				.OcclusionStrength      = mat.MaterialConstants.OcclusionStrength,
+				.AlphaCutoff            = mat.MaterialConstants.AlphaCutoff,
+				.BaseColorIndex         = albedoSRV != INVALID_DESCRIPTOR ? albedoSRV : fallbackAlbedoSRV,
+				.MetallicRoughnessIndex = lookupSRV(mat, &Material::MetallicRoughnessTextureIdx),
+				.NormalIndex            = lookupSRV(mat, &Material::NormalTextureIdx),
+				.OcclusionIndex         = lookupSRV(mat, &Material::OcclusionTextureIdx),
+				.EmissiveIndex          = lookupSRV(mat, &Material::EmissiveTextureIdx),
+			});
+		}
+
+		// Fallback entry for submeshes with no (or an out-of-range) material index.
+		const u32 defaultMaterialIndex = static_cast<u32>(materials.size());
+		materials.emplace_back(GPUMaterialData
+		{
+			.BaseColorFactor        = float4(1.0f, 1.0f, 1.0f, 1.0f),
+			.EmissiveFactor         = float4(0.0f, 0.0f, 0.0f, 0.0f),
+			.MetallicFactor         = 1.0f,
+			.RoughnessFactor        = 1.0f,
+			.NormalScale            = 1.0f,
+			.OcclusionStrength      = 1.0f,
+			.AlphaCutoff            = 0.5f,
+			.BaseColorIndex         = fallbackAlbedoSRV,
+			.MetallicRoughnessIndex = INVALID_DESCRIPTOR,
+			.NormalIndex            = INVALID_DESCRIPTOR,
+			.OcclusionIndex         = INVALID_DESCRIPTOR,
+			.EmissiveIndex          = INVALID_DESCRIPTOR,
+		});
+
 		// Flatten all mesh vertices and indices into a single pair of buffers.
 		std::vector<Vertex> vertices;
 		std::vector<u32>    indices;
@@ -69,34 +120,15 @@ namespace koi
 			// Get sub mesh data
 			for (const SubMesh& sub : m.SubMeshes)
 			{
-				// Args mean: Pointer to a DescriptorIndex member of Material
-				auto lookupSRV = [&](DescriptorIndex Material::* textureIdxMember) -> std::optional<DescriptorIndex>
-				{
-					if (sub.MaterialIndex < 0 || static_cast<size_t>(sub.MaterialIndex) >= model.Materials.size())
-						return std::nullopt;
-
-
-					// .* dereferences pointer to member, giving the value of the member for this material
-					const u32 imgIdx = model.Materials[sub.MaterialIndex].*textureIdxMember;
-					return imgIdx < imageSRVs.size() ? std::optional(imageSRVs[imgIdx]) : std::nullopt;
-				};
-
-				std::optional<DescriptorIndex> albedoSRV             = lookupSRV(&Material::BaseColorTextureIdx);
-				std::optional<DescriptorIndex> metallicRoughnessSRV  = lookupSRV(&Material::MetallicRoughnessTextureIdx);
-				std::optional<DescriptorIndex> normalSRV             = lookupSRV(&Material::NormalTextureIdx);
-				std::optional<DescriptorIndex> occlusionSRV          = lookupSRV(&Material::OcclusionTextureIdx);
-				std::optional<DescriptorIndex> emissiveSRV           = lookupSRV(&Material::EmissiveTextureIdx);
+				const bool validMaterial = sub.MaterialIndex >= 0
+					&& static_cast<size_t>(sub.MaterialIndex) < model.Materials.size();
 
 				mesh.DrawItems.push_back(GPUMeshDraw
 				{
-					.IndexCount           = sub.IndexCount,
-					.IndexOffset          = baseIndex  + sub.IndexOffset,
-					.VertexOffset         = static_cast<i32>(baseVertex + sub.VertexOffset),
-					.BaseColorSRV         = albedoSRV.value_or(fallbackAlbedoSRV),
-					.MetallicRoughnessSRV = metallicRoughnessSRV.value_or(INVALID_DESCRIPTOR),
-					.NormalSRV            = normalSRV.value_or(INVALID_DESCRIPTOR),
-					.OcclusionSRV         = occlusionSRV.value_or(INVALID_DESCRIPTOR),
-					.EmissiveSRV          = emissiveSRV.value_or(INVALID_DESCRIPTOR),
+					.IndexCount    = sub.IndexCount,
+					.IndexOffset   = baseIndex  + sub.IndexOffset,
+					.VertexOffset  = static_cast<i32>(baseVertex + sub.VertexOffset),
+					.MaterialIndex = validMaterial ? static_cast<u32>(sub.MaterialIndex) : defaultMaterialIndex,
 				});
 			}
 		}
@@ -123,15 +155,25 @@ namespace koi
 			.DebugName = "Mesh IB",
 		});
 
-		upload.UploadBuffer(mesh.VertexBuffer, vertices.data(), vbSize);
-		upload.UploadBuffer(mesh.IndexBuffer,  indices.data(),  ibSize);
-		upload.End();
+		const u64 matSize = materials.size() * sizeof(GPUMaterialData);
+		mesh.MaterialBuffer = device.CreateBuffer(BufferDesc
+		{
+			.Size      = matSize,
+			.Stride    = sizeof(GPUMaterialData),
+			.Usage     = BufferUsage::Storage | BufferUsage::CopyDest,
+			.Memory    = MemoryUsage::GpuOnly,
+			.DebugName = "Mesh Materials",
+		});
+
 
 		mesh.VertexBufferSRV = device.Get(mesh.VertexBuffer)->SRVIndex;
 		assert(mesh.VertexBufferSRV != INVALID_DESCRIPTOR && "Vertex buffer has no bindless SRV");
 
-		KOI_LOG_DEBUG("GPUMesh uploaded: {} draws, {} verts, {} indices, {} textures",
-		              mesh.DrawItems.size(), vertices.size(), indices.size(), mesh.Textures.size());
+		mesh.MaterialBufferSRV = device.Get(mesh.MaterialBuffer)->SRVIndex;
+		assert(mesh.MaterialBufferSRV != INVALID_DESCRIPTOR && "Material buffer has no bindless SRV");
+
+		KOI_LOG_DEBUG("GPUMesh uploaded: {} draws, {} verts, {} indices, {} materials, {} textures",
+		              mesh.DrawItems.size(), vertices.size(), indices.size(), materials.size(), mesh.Textures.size());
 
 		return mesh;
 	}
@@ -142,6 +184,7 @@ namespace koi
 
 		device.Destroy(VertexBuffer);
 		device.Destroy(IndexBuffer);
+		device.Destroy(MaterialBuffer);
 
 		for (TextureHandle t : Textures)
 		{
@@ -150,6 +193,7 @@ namespace koi
 
 		Textures.clear();
 		DrawItems.clear();
-		VertexBufferSRV = INVALID_DESCRIPTOR;
+		VertexBufferSRV   = INVALID_DESCRIPTOR;
+		MaterialBufferSRV = INVALID_DESCRIPTOR;
 	}
 }
