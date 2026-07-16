@@ -76,6 +76,17 @@ namespace koi
 		host.HostShutdown();
 	}
 
+	Engine::Stats Engine::GetStats() const
+	{
+		return Stats
+		{
+			.DeltaTime  = m_timer.GetDeltaTime(),
+			.FPS        = m_timer.GetFPS(),
+			.FrameCount = m_timer.GetFrameCount(),
+			.TotalTime  = m_timer.GetTotalTime(),
+		};
+	}
+
 	void Engine::BeginFrame()
 	{
 		ZoneScoped;

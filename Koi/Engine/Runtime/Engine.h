@@ -13,6 +13,15 @@ namespace koi
 	class Engine : public NonCopyable
 	{
 	public:
+		struct Stats
+		{
+			f32 DeltaTime  = 0.0f;
+			u32 FPS        = 0;
+			u64 FrameCount = 0;
+			f64 TotalTime  = 0.0;
+		};
+
+	public:
 		Engine();
 		~Engine();
 
@@ -25,10 +34,8 @@ namespace koi
 		[[nodiscard]] inline const Window& GetWindow() const    { return *m_window;        }
 		[[nodiscard]] inline Renderer&     GetRenderer()        { return *m_renderer;      }
 		[[nodiscard]] inline InputManager& GetInputManager()    { return *m_inputManager;  }
-		[[nodiscard]] inline f32           GetDeltaTime() const { return m_timer.GetDeltaTime();  }
-		[[nodiscard]] inline f64           GetTime() const      { return m_timer.GetTotalTime();  }
-		[[nodiscard]] inline u64           GetFrameCount() const{ return m_timer.GetFrameCount(); }
-		[[nodiscard]] inline Timer&        GetTimer()           { return m_timer;                 }
+
+		[[nodiscard]] Stats GetStats() const;
 
 	private:
 		void BeginFrame();
