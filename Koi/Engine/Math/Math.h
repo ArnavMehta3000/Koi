@@ -15,6 +15,7 @@ namespace koi
 {
 	// Pull hlslpp types into Koi's namespace
 	using namespace hlslpp;
+	class World;
 
 	struct AABB
 	{
@@ -36,6 +37,7 @@ namespace koi
 	{
 	public:
 		static DecomposedTransform DecomposeTransform(const float4x4& m);
+		static void RegisterHLSLPPTypes(World& world);
 
 		// Aligns a value to the nearest multiple of 256
 		template <typename T>

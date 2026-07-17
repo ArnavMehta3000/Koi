@@ -17,6 +17,7 @@ namespace koi
 	using Entity   = flecs::entity;
 	using EntityID = flecs::entity_t;
 
+
 	class World
 	{
 	public:
@@ -40,6 +41,9 @@ namespace koi
 
 		[[nodiscard]] ECS&       GetECS()       { return m_ecs; }
 		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
+
+		template <typename T>  // TODO: Setup concept for components
+		inline void RegisterSerializableComponent() { T::ConfigureECS(*this); }
 
 	private:
 		using TransformQuery = flecs::query<const Transform, const WorldTransform*, WorldTransform>;

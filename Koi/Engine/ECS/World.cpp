@@ -11,6 +11,11 @@ namespace koi
 		m_bounds.Min = float3(FLT_MAX, FLT_MAX, FLT_MAX);
 		m_bounds.Max = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
+		// Configure world defaults
+		MathUtils::RegisterHLSLPPTypes(*this);
+
+		RegisterSerializableComponent<TF>();
+
 		// Cascade query: parents are recomputed before their children, so a single
 		// pass produces correct world transforms with no manual dirty tracking
 		m_transformQuery = m_ecs.query_builder<const Transform, const WorldTransform*, WorldTransform>()

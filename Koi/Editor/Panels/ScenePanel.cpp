@@ -1,4 +1,4 @@
-#include "Koi/Editor/Panels/ScenePanel.h"
+﻿#include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Math/Math.h"
 #include <imgui.h>
@@ -125,17 +125,16 @@ namespace koi
 			store(scl, local.Scale);
 			rot[0] *= kRadToDeg; rot[1] *= kRadToDeg; rot[2] *= kRadToDeg;
 
-			bool changed = false;
-			changed |= ImGui::DragFloat3("Position", pos, 0.05f);
-			changed |= ImGui::DragFloat3("Rotation", rot, 0.5f);
-			changed |= ImGui::DragFloat3("Scale",    scl, 0.05f);
+			bool posChanged = ImGui::DragFloat3("Position", &local.Position.x, 0.05f);
+			bool rotChanged = ImGui::DragFloat3("Rotation", &local.EulerAngles.x, 0.5f);
+			bool sclChanged = ImGui::DragFloat3("Scale",    &local.Scale.x, 0.05f);
 
-			if (changed)
-			{
-				local.Position    = float3{ pos[0], pos[1], pos[2] };
-				local.EulerAngles = float3{ rot[0] * kDegToRad, rot[1] * kDegToRad, rot[2] * kDegToRad };
-				local.Scale       = float3{ scl[0], scl[1], scl[2] };
-			}
+			//if (posChanged)
+			//	local.Position = float3{ pos[0], pos[1], pos[2] };
+			//if (rotChanged)
+			//	local.EulerAngles = float3{ rot[0] * kDegToRad, rot[1] * kDegToRad, rot[2] * kDegToRad };
+			//if (sclChanged)
+			//	local.Scale = float3{ scl[0], scl[1], scl[2] };
 
 			if (const MeshRef* meshRef = m_selected.try_get<MeshRef>())
 			{

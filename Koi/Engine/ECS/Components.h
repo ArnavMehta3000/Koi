@@ -5,6 +5,8 @@
 
 namespace koi
 {
+
+
 	struct WorldTransform
 	{
 		float4x4 Value = float4x4::identity();
