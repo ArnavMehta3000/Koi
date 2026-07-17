@@ -61,76 +61,7 @@ namespace koi
 	private:
 		UnderlyingType m_mask{ 0 };
 	};
-
-	template <typename E>
-struct EnumFlagEntry
-{
-		E                value;
-		std::string_view name;
-};
-
-template <typename E> EnumFlagEntry(E, std::string_view) -> EnumFlagEntry<E>;
-template <typename E> struct EnumFlagNameTable;
-
-template <typename E> concept HasEnumFlagNames = requires { EnumFlagNameTable<E>::Entries(); };
-
-template <EnumFlagType E>
-		requires HasEnumFlagNames<E>
-[[nodiscard]] std::string ToString(EnumFlag<E> flags)
-{
-		using U = std::underlying_type_t<E>;
-
-		std::string out = "[";
-		U           remaining = flags.Raw();
-		bool        first = true;
-
-		for (const auto& entry : EnumFlagNameTable<E>::Entries())
-		{
-			const U bits = static_cast<U>(entry.value);
-			// Skip 0/None sentinels
-			if (bits == 0) continue;
-
-			if ((remaining & bits) == bits) // All of this flag's bits present
-			{
-				if (!first) out += ", ";
-				out += entry.name;
-				first = false;
-				remaining &= static_cast<U>(~bits);
-			}
-		}
-
-		if (remaining != 0) // unregistered / leftover bits
-		{
-			if (!first) out += ", ";
-			out += std::format("0x{:X}", remaining);
-			first = false;
-		}
-
-		if (first) out += "None";
-		out += ']';
-		return out;
 }
-
-	template <EnumFlagType E>
-			requires HasEnumFlagNames<E>
-	[[nodiscard]] std::string ToString(E flag)
-	{
-			return ToString(EnumFlag<E>(flag));
-	}
-}
-
-#define KOI_FLAG_ENTRY(Name) ::koi::EnumFlagEntry{ Name, #Name },
-
-#define KOI_ENUM_FLAG_NAMES(EnumType, ...)                        \
-	template <>                                                   \
-	struct ::koi::EnumFlagNameTable<EnumType>                     \
-	{                                                             \
-		[[nodiscard]] static constexpr auto Entries() noexcept    \
-		{                                                         \
-			using enum EnumType;                                  \
-			return std::array{ __VA_ARGS__ };                     \
-		}                                                         \
-	}
 
 template <::koi::EnumFlagType E>
 [[nodiscard]] constexpr ::koi::EnumFlag<E> operator|(E lhs, E rhs) noexcept { return ::koi::EnumFlag<E>(lhs) | ::koi::EnumFlag<E>(rhs); }
