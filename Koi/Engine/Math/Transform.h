@@ -13,18 +13,4 @@ namespace koi
 
 		[[nodiscard]] float4x4 ToMatrix() const;
 	};
-
-	// Test new transform struct
-	struct TF
-	{
-		float3 Position;
-		quaternion Orientation;
-		float3 Scale;
-
-		// Configure the ECS world for this component, called once internally
-		static void ConfigureECS(World& world);
-	};
-
-	struct WorldTF: TF {};  // Tagged transforms
-	struct LocalTF: TF {};  // Tagged transforms
 }

@@ -18,14 +18,4 @@ namespace koi
 		float4x4 T = float4x4::translation(Position);
 		return mul(mul(S, R), T);
 	}
-
-	void TF::ConfigureECS(World& world)
-	{
-		// Asuming MathUtils::RegisterHLSLPPTypes has been called
-		auto& ecs = world.GetECS();
-		ecs.component<TF>("transform")
-			.member("position"   , &TF::Position)
-			.member("orientation", &TF::Orientation)
-			.member("scale"      , &TF::Scale);
-	}
 }
