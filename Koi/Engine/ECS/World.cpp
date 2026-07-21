@@ -19,13 +19,6 @@ namespace koi
 			.term_at(1).parent().cascade()
 			.build();
 
-		Transform tf{ .Position = float3(1.0f), .Scale = float3(2.0f) };
-		toml::table root;
-		SerializeInto(root, "World", tf);
-		std::stringstream ss;
-		ss << root;
-		std::string str = ss.str();
-
 		// Add root entity, disabled by default. Every other entity is parented to this
 		m_root = m_ecs.entity("WorldRoot");
 	}
