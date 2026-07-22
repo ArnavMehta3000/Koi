@@ -59,7 +59,7 @@ namespace koi
 		{
 			if (const toml::array* asArr = node.as_array(); asArr->size() == 4)
 			{
-				const toml::array* arr = asArr;
+				const toml::array& arr = *asArr;
 				return Vector4(
 					arr[0].value_or<f32>(0.0f),
 					arr[1].value_or<f32>(0.0f),
@@ -82,7 +82,7 @@ namespace koi
 		{
 			if (const toml::array* asArr = node.as_array(); asArr->size() == 4)
 			{
-				const toml::array* arr = asArr;
+				const toml::array& arr = *asArr;
 				return Quaternion(
 					arr[0].value_or<f32>(0.0f),
 					arr[1].value_or<f32>(0.0f),
