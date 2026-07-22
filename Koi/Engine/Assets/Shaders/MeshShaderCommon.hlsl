@@ -1,4 +1,4 @@
-#ifndef _MESH_SHADER_COMMON_HLSL_
+﻿#ifndef _MESH_SHADER_COMMON_HLSL_
 #define _MESH_SHADER_COMMON_HLSL_
 
 cbuffer PushConstants : register(b0)
