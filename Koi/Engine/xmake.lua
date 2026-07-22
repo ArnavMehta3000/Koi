@@ -2,14 +2,13 @@
 	set_kind("static")
 
 	add_options("LogLevel", "WithEditor")
-	add_deps("ImGui", "AngelScript", { public = true })
+	add_deps("ImGui", "AngelScript", "SimpleMath", { public = true })
 	add_packages(
 		"cli11",
 		"spdlog",
 		"toml++",
 		"dxc",
 		"stb",
-		"hlslppmath",
 		"tracy-profiler",
 		"glfw",
 		"fastgltf",

@@ -1,5 +1,5 @@
 ﻿-- Custom packages
-includes("Packages/hlslpp.lua")
+includes("Packages/SimpleMath.lua")
 includes("Packages/Tracy.lua")
 includes("Packages/dxc.lua")
 includes("Packages/ImGui.lua")

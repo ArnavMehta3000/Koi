@@ -30,9 +30,9 @@ namespace koi
 
 				return Transform
 				{
-					.Position = DeserializeOr(tbl, "position", float3(0.0f, 0.0f, 0.0f)),
-					.Rotation = DeserializeOr(tbl, "rotation", quaternion::identity()),
-					.Scale    = DeserializeOr(tbl, "scale", float3(1.0f, 1.0f, 1.0f))
+					.Position = DeserializeOr(tbl, "position", Vector3(0.0f, 0.0f, 0.0f)),
+					.Rotation = DeserializeOr(tbl, "rotation", Quaternion::Identity),
+					.Scale    = DeserializeOr(tbl, "scale", Vector3(1.0f, 1.0f, 1.0f))
 				};
 			}
 			return std::nullopt;

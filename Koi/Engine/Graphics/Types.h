@@ -118,10 +118,10 @@ namespace koi
 
 	struct Vertex
 	{
-		float3 Position;
-		float3 Normal;
-		float4 Tangent;
-		float2 UV;
+		Vector3 Position;
+		Vector3 Normal;
+		Vector4 Tangent;
+		Vector2 UV;
 	};
 
 	struct ImageAsset
@@ -140,12 +140,12 @@ namespace koi
 		enum class AlphaMode { Opaque, Mask, Blend };
 		struct Constants
 		{
-			float4 BaseColorFactor         = float4(1.0f, 1.0f, 1.0, 1.0f);
+			Vector4 BaseColorFactor         = Vector4(1.0f, 1.0f, 1.0, 1.0f);
 			f32          MetallicFactor    = 1.0f;
 			f32          RoughnessFactor   = 1.0f;
 			f32          NormalScale       = 1.0f;
 			f32          OcclusionStrength = 1.0f;
-			float3 EmissiveFactor          = float3(0.0f, 0.0f, 0.0f);
+			Vector3 EmissiveFactor          = Vector3(0.0f, 0.0f, 0.0f);
 			f32          AlphaCutoff       = 0.5f;
 		};
 

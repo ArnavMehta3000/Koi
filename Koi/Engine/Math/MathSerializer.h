@@ -5,41 +5,40 @@
 namespace koi
 {
 	template<>
-	struct Serializer<float2>
+	struct Serializer<Vector2>
 	{
-		static toml::array Serialize(const float2& f)
+		static toml::array Serialize(const Vector2& f)
 		{
-			interop::float2 f2(f);
-			return toml::array{ f2.x, f2.y };
+			return toml::array{ f.x, f.y };
 		}
 
-		static std::optional<float2> Deserialize(const toml::node& node)
+		static std::optional<Vector2> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* arr = node.as_array(); arr->size() == 2)
+			if (const toml::array* asArr = node.as_array(); asArr->size() == 2)
 			{
-				return float2(
-					(*arr)[0].value_or<f32>(0.0f),
-					(*arr)[1].value_or<f32>(0.0f));
+				const toml::array& arr = *asArr;
+				return Vector2(
+					arr[0].value_or<f32>(0.0f),
+					arr[1].value_or<f32>(0.0f));
 			}
 			return std::nullopt;
 		}
 	};
 
 	template<>
-	struct Serializer<float3>
+	struct Serializer<Vector3>
 	{
-		static toml::array Serialize(const float3& f)
+		static toml::array Serialize(const Vector3& f)
 		{
-			interop::float3 f3(f);
-			return toml::array{ f3.x, f3.y, f3.z };
+			return toml::array{ f.x, f.y, f.z };
 		}
 
-		static std::optional<float3> Deserialize(const toml::node& node)
+		static std::optional<Vector3> Deserialize(const toml::node& node)
 		{
 			if (const toml::array* asArr = node.as_array(); asArr->size() == 3)
 			{
 				const toml::array& arr = *asArr;
-				return float3(
+				return Vector3(
 					arr[0].value_or<f32>(0.0f),
 					arr[1].value_or<f32>(0.0f),
 					arr[2].value_or<f32>(0.0f));
@@ -49,53 +48,53 @@ namespace koi
 	};
 
 	template<>
-	struct Serializer<float4>
+	struct Serializer<Vector4>
 	{
-		static toml::array Serialize(const float4& f)
+		static toml::array Serialize(const Vector4& f)
 		{
-			interop::float4 f4(f);
-			return toml::array{ f4.x, f4.y, f4.z, f4.w };
+			return toml::array{ f.x, f.y, f.z, f.w };
 		}
 
-		static std::optional<float4> Deserialize(const toml::node& node)
+		static std::optional<Vector4> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* arr = node.as_array(); arr->size() == 4)
+			if (const toml::array* asArr = node.as_array(); asArr->size() == 4)
 			{
-				return float4(
-					(*arr)[0].value_or<f32>(0.0f),
-					(*arr)[1].value_or<f32>(0.0f),
-					(*arr)[2].value_or<f32>(0.0f),
-					(*arr)[3].value_or<f32>(0.0f));
+				const toml::array* arr = asArr;
+				return Vector4(
+					arr[0].value_or<f32>(0.0f),
+					arr[1].value_or<f32>(0.0f),
+					arr[2].value_or<f32>(0.0f),
+					arr[3].value_or<f32>(0.0f));
 			}
 			return std::nullopt;
 		}
 	};
 
 	template<>
-	struct Serializer<quaternion>
+	struct Serializer<Quaternion>
 	{
-		static toml::array Serialize(const quaternion& quat)
+		static toml::array Serialize(const Quaternion& q)
 		{
-			interop::float4 q(quat.xyzw);
 			return toml::array{ q.x, q.y, q.z, q.w };
 		}
 
-		static std::optional<quaternion> Deserialize(const toml::node& node)
+		static std::optional<Quaternion> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* arr = node.as_array(); arr->size() == 4)
+			if (const toml::array* asArr = node.as_array(); asArr->size() == 4)
 			{
-				return quaternion(
-					(*arr)[0].value_or<f32>(0.0f),
-					(*arr)[1].value_or<f32>(0.0f),
-					(*arr)[2].value_or<f32>(0.0f),
-					(*arr)[3].value_or<f32>(0.0f));
+				const toml::array* arr = asArr;
+				return Quaternion(
+					arr[0].value_or<f32>(0.0f),
+					arr[1].value_or<f32>(0.0f),
+					arr[2].value_or<f32>(0.0f),
+					arr[3].value_or<f32>(0.0f));
 			}
 			return std::nullopt;
 		}
 	};
 
-	static_assert(Serializable<float2>);
-	static_assert(Serializable<float3>);
-	static_assert(Serializable<float4>);
-	static_assert(Serializable<quaternion>);
+	static_assert(Serializable<Vector2>);
+	static_assert(Serializable<Vector3>);
+	static_assert(Serializable<Vector4>);
+	static_assert(Serializable<Quaternion>);
 }

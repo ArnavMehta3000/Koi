@@ -4,45 +4,43 @@
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Core/Types.h"
 
-#if KOI_DEBUG
-	#define HLSLPP_ASSERT
-#endif
-
-#include <hlsl++.h>
+#include <directx/d3dx12.h>  // For interop types in SimpleMath
+#include <SimpleMath.h>
 
 namespace koi
 {
-	// Pull hlslpp types into Koi's namespace
-	using namespace hlslpp;
 	class World;
+
+	using Vector2    = DirectX::SimpleMath::Vector2;
+	using Vector3    = DirectX::SimpleMath::Vector3;
+	using Vector4    = DirectX::SimpleMath::Vector4;
+	using Matrix     = DirectX::SimpleMath::Matrix;
+	using Quaternion = DirectX::SimpleMath::Quaternion;
+	using Rectangle  = DirectX::SimpleMath::Rectangle;
+	using Plane      = DirectX::SimpleMath::Plane;
+	using Ray        = DirectX::SimpleMath::Ray;
+	using Color      = DirectX::SimpleMath::Color;
+	using Viewport   = DirectX::SimpleMath::Viewport;
 
 	struct AABB
 	{
-		float3 Min{};
-		float3 Max{};
+		Vector3 Min;
+		Vector3 Max;
 
-		void Expand(const float3 point);
+		void Expand(const Vector3& point);
 		void Expand(const AABB& other);
 
-		[[nodiscard]] float3 Center() const;
+		[[nodiscard]] Vector3 Center() const;
 
 		// Radius of a sphere that encloses this AABB, centered at Center()
 		[[nodiscard]] f32 Radius() const;
 	};
 
-	using DecomposedTransform = std::tuple<float3, quaternion, float3>;  // pos, rot, scale
-
 	class MathUtils
 	{
 	public:
-		static DecomposedTransform DecomposeTransform(const float4x4& m);
-
-		// ZXY Euler angles (radians) <-> quaternion, via DirectXMath (XMQuaternionRotationRollPitchYaw)
-		static quaternion QuaternionFromEulerZXY(const float3& radians);
-		static float3     ToEulerZXY(const quaternion& q);
-
 		// Aligns a value to the nearest multiple of 256
 		template <typename T>
-		static T AlignGPU256(T value) { return (value + static_cast<T>(255)) & ~static_cast<T>(255); }
+		static inline T AlignGPU256(T value) { return (value + static_cast<T>(255)) & ~static_cast<T>(255); }
 	};
 }

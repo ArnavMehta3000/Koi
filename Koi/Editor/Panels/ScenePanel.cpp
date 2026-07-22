@@ -119,20 +119,14 @@ namespace koi
 
 			Transform& local = m_selected.get_mut<Transform>();
 
-			if (m_eulerFor != m_selected.id())
-			{
-				store(m_eulerDeg, MathUtils::ToEulerZXY(local.Rotation));
-				m_eulerDeg[0] *= kRadToDeg; m_eulerDeg[1] *= kRadToDeg; m_eulerDeg[2] *= kRadToDeg;
-				m_eulerFor = m_selected.id();
-			}
+			Vector3 euler = local.Rotation.ToEuler() * kRadToDeg;
 
-			ImGui::DragFloat3("Position", &local.Position.x, 0.05f);
-			if (ImGui::DragFloat3("Rotation", m_eulerDeg, 0.5f))
+			ImGui::DragFloat3("Position", &local.Position.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
+			if (ImGui::DragFloat3("Rotation", &euler.x, 0.5f))
 			{
-				const float3 rad{ m_eulerDeg[0] * kDegToRad, m_eulerDeg[1] * kDegToRad, m_eulerDeg[2] * kDegToRad };
-				local.Rotation = MathUtils::QuaternionFromEulerZXY(rad);
+				local.Rotation = Quaternion::CreateFromYawPitchRoll(euler.y * kDegToRad, euler.x * kDegToRad, euler.z * kDegToRad);
 			}
-			ImGui::DragFloat3("Scale", &local.Scale.x, 0.05f);
+			ImGui::DragFloat3("Scale", &local.Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
 
 			if (const MeshRef* meshRef = m_selected.try_get<MeshRef>())
 			{

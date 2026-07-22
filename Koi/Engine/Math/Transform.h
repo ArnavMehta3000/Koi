@@ -7,10 +7,10 @@ namespace koi
 
 	struct Transform
 	{
-		float3     Position{ 0.0f, 0.0f, 0.0f };
-		quaternion Rotation = quaternion::identity();
-		float3     Scale   { 1.0f, 1.0f, 1.0f };
+		Vector3 Position    = Vector3::Zero;
+		Quaternion Rotation = Quaternion::Identity;
+		Vector3 Scale       = Vector3::One;
 
-		[[nodiscard]] float4x4 ToMatrix() const;
+		[[nodiscard]] Matrix ToMatrix() const;
 	};
 }

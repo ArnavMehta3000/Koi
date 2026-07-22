@@ -17,8 +17,5 @@ namespace koi
 	private:
 		AppBase* m_game = nullptr;
 		Entity   m_selected;
-
-		f32      m_eulerDeg[3]{};
-		EntityID m_eulerFor = 0;
 	};
 }

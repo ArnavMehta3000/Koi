@@ -124,7 +124,7 @@ namespace koi
 					gather->Objects.push_back(PerObjectData
 					{
 						.World        = worldXform.Value,
-						.NormalMatrix = transpose(inverse(worldXform.Value)),
+						.NormalMatrix = worldXform.Value.Invert().Transpose(),
 					});
 					gather->DrawInfos.push_back(DrawInfo{ mesh, objectIndex });
 				});
@@ -151,7 +151,7 @@ namespace koi
 		const FrameConstants frameConstants
 		{
 			.ViewProjection = m_camera->ViewProjection,
-			.CameraPosition = float4(m_camera->Position, 0.0f),
+			.CameraPosition = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
 		};
 		std::memcpy(frameConstantsBuf->MappedPtr, &frameConstants, sizeof(frameConstants));
 

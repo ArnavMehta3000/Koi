@@ -72,7 +72,7 @@ namespace koi
 			materials.emplace_back(GPUMaterialData
 			{
 				.BaseColorFactor        = mat.MaterialConstants.BaseColorFactor,
-				.EmissiveFactor         = float4(mat.MaterialConstants.EmissiveFactor, 0.0f),
+				.EmissiveFactor         = Vector4(mat.MaterialConstants.EmissiveFactor.x, mat.MaterialConstants.EmissiveFactor.y, mat.MaterialConstants.EmissiveFactor.z, 0.0f),
 				.MetallicFactor         = mat.MaterialConstants.MetallicFactor,
 				.RoughnessFactor        = mat.MaterialConstants.RoughnessFactor,
 				.NormalScale            = mat.MaterialConstants.NormalScale,
@@ -90,8 +90,8 @@ namespace koi
 		const u32 defaultMaterialIndex = static_cast<u32>(materials.size());
 		materials.emplace_back(GPUMaterialData
 		{
-			.BaseColorFactor        = float4(1.0f, 1.0f, 1.0f, 1.0f),
-			.EmissiveFactor         = float4(0.0f, 0.0f, 0.0f, 0.0f),
+			.BaseColorFactor        = Vector4::One,
+			.EmissiveFactor         = Vector4::Zero,
 			.MetallicFactor         = 1.0f,
 			.RoughnessFactor        = 1.0f,
 			.NormalScale            = 1.0f,

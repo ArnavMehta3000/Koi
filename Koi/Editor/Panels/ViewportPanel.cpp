@@ -132,7 +132,7 @@ namespace koi
 
 	void ViewportPanel::FrameBounds(const AABB& bounds)
 	{
-		const float3 center = bounds.Center();
+		const Vector3 center = bounds.Center();
 		const f32 radius = bounds.Radius();
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);

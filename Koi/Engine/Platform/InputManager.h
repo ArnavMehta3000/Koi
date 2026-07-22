@@ -36,9 +36,9 @@ namespace koi
 		[[nodiscard]] bool IsMouseButtonReleased(MouseButton btn) const noexcept;
 
 		// Delta and scroll reset to zero at the start of each frame.
-		[[nodiscard]] float2 GetMousePosition() const noexcept { return m_mousePos;    }
-		[[nodiscard]] float2 GetMouseDelta()    const noexcept { return m_mouseDelta;  }
-		[[nodiscard]] float2 GetScrollDelta()   const noexcept { return m_scrollDelta; }
+		[[nodiscard]] Vector2 GetMousePosition() const noexcept { return m_mousePos;    }
+		[[nodiscard]] Vector2 GetMouseDelta()    const noexcept { return m_mouseDelta;  }
+		[[nodiscard]] Vector2 GetScrollDelta()   const noexcept { return m_scrollDelta; }
 
 		void SetCursorVisible(bool visible);
 		void SetCursorLocked(bool locked);
@@ -59,10 +59,10 @@ namespace koi
 
 		EnumFlag<Modifier> m_modifiers{};
 
-		float2 m_mousePos{};
-		float2 m_mouseDelta{};
-		float2 m_scrollDelta{};
-		float2 m_scrollAccum{};
+		Vector2 m_mousePos{};
+		Vector2 m_mouseDelta{};
+		Vector2 m_scrollDelta{};
+		Vector2 m_scrollAccum{};
 
 		void* m_glfwWindow = nullptr;
 

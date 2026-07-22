@@ -25,10 +25,10 @@ namespace koi
 	static constexpr MouseButton kORBPanButton = MouseButton::Middle;
 
 	// Spherical → cartesian offset for the orbit camera (left-handed, Y-up)
-	static float3 SphericalOffset(f32 yaw, f32 pitch, f32 radius)
+	static Vector3 SphericalOffset(f32 yaw, f32 pitch, f32 radius)
 	{
 		const f32 cp = cosf(pitch);
-		return float3(
+		return Vector3(
 			radius * sinf(yaw) * cp,
 			radius * sinf(pitch),
 			radius * cosf(yaw) * cp
@@ -42,7 +42,7 @@ namespace koi
 		assert(m_camera && "Null camera passed to CameraController");
 	}
 
-	void CameraController::SetFirstPersonPosition(float3 position, f32 yaw, f32 pitch)
+	void CameraController::SetFirstPersonPosition(const Vector3& position, f32 yaw, f32 pitch)
 	{
 		m_fpPosition = position;
 		m_yaw        = yaw;
@@ -51,7 +51,7 @@ namespace koi
 			ApplyView();
 	}
 
-	void CameraController::SetOrbitTarget(float3 target, f32 radius, f32 yaw, f32 pitch)
+	void CameraController::SetOrbitTarget(const Vector3& target, f32 radius, f32 yaw, f32 pitch)
 	{
 		m_orbitTarget = target;
 		m_orbitRadius = std::clamp(radius, OrbitMinRadius, OrbitMaxRadius);
@@ -67,7 +67,8 @@ namespace koi
 
 		if (mode == CameraMode::Orbit)
 		{
-			const float3 forward = normalize(m_camera->Forward);
+			Vector3 forward = m_camera->Forward;
+			forward.Normalize();
 			m_orbitTarget = m_fpPosition + forward * m_orbitRadius;
 		}
 		else
@@ -108,7 +109,7 @@ namespace koi
 		// Mouse look - only while right mouse is held
 		if (rmb)
 		{
-			const float2 delta = input.GetMouseDelta();
+			const Vector2 delta = input.GetMouseDelta();
 			m_yaw   += delta.x * FpLookSensitivity;
 			m_pitch -= delta.y * FpLookSensitivity; // invert Y: drag up = look up
 			m_pitch  = std::clamp(m_pitch, -PitchLimit, PitchLimit);
@@ -119,9 +120,11 @@ namespace koi
 		const f32 cp = cosf(m_pitch), sp = sinf(m_pitch);
 		const f32 cy = cosf(m_yaw),   sy = sinf(m_yaw);
 
-		const float3 forward = normalize(float3(sy * cp, sp, cy * cp));
-		const float3 right   = normalize(float3(cy, 0.0f, -sy)); // perpendicular on XZ plane
-		const float3 worldUp = float3(0.0f, 1.0f, 0.0f);
+		Vector3 forward, right;
+		Vector3(sy * cp, sp, cy * cp).Normalize(forward);
+		Vector3(cy, 0.0f, -sy).Normalize(right);// perpendicular on XZ plane
+
+		const Vector3 worldUp = Vector3(0.0f, 1.0f, 0.0f);
 
 		// WASD + vertical movement
 		const f32 speed = FpMoveSpeed
@@ -149,7 +152,7 @@ namespace koi
 	{
 		m_wantsCursorLock = false;
 
-		const float2 delta = input.GetMouseDelta();
+		const Vector2 delta = input.GetMouseDelta();
 
 		// LMB drag - orbit (yaw / pitch)
 		if (input.IsMouseButtonDown(kORBMoveButton))
@@ -164,8 +167,10 @@ namespace koi
 		if (input.IsMouseButtonDown(kORBPanButton))
 		{
 			// Recompute right/up vectors from view basis
-			const float3 right  = normalize(m_camera->Right);
-			const float3 upDir  = normalize(m_camera->Up);
+			Vector3 right, upDir;
+			m_camera->Right.Normalize(right);
+			m_camera->Up.Normalize(upDir);
+
 			const f32 panScale  = m_orbitRadius * OrbitPanSpeed;
 			m_orbitTarget = m_orbitTarget - right  * (delta.x * panScale);
 			m_orbitTarget = m_orbitTarget + upDir  * (delta.y * panScale);
@@ -185,14 +190,15 @@ namespace koi
 	{
 		if (!m_camera) return;
 
-		float3 position;
-		float3 target;
+		Vector3 position;
+		Vector3 target;
 
 		if (m_mode == CameraMode::FirstPerson)
 		{
 			const f32 cp = cosf(m_pitch), sp = sinf(m_pitch);
 			const f32 cy = cosf(m_yaw),   sy = sinf(m_yaw);
-			const float3 forward = normalize(float3(sy * cp, sp, cy * cp));
+			Vector3 forward = Vector3(sy * cp, sp, cy * cp);
+			forward.Normalize();
 
 			position = m_fpPosition;
 			target   = m_fpPosition + forward;

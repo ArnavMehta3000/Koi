@@ -177,13 +177,13 @@ namespace koi
 
 	void InputManager::OnCursorPos(f64 x, f64 y) noexcept
 	{
-		const float2 newPos = { static_cast<f32>(x), static_cast<f32>(y) };
-		m_mouseDelta              = m_mouseDelta + (newPos - m_mousePos);
-		m_mousePos                = newPos;
+		const Vector2 newPos = { static_cast<f32>(x), static_cast<f32>(y) };
+		m_mouseDelta         = m_mouseDelta + (newPos - m_mousePos);
+		m_mousePos           = newPos;
 	}
 
 	void InputManager::OnScroll(f64 dx, f64 dy) noexcept
 	{
-		m_scrollAccum = m_scrollAccum + float2(static_cast<f32>(dx), static_cast<f32>(dy));
+		m_scrollAccum = m_scrollAccum + Vector2(static_cast<f32>(dx), static_cast<f32>(dy));
 	}
 }
