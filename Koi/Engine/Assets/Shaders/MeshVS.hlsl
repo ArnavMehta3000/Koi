@@ -3,12 +3,13 @@
 
 #include "MeshShaderCommon.hlsl"
 
+// Must match koi::Vertex (Koi/Engine/Graphics/Types.h) - tightly packed, 48 bytes
 struct Vertex
 {
-	float4 Position; // .xyz
-	float4 Normal;   // .xyz
+	float3 Position;
+	float3 Normal;
 	float4 Tangent;
-	float4 UV;       // .xy
+	float2 UV;
 };
 
 struct VSOutput
@@ -39,12 +40,12 @@ VSOutput VSMain(uint vertexId : SV_VertexID)
 	Vertex v = vertices[vertexId];
 	PerObjectData obj = objects[ObjectIndex];
 
-	float4 worldPos = mul(float4(v.Position.xyz, 1.0f), obj.World);
+	float4 worldPos = mul(float4(v.Position, 1.0f), obj.World);
 
 	VSOutput output;
 	output.Position    = mul(worldPos, frame.ViewProjection);
-	output.WorldNormal = normalize(mul(v.Normal.xyz, (float3x3)obj.NormalMatrix));
-	output.UV          = v.UV.xy;
+	output.WorldNormal = normalize(mul(v.Normal, (float3x3)obj.NormalMatrix));
+	output.UV          = v.UV;
 
 	return output;
 }
