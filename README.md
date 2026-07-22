@@ -38,6 +38,7 @@ xmake
 | Option | Values | Description |
 |---|---|---|
 | `--LogLevel` | `0`–`4` | Compile-time log floor (0=trace, 1=debug, 2=info, 3=warn, 4=error) |
+| `--WithEditor` | `0` / `1` | Build the editor (`koi-editor`) instead of the standalone runtime (`koi-runtime`) |
 
 Example: `xmake f -m debug --LogLevel=0`
 
@@ -50,13 +51,19 @@ Fetched automatically via xmake-repo:
 | `glfw` | Window creation and input |
 | `directx-headers` | D3D12 / DXGI headers |
 | `dxc` | HLSL shader compiler |
-| `hlslpp` | SIMD math library |
 | `stb` | Image loading |
 | `spdlog` | Logging |
 | `toml++` | TOML config parsing |
 | `cli11` | Command-line argument parsing |
 | `fastgltf` | glTF 2.0 model loading |
 | `tracy` | Frame profiler (active in `profile` mode) |
+
+Vendored in `External/` and built from source:
+
+| Library | Purpose |
+|---|---|
+| `SimpleMath` | Math types (DirectX Toolkit, over DirectXMath) |
+| `ImGui` | Editor UI (docking branch, GLFW + DX12 backends) |
 
 ## Project file
 
