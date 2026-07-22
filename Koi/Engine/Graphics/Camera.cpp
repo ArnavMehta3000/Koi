@@ -16,10 +16,7 @@ namespace koi
 
 	void Camera::SetTransform(const Transform& transform, float3 worldUp)
 	{
-		float r[3]{};
-		store(r, transform.EulerAngles);
-
-		float4x4 R = float4x4::rotation_z(r[2]) * float4x4::rotation_x(r[0]) * float4x4::rotation_y(r[1]);
+		float4x4 R = float4x4(transform.Rotation);
 		float3 forward = normalize(mul(float4(0.0f, 0.0f, 1.0f, 0.0f), R).xyz);
 
 		SetView(transform.Position, transform.Position + forward, worldUp);

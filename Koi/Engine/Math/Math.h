@@ -37,6 +37,10 @@ namespace koi
 	public:
 		static DecomposedTransform DecomposeTransform(const float4x4& m);
 
+		// ZXY Euler angles (radians) <-> quaternion, via DirectXMath (XMQuaternionRotationRollPitchYaw)
+		static quaternion QuaternionFromEulerZXY(const float3& radians);
+		static float3     ToEulerZXY(const quaternion& q);
+
 		// Aligns a value to the nearest multiple of 256
 		template <typename T>
 		static T AlignGPU256(T value) { return (value + static_cast<T>(255)) & ~static_cast<T>(255); }

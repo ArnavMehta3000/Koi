@@ -119,22 +119,20 @@ namespace koi
 
 			Transform& local = m_selected.get_mut<Transform>();
 
-			f32 pos[3]{}, rot[3]{}, scl[3]{};
-			store(pos, local.Position);
-			store(rot, local.EulerAngles);
-			store(scl, local.Scale);
-			rot[0] *= kRadToDeg; rot[1] *= kRadToDeg; rot[2] *= kRadToDeg;
+			if (m_eulerFor != m_selected.id())
+			{
+				store(m_eulerDeg, MathUtils::ToEulerZXY(local.Rotation));
+				m_eulerDeg[0] *= kRadToDeg; m_eulerDeg[1] *= kRadToDeg; m_eulerDeg[2] *= kRadToDeg;
+				m_eulerFor = m_selected.id();
+			}
 
-			bool posChanged = ImGui::DragFloat3("Position", &local.Position.x, 0.05f);
-			bool rotChanged = ImGui::DragFloat3("Rotation", &local.EulerAngles.x, 0.5f);
-			bool sclChanged = ImGui::DragFloat3("Scale",    &local.Scale.x, 0.05f);
-
-			//if (posChanged)
-			//	local.Position = float3{ pos[0], pos[1], pos[2] };
-			//if (rotChanged)
-			//	local.EulerAngles = float3{ rot[0] * kDegToRad, rot[1] * kDegToRad, rot[2] * kDegToRad };
-			//if (sclChanged)
-			//	local.Scale = float3{ scl[0], scl[1], scl[2] };
+			ImGui::DragFloat3("Position", &local.Position.x, 0.05f);
+			if (ImGui::DragFloat3("Rotation", m_eulerDeg, 0.5f))
+			{
+				const float3 rad{ m_eulerDeg[0] * kDegToRad, m_eulerDeg[1] * kDegToRad, m_eulerDeg[2] * kDegToRad };
+				local.Rotation = MathUtils::QuaternionFromEulerZXY(rad);
+			}
+			ImGui::DragFloat3("Scale", &local.Scale.x, 0.05f);
 
 			if (const MeshRef* meshRef = m_selected.try_get<MeshRef>())
 			{

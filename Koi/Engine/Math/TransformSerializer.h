@@ -12,7 +12,7 @@ namespace koi
 		{
 			toml::table out;
 			SerializeInto(out, "position", t.Position);
-			SerializeInto(out, "rotation", t.EulerAngles);
+			SerializeInto(out, "rotation", t.Rotation);
 			SerializeInto(out, "scale", t.Scale);
 			return out;
 		}
@@ -30,9 +30,9 @@ namespace koi
 
 				return Transform
 				{
-					.Position    = DeserializeOr(tbl, "position", float3(0.0f, 0.0f, 0.0f)),
-					.EulerAngles = DeserializeOr(tbl, "rotation", float3(0.0f, 0.0f, 0.0f)),
-					.Scale       = DeserializeOr(tbl, "scale", float3(1.0f, 1.0f, 1.0f))
+					.Position = DeserializeOr(tbl, "position", float3(0.0f, 0.0f, 0.0f)),
+					.Rotation = DeserializeOr(tbl, "rotation", quaternion::identity()),
+					.Scale    = DeserializeOr(tbl, "scale", float3(1.0f, 1.0f, 1.0f))
 				};
 			}
 			return std::nullopt;
