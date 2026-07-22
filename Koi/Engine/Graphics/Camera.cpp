@@ -6,8 +6,8 @@ namespace koi
 	{
 		Position = position;
 		(target - position).Normalize(Forward);
-		worldUp.Cross(Forward).Normalize(Right);
-		Forward.Cross(Right, Up);
+		Forward.Cross(worldUp).Normalize(Right);
+		Right.Cross(Forward, Up);
 
 		View = Matrix::CreateLookAt(position, target, worldUp);
 		ViewProjection = View * Projection;

@@ -1,10 +1,9 @@
-﻿// hlslpp math types + engine math helpers
+﻿// DirectXTK SimpleMath types + engine math helpers
 #pragma once
 
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Core/Types.h"
 
-#include <directx/d3dx12.h>  // For interop types in SimpleMath
 #include <SimpleMath.h>
 
 namespace koi

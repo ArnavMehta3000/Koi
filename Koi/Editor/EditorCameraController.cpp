@@ -24,14 +24,14 @@ namespace koi
 	static constexpr MouseButton kORBMoveButton = MouseButton::Left;
 	static constexpr MouseButton kORBPanButton = MouseButton::Middle;
 
-	// Spherical → cartesian offset for the orbit camera (left-handed, Y-up)
-	static Vector3 SphericalOffset(f32 yaw, f32 pitch, f32 radius)
+	// Yaw/pitch → unit view direction (right-handed, Y-up): yaw 0 looks down -Z, +yaw turns right
+	static Vector3 ForwardFromYawPitch(f32 yaw, f32 pitch)
 	{
-		const f32 cp = cosf(pitch);
+		const f32 cp = std::cos(pitch);
 		return Vector3(
-			radius * sinf(yaw) * cp,
-			radius * sinf(pitch),
-			radius * cosf(yaw) * cp
+			std::sin(yaw) * cp,
+			std::sin(pitch),
+			-std::cos(yaw) * cp
 		);
 	}
 
@@ -117,12 +117,11 @@ namespace koi
 		}
 
 		// Recompute local axes from angles
-		const f32 cp = cosf(m_pitch), sp = sinf(m_pitch);
-		const f32 cy = cosf(m_yaw),   sy = sinf(m_yaw);
+		const f32 cy = std::cos(m_yaw), sy = std::sin(m_yaw);
 
 		Vector3 forward, right;
-		Vector3(sy * cp, sp, cy * cp).Normalize(forward);
-		Vector3(cy, 0.0f, -sy).Normalize(right);// perpendicular on XZ plane
+		ForwardFromYawPitch(m_yaw, m_pitch).Normalize(forward);
+		Vector3(cy, 0.0f, sy).Normalize(right);// perpendicular on XZ plane
 
 		const Vector3 worldUp = Vector3(0.0f, 1.0f, 0.0f);
 
@@ -193,19 +192,17 @@ namespace koi
 		Vector3 position;
 		Vector3 target;
 
+		const Vector3 forward = ForwardFromYawPitch(m_yaw, m_pitch);
+
 		if (m_mode == CameraMode::FirstPerson)
 		{
-			const f32 cp = cosf(m_pitch), sp = sinf(m_pitch);
-			const f32 cy = cosf(m_yaw),   sy = sinf(m_yaw);
-			Vector3 forward = Vector3(sy * cp, sp, cy * cp);
-			forward.Normalize();
-
 			position = m_fpPosition;
 			target   = m_fpPosition + forward;
 		}
 		else
 		{
-			position = m_orbitTarget + SphericalOffset(m_yaw, m_pitch, m_orbitRadius);
+			// Sit behind the target along the view direction, so both modes share yaw/pitch
+			position = m_orbitTarget - forward * m_orbitRadius;
 			target   = m_orbitTarget;
 		}
 

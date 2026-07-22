@@ -47,7 +47,7 @@ namespace koi
 		const f32 radius = world.m_bounds.Radius();
 
 		world.m_camera.SetProjection(0.8f, 16.0f / 9.0f, 0.05f, 1000.0f);
-		world.m_camera.SetView(center + Vector3(0.0f, 0.0f, -radius * 2.5f), center);
+		world.m_camera.SetView(center + Vector3(0.0f, 0.0f, radius * 2.5f), center);
 
 		return world;
 	}

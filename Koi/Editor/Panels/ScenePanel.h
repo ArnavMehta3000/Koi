@@ -17,5 +17,10 @@ namespace koi
 	private:
 		AppBase* m_game = nullptr;
 		Entity   m_selected;
+
+		// Euler angles are UI state: re-deriving them from the quaternion every frame makes
+		// the drag widget snap near gimbal lock, so cache them until the selection changes
+		Vector3  m_eulerDeg = Vector3::Zero;
+		EntityID m_eulerFor = 0;
 	};
 }

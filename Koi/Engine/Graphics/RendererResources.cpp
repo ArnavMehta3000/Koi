@@ -138,7 +138,8 @@ namespace koi
 				{
 					.VertexShader        = vsData,
 					.PixelShader         = psData,
-					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK },
+					// Right-handed view/projection: front faces wind counter-clockwise on screen
+					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
 					.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
 					.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
 					.RenderTargetCount   = 1,

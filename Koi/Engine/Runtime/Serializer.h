@@ -239,9 +239,9 @@ namespace koi
 //               return std::nullopt;
 //
 //           Transform out{};
-//           out.position = DeserializeOr(*table, "position", math::float3(0.0f));
-//           out.rotation = DeserializeOr(*table, "rotation", math::quaternion::identity());
-//           out.scale    = DeserializeOr(*table, "scale",    math::float3(1.0f));
+//           out.position = DeserializeOr(*table, "position", Vector3::Zero);
+//           out.rotation = DeserializeOr(*table, "rotation", Quaternion::Identity);
+//           out.scale    = DeserializeOr(*table, "scale",    Vector3::One);
 //           return out;
 //       }
 //   };

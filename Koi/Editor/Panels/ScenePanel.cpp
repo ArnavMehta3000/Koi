@@ -119,12 +119,17 @@ namespace koi
 
 			Transform& local = m_selected.get_mut<Transform>();
 
-			Vector3 euler = local.Rotation.ToEuler() * kRadToDeg;
+			if (m_eulerFor != m_selected.id())
+			{
+				m_eulerDeg = local.Rotation.ToEuler() * kRadToDeg;
+				m_eulerFor = m_selected.id();
+			}
 
 			ImGui::DragFloat3("Position", &local.Position.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
-			if (ImGui::DragFloat3("Rotation", &euler.x, 0.5f))
+			if (ImGui::DragFloat3("Rotation", &m_eulerDeg.x, 0.5f))
 			{
-				local.Rotation = Quaternion::CreateFromYawPitchRoll(euler.y * kDegToRad, euler.x * kDegToRad, euler.z * kDegToRad);
+				local.Rotation = Quaternion::CreateFromYawPitchRoll(
+					m_eulerDeg.y * kDegToRad, m_eulerDeg.x * kDegToRad, m_eulerDeg.z * kDegToRad);
 			}
 			ImGui::DragFloat3("Scale", &local.Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
 
