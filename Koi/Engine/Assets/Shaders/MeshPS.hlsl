@@ -1,7 +1,7 @@
 ﻿#ifndef _MESH_PS_HLSL_
 #define _MESH_PS_HLSL_
 
-#include "MeshPushConstants.hlsl"
+#include "MeshShaderCommon.hlsl"
 
 struct PSInput
 {

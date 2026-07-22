@@ -165,6 +165,13 @@ namespace koi
 			.DebugName = "Mesh Materials",
 		});
 
+		// Fill the GPU-only buffers with their data	
+		upload.UploadBuffer(mesh.VertexBuffer,   vertices.data(),  vbSize);
+		upload.UploadBuffer(mesh.IndexBuffer,    indices.data(),   ibSize);
+		upload.UploadBuffer(mesh.MaterialBuffer, materials.data(), matSize);
+
+		// Upload complete
+		upload.End();
 
 		mesh.VertexBufferSRV = device.Get(mesh.VertexBuffer)->SRVIndex;
 		assert(mesh.VertexBufferSRV != INVALID_DESCRIPTOR && "Vertex buffer has no bindless SRV");

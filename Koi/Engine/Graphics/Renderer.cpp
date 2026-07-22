@@ -36,9 +36,12 @@ namespace koi
 		if (m_device)
 			m_device->WaitForIdle();
 
+		m_frameGraph.Clear();
 		m_frameContext.reset();
+
 		if (m_depthTexture)
 			m_device->Destroy(m_depthTexture);
+
 		m_renderWindow.reset();
 		m_defaultResources.Shutdown(*m_device);
 		m_device = nullptr;

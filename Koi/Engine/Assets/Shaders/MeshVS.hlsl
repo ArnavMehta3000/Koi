@@ -1,7 +1,7 @@
 ﻿#ifndef _MESH_VS_HLSL_
 #define _MESH_VS_HLSL_
 
-#include "MeshPushConstants.hlsl"
+#include "MeshShaderCommon.hlsl"
 
 struct Vertex
 {
