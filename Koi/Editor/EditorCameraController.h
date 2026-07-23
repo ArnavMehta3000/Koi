@@ -41,7 +41,7 @@ namespace koi
 
 		// First-person
 		f32 FpMoveSpeed        = 5.0f;    // units per second
-		f32 FpSpeedBoost       = 3.0f;    // multiplier applied when Shift is held
+		f32 FpSpeedBoost       = 5.0f;    // multiplier applied when Shift is held
 		f32 FpLookSensitivity  = 0.002f;  // radians per pixel
 		f32 FpScrollDollySpeed = 10.0f;   // units per scroll tick
 

@@ -10,6 +10,7 @@ cbuffer PushConstants : register(b0)
 	uint MaterialIndex;
 	uint VertexBufferIndex;
 	uint SamplerIndex;
+	uint VertexOffset;
 };
 
 struct GPUMaterialData

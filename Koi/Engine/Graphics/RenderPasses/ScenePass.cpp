@@ -178,10 +178,14 @@ namespace koi
 					.MaterialIndex       = d.MaterialIndex,
 					.VertexBufferIndex   = mesh.VertexBufferSRV,
 					.SamplerIndex        = m_config.Resources->LinearWrapSampler,
+					.VertexOffset        = static_cast<u32>(d.VertexOffset),
 				};
 
+				// Vertex fetch is fully bindless (no IA vertex buffer), so the per-primitive
+				// vertex offset is applied in the shader via VertexOffset above, not through
+				// BaseVertexLocation (whose effect on SV_VertexID is not something to rely on)
 				cmd.SetPushConstants(&pc, sizeof(pc) / sizeof(u32));
-				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, d.VertexOffset);
+				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);
 			}
 		}
 	}

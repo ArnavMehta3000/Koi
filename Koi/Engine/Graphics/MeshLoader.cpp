@@ -10,11 +10,22 @@
 #include "stb_image.h"
 #include <vector>
 #include <string>
+#include <cstring>
 
 namespace koi
 {
 	namespace
 	{
+		// fastgltf stores matrices column-major (column-vector convention, v' = M * v);
+		// SimpleMath stores them row-major (row-vector convention, v' = v * M). The transpose
+		// and the storage-order difference cancel out, so the raw floats copy straight across
+		Matrix ToMatrix(const fastgltf::math::fmat4x4& m)
+		{
+			Matrix out;
+			std::memcpy(&out, m.data(), sizeof(f32) * 16);
+			return out;
+		}
+
 		struct Loader
 		{
 			fastgltf::Asset* Asset = nullptr;
@@ -22,6 +33,7 @@ namespace koi
 
 			std::unique_ptr<ModelAsset> BuildModelAsset();
 			void LoadMeshes(ModelAsset& model);
+			void AppendMesh(ModelAsset& model, fastgltf::Mesh& gltfMesh, const Matrix& worldXform);
 			void LoadMaterials(ModelAsset& model);
 			u32 LoadTexture(ModelAsset& model, u32 textureIndex);
 		};
@@ -93,136 +105,178 @@ namespace koi
 	void Loader::LoadMeshes(ModelAsset& model)
 	{
 		ZoneScoped;
-		// For-each mesh
-		for (fastgltf::Mesh& gltfMesh : Asset->meshes)
+
+		if (!Asset->scenes.empty())
 		{
-			Mesh mesh;
-			mesh.Name = gltfMesh.name;
-
-			std::vector<Vertex> allVertices;
-			std::vector<u32> allIndices;
-
-			// For-each primitive
-			for (fastgltf::Primitive& primitive : gltfMesh.primitives)
+			const size_t sceneIndex = Asset->defaultScene.value_or(0);
+			fastgltf::iterateSceneNodes(*Asset, sceneIndex, fastgltf::math::fmat4x4(),
+				[&](fastgltf::Node& node, const fastgltf::math::fmat4x4& worldMatrix)
+				{
+					if (!node.meshIndex.has_value()) return;
+					AppendMesh(model, Asset->meshes[*node.meshIndex], ToMatrix(worldMatrix));
+				});
+		}
+		else
+		{
+			KOI_LOG_WARN("glTF has no scenes, emitting all meshes without node transforms");
+			for (fastgltf::Mesh& gltfMesh : Asset->meshes)
 			{
-				SubMesh sub;
-				sub.VertexOffset = static_cast<u32>(allVertices.size());
-				sub.IndexOffset = static_cast<u32>(allIndices.size());
-				sub.MaterialIndex = static_cast<i32>(primitive.materialIndex.value_or(-1));
+				AppendMesh(model, gltfMesh, Matrix::Identity);
+			}
+		}
+	}
 
-				fastgltf::Attribute* posAccessor = primitive.findAttribute("POSITION");
-				if (!posAccessor || posAccessor == primitive.attributes.end())
-				{
-					KOI_LOG_WARN("Primitive in mesh '{}' has no POSITION attribute, skipping", mesh.Name);
-					continue;
-				}
+	void Loader::AppendMesh(ModelAsset& model, fastgltf::Mesh& gltfMesh, const Matrix& worldXform)
+	{
+		ZoneScoped;
+		Mesh mesh;
+		mesh.Name = gltfMesh.name;
 
-				fastgltf::Accessor& posAcc = Asset->accessors[posAccessor->accessorIndex];
-				const u32 vertexCount = static_cast<u32>(posAcc.count);
+		// Normals use the inverse-transpose so non-uniform scale does not shear them
+		// A mirroring transform (negative determinant) flips tangent-space handedness
+		const Matrix normalXform    = worldXform.Invert().Transpose();
+		const f32    handednessFlip = worldXform.Determinant() < 0.0f ? -1.0f : 1.0f;
 
-				allVertices.resize(allVertices.size() + vertexCount);
-				Vertex* vertices = &allVertices[sub.VertexOffset];
+		std::vector<Vertex> allVertices;
+		std::vector<u32> allIndices;
 
-				// Read positions
-				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, posAcc,
-					[&](const fastgltf::math::fvec3& pos, std::size_t i)
-					{
-						vertices[i].Position = Vector3(pos.x(), pos.y(), pos.z());
-						sub.Bounds.Expand(vertices[i].Position);
-					});
+		// For-each primitive
+		for (fastgltf::Primitive& primitive : gltfMesh.primitives)
+		{
+			SubMesh sub;
+			sub.VertexOffset = static_cast<u32>(allVertices.size());
+			sub.IndexOffset = static_cast<u32>(allIndices.size());
+			sub.MaterialIndex = static_cast<i32>(primitive.materialIndex.value_or(-1));
 
-				// Normals
-				if (fastgltf::Attribute* normAttr = primitive.findAttribute("NORMAL"); normAttr != primitive.attributes.end())
-				{
-					fastgltf::Accessor& acc = Asset->accessors[normAttr->accessorIndex];
-					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, acc,
-						[&](const fastgltf::math::fvec3& n, std::size_t i)
-						{
-							vertices[i].Normal = Vector3(n.x(), n.y(), n.z());
-						});
-				}
-				else
-				{
-					KOI_LOG_WARN("Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
-				}
-
-				// UV
-				if (fastgltf::Attribute* uvAttr = primitive.findAttribute("TEXCOORD_0"); uvAttr != primitive.attributes.end())
-				{
-					fastgltf::Accessor& acc = Asset->accessors[uvAttr->accessorIndex];
-					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(*Asset, acc,
-						[&](const fastgltf::math::fvec2& uv, std::size_t i)
-						{
-							vertices[i].UV = Vector2(uv.x(), uv.y());
-						});
-				}
-				else
-				{
-					KOI_LOG_WARN("Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
-				}
-
-				// Tangent
-				bool hasTangent = false;
-				if (fastgltf::Attribute* tanAttr = primitive.findAttribute("TANGENT"); tanAttr != primitive.attributes.end())
-				{
-					fastgltf::Accessor& acc = Asset->accessors[tanAttr->accessorIndex];
-					fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec4>(*Asset, acc,
-						[&](const fastgltf::math::fvec4& t, std::size_t i)
-						{
-							vertices[i].Tangent = Vector4(t.x(), t.y(), t.z(), t.w());
-						});
-					hasTangent = true;
-				}
-				else
-				{
-					KOI_LOG_WARN("Primitive in mesh '{}' has no TANGENT attribute", mesh.Name);
-				}
-
-				// Indices
-				if (primitive.indicesAccessor.has_value())
-				{
-					fastgltf::Accessor& idxAcc = Asset->accessors[*primitive.indicesAccessor];
-					sub.IndexCount = static_cast<u32>(idxAcc.count);
-					allIndices.reserve(allIndices.size() + sub.IndexCount);
-
-					fastgltf::iterateAccessor<u32>(*Asset, idxAcc,
-						[&](u32 idx)
-						{
-							allIndices.push_back(idx);
-						});
-				}
-				else
-				{
-					// Non-indexed: generate sequential indices
-					sub.IndexCount = vertexCount;
-					for (u32 i = 0; i < vertexCount; ++i)
-					{
-						allIndices.push_back(i);
-					}
-				}
-
-				if (!hasTangent)
-				{
-					// Since no tangents were found, generate them
-					//TODO: MikkTSpace tangent generation
-					for (u32 i = 0; i < vertexCount; ++i)
-					{
-						vertices[i].Tangent = Vector4(1.0f, 0.0f, 0.0f, 0.0f);
-					}
-				}
-
-				mesh.Bounds.Expand(sub.Bounds);
-				mesh.SubMeshes.push_back(std::move(sub));
+			fastgltf::Attribute* posAccessor = primitive.findAttribute("POSITION");
+			if (!posAccessor || posAccessor == primitive.attributes.end())
+			{
+				KOI_LOG_WARN("Primitive in mesh '{}' has no POSITION attribute, skipping", mesh.Name);
+				continue;
 			}
 
-			mesh.VertexCount = static_cast<u32>(allVertices.size());
-			mesh.IndexCount  = static_cast<u32>(allIndices.size());
-			mesh.Vertices    = std::move(allVertices);
-			mesh.Indices     = std::move(allIndices);
+			fastgltf::Accessor& posAcc = Asset->accessors[posAccessor->accessorIndex];
+			const u32 vertexCount = static_cast<u32>(posAcc.count);
 
-			model.Bounds.Expand(mesh.Bounds);
-			model.Meshes.push_back(std::move(mesh));
+			allVertices.resize(allVertices.size() + vertexCount);
+			Vertex* vertices = &allVertices[sub.VertexOffset];
+
+			// Read positions
+			fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, posAcc,
+				[&](const fastgltf::math::fvec3& pos, std::size_t i)
+				{
+					vertices[i].Position = Vector3(pos.x(), pos.y(), pos.z());
+				});
+
+			// Normals
+			if (fastgltf::Attribute* normAttr = primitive.findAttribute("NORMAL"); normAttr != primitive.attributes.end())
+			{
+				fastgltf::Accessor& acc = Asset->accessors[normAttr->accessorIndex];
+				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, acc,
+					[&](const fastgltf::math::fvec3& n, std::size_t i)
+					{
+						vertices[i].Normal = Vector3(n.x(), n.y(), n.z());
+					});
+			}
+			else
+			{
+				KOI_LOG_WARN("Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
+			}
+
+			// UV
+			if (fastgltf::Attribute* uvAttr = primitive.findAttribute("TEXCOORD_0"); uvAttr != primitive.attributes.end())
+			{
+				fastgltf::Accessor& acc = Asset->accessors[uvAttr->accessorIndex];
+				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(*Asset, acc,
+					[&](const fastgltf::math::fvec2& uv, std::size_t i)
+					{
+						vertices[i].UV = Vector2(uv.x(), uv.y());
+					});
+			}
+			else
+			{
+				KOI_LOG_WARN("Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
+			}
+
+			// Tangent
+			bool hasTangent = false;
+			if (fastgltf::Attribute* tanAttr = primitive.findAttribute("TANGENT"); tanAttr != primitive.attributes.end())
+			{
+				fastgltf::Accessor& acc = Asset->accessors[tanAttr->accessorIndex];
+				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec4>(*Asset, acc,
+					[&](const fastgltf::math::fvec4& t, std::size_t i)
+					{
+						vertices[i].Tangent = Vector4(t.x(), t.y(), t.z(), t.w());
+					});
+				hasTangent = true;
+			}
+			else
+			{
+				KOI_LOG_WARN("Primitive in mesh '{}' has no TANGENT attribute", mesh.Name);
+			}
+
+			// Indices
+			if (primitive.indicesAccessor.has_value())
+			{
+				fastgltf::Accessor& idxAcc = Asset->accessors[*primitive.indicesAccessor];
+				sub.IndexCount = static_cast<u32>(idxAcc.count);
+				allIndices.reserve(allIndices.size() + sub.IndexCount);
+
+				fastgltf::iterateAccessor<u32>(*Asset, idxAcc,
+					[&](u32 idx)
+					{
+						allIndices.push_back(idx);
+					});
+			}
+			else
+			{
+				// Non-indexed: generate sequential indices
+				sub.IndexCount = vertexCount;
+				for (u32 i = 0; i < vertexCount; ++i)
+				{
+					allIndices.push_back(i);
+				}
+			}
+
+			if (!hasTangent)
+			{
+				// Since no tangents were found, generate them
+				//TODO: MikkTSpace tangent generation
+				for (u32 i = 0; i < vertexCount; ++i)
+				{
+					vertices[i].Tangent = Vector4(1.0f, 0.0f, 0.0f, 0.0f);
+				}
+			}
+
+			// Bake this node's world transform into the vertices
+			for (u32 i = 0; i < vertexCount; ++i)
+			{
+				Vertex& v = vertices[i];
+
+				v.Position = Vector3::Transform(v.Position, worldXform);
+
+				Vector3 normal = Vector3::TransformNormal(v.Normal, normalXform);
+				normal.Normalize();
+				v.Normal = normal;
+
+				Vector3 tangent = Vector3::TransformNormal(Vector3(v.Tangent.x, v.Tangent.y, v.Tangent.z), worldXform);
+				tangent.Normalize();
+				v.Tangent = Vector4(tangent.x, tangent.y, tangent.z, v.Tangent.w * handednessFlip);
+
+				sub.Bounds.Expand(v.Position);
+			}
+
+			mesh.Bounds.Expand(sub.Bounds);
+			mesh.SubMeshes.push_back(std::move(sub));
 		}
+
+		mesh.VertexCount = static_cast<u32>(allVertices.size());
+		mesh.IndexCount  = static_cast<u32>(allIndices.size());
+		mesh.Vertices    = std::move(allVertices);
+		mesh.Indices     = std::move(allIndices);
+
+		model.Bounds.Expand(mesh.Bounds);
+		model.Meshes.push_back(std::move(mesh));
 	}
 
 	void Loader::LoadMaterials(ModelAsset& model)

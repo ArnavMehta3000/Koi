@@ -46,6 +46,7 @@ namespace koi
 		u32 MaterialIndex;
 		u32 VertexBufferIndex;
 		u32 SamplerIndex;
+		u32 VertexOffset;      // added to SV_VertexID to index the shared vertex buffer
 	};
 #pragma warning(default : 4324)
 }

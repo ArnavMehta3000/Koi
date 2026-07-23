@@ -31,7 +31,7 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
 		World world;
-		constexpr const char* kMeshPath = "project://Assets/Models/DamagedHelmet.gltf";
+		constexpr const char* kMeshPath = "project://Assets/Models/Sponza/Sponza.gltf";
 
 		KOI_LOG_INFO("Loading world (hardcoded): {}", kMeshPath);
 

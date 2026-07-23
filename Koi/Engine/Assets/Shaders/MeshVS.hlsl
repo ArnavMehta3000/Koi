@@ -37,7 +37,7 @@ VSOutput VSMain(uint vertexId : SV_VertexID)
 	ConstantBuffer<FrameConstants>  frame    = ResourceDescriptorHeap[FrameConstantsIndex];
 	StructuredBuffer<PerObjectData> objects  = ResourceDescriptorHeap[ObjectBufferIndex];
 
-	Vertex v = vertices[vertexId];
+	Vertex v = vertices[vertexId + VertexOffset];
 	PerObjectData obj = objects[ObjectIndex];
 
 	float4 worldPos = mul(float4(v.Position, 1.0f), obj.World);
