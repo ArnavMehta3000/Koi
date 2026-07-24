@@ -37,7 +37,7 @@ namespace koi
 	};
 
 #pragma warning(disable : 4324) // structure was padded due to alignment specifier
-	struct alignas(16) DrawPushConstants
+	struct alignas(16) DrawRootConstants
 	{
 		u32 FrameConstantsIndex;
 		u32 ObjectBufferIndex;

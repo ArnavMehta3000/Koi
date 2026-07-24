@@ -36,7 +36,7 @@ namespace koi
 		void SetPipeline(PipelineHandle h);
 		void SetVertexBuffer(u32 slot, BufferHandle h);
 		void SetIndexBuffer(BufferHandle h);
-		void SetPushConstants(const void* data, u32 count32BitValues, u32 destOffsetIn32BitValues = 0);
+		void SetRootConstants(const void* data, u32 count32BitValues, u32 destOffsetIn32BitValues = 0);
 
 		// Draw
 		void Draw(u32 vertexCount, u32 instanceCount = 1, u32 startVertex = 0, u32 startInstance = 0);

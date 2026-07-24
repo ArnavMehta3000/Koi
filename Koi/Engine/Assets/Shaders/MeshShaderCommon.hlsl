@@ -1,7 +1,7 @@
 ﻿#ifndef _MESH_SHADER_COMMON_HLSL_
 #define _MESH_SHADER_COMMON_HLSL_
 
-cbuffer PushConstants : register(b0)
+cbuffer DrawPushConstants : register(b0)
 {
 	uint FrameConstantsIndex;
 	uint ObjectBufferIndex;

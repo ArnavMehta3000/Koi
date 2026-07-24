@@ -169,7 +169,7 @@ namespace koi
 
 			for (const GPUMeshDraw& d : mesh.DrawItems)
 			{
-				DrawPushConstants pc
+				DrawRootConstants pc
 				{
 					.FrameConstantsIndex = frameConstantsBuf->CBVIndex,
 					.ObjectBufferIndex   = objectBuf->SRVIndex,
@@ -184,7 +184,7 @@ namespace koi
 				// Vertex fetch is fully bindless (no IA vertex buffer), so the per-primitive
 				// vertex offset is applied in the shader via VertexOffset above, not through
 				// BaseVertexLocation (whose effect on SV_VertexID is not something to rely on)
-				cmd.SetPushConstants(&pc, sizeof(pc) / sizeof(u32));
+				cmd.SetRootConstants(&pc, sizeof(pc) / sizeof(u32));
 				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);
 			}
 		}

@@ -217,7 +217,7 @@ namespace koi
 		m_cmdList->IASetIndexBuffer(&view);
 	}
 
-	void CommandList::SetPushConstants(const void* data, u32 count32BitValues, u32 destOffsetIn32BitValues)
+	void CommandList::SetRootConstants(const void* data, u32 count32BitValues, u32 destOffsetIn32BitValues)
 	{
 		m_cmdList->SetGraphicsRoot32BitConstants(0, count32BitValues, data, destOffsetIn32BitValues);
 	}

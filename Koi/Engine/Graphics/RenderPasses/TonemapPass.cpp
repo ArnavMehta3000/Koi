@@ -40,7 +40,7 @@ namespace koi
 		const Texture* hdrTex = m_config.Device->Get(m_input.Texture);
 		u32 hdrSrvIndex       = hdrTex ? hdrTex->SRVIndex : INVALID_DESCRIPTOR;
 
-		cmd.SetPushConstants(&hdrSrvIndex, 1);
+		cmd.SetRootConstants(&hdrSrvIndex, 1);
 		cmd.Draw(3);
 	}
 }
