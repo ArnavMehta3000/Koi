@@ -39,14 +39,14 @@ namespace koi
 #pragma warning(disable : 4324) // structure was padded due to alignment specifier
 	struct alignas(16) DrawRootConstants
 	{
-		u32 FrameConstantsIndex;
-		u32 ObjectBufferIndex;
-		u32 ObjectIndex;
-		u32 MaterialBufferIndex;
-		u32 MaterialIndex;
-		u32 VertexBufferIndex;
-		u32 SamplerIndex;
-		u32 VertexOffset;      // added to SV_VertexID to index the shared vertex buffer
+	    u32 FrameConstantsIndex;   // which CBV, in the global heap
+	    u32 ObjectBufferIndex;     // which StructuredBuffer<PerObjectData>, in the global heap
+	    u32 ObjectIndex;           // which element inside that buffer
+	    u32 MaterialBufferIndex;   // which StructuredBuffer<GPUMaterialData>
+	    u32 MaterialIndex;         // which element inside that buffer
+	    u32 VertexBufferIndex;     // which StructuredBuffer<Vertex>
+	    u32 SamplerIndex;          // which sampler, in the global sampler heap
+	    u32 VertexOffset;          // added to SV_VertexID to index the shared vertex buffer
 	};
 #pragma warning(default : 4324)
 }
