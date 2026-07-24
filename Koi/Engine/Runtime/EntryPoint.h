@@ -3,6 +3,14 @@
 #pragma once
 #include "Koi/Engine/Core/Core.h"
 #include "Koi/Engine/Platform/Win32.h"
+#include <memory>
+
+namespace koi
+{
+	class AppBase;
+	class IAppHost;
+	class CommandLine;
+}
 
 
 // Default main
@@ -26,8 +34,13 @@ int WINAPI wWinMain(                                   \
 
 namespace koi::internal
 {
+	// Pointer to wrap host (editor will wrap user AppBase)
+	using HostAdapter = std::unique_ptr<IAppHost>(*)(std::unique_ptr<AppBase>, CommandLine&);
+
 	int RunApplication(int argc, char* argv[]);
 	int RunApplication(int argc, wchar_t* wargv[]);
+	int RunApplication(int argc, char* argv[], HostAdapter adapter);
+	int RunApplication(int argc, wchar_t* wargv[], HostAdapter adapter);
 }
 
 #if KOI_DEBUG
@@ -41,5 +54,20 @@ namespace koi::internal
 		KOI_MAIN()                                                   \
 		{                                                            \
 			return ::koi::internal::RunApplication(__argc, __wargv); \
+		}
+#endif
+
+// For editor use
+#if KOI_DEBUG
+	#define KOI_IMPLEMENT_MAIN_WITH_HOST(adapter)                        \
+		KOI_MAIN()                                                       \
+		{                                                                \
+			return ::koi::internal::RunApplication(argc, argv, adapter); \
+		}
+#else
+	#define KOI_IMPLEMENT_MAIN_WITH_HOST(adapter)                             \
+		KOI_MAIN()                                                            \
+		{                                                                     \
+			return ::koi::internal::RunApplication(__argc, __wargv, adapter); \
 		}
 #endif

@@ -1,11 +1,16 @@
-﻿#include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/EntryPoint.h"
+#include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <filesystem>
+#include <memory>
+#include <span>
 #include <vector>
 #include <string>
+#include <cassert>
 
 namespace koi::internal
 {
@@ -16,19 +21,7 @@ namespace koi::internal
 		return CreateApplication(cmd);
 	}
 
-	int RunApplication(int argc, wchar_t* wargv[])
-	{
-		std::vector<std::string> args(argc);
-		std::vector<char*> argv(argc);
-		for (int i = 0; i < argc; ++i)
-		{
-			args[i] = StringUtils::FromWide(wargv[i]);
-			argv[i] = args[i].data();
-		}
-		return RunApplication(argc, argv.data());
-	}
-
-	int RunApplication(int argc, char* argv[])
+	int RunApplication(int argc, char* argv[], HostAdapter adapter)
 	{
 		assert(argc > 0 && "argc must be > 0");
 		assert(argv != nullptr && "argv must not be nullptr");
@@ -47,24 +40,33 @@ namespace koi::internal
 				return -1;
 			}
 
-			// Set up VFS before engine init
-			//   Runtime: cooked assets live next to the exe, either directly
-			//           or under a 'Cooked/' subdir. The content root is
-			//           wherever Project.toml is found; engine mount is
-			//           <contentRoot>/Engine, project mount is <contentRoot>
-			//   Editor:  assets live in source - project mount follows the
-			//           --project TOML's parent dir, engine mount follows
-			//           the engine assets shipped next to the editor exe
+			// Set up the VFS before engine init.
+			//   Editor:  read straight from the source tree. --engine-source /
+			//            --project-source layer on top of the exe-relative fallbacks.
+			//   Runtime: cooked content lives next to the exe (or under Cooked/),
+			//            laid out as <root>/Engine and <root>/Project.
 			{
 				const fs::path exeDir = fs::current_path();
+				auto& vfs = VirtualFileSystem::Get();
 #if KOI_WITH_EDITOR
-				const fs::path projectRoot = cmd->GetProjectFile().empty()
-					? exeDir  // No project file specified, default to current dir
-					: fs::absolute(cmd->GetProjectFile()).parent_path();
-				const fs::path engineRoot = exeDir / "Engine";
+				std::vector<fs::path> engineRoots;
+				if (!cmd->GetEngineSource().empty())
+					engineRoots.push_back(fs::absolute(cmd->GetEngineSource()));
+				engineRoots.push_back(exeDir / "Engine");
+
+				std::vector<fs::path> projectRoots;
+				if (!cmd->GetProjectSource().empty())
+					projectRoots.push_back(fs::absolute(cmd->GetProjectSource()));
+				projectRoots.push_back(exeDir);
+
+				vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoots));
+				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
+#if KOI_DEBUG
+				KOI_LOG_DEBUG("Editor VFS mounts (working dir {}):", exeDir.string());
+				for (const fs::path& p : engineRoots)  KOI_LOG_DEBUG("\tengine  <- {}", p.string());
+				for (const fs::path& p : projectRoots) KOI_LOG_DEBUG("\tproject <- {}", p.string());
+#endif
 #else
-				// Locate the cooked content root: prefer <exe>/, fall back to <exe>/Cooked/.
-				// Either way, content is laid out as <root>/Engine/ and <root>/Project/
 				fs::path contentRoot = exeDir;
 				if (!fs::exists(contentRoot / "Project" / "Project.toml") &&
 				     fs::exists(exeDir / "Cooked" / "Project" / "Project.toml"))
@@ -84,31 +86,45 @@ namespace koi::internal
 
 				const fs::path projectRoot = contentRoot / "Project";
 				const fs::path engineRoot  = contentRoot / "Engine";
-#endif
+
+				vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoot));
+				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
 #if KOI_DEBUG
-				KOI_LOG_DEBUG("Setting up runtime VFS mounts");
+				KOI_LOG_DEBUG("Runtime VFS mounts:");
 				KOI_LOG_DEBUG("\tWorking directory : {}", exeDir.string());
 				KOI_LOG_DEBUG("\tProject file      : {}", cmd->GetProjectFile().string());
 				KOI_LOG_DEBUG("\tEngine root       : {}", engineRoot.string());
 				KOI_LOG_DEBUG("\tProject root      : {}", projectRoot.string());
 #endif
-				auto& vfs = VirtualFileSystem::Get();
-				vfs.Mount("engine", std::make_unique<FilesystemMount>(engineRoot));
-				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
+#endif
 			}
 
 			Engine engine;
 
-			if (auto app = CreateApplicationInstance(*cmd))
-			{
-				engine.RunApp(*app);
-				return 0;
-			}
-			else
+			std::unique_ptr<AppBase> app = CreateApplicationInstance(*cmd);
+			if (!app)
 			{
 				KOI_LOG_CRITICAL("Failed to create application");
 				return -1;
 			}
+
+			if (adapter)
+			{
+				// Editor build: wrap the game in an EditorApp supplied by the launcher
+				std::unique_ptr<IAppHost> host = adapter(std::move(app), *cmd);
+				if (!host)
+				{
+					KOI_LOG_CRITICAL("Host adapter returned null");
+					return -1;
+				}
+				engine.RunApp(*host);
+			}
+			else
+			{
+				// Standalone build: run the game directly
+				engine.RunApp(*app);
+			}
+			return 0;
 		}
 		catch (const std::exception& e)
 		{
@@ -122,5 +138,27 @@ namespace koi::internal
 			Logger::Shutdown();
 			return 2;
 		}
+	}
+
+	int RunApplication(int argc, char* argv[])
+	{
+		return RunApplication(argc, argv, nullptr);
+	}
+
+	int RunApplication(int argc, wchar_t* wargv[], HostAdapter adapter)
+	{
+		std::vector<std::string> args(argc);
+		std::vector<char*> argv(argc);
+		for (int i = 0; i < argc; ++i)
+		{
+			args[i] = StringUtils::FromWide(wargv[i]);
+			argv[i] = args[i].data();
+		}
+		return RunApplication(argc, argv.data(), adapter);
+	}
+
+	int RunApplication(int argc, wchar_t* wargv[])
+	{
+		return RunApplication(argc, wargv, nullptr);
 	}
 }
