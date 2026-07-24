@@ -252,6 +252,8 @@ namespace koi::editor
 
 		if (ImGui::BeginMenu("File"))
 		{
+			if (ImGui::MenuItem("Save Scene"))
+				SaveScene();
 			if (ImGui::MenuItem("Cook"))
 				Cook();
 			ImGui::EndMenu();
@@ -264,6 +266,27 @@ namespace koi::editor
 		}
 
 		ImGui::EndMainMenuBar();
+	}
+
+	void EditorApp::SaveScene()
+	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
+
+		World* world = m_game->GetEditorWorld();
+		if (!world)
+		{
+			m_lastCookStatus = "Save: no editor world";
+			return;
+		}
+
+		const std::string& scenePath = m_game->GetDesc().StartupScene;
+		if (scenePath.empty())
+		{
+			m_lastCookStatus = "Save: no startup_scene set";
+			return;
+		}
+
+		m_lastCookStatus = world->Save(scenePath) ? "Scene saved" : "Scene save FAILED";
 	}
 
 	void EditorApp::Cook()

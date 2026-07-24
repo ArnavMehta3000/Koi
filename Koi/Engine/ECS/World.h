@@ -29,6 +29,8 @@ namespace koi
 
 		[[nodiscard]] static std::optional<World> Load(const fs::path& path, GfxDevice& device);
 
+		bool Save(const fs::path& path);
+
 		void Update(f32 dt);
 		void Release(GfxDevice& device);
 

@@ -6,6 +6,7 @@
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <toml++/toml.hpp>
 #include <cassert>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -119,6 +120,61 @@ namespace koi
 			KOI_LOG_ERROR("Failed to parse scene '{}': {}", virtualPath, e.description());
 			return std::nullopt;
 		}
+	}
+
+	bool World::Save(const fs::path& path)
+	{
+		ZoneScoped;
+
+		const std::string virtualPath = "project://" + path.generic_string();
+
+		// Build the document in the same shape World::Load reads
+		toml::table root;
+		toml::array entities;
+
+		m_ecs.query<const Transform>().each([&](Entity e, const Transform& transform)
+		{
+			if (e == m_root) return;  // skip the internal WorldRoot
+
+			toml::table entity;
+			entity.insert("name", std::string(e.name().c_str()));
+
+			if (const Entity parent = e.parent(); parent && parent != m_root)
+				entity.insert("parent", std::string(parent.name().c_str()));
+
+			entity.insert("transform", Serializer<Transform>::Serialize(transform));
+
+			if (e.has<MeshRef>())
+			{
+				const MeshRef& mesh = e.get<MeshRef>();
+				toml::table meshTable;
+				meshTable.insert("path", mesh.SourcePath);
+				entity.insert("mesh", std::move(meshTable));
+			}
+
+			entities.push_back(std::move(entity));
+		});
+
+		root.insert("entity", std::move(entities));
+
+		// project:// must resolve to a real file (editor source tree) to write back.
+		const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(virtualPath);
+		if (!diskPath)
+		{
+			KOI_LOG_ERROR("Cannot resolve scene path to disk for saving: {}", virtualPath);
+			return false;
+		}
+
+		std::ofstream out(*diskPath, std::ios::trunc);
+		if (!out)
+		{
+			KOI_LOG_ERROR("Failed to open scene file for writing: {}", diskPath->string());
+			return false;
+		}
+
+		out << root;
+		KOI_LOG_INFO("Saved scene '{}'", diskPath->string());
+		return true;
 	}
 
 	void World::Update(f32 dt)

@@ -59,6 +59,7 @@ namespace koi::editor
 		void ShutdownImGui();
 		void DrawMenuBar();
 		void ReloadAll();
+		void SaveScene();
 		void Cook();
 
 	private:
