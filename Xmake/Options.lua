@@ -1,6 +1,6 @@
 ﻿
 option("WithEditor")
-    set_default(0)
+    set_default(1)
     set_values(0, 1)
     set_showmenu(true)
     set_description("Build with editor support (enables koi-editor target, hot-reload, editor subsystem)")
