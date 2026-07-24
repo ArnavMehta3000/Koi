@@ -4,6 +4,7 @@
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
 #include <cassert>
+#include <ranges>
 
 #pragma warning(push)
 #pragma warning(disable: 6011)  // warning C6011: Dereferencing NULL pointer (I handle this with asserts instead)
@@ -151,6 +152,37 @@ namespace koi
 		m_cmdList->OMSetRenderTargets(
 			colorRT ? 1 : 0,
 			colorRT ? &rtvHandle : nullptr,
+			FALSE,
+			depthRT ? &dsvHandle : nullptr);
+	}
+
+	void CommandList::SetRenderTarget(std::span<TextureHandle> colorRTs, TextureHandle depthRT)
+	{
+		assert(colorRTs.size() <= MAX_RENDER_TARGETS && "SetRenderTarget: too many color RTs");
+
+		FlushBarriers();
+
+		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, MAX_RENDER_TARGETS> rtvHandles{};
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle{};
+
+		for (const auto& [i, handle] : std::views::enumerate(colorRTs) | std::views::as_const)
+		{
+			if (Texture* tex = m_device->Get(colorRTs[i]))
+			{
+				assert(tex->RTVIndex != INVALID_DESCRIPTOR && "SetRenderTarget: invalid color RT");
+				rtvHandles[i] = m_device->RTVHeap().CpuHandle(tex->RTVIndex);
+			}
+		}
+
+		if (Texture* tex = m_device->Get(depthRT))
+		{
+			assert(tex->DSVIndex != INVALID_DESCRIPTOR && "SetRenderTarget: invalid depth RT");
+			dsvHandle = m_device->DSVHeap().CpuHandle(tex->DSVIndex);
+		}
+
+		m_cmdList->OMSetRenderTargets(
+			static_cast<u32>(colorRTs.size()),
+			rtvHandles.data(),
 			FALSE,
 			depthRT ? &dsvHandle : nullptr);
 	}

@@ -13,7 +13,7 @@ namespace koi
 {
 	static constexpr u32 BACK_BUFFER_COUNT      = 3;
 	static constexpr u32 FRAMES_IN_FLIGHT       = 3;
-	static constexpr u32 MAX_RENDER_TARGETS     = 8;
+	static constexpr u32 MAX_RENDER_TARGETS     = 8;  // D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT
 	static constexpr u32 MAX_VERTEX_ATTRIBUTES  = 16;
 	static constexpr u32 MAX_PUSH_CONSTANT_U32S = 32;
 

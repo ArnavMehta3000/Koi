@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Graphics/RHI/DX12Common.h"
+#include <span>
 
 namespace koi
 {
@@ -30,6 +31,7 @@ namespace koi
 
 		// State binding
 		void SetRenderTarget(TextureHandle colorRT, TextureHandle depthRT = {});
+		void SetRenderTarget(std::span<TextureHandle> colorRTs, TextureHandle depthRT = {});
 		void SetViewport(f32 x, f32 y, f32 width, f32 height, f32 minDepth = 0.0f, f32 maxDepth = 1.0f);
 		void SetScissor(u32 x, u32 y, u32 width, u32 height);
 		void SetViewportAndScissor(u32 width, u32 height);
