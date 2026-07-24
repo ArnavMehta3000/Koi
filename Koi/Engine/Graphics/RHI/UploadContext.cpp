@@ -178,6 +178,7 @@ namespace koi
 		// The copy queue is fast relative to frame rate, so the poll branch is almost always taken.
 		if (!m_pendingStagingFree.empty())
 		{
+			// Rare: copy queue somehow hasn't caught up in a whole frame —> actually block
 			if (m_copyFence->GetCompletedValue() < m_pendingFreeFenceValue)
 			{
 				DX_CHECK(m_copyFence->SetEventOnCompletion(m_pendingFreeFenceValue, m_fenceEvent));
