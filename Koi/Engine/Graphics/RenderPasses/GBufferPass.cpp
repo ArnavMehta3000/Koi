@@ -8,9 +8,11 @@ namespace koi
 		: m_config(config)
 	{
 		assert(config.Device && "GBufferPass requires a valid GfxDevice");
-		assert(config.Width > 0 && config.Height > 0 && "Invalid GBuffer RT dimensions");
+	}
 
-		CreateRenderTargets();
+	GBufferPass::~GBufferPass()
+	{
+		if (m_config.Device) DestroyRenderTargets();
 	}
 
 	void GBufferPass::Execute(CommandList& cmd)
@@ -20,29 +22,39 @@ namespace koi
 
 	void GBufferPass::Reset()
 	{
-		for (RenderPassAttachment& o : m_outputs)
-		{
-			m_config.Device->Destroy(o.Texture);
-			o.Texture = TextureHandle();
-		}
+		// Clear only transient per-frame inputs
+		m_world  = nullptr;
+		m_camera = nullptr;
 	}
 
-	void GBufferPass::SetRTSize(u32 width, u32 height)
+	GBufferPass& GBufferPass::SetTarget(u32 width, u32 height)
 	{
-		m_config.Width  = width;
-		m_config.Height = height;
+		if (width == m_width && height == m_height) return *this;
 
-		// Recreate/resize render targets
-		Reset();
+		m_width  = width;
+		m_height = height;
+
+		// Release the old targets and recreate at the new size
+		DestroyRenderTargets();
 		CreateRenderTargets();
+		return *this;
+	}
+
+	void GBufferPass::DestroyRenderTargets()
+	{
+		for (RenderPassAttachment& o : m_outputs)
+		{
+			if (o.Texture) m_config.Device->Destroy(o.Texture);
+			o.Texture = TextureHandle();
+		}
 	}
 
 	void GBufferPass::CreateRenderTargets()
 	{
 		TextureDesc baseTexDesc
 		{
-			.Width  = m_config.Width,
-			.Height = m_config.Height,
+			.Width  = m_width,
+			.Height = m_height,
 			.Format = Format::R8G8B8A8_UNORM,
 			.Usage  = TextureUsage::RenderTarget | TextureUsage::ShaderRead
 		};

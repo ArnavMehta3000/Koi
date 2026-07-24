@@ -15,25 +15,25 @@ namespace koi
 	public:
 		struct Config
 		{
-			u32                      Width     = 0;
-			u32                      Height    = 0;
 			GfxDevice*               Device    = nullptr;
 			const RendererResources* Resources = nullptr;
 		};
 
 		explicit GBufferPass(const Config& config);
+		~GBufferPass();
 
 		std::string_view GetName() const override { return "GBuffer"; }
 		std::span<const RenderPassAttachment> GetOutputs() const override { return m_outputs; }
 		void Execute(CommandList& cmd) override;
 		void Reset() override;
 
-		inline void SetWorld(World& world) { m_world = &world; }
-		inline void SetCamera(const Camera& camera) { m_camera = &camera; }
-		void SetRTSize(u32 width, u32 height);
+		inline GBufferPass& SetWorld(World* world) { m_world = world; return *this; }
+		inline GBufferPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }
+		GBufferPass& SetTarget(u32 width, u32 height);
 
 	private:
 		void CreateRenderTargets();
+		void DestroyRenderTargets();
 
 	private:
 		enum class Outputs
@@ -50,6 +50,8 @@ namespace koi
 		Config        m_config;
 		World*        m_world  = nullptr;
 		const Camera* m_camera = nullptr;
+		u32           m_width  = 0;
+		u32           m_height = 0;
 
 		std::array<RenderPassAttachment, size_t(Outputs::MAX_COUNT)> m_outputs;
 	};
