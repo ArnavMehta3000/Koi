@@ -1,6 +1,17 @@
-﻿[[nodes]]
-name     = "DamagedHelmet"
-mesh     = "Assets/Models/DamagedHelmet.gltf"
-position = [0.0, 0.0, 0.0]
-rotation = [0.0, 0.0, 0.0, 1.0]
-scale    = [1.0, 1.0, 1.0]
+# Scene format: one [[entity]] per entity; components are named sub-tables.
+# Adding a new component type = a koi::Serializer<T> specialization + a line in World::Load.
+#   name             - entity name (used as the child_of link target)
+#   parent           - optional; name of another entity in this file
+#   [entity.transform] position/rotation(quat xyzw)/scale
+#   [entity.mesh]     path - VFS path to a glTF
+
+[[entity]]
+name = "Sponza"
+
+  [entity.transform]
+  position = [0.0, 0.0, 0.0]
+  rotation = [0.0, 0.0, 0.0, 1.0]
+  scale    = [1.0, 1.0, 1.0]
+
+  [entity.mesh]
+  path = "project://Assets/Models/Sponza/Sponza.gltf"

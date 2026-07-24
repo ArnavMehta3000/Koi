@@ -49,7 +49,7 @@ namespace koi
 		Entity         m_root;
 		TransformQuery m_transformQuery;
 		MeshRegistry   m_meshRegistry;
-		AABB     m_bounds;
+		AABB           m_bounds;
 		Camera         m_camera;
 	};
 }
