@@ -476,7 +476,7 @@ namespace koi
 			"PipelineDesc has neither render targets nor a depth target");
 
 		// Vertex input layout
-		std::array<D3D12_INPUT_ELEMENT_DESC, MAX_VERTEX_ATTRIBUTES> inputElements;
+		std::array<D3D12_INPUT_ELEMENT_DESC, MAX_VERTEX_ATTRIBUTES> inputElements{};
 
 		for (const auto& [index, attr] : std::views::enumerate(desc.VertexLayout) | std::views::as_const)
 		{
@@ -496,7 +496,7 @@ namespace koi
 		}
 
 		// Rasterizer
-		D3D12_RASTERIZER_DESC rasterDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+		auto rasterDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		rasterDesc.FillMode              = desc.Rasterizer.FillMode;
 		rasterDesc.CullMode              = desc.Rasterizer.CullMode;
 		rasterDesc.FrontCounterClockwise = desc.Rasterizer.FrontCounterClockwise;
@@ -509,7 +509,7 @@ namespace koi
 		rasterDesc.SlopeScaledDepthBias  = desc.Rasterizer.SlopeScaledDepthBias;
 
 		// Blend state
-		D3D12_BLEND_DESC blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+		auto blendDesc = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		for (u32 i = 0; i < desc.RenderTargetCount; i++)
 		{
 			const BlendTargetDesc& src    = desc.BlendTargets[i];
@@ -525,7 +525,7 @@ namespace koi
 		}
 
 		// Depth-stencil
-		D3D12_DEPTH_STENCIL_DESC depthDesc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+		auto depthDesc = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
 		depthDesc.DepthEnable              = desc.DepthStencil.DepthEnable;
 		depthDesc.DepthWriteMask           = desc.DepthStencil.DepthWrite
 			? D3D12_DEPTH_WRITE_MASK_ALL
@@ -536,18 +536,18 @@ namespace koi
 		// Create PSO desc
 		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc
 		{
-				.pRootSignature        = m_rootSignature.Get(),
-				.VS                    = { desc.VertexShader.data(), desc.VertexShader.size() },
-				.PS                    = { desc.PixelShader.data(), desc.PixelShader.size() },
-				.BlendState            = blendDesc,
-				.SampleMask            = 0xffffffff , // Same as UINT_MAX
-				.RasterizerState       = rasterDesc,
-				.DepthStencilState     = depthDesc,
-				.InputLayout           = { inputElements.data(), static_cast<u32>(desc.VertexLayout.size())},
-				.PrimitiveTopologyType = desc.TopologyType,
-				.NumRenderTargets      = desc.RenderTargetCount,
-				.DSVFormat             = ToDXGIFormat(desc.DepthFormat),
-				.SampleDesc            = { desc.SampleCount , 0 },
+			.pRootSignature        = m_rootSignature.Get(),
+			.VS                    = { desc.VertexShader.data(), desc.VertexShader.size() },
+			.PS                    = { desc.PixelShader.data(), desc.PixelShader.size() },
+			.BlendState            = blendDesc,
+			.SampleMask            = 0xffffffff , // Same as UINT_MAX
+			.RasterizerState       = rasterDesc,
+			.DepthStencilState     = depthDesc,
+			.InputLayout           = { inputElements.data(), static_cast<u32>(desc.VertexLayout.size())},
+			.PrimitiveTopologyType = desc.TopologyType,
+			.NumRenderTargets      = desc.RenderTargetCount,
+			.DSVFormat             = ToDXGIFormat(desc.DepthFormat),
+			.SampleDesc            = { desc.SampleCount , 0 },
 		};
 
 		// Add optional shaders
@@ -592,11 +592,12 @@ namespace koi
 		KOI_LOG_TRACE("Creating bindless root signature");
 
 		const D3D_ROOT_SIGNATURE_VERSION rootSignatureVersion = g_featureSupport.HighestRootSignatureVersion();
+		assert(rootSignatureVersion >= D3D_ROOT_SIGNATURE_VERSION_1_1 && "Bindless requires root signature version 1.1 or higher");
 
-		CD3DX12_ROOT_PARAMETER1 rootParam;
+		auto rootParam = CD3DX12_ROOT_PARAMETER1();
 		rootParam.InitAsConstants(MAX_PUSH_CONSTANT_U32S, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
 
-		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC desc;
+		auto desc = CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC();
 		desc.Init_1_1(
 			1, &rootParam,
 			0, nullptr,
