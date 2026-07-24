@@ -66,17 +66,17 @@ void SandboxApp::OnRender()
 {
 	ZoneScoped;
 
-	const std::optional<koi::ViewportTarget> target = GetFrameTarget();
-	if (!target) return;  // Nothing valid to render into yet this frame
+	const std::optional<koi::RenderView> view = GetRenderView(&m_world.GetCamera());
+	if (!view) return;  // Nothing valid to render into yet this frame
 
-	const koi::Camera* camera = ResolveCamera(&m_world.GetCamera());
+	const koi::ViewportTarget& target = view->Target;
 
 	m_scenePass->SetWorld(&m_world)
-		.SetCamera(camera)
-		.SetTarget(target->HDRColorBuffer, target->DepthBuffer, target->Width, target->Height);
+		.SetCamera(view->Camera)
+		.SetTarget(target.HDRColorBuffer, target.DepthBuffer, target.Width, target.Height);
 
 	m_tonemapPass->SetInput(m_scenePass->GetColorOutput())
-		.SetTarget(target->ResolvedColorBuffer, target->Width, target->Height);
+		.SetTarget(target.ResolvedColorBuffer, target.Width, target.Height);
 }
 
 void SandboxApp::OnShutdown()

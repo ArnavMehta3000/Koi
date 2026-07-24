@@ -2,12 +2,12 @@
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include "Koi/Engine/Interop/ViewportTarget.h"
 #include <memory>
+#include <optional>
 #include <utility>
 
 namespace koi
 {
 	class IReloadable;
-	struct Camera;
 
 	class IEditorContext
 	{
@@ -17,8 +17,7 @@ namespace koi
 		virtual void RegisterReloadable(IReloadable* reloadable) = 0;
 		virtual void RegisterPanel(std::unique_ptr<IEditorPanel> panel) = 0;
 
-		[[nodiscard]] virtual const ViewportTarget* GetViewportTarget() const = 0;
-		[[nodiscard]] virtual const Camera* GetEditorCamera() const = 0;
+		[[nodiscard]] virtual std::optional<RenderView> GetEditorRenderView() const = 0;
 
 		template<typename T, typename... Args>
 		T& RegisterPanel(Args&&... args)

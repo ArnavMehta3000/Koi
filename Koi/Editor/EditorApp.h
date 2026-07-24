@@ -14,7 +14,6 @@ namespace koi
 	class Engine;
 	class CommandList;
 	class ViewportPanel;
-	struct Camera;
 }
 
 namespace koi::editor
@@ -52,8 +51,7 @@ namespace koi::editor
 		void RegisterPanel(std::unique_ptr<IEditorPanel> panel) override;
 		using IEditorContext::RegisterPanel;
 
-		[[nodiscard]] const ViewportTarget* GetViewportTarget() const override;
-		[[nodiscard]] const Camera* GetEditorCamera() const override;
+		[[nodiscard]] std::optional<RenderView> GetEditorRenderView() const override;
 
 	private:
 		void Setup();

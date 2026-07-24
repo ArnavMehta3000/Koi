@@ -60,8 +60,8 @@ namespace koi
 
 		[[nodiscard]] virtual World* GetEditorWorld() { return nullptr; }
 
-		[[nodiscard]] std::optional<ViewportTarget> GetFrameTarget() const;
-		[[nodiscard]] const Camera* ResolveCamera(const Camera* fallback) const;
+		// Resolves the camera + render target for this frame
+		[[nodiscard]] std::optional<RenderView> GetRenderView(const Camera* gameCamera) const;
 
 	private:
 		AppCreateDesc   m_desc;

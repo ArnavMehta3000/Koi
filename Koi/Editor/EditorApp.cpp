@@ -174,9 +174,12 @@ namespace koi::editor
 
 	void EditorApp::RegisterPanel(std::unique_ptr<IEditorPanel> panel) { m_panels.push_back(std::move(panel)); }
 
-	const ViewportTarget* EditorApp::GetViewportTarget() const { return m_viewportPanel->GetTarget(); }
-
-	const Camera* EditorApp::GetEditorCamera() const { return &m_viewportPanel->GetCamera(); }
+	std::optional<RenderView> EditorApp::GetEditorRenderView() const
+	{
+		const ViewportTarget* target = m_viewportPanel->GetTarget();
+		if (!target) return std::nullopt;
+		return RenderView{ .Camera = &m_viewportPanel->GetCamera(), .Target = *target };
+	}
 
 	void EditorApp::ReloadAll()
 	{

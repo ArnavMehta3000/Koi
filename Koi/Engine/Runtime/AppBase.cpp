@@ -28,12 +28,12 @@ namespace koi
 		OnInit();
 	}
 
-	void AppBase::HostTick(f32 dt) 
+	void AppBase::HostTick(f32 dt)
 	{
 		OnTick(dt);
 	}
 
-	void AppBase::HostRender() 
+	void AppBase::HostRender()
 	{
 		OnRender();
 	}
@@ -44,35 +44,28 @@ namespace koi
 		KOI_LOG_INFO("Shutting down application: {}", m_desc.AppName);
 	}
 
-	std::optional<ViewportTarget> AppBase::GetFrameTarget() const
+	std::optional<RenderView> AppBase::GetRenderView(const Camera* gameCamera) const
 	{
+		// Editor owns both the camera and the target (viewport RT)
 		if (m_editorContext)
-		{
-			const ViewportTarget* vp = m_editorContext->GetViewportTarget();
-			return vp ? std::optional(*vp) : std::nullopt;
-		}
+			return m_editorContext->GetEditorRenderView();
 
+		// Standalone: render from the game camera straight into the swapchain
 		Renderer& renderer = m_engine->GetRenderer();
 		RenderWindow* rw = renderer.GetMainRenderWindow();
 		if (!rw) return std::nullopt;
 
-		return ViewportTarget
+		return RenderView
 		{
-			.HDRColorBuffer      = rw->GetHDRColorBuffer(),
-			.DepthBuffer         = renderer.GetDepthBuffer(),
-			.ResolvedColorBuffer = rw->CurrentBackBuffer(),
-			.Width               = rw->GetWidth(),
-			.Height              = rw->GetHeight(),
+			.Camera = gameCamera,
+			.Target =
+			{
+				.HDRColorBuffer      = rw->GetHDRColorBuffer(),
+				.DepthBuffer         = renderer.GetDepthBuffer(),
+				.ResolvedColorBuffer = rw->CurrentBackBuffer(),
+				.Width               = rw->GetWidth(),
+				.Height              = rw->GetHeight(),
+			},
 		};
-	}
-
-	const Camera* AppBase::ResolveCamera(const Camera* fallback) const
-	{
-		if (m_editorContext)
-		{
-			if (const Camera* editorCamera = m_editorContext->GetEditorCamera())
-				return editorCamera;
-		}
-		return fallback;
 	}
 }
