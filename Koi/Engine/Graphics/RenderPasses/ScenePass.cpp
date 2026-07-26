@@ -4,6 +4,7 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/Camera.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
 #include <cassert>
@@ -30,6 +31,7 @@ namespace koi
 	ScenePass::ScenePass(const Config& config)
 		: m_config(config)
 	{
+		ZoneScoped;
 		assert(m_config.Device && "ScenePass requires a valid GfxDevice");
 
 		m_outputs[0] = { {}, "HDRColor" };
@@ -50,6 +52,7 @@ namespace koi
 
 	ScenePass::~ScenePass()
 	{
+		ZoneScoped;
 		if (!m_config.Device) return;
 
 		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
@@ -62,6 +65,7 @@ namespace koi
 
 	void ScenePass::EnsureObjectCapacity(u32 frameSlot, u32 requiredCount)
 	{
+		ZoneScoped;
 		if (requiredCount <= m_objectCapacity[frameSlot]) return;
 
 		const u32 newCapacity = std::max(requiredCount, std::max(64u, m_objectCapacity[frameSlot] * 2));
@@ -79,6 +83,28 @@ namespace koi
 		});
 		m_objectCapacity[frameSlot] = newCapacity;
 	}
+
+	void ScenePass::ConfigureECS()
+	{
+		ZoneScoped;
+		m_renderSystem = m_world->GetECS().system<const WorldTransform, const MeshRef>("SceneMeshGatherSystem")
+			.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
+			.each([this](flecs::iter& it, size_t, const WorldTransform& worldXform, const MeshRef& meshRef)
+			{
+				GatherContext* gather = it.param<GatherContext>();
+				const GPUMesh* mesh = m_world->GetMesh(meshRef.Handle);
+				if (!mesh) return;
+
+				const u32 objectIndex = static_cast<u32>(gather->Objects.size());
+				gather->Objects.push_back(PerObjectData
+					{
+						.World = worldXform.Value,
+						.NormalMatrix = worldXform.Value.Invert().Transpose(),
+					});
+				gather->DrawInfos.push_back(DrawInfo{ mesh, objectIndex });
+			});
+	}
+
 
 	void ScenePass::Reset()
 	{
@@ -101,6 +127,7 @@ namespace koi
 
 	void ScenePass::Execute(CommandList& cmd)
 	{
+		ZoneScoped;
 		const TextureHandle colorTarget = m_outputs[0].Texture;
 		const TextureHandle depthTarget = m_outputs[1].Texture;
 		if (!colorTarget || !m_world || !m_camera || !m_config.Resources) return;
@@ -109,28 +136,11 @@ namespace koi
 		const u32 frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
 
 		// Set up scene pass rendering ECS system for this world (if world is first encountered or changed)
-		flecs::world_t* ecsWorld = m_world->GetECS().c_ptr();
-		if (m_queryWorld != ecsWorld)
+		if (flecs::world_t* ecsWorld = m_world->GetECS().c_ptr(); m_queryWorld != ecsWorld)
 		{
-			m_renderSystem = m_world->GetECS().system<const WorldTransform, const MeshRef>("SceneMeshGatherSystem")
-				.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
-				.each([this](flecs::iter& it, size_t, const WorldTransform& worldXform, const MeshRef& meshRef)
-				{
-					GatherContext* gather = it.param<GatherContext>();
-					const GPUMesh* mesh = m_world->GetMesh(meshRef.Handle);
-					if (!mesh) return;
-
-					const u32 objectIndex = static_cast<u32>(gather->Objects.size());
-					gather->Objects.push_back(PerObjectData
-					{
-						.World        = worldXform.Value,
-						.NormalMatrix = worldXform.Value.Invert().Transpose(),
-					});
-					gather->DrawInfos.push_back(DrawInfo{ mesh, objectIndex });
-				});
 			m_queryWorld = ecsWorld;
+			ConfigureECS();
 		}
-
 
 		// Gather this frame's per-object data + draw list
 		GatherContext gather;

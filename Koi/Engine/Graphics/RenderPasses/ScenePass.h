@@ -38,6 +38,7 @@ namespace koi
 
 	private:
 		void EnsureObjectCapacity(u32 frameSlot, u32 requiredCount);
+		void ConfigureECS();
 
 		Config        m_config;
 		World*        m_world  = nullptr;
@@ -52,6 +53,6 @@ namespace koi
 		FrameArray<u32>          m_objectCapacity{};         // element capacity of m_objectBuffers[i]
 
 		flecs::world_t* m_queryWorld = nullptr;
-		flecs::system m_renderSystem;
+		flecs::system   m_renderSystem;
 	};
 }
