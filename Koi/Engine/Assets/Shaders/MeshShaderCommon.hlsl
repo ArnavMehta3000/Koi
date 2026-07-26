@@ -13,6 +13,8 @@ cbuffer DrawPushConstants : register(b0)
 	uint VertexOffset;
 };
 
+static const uint INVALID_DESCRIPTOR = 0xFFFFFFFFu;
+
 struct GPUMaterialData
 {
 	float4 BaseColorFactor;
