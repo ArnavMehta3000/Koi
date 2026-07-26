@@ -61,6 +61,7 @@ namespace koi
 		{
 			if (m_renderWindow) m_renderWindow->Resize(w, h);
 			RebuildDepthBuffer(w, h);
+			m_frameGraph.OnResize(w, h);
 		});
 
 		m_frameContext = std::make_unique<FrameContext>();

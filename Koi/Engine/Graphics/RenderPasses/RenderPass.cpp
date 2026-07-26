@@ -48,6 +48,14 @@ namespace koi
 		}
 	}
 
+	void RenderGraph::OnResize(u32 w, u32 h)
+	{
+		for (auto& pass : m_passes)
+		{
+			pass->OnResize(w, h);
+		}
+	}
+
 	void RenderGraph::Clear()
 	{
 		m_passes.clear();

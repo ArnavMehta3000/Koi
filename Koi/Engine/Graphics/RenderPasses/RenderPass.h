@@ -26,6 +26,7 @@ namespace koi
 		virtual std::span<const RenderPassAttachment> GetOutputs() const { return {}; }
 		virtual void Reset() {}
 		virtual void Execute(CommandList& cmd) = 0;
+		virtual void OnResize([[maybe_unused]] u32 w, [[maybe_unused]] u32 h) {}
 	};
 
 	class RenderGraph
@@ -44,6 +45,7 @@ namespace koi
 		void Compile();
 		void Execute(CommandList& cmd);
 		void ResetAll();
+		void OnResize(u32 w, u32 h);
 
 		void Clear();
 
