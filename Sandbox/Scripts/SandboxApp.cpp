@@ -3,6 +3,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Runtime/CommandLine.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/ScenePass.h"
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
 #include <toml++/toml.hpp>
@@ -34,6 +35,12 @@ void SandboxApp::OnInit()
 	koi::Renderer& renderer = GetEngine()->GetRenderer();
 	koi::RenderGraph& graph = renderer.GetFrameGraph();
 
+	m_gbufferPass = &graph.AddPass<koi::GBufferPass>(koi::GBufferPass::Config
+	{
+		.Device    = &renderer.GetDevice(),
+		.Resources = &renderer.GetDefaultResources(),
+	});
+
 	m_scenePass = &graph.AddPass<koi::ScenePass>(koi::ScenePass::Config
 	{
 		.Device    = &renderer.GetDevice(),
@@ -47,6 +54,10 @@ void SandboxApp::OnInit()
 	});
 
 	LoadScene();
+
+	// Update pass data
+	m_gbufferPass->SetWorld(&m_world);
+	m_scenePass->SetWorld(&m_world);
 }
 
 void SandboxApp::OnTick(koi::f32 dt)
@@ -71,8 +82,10 @@ void SandboxApp::OnRender()
 
 	const koi::ViewportTarget& target = view->Target;
 
-	m_scenePass->SetWorld(&m_world)
-		.SetCamera(view->Camera)
+	m_gbufferPass->SetCamera(view->Camera)
+		.SetTarget(target.Width, target.Height);
+
+	m_scenePass->SetCamera(view->Camera)
 		.SetTarget(target.HDRColorBuffer, target.DepthBuffer, target.Width, target.Height);
 
 	m_tonemapPass->SetInput(m_scenePass->GetColorOutput())
