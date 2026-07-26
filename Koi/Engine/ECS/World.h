@@ -45,13 +45,10 @@ namespace koi
 		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
 
 	private:
-		using TransformQuery = flecs::query<const Transform, const WorldTransform*, WorldTransform>;
-
-		ECS            m_ecs;
-		Entity         m_root;
-		TransformQuery m_transformQuery;
-		MeshRegistry   m_meshRegistry;
-		AABB           m_bounds;
-		Camera         m_camera;
+		ECS          m_ecs;
+		Entity       m_root;
+		MeshRegistry m_meshRegistry;
+		AABB         m_bounds;
+		Camera       m_camera;
 	};
 }

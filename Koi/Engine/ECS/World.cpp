@@ -4,25 +4,28 @@
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Math/TransformSerializer.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
-#include <toml++/toml.hpp>
 #include <cassert>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <vector>
 
 namespace koi
 {
 	World::World()
 	{
+		ZoneScoped;
+
 		m_bounds.Min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 		m_bounds.Max = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-		// Cascade query: parents are recomputed before their children, so a single
-		// pass produces correct world transforms with no manual dirty tracking
-		m_transformQuery = m_ecs.query_builder<const Transform, const WorldTransform*, WorldTransform>()
+		m_ecs.system<const Transform, const WorldTransform*, WorldTransform>("UpdateWorldTransforms")
 			.term_at(1).parent().cascade()
-			.build();
+			.kind(flecs::PostUpdate)
+			.each([](const Transform& local, const WorldTransform* parentWorld, WorldTransform& worldXform)
+			{
+				const Matrix localMat = local.ToMatrix();
+				worldXform.Value = parentWorld ? (localMat * parentWorld->Value) : localMat;
+			});
 
 		// Add root entity, disabled by default. Every other entity is parented to this
 		m_root = m_ecs.entity("WorldRoot");
@@ -33,7 +36,6 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
-		// Scene files are addressed under the project:// scheme.
 		const std::string virtualPath = "project://" + path.generic_string();
 
 		const std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
@@ -181,12 +183,6 @@ namespace koi
 	{
 		ZoneScoped;
 		m_ecs.progress(dt);
-
-		m_transformQuery.each([](const Transform& local, const WorldTransform* parentWorld, WorldTransform& worldXform)
-		{
-			const Matrix localMat = local.ToMatrix();
-			worldXform.Value = parentWorld ? (localMat * parentWorld->Value) : localMat;
-		});
 	}
 
 	void World::Release(GfxDevice& device)
