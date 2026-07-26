@@ -138,6 +138,15 @@ namespace koi
 				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);
 			}
 		}
+
+		// Leave the color outputs shader-readable so any consumer (the debug panel now, the
+		// lighting pass later) can sample them without knowing who produced them. Next frame's
+		// ClearRenderTarget transitions them back to RENDER_TARGET. Depth stays DEPTH_WRITE —
+		// it isn't sampleable until Step 7 makes it a typeless resource with an SRV.
+		cmd.TransitionBarrier(albedo,   D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cmd.TransitionBarrier(normals,  D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cmd.TransitionBarrier(material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cmd.FlushBarriers();
 	}
 
 	void GBufferPass::EnsureObjectCapacity(u32 frameSlot, u32 requiredCount)

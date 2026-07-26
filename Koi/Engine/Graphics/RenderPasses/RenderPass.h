@@ -40,6 +40,17 @@ namespace koi
 			return *static_cast<T*>(p.get());
 		}
 
+		template<typename T>
+		T* GetPass()
+		{
+			for (auto& p : m_passes)
+			{
+				if (T* t = dynamic_cast<T*>(p.get()))
+					return t;
+			}
+			return nullptr;
+		}
+
 		// Validates that every declared input name is produced as an output by a prior pass
 		// Inputs not covered by any prior pass are assumed externally produced and logged at trace level
 		void Compile();
