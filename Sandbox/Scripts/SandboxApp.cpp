@@ -54,10 +54,6 @@ void SandboxApp::OnInit()
 	});
 
 	LoadScene();
-
-	// Update pass data
-	m_gbufferPass->SetWorld(&m_world);
-	m_scenePass->SetWorld(&m_world);
 }
 
 void SandboxApp::OnTick(koi::f32 dt)
@@ -82,10 +78,12 @@ void SandboxApp::OnRender()
 
 	const koi::ViewportTarget& target = view->Target;
 
-	m_gbufferPass->SetCamera(view->Camera)
+	m_gbufferPass->SetWorld(&m_world)
+		.SetCamera(view->Camera)
 		.SetTarget(target.Width, target.Height);
 
-	m_scenePass->SetCamera(view->Camera)
+	m_scenePass->SetWorld(&m_world)
+		.SetCamera(view->Camera)
 		.SetTarget(target.HDRColorBuffer, target.DepthBuffer, target.Width, target.Height);
 
 	m_tonemapPass->SetInput(m_scenePass->GetColorOutput())

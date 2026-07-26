@@ -26,6 +26,7 @@ namespace koi
 		std::span<const RenderPassAttachment> GetOutputs() const override { return m_outputs; }
 		void Execute(CommandList& cmd) override;
 		void Reset() override;
+		void OnResize(u32 w, u32 h) override;
 
 		inline GBufferPass& SetWorld(World* world) { m_world = world; return *this; }
 		inline GBufferPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }
@@ -34,6 +35,8 @@ namespace koi
 	private:
 		void CreateRenderTargets();
 		void DestroyRenderTargets();
+		void ConfigureECS();
+		void EnsureObjectCapacity(u32 frameSlot, u32 requiredCount);
 
 	private:
 		enum class Outputs
@@ -52,6 +55,13 @@ namespace koi
 		const Camera* m_camera = nullptr;
 		u32           m_width  = 0;
 		u32           m_height = 0;
+
+		flecs::world_t* m_queryWorld = nullptr;
+		flecs::system   m_renderSystem;
+
+		FrameArray<BufferHandle> m_frameConstantsBuffers{};
+		FrameArray<BufferHandle> m_objectBuffers{};
+		FrameArray<u32>          m_objectCapacity{};
 
 		std::array<RenderPassAttachment, size_t(Outputs::MAX_COUNT)> m_outputs;
 	};
