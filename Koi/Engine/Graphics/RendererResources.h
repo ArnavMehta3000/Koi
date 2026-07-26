@@ -20,6 +20,7 @@ namespace koi
 		PipelineHandle TonemapPipeline{};          // fullscreen HDR -> swapchain ACES tonemap
 		PipelineHandle MeshOpaquePipeline{};        // solid fill, back-face cull, depth read/write, HDR RT
 		PipelineHandle MeshWireframePipeline{};     // wireframe fill, no cull, depth read/write, HDR RT
+		PipelineHandle GBufferPipeline{};           // deferred geometry: 3 MRT (albedo/normals/material) + depth
 
 		void Init(GfxDevice& device);
 		void Shutdown(GfxDevice& device);

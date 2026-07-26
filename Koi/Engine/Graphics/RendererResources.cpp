@@ -82,11 +82,13 @@ namespace koi
 		device.Destroy(TonemapPipeline);
 		device.Destroy(MeshOpaquePipeline);
 		device.Destroy(MeshWireframePipeline);
+		device.Destroy(GBufferPipeline);
 		WhiteTexture          = {};
 		FlatNormalTexture     = {};
 		TonemapPipeline       = {};
 		MeshOpaquePipeline    = {};
 		MeshWireframePipeline = {};
+		GBufferPipeline       = {};
 		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
 	}
 
@@ -158,6 +160,33 @@ namespace koi
 					.RenderTargetCount   = 1,
 					.DepthFormat         = Format::D32_FLOAT,
 					.DebugName           = "Mesh.Wireframe",
+				});
+			}
+		}
+
+		// --- G-buffer (deferred geometry: 3 color MRT + depth) ---
+		{
+			auto vsData = LoadShader("engine://Assets/Shaders/GBufferVS");
+			auto psData = LoadShader("engine://Assets/Shaders/GBufferPS");
+			if (vsData.empty() || psData.empty())
+			{
+				KOI_LOG_ERROR("RendererResources: failed to load gbuffer shaders");
+			}
+			else
+			{
+				destroyIfValid(GBufferPipeline);
+				GBufferPipeline = device.CreatePipeline(PipelineDesc
+				{
+					.VertexShader        = vsData,
+					.PixelShader         = psData,
+					// Same winding/cull as the opaque mesh pass (RH, front faces wind CCW).
+					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
+					.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+					// Must match GBufferPass::CreateRenderTargets and the shader's SV_Target formats.
+					.RenderTargetFormats = { Format::R8G8B8A8_UNORM, Format::R16G16B16A16_UNORM, Format::R8G8B8A8_UNORM },
+					.RenderTargetCount   = 3,
+					.DepthFormat         = Format::D32_FLOAT,
+					.DebugName           = "GBuffer",
 				});
 			}
 		}

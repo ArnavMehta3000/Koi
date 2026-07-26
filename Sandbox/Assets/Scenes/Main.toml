@@ -1,8 +1,8 @@
-[[entity]]
-name = 'Sponza'
+﻿[[entity]]
+name = 'Test Mesh'
 
     [entity.mesh]
-    path = 'project://Assets/Models/Sponza/Sponza.gltf'
+    path = 'project://Assets/Models/DamagedHelmet.gltf'
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
