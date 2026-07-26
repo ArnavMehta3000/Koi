@@ -2,7 +2,13 @@
 	set_kind("static")
 
 	add_options("LogLevel", "WithEditor")
-	add_deps("ImGui", "AngelScript", "SimpleMath", { public = true })
+
+	add_deps(
+		"ImGui",
+		"ImGuiColorTextEdit",
+		"AngelScript",
+		"SimpleMath", { public = true })
+
 	add_packages(
 		"cli11",
 		"spdlog",
