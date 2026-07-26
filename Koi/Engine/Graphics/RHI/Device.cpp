@@ -38,6 +38,22 @@ namespace koi
 		return f;
 	}
 
+	// A sampleable depth texture needs three different DXGI formats over one resource:
+	// - A typeless resource (so it can carry both views)
+	// - A typed depth DSV to render into
+	// - A typed float SRV to sample
+	struct DepthFormats { DXGI_FORMAT Resource; DXGI_FORMAT Dsv; DXGI_FORMAT Srv; };
+	static DepthFormats MapDepthFormats(Format f)
+	{
+		switch (f)
+		{
+		case Format::D32_FLOAT:         return { DXGI_FORMAT_R32_TYPELESS,   DXGI_FORMAT_D32_FLOAT,         DXGI_FORMAT_R32_FLOAT };
+		case Format::D24_UNORM_S8_UINT: return { DXGI_FORMAT_R24G8_TYPELESS, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS };
+		case Format::D16_UNORM:         return { DXGI_FORMAT_R16_TYPELESS,   DXGI_FORMAT_D16_UNORM,         DXGI_FORMAT_R16_UNORM };
+		default:                        return { ToDXGIFormat(f), ToDXGIFormat(f), ToDXGIFormat(f) };
+		}
+	}
+
 	static void ReportLiveObjects()
 	{
 #if KOI_DEBUG
@@ -152,8 +168,17 @@ namespace koi
 
 		Texture tex{ .Desc = desc, .IsSwapChainImage = false };
 
+		const bool isDepth        = desc.Usage.Has(TextureUsage::DepthStencil);
+		const bool isRenderTarget = desc.Usage.Has(TextureUsage::RenderTarget);
+		const bool isShaderRead   = desc.Usage.Has(TextureUsage::ShaderRead);
+
+		const DepthFormats depthFmts     = MapDepthFormats(desc.Format);
+		const DXGI_FORMAT resourceFormat = (isDepth && isShaderRead)
+			? depthFmts.Resource
+			: ToDXGIFormat(desc.Format);
+
 		auto rd = CD3DX12_RESOURCE_DESC::Tex2D(
-			ToDXGIFormat(desc.Format),
+			resourceFormat,
 			desc.Width, desc.Height,
 			static_cast<u16>(desc.DepthOrArray),
 			static_cast<u16>(desc.MipLevels),
@@ -164,9 +189,6 @@ namespace koi
 
 		CD3DX12_HEAP_PROPERTIES heap(D3D12_HEAP_TYPE_DEFAULT);
 		D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
-
-		const bool isDepth        = desc.Usage.Has(TextureUsage::DepthStencil);
-		const bool isRenderTarget = desc.Usage.Has(TextureUsage::RenderTarget);
 
 		// Debug layer will warn if I pass a different clear value
 		D3D12_CLEAR_VALUE clearValue{};
@@ -218,9 +240,10 @@ namespace koi
 		{
 			tex.SRVIndex = m_resourceHeap.Allocate();
 
+			// Depth resources are typeless, so the SRV must use the typed float view format
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc
 			{
-				.Format                  = ToDXGIFormat(desc.Format),
+				.Format                  = isDepth ? depthFmts.Srv : ToDXGIFormat(desc.Format),
 				.ViewDimension           = D3D12_SRV_DIMENSION_TEXTURE2D,
 				.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
 				.Texture2D               = { .MostDetailedMip = 0, .MipLevels = desc.MipLevels },

@@ -139,13 +139,11 @@ namespace koi
 			}
 		}
 
-		// Leave the color outputs shader-readable so any consumer (the debug panel now, the
-		// lighting pass later) can sample them without knowing who produced them. Next frame's
-		// ClearRenderTarget transitions them back to RENDER_TARGET. Depth stays DEPTH_WRITE —
-		// it isn't sampleable until Step 7 makes it a typeless resource with an SRV.
+		// Leave all outputs shader-readable
 		cmd.TransitionBarrier(albedo,   D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cmd.TransitionBarrier(normals,  D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cmd.TransitionBarrier(material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		if (depth) cmd.TransitionBarrier(depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cmd.FlushBarriers();
 	}
 
@@ -249,21 +247,20 @@ namespace koi
 		baseTexDesc.DebugName     = "GBuffer Material";
 		TextureHandle materialSRV = m_config.Device->CreateTexture(baseTexDesc);
 
-		// Depth: plain D32 DepthStencil for now — bound so geometry has correct occlusion.
-		// Not yet sampleable (no ShaderRead / SRV); Step 7 upgrades it to a typeless
-		// resource with a D32 DSV + R32 SRV so the debug panel can read it.
+		// Depth: sampleable D32. DepthStencil | ShaderRead makes the device back it with a
+		// typeless resource carrying both a D32 DSV (to render into) and an R32 SRV (to sample)
 		TextureHandle depth = m_config.Device->CreateTexture(TextureDesc
 		{
 			.Width     = m_width,
 			.Height    = m_height,
 			.Format    = Format::D32_FLOAT,
-			.Usage     = TextureUsage::DepthStencil,
+			.Usage     = TextureUsage::DepthStencil | TextureUsage::ShaderRead,
 			.DebugName = "GBuffer Depth",
 		});
 
-		m_outputs[size_t(Outputs::Albedo)]   = { albedoSRV  , "Albedo" };
-		m_outputs[size_t(Outputs::Normals)]  = { normalSRV  , "Normals" };
+		m_outputs[size_t(Outputs::Albedo)]   = { albedoSRV  , "Albedo"   };
+		m_outputs[size_t(Outputs::Normals)]  = { normalSRV  , "Normals"  };
 		m_outputs[size_t(Outputs::Material)] = { materialSRV, "Material" };
-		m_outputs[size_t(Outputs::Depth)]    = { depth      , "Depth" };
+		m_outputs[size_t(Outputs::Depth)]    = { depth      , "Depth"    };
 	}
 }
