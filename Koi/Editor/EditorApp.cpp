@@ -1,6 +1,7 @@
 ﻿#include "Koi/Editor/EditorApp.h"
 #include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/Panels/GbufferDebugPanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/ECS/World.h"
@@ -85,6 +86,7 @@ namespace koi::editor
 
 		// Register default editor panels
 		RegisterPanel<ScenePanel>(*m_game);
+		RegisterPanel<GBufferDebugPanel>(renderer);
 		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer);
 	}
 
