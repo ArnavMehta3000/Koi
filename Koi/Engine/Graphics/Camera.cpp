@@ -35,6 +35,7 @@ namespace koi
 
 	void Camera::SetAspect(f32 aspect)
 	{
+		if (Aspect == aspect) return;
 		SetProjection(FovY, aspect, Near, Far);
 	}
 }
