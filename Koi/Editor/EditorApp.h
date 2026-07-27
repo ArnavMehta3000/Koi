@@ -3,6 +3,8 @@
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Interop/EditorContext.h"
+#include "Koi/Engine/Assets/MeshAsset.h"
+#include <toml++/toml.hpp>
 #include <filesystem>
 
 namespace koi
@@ -16,6 +18,15 @@ namespace koi
 namespace koi::editor
 {
 	namespace fs = std::filesystem;
+
+	// The game only ticks while Playing; Edit and Paused leave the world untouched
+	// between frames, so it still renders and stays editable
+	enum class PlayState
+	{
+		Edit,
+		Playing,
+		Paused,
+	};
 
 	struct EditorConfig
 	{
@@ -59,6 +70,10 @@ namespace koi::editor
 		void SaveScene();
 		void Cook();
 
+		void Play();
+		void TogglePause();
+		void Stop();
+
 	private:
 		std::unique_ptr<AppBase>                    m_game;
 		EditorConfig                                m_config{};
@@ -67,5 +82,9 @@ namespace koi::editor
 		ViewportPanel*                              m_viewportPanel    = nullptr;
 		bool                                        m_imguiInitialized = false;
 		std::string                                 m_lastCookStatus;  // shown in menubar after Cook click
+
+		PlayState                                   m_playState = PlayState::Edit;
+		toml::table                                 m_snapshot;        // the world as it was when Play was pressed
+		std::vector<MeshHandle>                     m_pinnedAssets;    // keeps the snapshot's assets resident across Stop
 	};
 }

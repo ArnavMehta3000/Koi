@@ -4,6 +4,7 @@
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/ECS/Components.h"
 #include <flecs.h>
+#include <toml++/toml.hpp>
 #include <optional>
 #include <filesystem>
 
@@ -29,6 +30,12 @@ namespace koi
 		[[nodiscard]] static std::optional<World> Load(const fs::path& path, GfxDevice& device);
 
 		bool Save(const fs::path& path);
+
+		bool LoadFromTable(const toml::table& scene, GfxDevice& device);
+		[[nodiscard]] toml::table SaveToTable();
+
+		// Destroys every entity and releases the assets they held references on
+		void Clear(GfxDevice& device);
 
 		void Update(f32 dt);
 		void UpdateCamera(f32 aspect);

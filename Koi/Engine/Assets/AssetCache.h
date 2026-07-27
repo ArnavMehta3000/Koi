@@ -23,7 +23,7 @@ namespace koi
 		{
 			if (const AssetHandle<T> existing = AddRef(vfsPath))
 			{
-				KOI_LOG_DEBUG("Reusing {} asset: {}", AssetTraits<T>::Name, vfsPath);
+				//KOI_LOG_DEBUG("Reusing {} asset: {}", AssetTraits<T>::Name, vfsPath);  // Spams log on editor Play/Pause
 				return existing;
 			}
 

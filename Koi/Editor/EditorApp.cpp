@@ -106,8 +106,12 @@ namespace koi::editor
 
 	void EditorApp::HostTick(f32 dt)
 	{
+		// The editor camera keeps moving in every state; only the game's tick is gated,
+		// which is what stops the world from simulating in Edit and Paused
 		m_viewportPanel->Update(dt, Engine::Get().GetInputManager());
-		m_game->HostTick(dt);
+
+		if (m_playState == PlayState::Playing)
+			m_game->HostTick(dt);
 	}
 
 	void EditorApp::HostRender()
@@ -261,6 +265,22 @@ namespace koi::editor
 			ImGui::EndMenu();
 		}
 
+		ImGui::Separator();
+
+		if (ImGui::MenuItem(m_playState == PlayState::Edit ? "Play" : "Stop"))
+		{
+			if (m_playState == PlayState::Edit)
+				Play();
+			else
+				Stop();
+		}
+
+		if (m_playState != PlayState::Edit)
+		{
+			if (ImGui::MenuItem(m_playState == PlayState::Paused ? "Resume" : "Pause"))
+				TogglePause();
+		}
+
 		if (!m_lastCookStatus.empty())
 		{
 			ImGui::Separator();
@@ -289,6 +309,71 @@ namespace koi::editor
 		}
 
 		m_lastCookStatus = world->Save(scenePath) ? "Scene saved" : "Scene save FAILED";
+	}
+
+	void EditorApp::Play()
+	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
+
+		World* world = m_game->GetEditorWorld();
+		if (!world)
+		{
+			KOI_LOG_WARN("Play: game exposes no editor world");
+			return;
+		}
+
+		GfxDevice& device           = Engine::Get().GetRenderer().GetDevice();
+		AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+
+		m_snapshot = world->SaveToTable();
+
+		// Hold a reference to everything the snapshot names. Stop tears the world down
+		// before rebuilding it, and without this the last reference to each mesh would
+		// drop to zero and the same files would be re-read from disk a moment later
+		world->GetECS().each<MeshRef>([&](Entity, MeshRef& mesh)
+		{
+			const std::string path(meshes.GetPath(mesh.Handle));
+			if (!path.empty())
+				m_pinnedAssets.push_back(meshes.Acquire(device, path));
+		});
+
+		m_playState = PlayState::Playing;
+		KOI_LOG_INFO("Play");
+	}
+
+	void EditorApp::TogglePause()
+	{
+		if (m_playState == PlayState::Playing)
+			m_playState = PlayState::Paused;
+		else if (m_playState == PlayState::Paused)
+			m_playState = PlayState::Playing;
+	}
+
+	void EditorApp::Stop()
+	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
+
+		if (m_playState == PlayState::Edit) return;
+
+		GfxDevice& device           = Engine::Get().GetRenderer().GetDevice();
+		AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+
+		if (World* world = m_game->GetEditorWorld())
+		{
+			world->Clear(device);
+			world->LoadFromTable(m_snapshot, device);
+		}
+
+		// The rebuilt world took its own references, so the play-time pins can go
+		for (const MeshHandle handle : m_pinnedAssets)
+		{
+			meshes.Release(device, handle);
+		}
+
+		m_pinnedAssets.clear();
+		m_snapshot  = toml::table{};
+		m_playState = PlayState::Edit;
+		KOI_LOG_INFO("Stop");
 	}
 
 	void EditorApp::Cook()
