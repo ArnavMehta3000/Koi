@@ -32,6 +32,8 @@ namespace koi
 		bool Save(const fs::path& path);
 
 		void Update(f32 dt);
+		void UpdateCamera(f32 aspect);
+
 		void Release(GfxDevice& device);
 
 		[[nodiscard]] const AABB& GetBounds() const { return m_bounds; }

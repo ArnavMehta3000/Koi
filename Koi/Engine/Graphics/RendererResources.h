@@ -17,10 +17,11 @@ namespace koi
 		DescriptorIndex PointClampSampler  = INVALID_DESCRIPTOR;
 
 		// Default pipelines
-		PipelineHandle TonemapPipeline{};          // fullscreen HDR -> swapchain ACES tonemap
+		PipelineHandle TonemapPipeline{};           // fullscreen HDR -> swapchain ACES tonemap
 		PipelineHandle MeshOpaquePipeline{};        // solid fill, back-face cull, depth read/write, HDR RT
 		PipelineHandle MeshWireframePipeline{};     // wireframe fill, no cull, depth read/write, HDR RT
 		PipelineHandle GBufferPipeline{};           // deferred geometry: 3 MRT (albedo/normals/material) + depth
+		PipelineHandle LightingPipeline{};          // full-screen deferred lighting: samples G-buffer -> HDR
 
 		void Init(GfxDevice& device);
 		void Shutdown(GfxDevice& device);

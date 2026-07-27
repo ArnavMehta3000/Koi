@@ -143,6 +143,37 @@ namespace koi
 					ImGui::Text("Textures    %d", static_cast<i32>(mesh->Textures.size()));
 				}
 			}
+
+			if (m_selected.has<CameraComponent>())
+			{
+				CameraComponent& cam = m_selected.get_mut<CameraComponent>();
+				ImGui::Separator();
+				ImGui::TextUnformatted("Camera");
+
+				f32 fovDeg = cam.FovY * kRadToDeg;
+				if (ImGui::DragFloat("FOV", &fovDeg, 0.5f, 1.0f, 179.0f))
+					cam.FovY = fovDeg * kDegToRad;
+				ImGui::DragFloat("Near", &cam.Near, 0.01f, 0.001f, cam.Far);
+				ImGui::DragFloat("Far", &cam.Far, 1.0f, cam.Near, 100000.0f);
+				ImGui::Checkbox("Primary", &cam.Primary);
+			}
+
+			if (m_selected.has<Light>())
+			{
+				Light& light = m_selected.get_mut<Light>();
+				ImGui::Separator();
+				ImGui::TextUnformatted("Light");
+
+				const char* types[] = { "Directional", "Point" };
+				int type = static_cast<int>(light.Type);
+				if (ImGui::Combo("Type", &type, types, IM_ARRAYSIZE(types)))
+					light.Type = static_cast<LightType>(type);
+
+				ImGui::ColorEdit3("Color", &light.Color.x);
+				ImGui::DragFloat("Intensity", &light.Intensity, 0.05f, 0.0f, 100.0f);
+				if (light.Type == LightType::Point)
+					ImGui::DragFloat("Range", &light.Range, 0.1f, 0.0f, 1000.0f);
+			}
 		}
 		else
 		{

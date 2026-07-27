@@ -83,12 +83,14 @@ namespace koi
 		device.Destroy(MeshOpaquePipeline);
 		device.Destroy(MeshWireframePipeline);
 		device.Destroy(GBufferPipeline);
+		device.Destroy(LightingPipeline);
 		WhiteTexture          = {};
 		FlatNormalTexture     = {};
 		TonemapPipeline       = {};
 		MeshOpaquePipeline    = {};
 		MeshWireframePipeline = {};
 		GBufferPipeline       = {};
+		LightingPipeline      = {};
 		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
 	}
 
@@ -187,6 +189,30 @@ namespace koi
 					.RenderTargetCount   = 3,
 					.DepthFormat         = Format::D32_FLOAT,
 					.DebugName           = "GBuffer",
+				});
+			}
+		}
+
+		// --- Deferred lighting (full-screen triangle: samples G-buffer -> HDR color) ---
+		{
+			auto vsData = LoadShader("engine://Assets/Shaders/LightingVS");
+			auto psData = LoadShader("engine://Assets/Shaders/LightingPS");
+			if (vsData.empty() || psData.empty())
+			{
+				KOI_LOG_ERROR("RendererResources: failed to load lighting shaders");
+			}
+			else
+			{
+				destroyIfValid(LightingPipeline);
+				LightingPipeline = device.CreatePipeline(PipelineDesc
+				{
+					.VertexShader        = vsData,
+					.PixelShader         = psData,
+					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+					.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
+					.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
+					.RenderTargetCount   = 1,
+					.DebugName           = "DeferredLighting",
 				});
 			}
 		}

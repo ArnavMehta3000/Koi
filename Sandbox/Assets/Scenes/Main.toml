@@ -8,3 +8,45 @@ name = 'Test Mesh'
     position = [ 0.0, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Camera'
+
+    [entity.camera]
+    far = 1000.0
+    fov = 0.800000011920929
+    near = 0.05000000074505806
+    primary = true
+
+    [entity.transform]
+    position = [ -0.0024815797805786133, 1.0520219802856445e-05, 3.92438006401062 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Sun'
+
+    [entity.light]
+    color = [ 1.0, 0.4117647409439087, 0.0 ]
+    intensity = 2.799999952316284
+    range = 0.0
+    type = 'directional'
+
+    [entity.transform]
+    position = [ 0.0, 5.0, 0.0 ]
+    rotation = [ 0.450716108083725, -0.24707435071468353, 0.13137176632881165, 0.8476737141609192 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Point Light'
+
+    [entity.light]
+    color = [ 0.0, 0.47058820724487305, 1.0 ]
+    intensity = 5.5
+    range = 7.099999904632568
+    type = 'point'
+
+    [entity.transform]
+    position = [ 1.100000023841858, 2.549999952316284, 2.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]

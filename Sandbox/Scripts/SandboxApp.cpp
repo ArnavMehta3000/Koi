@@ -4,8 +4,8 @@
 #include "Koi/Engine/Runtime/CommandLine.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
-#include "Koi/Engine/Graphics/RenderPasses/ScenePass.h"
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
 #include <toml++/toml.hpp>
 
 namespace koi
@@ -41,7 +41,7 @@ void SandboxApp::OnInit()
 		.Resources = &renderer.GetDefaultResources(),
 	});
 
-	m_scenePass = &graph.AddPass<koi::ScenePass>(koi::ScenePass::Config
+	m_lightingPass = &graph.AddPass<koi::LightingPass>(koi::LightingPass::Config
 	{
 		.Device    = &renderer.GetDevice(),
 		.Resources = &renderer.GetDefaultResources(),
@@ -63,7 +63,7 @@ void SandboxApp::OnTick(koi::f32 dt)
 	koi::InputManager& input = engine.GetInputManager();
 
 	m_world.Update(dt);
-	m_world.GetCamera().SetAspect(GetWindow().AspectRatio());
+	m_world.UpdateCamera(GetWindow().AspectRatio());  // Not a fan of the way this is being done here
 
 	if (input.IsKeyPressed(koi::KeyCode::Escape))
 		engine.RequestExit();
@@ -82,11 +82,12 @@ void SandboxApp::OnRender()
 		.SetCamera(view->Camera)
 		.SetTarget(target.Width, target.Height);
 
-	m_scenePass->SetWorld(&m_world)
+	m_lightingPass->SetWorld(&m_world)
 		.SetCamera(view->Camera)
-		.SetTarget(target.HDRColorBuffer, target.DepthBuffer, target.Width, target.Height);
+		.SetGBuffer(m_gbufferPass->GetAlbedo(), m_gbufferPass->GetNormals(), m_gbufferPass->GetMaterial(), m_gbufferPass->GetDepth())
+		.SetTarget(target.HDRColorBuffer, target.Width, target.Height);
 
-	m_tonemapPass->SetInput(m_scenePass->GetColorOutput())
+	m_tonemapPass->SetInput(m_lightingPass->GetColorOutput())
 		.SetTarget(target.ResolvedColorBuffer, target.Width, target.Height);
 }
 
@@ -115,5 +116,5 @@ void SandboxApp::LoadScene()
 		m_world = std::move(*result);
 	}
 
-	m_world.GetCamera().SetAspect(GetWindow().AspectRatio());
+	m_world.UpdateCamera(GetWindow().AspectRatio());
 }

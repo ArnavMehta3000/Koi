@@ -4,9 +4,6 @@
 #include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Interop/EditorContext.h"
 #include <filesystem>
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace koi
 {

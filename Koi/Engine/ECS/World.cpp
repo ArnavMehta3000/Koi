@@ -3,6 +3,8 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Math/TransformSerializer.h"
+#include "Koi/Engine/ECS/CameraSerializer.h"
+#include "Koi/Engine/ECS/LightSerializer.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <cassert>
 #include <fstream>
@@ -17,15 +19,6 @@ namespace koi
 
 		m_bounds.Min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 		m_bounds.Max = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
-		m_ecs.system<const Transform, const WorldTransform*, WorldTransform>("UpdateWorldTransforms")
-			.term_at(1).parent().cascade()
-			.kind(flecs::PostUpdate)
-			.each([](const Transform& local, const WorldTransform* parentWorld, WorldTransform& worldXform)
-			{
-				const Matrix localMat = local.ToMatrix();
-				worldXform.Value = parentWorld ? (localMat * parentWorld->Value) : localMat;
-			});
 
 		// Add root entity, disabled by default. Every other entity is parented to this
 		m_root = m_ecs.entity("WorldRoot");
@@ -75,7 +68,7 @@ namespace koi
 
 				// Transform (identity when the sub-table is absent)
 				const Transform transform = DeserializeOr<Transform>(*entityTable, "transform", Transform{});
-				e.set<Transform>(transform).set<WorldTransform>({});
+				e.set<Transform>(transform);
 
 				// Optional mesh component: [entity.mesh] path = "project://..."
 				if (const toml::table* meshTable = (*entityTable)["mesh"].as_table())
@@ -87,6 +80,14 @@ namespace koi
 						e.set<MeshRef>({ meshPath, handle });
 					}
 				}
+
+				// Optional camera component: [entity.camera] fov/near/far/primary
+				if (std::optional<CameraComponent> cam = DeserializeFrom<CameraComponent>(*entityTable, "camera"))
+					e.set<CameraComponent>(*cam);
+
+				// Optional light component: [entity.light] type/color/intensity/range
+				if (std::optional<Light> light = DeserializeFrom<Light>(*entityTable, "light"))
+					e.set<Light>(*light);
 
 				if (const std::string parentName = (*entityTable)["parent"].value_or(std::string()); !parentName.empty())
 					pendingParents.push_back({ e, parentName });
@@ -101,17 +102,26 @@ namespace koi
 					KOI_LOG_WARN("Scene entity parent '{}' not found", link.ParentName);
 			}
 
-			// Frame the camera on whatever geometry loaded (empty scenes get a default view)
-			world.m_camera.SetProjection(0.8f, 16.0f / 9.0f, 0.05f, 1000.0f);
-			if (world.m_bounds.Min.x <= world.m_bounds.Max.x)
+			// If no deserialized camera exists, create one centered on the scene world bounds
+			bool hasCamera = false;
+			world.m_ecs.query<const CameraComponent>().each([&](const CameraComponent&) { hasCamera = true; });
+			if (!hasCamera)
 			{
-				const Vector3 center = world.m_bounds.Center();
-				const f32 radius = world.m_bounds.Radius();
-				world.m_camera.SetView(center + Vector3(0.0f, 0.0f, radius * 2.5f), center);
-			}
-			else
-			{
-				world.m_camera.SetView(Vector3(0.0f, 1.0f, 5.0f), Vector3::Zero);
+				Transform camXform;
+				if (world.m_bounds.Min.x <= world.m_bounds.Max.x)
+				{
+					const Vector3 center = world.m_bounds.Center();
+					const f32 radius     = world.m_bounds.Radius();
+					camXform.Position    = center + Vector3(0.0f, 0.0f, radius * 2.5f);
+				}
+				else
+				{
+					camXform.Position = Vector3(0.0f, 1.0f, 5.0f);
+				}
+
+				world.m_ecs.entity("Camera")
+					.set<Transform>(camXform)
+					.set<CameraComponent>({});
 			}
 
 			KOI_LOG_INFO("Loaded scene '{}' ({} entities)", virtualPath, entities->size());
@@ -154,12 +164,18 @@ namespace koi
 				entity.insert("mesh", std::move(meshTable));
 			}
 
+			if (const CameraComponent* cam = e.try_get<CameraComponent>())
+				entity.insert("camera", Serializer<CameraComponent>::Serialize(*cam));
+
+			if (const Light* light = e.try_get<Light>())
+				entity.insert("light", Serializer<Light>::Serialize(*light));
+
 			entities.push_back(std::move(entity));
 		});
 
 		root.insert("entity", std::move(entities));
 
-		// project:// must resolve to a real file (editor source tree) to write back.
+		// project:// must resolve to a real file (editor source tree) to write back
 		const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(virtualPath);
 		if (!diskPath)
 		{
@@ -183,6 +199,18 @@ namespace koi
 	{
 		ZoneScoped;
 		m_ecs.progress(dt);
+	}
+
+	void World::UpdateCamera(f32 aspect)
+	{
+		ZoneScoped;
+		m_ecs.query<const Transform, const CameraComponent>()
+			.each([&](const Transform& xform, const CameraComponent& cam)
+			{
+				if (!cam.Primary) return;
+				m_camera.SetProjection(cam.FovY, aspect, cam.Near, cam.Far);
+				m_camera.SetTransform(xform);
+			});
 	}
 
 	void World::Release(GfxDevice& device)

@@ -18,6 +18,17 @@ namespace koi
 		Matrix NormalMatrix; // transpose(inverse(World)); shader uses the upper 3x3
 	};
 
+	// StructuredBuffer element, one per light. Rebuilt every frame
+	struct alignas(16) GPULight
+	{
+		Vector3 Position;   // world position (point lights)
+		u32     Type;       // LightType: 0 = directional, 1 = point
+		Vector3 Direction;  // world forward (directional lights)
+		f32     Range;      // point-light attenuation cutoff
+		Vector3 Color;      // linear RGB
+		f32     Intensity;
+	};
+
 	// StructuredBuffer element, one per material
 	struct alignas(16) GPUMaterialData
 	{
@@ -34,6 +45,23 @@ namespace koi
 		u32     OcclusionIndex;
 		u32     EmissiveIndex;
 		u32     _Pad[2];
+	};
+
+	// Root constants for the full-screen deferred lighting pass. Pushed directly
+	// (28 u32 <= MAX_PUSH_CONSTANT_U32S), so no per-frame CBV is needed. Layout must
+	// match the b0 cbuffer in LightingPS.hlsl (float4-aligned groups, no float3 packing).
+	struct LightingRootConstants
+	{
+		Matrix  InvViewProjection;      // reconstructs world pos from depth
+		Vector4 CameraPosition;         // .xyz used
+		u32     AlbedoIndex;            // G-buffer SRVs, in the global heap
+		u32     NormalIndex;
+		u32     MaterialIndex;
+		u32     DepthIndex;
+		u32     LightBufferIndex;       // StructuredBuffer<GPULight>
+		u32     LightCount;
+		u32     SamplerIndex;           // point-clamp sampler
+		u32     _Pad;
 	};
 
 #pragma warning(disable : 4324) // structure was padded due to alignment specifier

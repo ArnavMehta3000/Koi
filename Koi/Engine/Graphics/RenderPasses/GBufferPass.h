@@ -32,6 +32,11 @@ namespace koi
 		inline GBufferPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }
 		GBufferPass& SetTarget(u32 width, u32 height);
 
+		[[nodiscard]] inline TextureHandle GetAlbedo()   const { return m_outputs[size_t(Outputs::Albedo)].Texture;   }
+		[[nodiscard]] inline TextureHandle GetNormals()  const { return m_outputs[size_t(Outputs::Normals)].Texture;  }
+		[[nodiscard]] inline TextureHandle GetMaterial() const { return m_outputs[size_t(Outputs::Material)].Texture; }
+		[[nodiscard]] inline TextureHandle GetDepth()    const { return m_outputs[size_t(Outputs::Depth)].Texture;    }
+
 	private:
 		void CreateRenderTargets();
 		void DestroyRenderTargets();

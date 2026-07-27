@@ -6,8 +6,8 @@
 namespace koi
 {
 	class GBufferPass;
-	class ScenePass;
 	class TonemapPass;
+	class LightingPass;
 }
 
 class SandboxApp : public koi::AppBase
@@ -28,7 +28,7 @@ private:
 private:
 	koi::World m_world;
 
-	koi::GBufferPass* m_gbufferPass = nullptr;
-	koi::ScenePass*   m_scenePass   = nullptr;
-	koi::TonemapPass* m_tonemapPass = nullptr;
+	koi::GBufferPass*  m_gbufferPass  = nullptr;
+	koi::TonemapPass*  m_tonemapPass  = nullptr;
+	koi::LightingPass* m_lightingPass = nullptr;
 };

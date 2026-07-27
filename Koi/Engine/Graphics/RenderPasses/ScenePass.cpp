@@ -87,20 +87,21 @@ namespace koi
 	void ScenePass::ConfigureECS()
 	{
 		ZoneScoped;
-		m_renderSystem = m_world->GetECS().system<const WorldTransform, const MeshRef>("SceneMeshGatherSystem")
+		m_renderSystem = m_world->GetECS().system<const Transform, const MeshRef>("SceneMeshGatherSystem")
 			.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
-			.each([this](flecs::iter& it, size_t, const WorldTransform& worldXform, const MeshRef& meshRef)
+			.each([this](flecs::iter& it, size_t, const Transform& xform, const MeshRef& meshRef)
 			{
 				GatherContext* gather = it.param<GatherContext>();
-				const GPUMesh* mesh = m_world->GetMesh(meshRef.Handle);
+				const GPUMesh* mesh   = m_world->GetMesh(meshRef.Handle);
 				if (!mesh) return;
 
+				const Matrix world = xform.ToMatrix();
 				const u32 objectIndex = static_cast<u32>(gather->Objects.size());
 				gather->Objects.push_back(PerObjectData
-					{
-						.World = worldXform.Value,
-						.NormalMatrix = worldXform.Value.Invert().Transpose(),
-					});
+				{
+					.World        = world,
+					.NormalMatrix = world.Invert().Transpose(),
+				});
 				gather->DrawInfos.push_back(DrawInfo{ mesh, objectIndex });
 			});
 	}
