@@ -1,4 +1,4 @@
-#include "Koi/Engine/ECS/ComponentRegistry.h"
+﻿#include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/ComponentInspectors.h"
 #include "Koi/Engine/ECS/CameraSerializer.h"
 #include "Koi/Engine/ECS/LightSerializer.h"

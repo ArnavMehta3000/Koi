@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Koi/Engine/ECS/World.h"
 
 namespace koi
