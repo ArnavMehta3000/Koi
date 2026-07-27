@@ -1,18 +1,14 @@
-﻿#include "Koi/Editor/Panels/ScenePanel.h"
+#include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
-#include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Math/Math.h"
+#include "Koi/Engine/ECS/ComponentRegistry.h"
 #include <imgui.h>
 #include <functional>
-#include <numbers>
 
 namespace koi
 {
 	namespace
 	{
 		constexpr const char* kDragDropPayloadType = "KOI_SCENE_ENTITY";
-		constexpr f32 kRadToDeg = 180.0f / static_cast<f32>(std::numbers::pi);
-		constexpr f32 kDegToRad = static_cast<f32>(std::numbers::pi) / 180.0f;
 	}
 
 	void ScenePanel::OnDraw()
@@ -118,63 +114,14 @@ namespace koi
 			ImGui::TextUnformatted(name);
 			ImGui::Separator();
 
-			Transform& local = m_selected.get_mut<Transform>();
-
-			if (m_eulerFor != m_selected.id())
+			// Draw components
+			for (const ComponentInfo& component : ComponentRegistry::Get().All())
 			{
-				m_eulerDeg = local.Rotation.ToEuler() * kRadToDeg;
-				m_eulerFor = m_selected.id();
-			}
+				if (!component.Draw) continue;
 
-			ImGui::DragFloat3("Position", &local.Position.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
-			if (ImGui::DragFloat3("Rotation", &m_eulerDeg.x, 0.5f))
-			{
-				local.Rotation = Quaternion::CreateFromYawPitchRoll(
-					m_eulerDeg.y * kDegToRad, m_eulerDeg.x * kDegToRad, m_eulerDeg.z * kDegToRad);
-			}
-			ImGui::DragFloat3("Scale", &local.Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
-
-			if (const MeshRef* meshRef = m_selected.try_get<MeshRef>())
-			{
-				ImGui::Separator();
-				const std::string_view source = Engine::Get().GetAssets().Cache<GPUMesh>().GetPath(meshRef->Handle);
-				ImGui::TextWrapped("Source: %.*s", static_cast<int>(source.size()), source.data());
-				if (const GPUMesh* mesh = world->GetMesh(meshRef->Handle))
-				{
-					ImGui::Text("Draw calls  %d", static_cast<i32>(mesh->DrawItems.size()));
-					ImGui::Text("Textures    %d", static_cast<i32>(mesh->Textures.size()));
-				}
-			}
-
-			if (m_selected.has<CameraComponent>())
-			{
-				CameraComponent& cam = m_selected.get_mut<CameraComponent>();
-				ImGui::Separator();
-				ImGui::TextUnformatted("Camera");
-
-				f32 fovDeg = cam.FovY * kRadToDeg;
-				if (ImGui::DragFloat("FOV", &fovDeg, 0.5f, 1.0f, 179.0f))
-					cam.FovY = fovDeg * kDegToRad;
-				ImGui::DragFloat("Near", &cam.Near, 0.01f, 0.001f, cam.Far);
-				ImGui::DragFloat("Far", &cam.Far, 1.0f, cam.Near, 100000.0f);
-				ImGui::Checkbox("Primary", &cam.Primary);
-			}
-
-			if (m_selected.has<Light>())
-			{
-				Light& light = m_selected.get_mut<Light>();
-				ImGui::Separator();
-				ImGui::TextUnformatted("Light");
-
-				const char* types[] = { "Directional", "Point" };
-				int type = static_cast<int>(light.Type);
-				if (ImGui::Combo("Type", &type, types, IM_ARRAYSIZE(types)))
-					light.Type = static_cast<LightType>(type);
-
-				ImGui::ColorEdit3("Color", &light.Color.x);
-				ImGui::DragFloat("Intensity", &light.Intensity, 0.05f, 0.0f, 100.0f);
-				if (light.Type == LightType::Point)
-					ImGui::DragFloat("Range", &light.Range, 0.1f, 0.0f, 1000.0f);
+				ImGui::PushID(component.Key.data(), component.Key.data() + component.Key.size());
+				component.Draw(m_selected);
+				ImGui::PopID();
 			}
 		}
 		else

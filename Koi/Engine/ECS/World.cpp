@@ -1,10 +1,8 @@
-﻿#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
-#include "Koi/Engine/Math/TransformSerializer.h"
-#include "Koi/Engine/ECS/CameraSerializer.h"
-#include "Koi/Engine/ECS/LightSerializer.h"
+#include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <cassert>
@@ -59,42 +57,21 @@ namespace koi
 			struct PendingParent { Entity Child; std::string ParentName; };
 			std::vector<PendingParent> pendingParents;
 
-			AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
-			for (const toml::node& node : *entities)
+			const std::span<const ComponentInfo> components = ComponentRegistry::Get().All();
+			for (const auto& [i, node] : std::views::enumerate(*entities) | std::views::as_const)
 			{
 				const toml::table* entityTable = node.as_table();
 				if (!entityTable) continue;
 
-				const std::string name = (*entityTable)["name"].value_or(std::string("Entity"));
+				// Create entity
+				const std::string name = (*entityTable)["name"].value_or<std::string>("Entity_" + std::to_string(i));
 				Entity e = world.m_ecs.entity(name.c_str());
 
-				// Transform (identity when the sub-table is absent)
-				const Transform transform = DeserializeOr<Transform>(*entityTable, "transform", Transform{});
-				e.set<Transform>(transform);
+				// Load components (use registry for this)
+				for (const ComponentInfo& component : components)
+					component.Load(e, *entityTable, component.Key, device);
 
-				// Optional mesh component: [entity.mesh] path = "project://..."
-				if (const toml::table* meshTable = (*entityTable)["mesh"].as_table())
-				{
-					const std::string meshPath = (*meshTable)["path"].value_or(std::string());
-					if (!meshPath.empty())
-					{
-						const MeshHandle handle = meshes.Acquire(device, meshPath);
-						if (handle)
-						{
-							e.set<MeshRef>({ handle });
-							world.m_bounds.Expand(meshes.Get(handle)->Bounds);
-						}
-					}
-				}
-
-				// Optional camera component: [entity.camera] fov/near/far/primary
-				if (std::optional<CameraComponent> cam = DeserializeFrom<CameraComponent>(*entityTable, "camera"))
-					e.set<CameraComponent>(*cam);
-
-				// Optional light component: [entity.light] type/color/intensity/range
-				if (std::optional<Light> light = DeserializeFrom<Light>(*entityTable, "light"))
-					e.set<Light>(*light);
-
+				// Configure parents if they exist
 				if (const std::string parentName = (*entityTable)["parent"].value_or(std::string()); !parentName.empty())
 					pendingParents.push_back({ e, parentName });
 			}
@@ -107,6 +84,14 @@ namespace koi
 				else
 					KOI_LOG_WARN("Scene entity parent '{}' not found", link.ParentName);
 			}
+
+			// World bounds come from whichever meshes ended up resident
+			const AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+			world.m_ecs.each<MeshRef>([&](Entity, MeshRef& mesh)
+			{
+				if (const GPUMesh* gpuMesh = meshes.Get(mesh.Handle))
+					world.m_bounds.Expand(gpuMesh->Bounds);
+			});
 
 			// If no deserialized camera exists, create one centered on the scene world bounds
 			bool hasCamera = false;
@@ -150,32 +135,23 @@ namespace koi
 		toml::table root;
 		toml::array entities;
 
-		AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
-		m_ecs.query<const Transform>().each([&](Entity e, const Transform& transform)
+		const std::span<const ComponentInfo> components = ComponentRegistry::Get().All();
+		m_ecs.query<const Transform>().each([&](Entity e, const Transform&)
 		{
 			if (e == m_root) return;  // skip the internal WorldRoot
 
 			toml::table entity;
+
+			// Save name
 			entity.insert("name", std::string(e.name().c_str()));
 
+			// Save parent
 			if (const Entity parent = e.parent(); parent && parent != m_root)
 				entity.insert("parent", std::string(parent.name().c_str()));
 
-			entity.insert("transform", Serializer<Transform>::Serialize(transform));
-
-			if (e.has<MeshRef>())
-			{
-				const std::string_view path = meshes.GetPath(e.get<MeshRef>().Handle);
-				toml::table meshTable;
-				meshTable.insert("path", std::string(path));
-				entity.insert("mesh", std::move(meshTable));
-			}
-
-			if (const CameraComponent* cam = e.try_get<CameraComponent>())
-				entity.insert("camera", Serializer<CameraComponent>::Serialize(*cam));
-
-			if (const Light* light = e.try_get<Light>())
-				entity.insert("light", Serializer<Light>::Serialize(*light));
+			// Save components (use registry for this)
+			for (const ComponentInfo& component : components)
+				component.Save(e, entity, component.Key);
 
 			entities.push_back(std::move(entity));
 		});
