@@ -95,8 +95,6 @@ void SandboxApp::OnShutdown()
 {
 	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnShutdown()");
-	koi::GfxDevice& device = GetEngine()->GetRenderer().GetDevice();
-	m_world.Release(device);
 }
 
 void SandboxApp::LoadScene()

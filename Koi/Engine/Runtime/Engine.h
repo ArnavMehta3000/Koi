@@ -3,6 +3,7 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Timer.h"
 #include "Koi/Engine/Interop/AppHost.h"
@@ -34,6 +35,8 @@ namespace koi
 		[[nodiscard]] inline const Window& GetWindow() const    { return *m_window;        }
 		[[nodiscard]] inline Renderer&     GetRenderer()        { return *m_renderer;      }
 		[[nodiscard]] inline InputManager& GetInputManager()    { return *m_inputManager;  }
+		[[nodiscard]] inline AssetRegistry&       GetAssets()       { return m_assets;   }
+		[[nodiscard]] inline const AssetRegistry& GetAssets() const { return m_assets;   }
 
 		[[nodiscard]] Stats GetStats() const;
 
@@ -50,6 +53,7 @@ namespace koi
 		std::optional<Window>         m_window;
 		std::unique_ptr<InputManager> m_inputManager;
 		std::unique_ptr<Renderer>     m_renderer;
+		AssetRegistry                 m_assets;
 
 		Timer m_timer;
 		bool  m_isRunning = true;

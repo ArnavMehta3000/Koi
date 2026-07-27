@@ -24,6 +24,7 @@ namespace koi
 		}();
 
 		GPUMesh mesh;
+		mesh.Bounds = model.Bounds;
 
 		// Upload all images and collect their SRV indices
 		std::vector<DescriptorIndex> imageSRVs;

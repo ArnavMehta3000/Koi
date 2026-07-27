@@ -74,6 +74,8 @@ namespace koi
 		m_renderer->GetFrameGraph().Compile(); // One time compile to ensure user-defined render pass succeeds post-init
 		MainLoop(host);
 		host.HostShutdown();
+
+		m_assets.ReleaseAll(m_renderer->GetDevice());
 	}
 
 	Engine::Stats Engine::GetStats() const

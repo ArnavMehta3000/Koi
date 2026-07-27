@@ -31,6 +31,7 @@ namespace koi
 		DescriptorIndex MaterialBufferSRV = INVALID_DESCRIPTOR;
 		std::vector<TextureHandle> Textures;   // per-image GPU textures (not fallback)
 		std::vector<GPUMeshDraw> DrawItems;
+		AABB Bounds;                           // model-space, carried over from the source ModelAsset
 
 		// Synchronous upload
 		[[nodiscard]] static GPUMesh Upload(GfxDevice& device, const ModelAsset& model);

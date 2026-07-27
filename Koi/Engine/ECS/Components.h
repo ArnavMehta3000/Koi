@@ -1,14 +1,12 @@
 ﻿#pragma once
 #include "Koi/Engine/Math/Math.h"
-#include "Koi/Engine/Graphics/MeshRegistry.h"
-#include <string>
+#include "Koi/Engine/Assets/MeshAsset.h"
 
 namespace koi
 {
 	struct MeshRef
 	{
-		std::string SourcePath;  // VFS path of the GLTF this mesh was loaded from
-		MeshHandle  Handle;      // lightweight handle into MeshRegistry
+		MeshHandle Handle;  // the source path lives in the mesh AssetCache, not per entity
 	};
 
 	struct CameraComponent

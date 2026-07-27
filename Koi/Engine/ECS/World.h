@@ -2,7 +2,6 @@
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Graphics/Camera.h"
-#include "Koi/Engine/Graphics/MeshRegistry.h"
 #include "Koi/Engine/ECS/Components.h"
 #include <flecs.h>
 #include <optional>
@@ -34,23 +33,20 @@ namespace koi
 		void Update(f32 dt);
 		void UpdateCamera(f32 aspect);
 
-		void Release(GfxDevice& device);
-
 		[[nodiscard]] const AABB& GetBounds() const { return m_bounds; }
 
 		[[nodiscard]] Camera&       GetCamera()       { return m_camera; }
 		[[nodiscard]] const Camera& GetCamera() const { return m_camera; }
 
-		[[nodiscard]] const GPUMesh* GetMesh(MeshHandle handle) const { return m_meshRegistry.Get(handle); }
+		[[nodiscard]] const GPUMesh* GetMesh(MeshHandle handle) const;
 
 		[[nodiscard]] ECS&       GetECS()       { return m_ecs; }
 		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
 
 	private:
-		ECS          m_ecs;
-		Entity       m_root;
-		MeshRegistry m_meshRegistry;
-		AABB         m_bounds;
-		Camera       m_camera;
+		ECS    m_ecs;
+		Entity m_root;
+		AABB   m_bounds;
+		Camera m_camera;
 	};
 }

@@ -1,5 +1,6 @@
 ﻿#include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Math/Math.h"
 #include <imgui.h>
 #include <functional>
@@ -136,7 +137,8 @@ namespace koi
 			if (const MeshRef* meshRef = m_selected.try_get<MeshRef>())
 			{
 				ImGui::Separator();
-				ImGui::TextWrapped("Source: %s", meshRef->SourcePath.c_str());
+				const std::string_view source = Engine::Get().GetAssets().Cache<GPUMesh>().GetPath(meshRef->Handle);
+				ImGui::TextWrapped("Source: %.*s", static_cast<int>(source.size()), source.data());
 				if (const GPUMesh* mesh = world->GetMesh(meshRef->Handle))
 				{
 					ImGui::Text("Draw calls  %d", static_cast<i32>(mesh->DrawItems.size()));

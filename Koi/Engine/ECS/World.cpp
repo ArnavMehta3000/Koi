@@ -5,6 +5,7 @@
 #include "Koi/Engine/Math/TransformSerializer.h"
 #include "Koi/Engine/ECS/CameraSerializer.h"
 #include "Koi/Engine/ECS/LightSerializer.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <cassert>
 #include <fstream>
@@ -58,6 +59,7 @@ namespace koi
 			struct PendingParent { Entity Child; std::string ParentName; };
 			std::vector<PendingParent> pendingParents;
 
+			AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
 			for (const toml::node& node : *entities)
 			{
 				const toml::table* entityTable = node.as_table();
@@ -76,8 +78,12 @@ namespace koi
 					const std::string meshPath = (*meshTable)["path"].value_or(std::string());
 					if (!meshPath.empty())
 					{
-						const MeshHandle handle = world.m_meshRegistry.GetOrLoad(meshPath, device, &world.m_bounds);
-						e.set<MeshRef>({ meshPath, handle });
+						const MeshHandle handle = meshes.Load(device, meshPath);
+						if (handle)
+						{
+							e.set<MeshRef>({ handle });
+							world.m_bounds.Expand(meshes.Get(handle)->Bounds);
+						}
 					}
 				}
 
@@ -144,6 +150,7 @@ namespace koi
 		toml::table root;
 		toml::array entities;
 
+		AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
 		m_ecs.query<const Transform>().each([&](Entity e, const Transform& transform)
 		{
 			if (e == m_root) return;  // skip the internal WorldRoot
@@ -158,9 +165,9 @@ namespace koi
 
 			if (e.has<MeshRef>())
 			{
-				const MeshRef& mesh = e.get<MeshRef>();
+				const std::string_view path = meshes.GetPath(e.get<MeshRef>().Handle);
 				toml::table meshTable;
-				meshTable.insert("path", mesh.SourcePath);
+				meshTable.insert("path", std::string(path));
 				entity.insert("mesh", std::move(meshTable));
 			}
 
@@ -213,11 +220,8 @@ namespace koi
 			});
 	}
 
-	void World::Release(GfxDevice& device)
+	const GPUMesh* World::GetMesh(MeshHandle handle) const
 	{
-		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-
-		m_meshRegistry.Release(device);
+		return Engine::Get().GetAssets().Cache<GPUMesh>().Get(handle);
 	}
 }
