@@ -1,12 +1,23 @@
-﻿[[entity]]
-name = 'Test Mesh'
+[[entity]]
+name = 'Sponza'
+
+    [entity.mesh]
+    path = 'project://Assets/Models/Sponza/Sponza.gltf'
+
+    [entity.transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Damaged Helmet'
 
     [entity.mesh]
     path = 'project://Assets/Models/DamagedHelmet.gltf'
 
     [entity.transform]
-    position = [ 0.0, 0.0, 0.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    position = [ 0.0, 15.899999618530273, 0.0 ]
+    rotation = [ -0.0, -0.7071067690849304, 0.0, 0.7071067094802856 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -27,7 +38,7 @@ name = 'Camera'
 name = 'Sun'
 
     [entity.light]
-    color = [ 1.0, 0.4117647409439087, 0.0 ]
+    color = [ 1.0, 0.9279123544692993, 0.8774510025978088 ]
     intensity = 2.799999952316284
     range = 0.0
     type = 'directional'
@@ -41,12 +52,12 @@ name = 'Sun'
 name = 'Point Light'
 
     [entity.light]
-    color = [ 0.0, 0.47058820724487305, 1.0 ]
-    intensity = 5.5
-    range = 7.099999904632568
+    color = [ 0.6000000238418579, 0.47058823704719543, 1.0 ]
+    intensity = 5.449999809265137
+    range = 17.700000762939453
     type = 'point'
 
     [entity.transform]
-    position = [ 1.100000023841858, 2.549999952316284, 2.0 ]
+    position = [ 0.0, 15.149999618530273, -3.75 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
