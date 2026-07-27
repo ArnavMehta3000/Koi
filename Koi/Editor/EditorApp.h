@@ -19,15 +19,6 @@ namespace koi::editor
 {
 	namespace fs = std::filesystem;
 
-	// The game only ticks while Playing; Edit and Paused leave the world untouched
-	// between frames, so it still renders and stays editable
-	enum class PlayState
-	{
-		Edit,
-		Playing,
-		Paused,
-	};
-
 	struct EditorConfig
 	{
 		fs::path EngineSource;   // <engine>/Assets
@@ -52,6 +43,8 @@ namespace koi::editor
 		void HostTick(f32 dt) override;
 		void HostRender() override;
 		void HostShutdown() override;
+		void HostBeginPlay() override;
+		void HostEndPlay() override;
 
 		void OnOverlayRender(CommandList& cmd) override;
 
@@ -83,7 +76,6 @@ namespace koi::editor
 		bool                                        m_imguiInitialized = false;
 		std::string                                 m_lastCookStatus;  // shown in menubar after Cook click
 
-		PlayState                                   m_playState = PlayState::Edit;
 		toml::table                                 m_snapshot;        // the world as it was when Play was pressed
 		std::vector<MeshHandle>                     m_pinnedAssets;    // keeps the snapshot's assets resident across Stop
 	};

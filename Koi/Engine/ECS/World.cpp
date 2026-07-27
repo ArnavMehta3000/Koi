@@ -1,4 +1,4 @@
-#include "Koi/Engine/ECS/World.h"
+﻿#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
@@ -230,6 +230,9 @@ namespace koi
 	void World::Update(f32 dt)
 	{
 		ZoneScoped;
+		// NOTE: Might refactor the entire world update system
+		if (!Engine::Get().IsPlaying()) return;
+
 		m_ecs.progress(dt);
 	}
 

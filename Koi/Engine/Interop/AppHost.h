@@ -18,5 +18,7 @@ namespace koi
 		virtual void HostTick(f32 dt) = 0;
 		virtual void HostRender() = 0;
 		virtual void HostShutdown() = 0;
+		virtual void HostBeginPlay() = 0;
+		virtual void HostEndPlay() = 0;
 	};
 }

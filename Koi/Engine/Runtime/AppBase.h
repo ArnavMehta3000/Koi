@@ -49,11 +49,15 @@ namespace koi
 		void HostTick(f32 dt) override;
 		void HostRender() override;
 		void HostShutdown() override;
+		void HostBeginPlay() override;
+		void HostEndPlay() override;
 
 		virtual void OnInit() {}
 		virtual void OnShutdown() {}
 		virtual void OnTick(f32 /*dt*/) {}
 		virtual void OnRender() {}
+		virtual void OnBeginPlay() {}
+		virtual void OnEndPlay() {}
 
 		[[nodiscard]] IEditorContext* GetEditorContext() const { return m_editorContext; }
 		void SetEditorContext(IEditorContext* context) { m_editorContext = context; }

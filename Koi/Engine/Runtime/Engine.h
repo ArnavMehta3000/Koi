@@ -11,6 +11,13 @@
 
 namespace koi
 {
+	enum class PlayState : u8
+	{
+		Edit,
+		Playing,
+		Paused,
+	};
+
 	class Engine : public NonCopyable
 	{
 	public:
@@ -31,14 +38,18 @@ namespace koi
 		void RunApp(IAppHost& host);
 		void RequestExit() { m_isRunning = false; }
 
-		[[nodiscard]] inline Window&       GetWindow()          { return *m_window;        }
-		[[nodiscard]] inline const Window& GetWindow() const    { return *m_window;        }
-		[[nodiscard]] inline Renderer&     GetRenderer()        { return *m_renderer;      }
-		[[nodiscard]] inline InputManager& GetInputManager()    { return *m_inputManager;  }
-		[[nodiscard]] inline AssetRegistry&       GetAssets()       { return m_assets;   }
-		[[nodiscard]] inline const AssetRegistry& GetAssets() const { return m_assets;   }
+		[[nodiscard]] inline Window&              GetWindow()       { return *m_window;        }
+		[[nodiscard]] inline const Window&        GetWindow() const { return *m_window;        }
+		[[nodiscard]] inline Renderer&            GetRenderer()     { return *m_renderer;      }
+		[[nodiscard]] inline InputManager&        GetInputManager() { return *m_inputManager;  }
+		[[nodiscard]] inline AssetRegistry&       GetAssets()       { return m_assets;         }
+		[[nodiscard]] inline const AssetRegistry& GetAssets() const { return m_assets;         }
 
 		[[nodiscard]] Stats GetStats() const;
+
+		void SetPlayState(PlayState state);
+		[[nodiscard]] PlayState GetPlayState() const { return m_playState; }
+		[[nodiscard]] bool IsPlaying() const { return m_playState == PlayState::Playing; }
 
 	private:
 		void BeginFrame();
@@ -55,7 +66,10 @@ namespace koi
 		std::unique_ptr<Renderer>     m_renderer;
 		AssetRegistry                 m_assets;
 
-		Timer m_timer;
-		bool  m_isRunning = true;
+		IAppHost* m_host = nullptr;  // valid for the duration of RunApp
+
+		Timer     m_timer;
+		bool      m_isRunning = true;
+		PlayState m_playState = PlayState::Edit;
 	};
 }

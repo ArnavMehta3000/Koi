@@ -44,6 +44,16 @@ namespace koi
 		KOI_LOG_INFO("Shutting down application: {}", m_desc.AppName);
 	}
 
+	void AppBase::HostBeginPlay()
+	{
+		OnBeginPlay();
+	}
+
+	void AppBase::HostEndPlay()
+	{
+		OnEndPlay();
+	}
+
 	std::optional<RenderView> AppBase::GetRenderView(const Camera* gameCamera) const
 	{
 		// Editor owns both the camera and the target (viewport RT)

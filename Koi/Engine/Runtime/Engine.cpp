@@ -70,12 +70,40 @@ namespace koi
 		window.SetCloseCallback([this]() { RequestExit(); });
 
 		// Init application
+		m_host = &host;
 		host.HostInit();
 		m_renderer->GetFrameGraph().Compile(); // One time compile to ensure user-defined render pass succeeds post-init
+
+#if !KOI_WITH_EDITOR
+		// Nothing to press Play with, so a standalone build simulates from the start
+		SetPlayState(PlayState::Playing);
+#endif
+
 		MainLoop(host);
+
+		SetPlayState(PlayState::Edit);  // fires HostEndPlay when we exit mid-play
 		host.HostShutdown();
+		m_host = nullptr;
 
 		m_assets.ReleaseAll(m_renderer->GetDevice());
+	}
+
+	void Engine::SetPlayState(PlayState state)
+	{
+		if (state == m_playState) return;
+
+		// Pause/Resume stay inside play mode, so only the Edit boundary is a transition
+		const bool wasInPlay = m_playState != PlayState::Edit;
+		const bool nowInPlay = state != PlayState::Edit;
+
+		m_playState = state;
+
+		if (!m_host) return;
+
+		if (!wasInPlay && nowInPlay)
+			m_host->HostBeginPlay();
+		else if (wasInPlay && !nowInPlay)
+			m_host->HostEndPlay();
 	}
 
 	Engine::Stats Engine::GetStats() const

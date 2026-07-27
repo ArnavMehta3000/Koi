@@ -106,12 +106,11 @@ namespace koi::editor
 
 	void EditorApp::HostTick(f32 dt)
 	{
-		// The editor camera keeps moving in every state; only the game's tick is gated,
-		// which is what stops the world from simulating in Edit and Paused
 		m_viewportPanel->Update(dt, Engine::Get().GetInputManager());
 
-		if (m_playState == PlayState::Playing)
-			m_game->HostTick(dt);
+		// The game always ticks. What play state gates is the world's simulation, and
+		// World::Update decides that itself, so nothing here has to know the difference
+		m_game->HostTick(dt);
 	}
 
 	void EditorApp::HostRender()
@@ -129,6 +128,10 @@ namespace koi::editor
 		ShutdownImGui();
 		KOI_LOG_INFO("Editor shut down");
 	}
+
+	void EditorApp::HostBeginPlay() { m_game->HostBeginPlay(); }
+
+	void EditorApp::HostEndPlay() { m_game->HostEndPlay(); }
 
 	void EditorApp::InitImGui()
 	{
@@ -267,17 +270,19 @@ namespace koi::editor
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem(m_playState == PlayState::Edit ? "Play" : "Stop"))
+		const PlayState playState = Engine::Get().GetPlayState();
+
+		if (ImGui::MenuItem(playState == PlayState::Edit ? "Play" : "Stop"))
 		{
-			if (m_playState == PlayState::Edit)
+			if (playState == PlayState::Edit)
 				Play();
 			else
 				Stop();
 		}
 
-		if (m_playState != PlayState::Edit)
+		if (playState != PlayState::Edit)
 		{
-			if (ImGui::MenuItem(m_playState == PlayState::Paused ? "Resume" : "Pause"))
+			if (ImGui::MenuItem(playState == PlayState::Paused ? "Resume" : "Pause"))
 				TogglePause();
 		}
 
@@ -337,26 +342,35 @@ namespace koi::editor
 				m_pinnedAssets.push_back(meshes.Acquire(device, path));
 		});
 
-		m_playState = PlayState::Playing;
+		// Set the state last: it fires OnBeginPlay, and whatever that spawns must land
+		// outside the snapshot so Stop discards it
+		Engine::Get().SetPlayState(PlayState::Playing);
 		KOI_LOG_INFO("Play");
 	}
 
 	void EditorApp::TogglePause()
 	{
-		if (m_playState == PlayState::Playing)
-			m_playState = PlayState::Paused;
-		else if (m_playState == PlayState::Paused)
-			m_playState = PlayState::Playing;
+		Engine& engine = Engine::Get();
+		switch (engine.GetPlayState())
+		{
+			case PlayState::Playing: engine.SetPlayState(PlayState::Paused);  break;
+			case PlayState::Paused:  engine.SetPlayState(PlayState::Playing); break;
+			case PlayState::Edit:                                             break;
+		}
 	}
 
 	void EditorApp::Stop()
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
-		if (m_playState == PlayState::Edit) return;
+		Engine& engine = Engine::Get();
+		if (engine.GetPlayState() == PlayState::Edit) return;
 
-		GfxDevice& device           = Engine::Get().GetRenderer().GetDevice();
-		AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+		// Leave play mode first: OnEndPlay still needs the world it ran against
+		engine.SetPlayState(PlayState::Edit);
+
+		GfxDevice& device           = engine.GetRenderer().GetDevice();
+		AssetCache<GPUMesh>& meshes = engine.GetAssets().Cache<GPUMesh>();
 
 		if (World* world = m_game->GetEditorWorld())
 		{
@@ -371,8 +385,7 @@ namespace koi::editor
 		}
 
 		m_pinnedAssets.clear();
-		m_snapshot  = toml::table{};
-		m_playState = PlayState::Edit;
+		m_snapshot = toml::table{};
 		KOI_LOG_INFO("Stop");
 	}
 
