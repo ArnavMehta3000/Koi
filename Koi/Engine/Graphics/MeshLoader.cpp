@@ -31,6 +31,7 @@ namespace koi
 		{
 			fastgltf::Asset* Asset = nullptr;
 			fs::path BasePath;
+			fs::path SourcePath;  // the glTF itself; used to key images embedded inside it
 
 			// glTF image index -> index into ModelAsset::Images
 			std::unordered_map<u32, u32> LoadedImages;
@@ -72,10 +73,12 @@ namespace koi
 			return nullptr;
 		}
 
-		Loader loader{ .BasePath = path.parent_path() };
+		Loader loader{ .BasePath = path.parent_path(), .SourcePath = path };
 
+		// Deliberately no LoadExternalImages: it would pull URI-referenced images into memory as
+		// embedded blobs, and then two models sharing a texture file could no longer be recognised
+		// as the same asset. External images stay as URIs and are decoded by the texture AssetCache.
 		constexpr fastgltf::Options options = fastgltf::Options::LoadExternalBuffers
-			| fastgltf::Options::LoadExternalImages
 			| fastgltf::Options::GenerateMeshIndices;
 
 		auto loadResult = parser.loadGltf(data.get(), loader.BasePath, options);
@@ -360,66 +363,82 @@ namespace koi
 		fastgltf::Image& gltfImage = Asset->images[imageIndex];
 
 		ImageAsset img{};
-		stbi_uc* pixels = nullptr;
+
 		if (std::holds_alternative<fastgltf::sources::URI>(gltfImage.data))
 		{
-			auto& uri = std::get<fastgltf::sources::URI>(gltfImage.data);  // Load from filename
+			// Standalone file: record where it lives and leave Pixels empty. The texture
+			// AssetCache decodes it, so the same file referenced by another model resolves to
+			// the same GPU texture instead of a second copy
+			auto& uri = std::get<fastgltf::sources::URI>(gltfImage.data);
 
 			assert(uri.fileByteOffset == 0);
 			assert(uri.uri.isLocalPath());  // Needs to be a local file to be loaded
 
-			fs::path fullPath = BasePath / uri.uri.fspath();
-			pixels = stbi_load(fullPath.string().c_str(), &img.Width, &img.Height, &img.Channels, 4);
+			img.Path = (BasePath / uri.uri.fspath()).generic_string();
+			img.Name = uri.uri.fspath().filename().string();
 		}
-		else if (std::holds_alternative<fastgltf::sources::Array>(gltfImage.data))  // Load from memory
+		else
 		{
-			auto& array = std::get<fastgltf::sources::Array>(gltfImage.data);
-			pixels = stbi_load_from_memory(
-				reinterpret_cast<const stbi_uc*>(array.bytes.data()),
-				static_cast<i32>(array.bytes.size()),
-				&img.Width, &img.Height, &img.Channels, 4);
-		}
-		else if (std::holds_alternative<fastgltf::sources::BufferView>(gltfImage.data))  // Load from buffer view
-		{
-			auto& bufferView = std::get<fastgltf::sources::BufferView>(gltfImage.data);
+			// Embedded: there is no file to point at, so decode here and hand the pixels to the
+			// cache under a synthetic key derived from the container it came out of
+			const stbi_uc* encoded = nullptr;
+			size_t encodedSize     = 0;
 
-			fastgltf::BufferView& view = Asset->bufferViews[bufferView.bufferViewIndex];
-			fastgltf::Buffer& buffer = Asset->buffers[view.bufferIndex];
-
-			if (std::holds_alternative<fastgltf::sources::Array>(buffer.data))
+			if (std::holds_alternative<fastgltf::sources::Array>(gltfImage.data))
 			{
-				auto& array = std::get<fastgltf::sources::Array>(buffer.data);
-				pixels = stbi_load_from_memory(
-					reinterpret_cast<const stbi_uc*>(array.bytes.data()),
-					static_cast<i32>(array.bytes.size()),
-					&img.Width, &img.Height, &img.Channels, 4);
+				auto& array = std::get<fastgltf::sources::Array>(gltfImage.data);
+				encoded     = reinterpret_cast<const stbi_uc*>(array.bytes.data());
+				encodedSize = array.bytes.size();
 			}
-		}
-		else
-		{
-			assert(!"Unknown image data type");
-		}
+			else if (std::holds_alternative<fastgltf::sources::BufferView>(gltfImage.data))
+			{
+				auto& source = std::get<fastgltf::sources::BufferView>(gltfImage.data);
 
-		if (!pixels)
-		{
-			KOI_LOG_WARN("Failed to load texture image index {}", *gltfTexture.imageIndex);
-			return u32(-1);
-		}
-		else
-		{
+				fastgltf::BufferView& view   = Asset->bufferViews[source.bufferViewIndex];
+				fastgltf::Buffer&     buffer = Asset->buffers[view.bufferIndex];
+
+				if (std::holds_alternative<fastgltf::sources::Array>(buffer.data))
+				{
+					// The view is a window into the buffer
+					auto& array = std::get<fastgltf::sources::Array>(buffer.data);
+					encoded     = reinterpret_cast<const stbi_uc*>(array.bytes.data()) + view.byteOffset;
+					encodedSize = view.byteLength;
+				}
+			}
+			else
+			{
+				assert(!"Unknown image data type");
+			}
+
+			if (!encoded || encodedSize == 0)
+			{
+				KOI_LOG_WARN("Texture image index {} has no readable data", imageIndex);
+				return u32(-1);
+			}
+
+			stbi_uc* pixels = stbi_load_from_memory(
+				encoded, static_cast<i32>(encodedSize),
+				&img.Width, &img.Height, &img.Channels, 4);
+
+			if (!pixels)
+			{
+				KOI_LOG_WARN("Failed to decode embedded texture image index {}", imageIndex);
+				return u32(-1);
+			}
+
 			assert(img.Width > 0 && img.Height > 0);
 
 			// stbi was asked for 4 components, so the returned data is always RGBA
 			// regardless of the file's native channel count.
 			img.Channels = 4;
 			const size_t byteCount = static_cast<size_t>(img.Width) * img.Height * 4;
-			img.Pixels.resize(byteCount);
-			std::copy(pixels, pixels + byteCount, img.Pixels.data());
-
+			img.Pixels.assign(pixels, pixels + byteCount);
 			stbi_image_free(pixels);
+
+			img.Path = fmt::format("{}#image{}", SourcePath.generic_string(), imageIndex);
+			img.Name = gltfTexture.name.empty() ? fmt::format("Image_{}", imageIndex) : std::string(gltfTexture.name);
 		}
 
-		img.Name = (gltfTexture.name.empty()) ? fmt::format("Texture_{}", idx) : gltfTexture.name.data();
 		model.Images.push_back(std::move(img));
 		LoadedImages.emplace(imageIndex, idx);
 		return idx;

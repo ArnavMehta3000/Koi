@@ -1,4 +1,4 @@
-﻿[[entity]]
+[[entity]]
 name = 'Sponza'
 
     [entity.mesh]
@@ -10,13 +10,24 @@ name = 'Sponza'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-name = 'Damaged Helmet'
+name = 'Sponza 2'
+
+    [entity.mesh]
+    path = 'project://Assets/Models/Sponza/Sponza.gltf'
+
+    [entity.transform]
+    position = [ -5.449999809265137, 0.0, 18.649999618530273 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Damaged Helmet 2'
 
     [entity.mesh]
     path = 'project://Assets/Models/DamagedHelmet.gltf'
 
     [entity.transform]
-    position = [ 0.0, 15.899999618530273, 0.0 ]
+    position = [ 3.0, 15.899999618530273, 0.0 ]
     rotation = [ -0.0, -0.7071067690849304, 0.0, 0.7071067094802856 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
@@ -44,8 +55,8 @@ name = 'Sun'
     type = 'directional'
 
     [entity.transform]
-    position = [ 0.0, 5.0, 0.0 ]
-    rotation = [ 0.450716108083725, -0.24707435071468353, 0.13137176632881165, 0.8476737141609192 ]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ 0.13080959022045135, -0.4605000615119934, -0.8752668499946594, -0.06882224231958389 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -53,11 +64,11 @@ name = 'Point Light'
 
     [entity.light]
     color = [ 0.6000000238418579, 0.47058823704719543, 1.0 ]
-    intensity = 5.449999809265137
-    range = 17.700000762939453
+    intensity = 8.850000381469727
+    range = 33.099998474121094
     type = 'point'
 
     [entity.transform]
-    position = [ 0.0, 15.149999618530273, -3.75 ]
+    position = [ -1.149999976158142, 15.149999618530273, 7.449999809265137 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]

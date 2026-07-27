@@ -26,35 +26,30 @@ namespace koi
 		GPUMesh mesh;
 		mesh.Bounds = model.Bounds;
 
-		// Upload all images and collect their SRV indices
+		// Resolve every image this model references to a shared texture asset and collect their
+		// SRV indices. Images that came from a standalone file are keyed by that file's path, so a
+		// texture used by two different models is uploaded once
 		std::vector<DescriptorIndex> imageSRVs;
 		imageSRVs.reserve(model.Images.size());
 
-		GfxDevice::UploadContext& upload = device.GetUploadContext();
-		upload.Begin();
+		AssetCache<GPUTexture>& textures = Engine::Get().GetAssets().Cache<GPUTexture>();
 
-		// --- Create GPU textures --- 
+		GfxDevice::UploadContext& upload = device.GetUploadContext();
+		upload.Begin();  // outer batch: each texture's own Begin/End nests into this one
+
 		for (const ImageAsset& img : model.Images)
 		{
-			// Create & upload a GPU texture
-			TextureHandle tex = device.CreateTexture(TextureDesc
-			{
-				.Width     = static_cast<u32>(img.Width),
-				.Height    = static_cast<u32>(img.Height),
-				.Format    = Format::R8G8B8A8_UNORM,
-				.Usage     = TextureUsage::ShaderRead,
-				.DebugName = img.Name.empty() ? "Mesh Texture" : std::string_view(img.Name),
-			});
-			upload.UploadTexture(tex, img.Pixels.data(), img.Pixels.size());
+			// Pixels are only carried inline for images embedded in the glTF; anything else is
+			// decoded by the cache from img.Path
+			const GPUTextureHandle handle = img.Pixels.empty()
+				? textures.Acquire(device, img.Path)
+				: textures.AcquireFrom(device, img.Path, img);
 
-			// Use the handle to get the underlying GPU texture, then its SRV index
-			if (Texture* texture = device.Get(tex); texture->Resource)
-			{
-				imageSRVs.push_back(texture->SRVIndex);
+			const GPUTexture* texture = textures.Get(handle);
+			imageSRVs.push_back(texture ? texture->SRVIndex : INVALID_DESCRIPTOR);
 
-				// Cache the texture handle for this image
-				mesh.Textures.push_back(tex);
-			}
+			if (texture)
+				mesh.Textures.push_back(handle);
 		}
 
 		// --- Build one GPUMaterialData per model material (shared across however many submeshes use it) ---
@@ -194,9 +189,11 @@ namespace koi
 		device.Destroy(IndexBuffer);
 		device.Destroy(MaterialBuffer);
 
-		for (TextureHandle t : Textures)
+		// Each texture is destroyed only once every mesh using it has released it
+		AssetCache<GPUTexture>& textures = Engine::Get().GetAssets().Cache<GPUTexture>();
+		for (GPUTextureHandle handle : Textures)
 		{
-			device.Destroy(t);
+			textures.Release(device, handle);
 		}
 
 		Textures.clear();

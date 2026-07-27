@@ -59,8 +59,7 @@ namespace koi
 			std::vector<BufferHandle>         m_activeStagingBuffers;
 			std::vector<BufferHandle>         m_pendingStagingFree;
 			u64                               m_pendingFreeFenceValue = 0;
-
-			bool                              m_isRecording          = false;
+			u32                               m_recordDepth           = 0;  // Final End() actualy uploads (allows nesting)
 		};
 
 	public:

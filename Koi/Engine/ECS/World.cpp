@@ -78,7 +78,7 @@ namespace koi
 					const std::string meshPath = (*meshTable)["path"].value_or(std::string());
 					if (!meshPath.empty())
 					{
-						const MeshHandle handle = meshes.Load(device, meshPath);
+						const MeshHandle handle = meshes.Acquire(device, meshPath);
 						if (handle)
 						{
 							e.set<MeshRef>({ handle });

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/Graphics/GPUTexture.h"
 #include <vector>
 
 namespace koi
@@ -29,7 +30,7 @@ namespace koi
 		BufferHandle MaterialBuffer;
 		DescriptorIndex VertexBufferSRV   = INVALID_DESCRIPTOR;
 		DescriptorIndex MaterialBufferSRV = INVALID_DESCRIPTOR;
-		std::vector<TextureHandle> Textures;   // per-image GPU textures (not fallback)
+		std::vector<GPUTextureHandle> Textures;  // referenced, not owned: the texture AssetCache owns them
 		std::vector<GPUMeshDraw> DrawItems;
 		AABB Bounds;                           // model-space, carried over from the source ModelAsset
 

@@ -47,7 +47,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		assert(!m_isRecording && "UploadContext::Shutdown called while a Begin/End block is still open");
+		assert(m_recordDepth == 0 && "UploadContext::Shutdown called while a Begin/End block is still open");
 
 		// If there are staging buffers pending from the last FlushQueued, wait for the
 		// copy fence to pass so we can safely destroy them.
@@ -87,18 +87,20 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		assert(m_device                       && "UploadContext::Begin called before Init");
-		assert(!m_isRecording                 && "UploadContext::Begin called while already recording - missing End()?");
+		assert(m_device && "UploadContext::Begin called before Init");
+
+		// Only the outermost Begin() can operate on the logic below (nested Begin() no-ops)
+		if (m_recordDepth++ > 0) return;
+
 		assert(m_activeStagingBuffers.empty() && "Staging buffers leaked from a previous Begin/End block");
 
 		DX_CHECK(m_allocator->Reset());
 		DX_CHECK(m_cmdList->Reset(m_allocator.Get(), nullptr));
-		m_isRecording = true;
 	}
 
 	void GfxDevice::UploadContext::UploadBuffer(BufferHandle dst, const void* data, u64 size)
 	{
-		assert(m_isRecording && "UploadBuffer called without a matching Begin()");
+		assert(m_recordDepth > 0 && "UploadBuffer called without a matching Begin()");
 		assert(data          && "UploadBuffer: data pointer is null");
 		assert(size > 0      && "UploadBuffer: size must be > 0");
 		assert(m_device->m_buffers.IsValid(dst) && "UploadBuffer: invalid destination buffer handle");
@@ -108,7 +110,7 @@ namespace koi
 
 	void GfxDevice::UploadContext::UploadTexture(TextureHandle dst, const void* data, u64 size)
 	{
-		assert(m_isRecording && "UploadTexture called without a matching Begin()");
+		assert(m_recordDepth > 0 && "UploadTexture called without a matching Begin()");
 		assert(data          && "UploadTexture: data pointer is null");
 		assert(size > 0      && "UploadTexture: size must be > 0");
 		assert(m_device->m_textures.IsValid(dst) && "UploadTexture: invalid destination texture handle");
@@ -121,10 +123,16 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		assert(m_isRecording                    && "UploadContext::End called without a matching Begin()");
-		assert(!m_activeStagingBuffers.empty()  && "UploadContext::End called with no uploads recorded");
+		assert(m_recordDepth > 0 && "UploadContext::End called without a matching Begin()");
+
+		// Inner batches defer submission (and the CPU stall) to the outermost End()
+		if (--m_recordDepth > 0) return;
 
 		DX_CHECK(m_cmdList->Close());
+
+		if (m_activeStagingBuffers.empty())
+			return;  // The list still had to be closed so the next Reset is legal
+
 
 		dx12::CommandList* lists[] = { m_cmdList.Get() };
 		m_copyQueue->ExecuteCommandLists(1, lists);
@@ -141,26 +149,24 @@ namespace koi
 
 		m_device->FlushPendingDeletions();
 		m_activeStagingBuffers.clear();
-
-		m_isRecording = false;
 	}
 
 	void GfxDevice::UploadContext::QueueBufferUpload(BufferHandle dst, const std::vector<byte>& data)
 	{
-		assert(m_device       && "UploadContext::QueueBufferUpload called before Init");
-		assert(!m_isRecording && "Cannot queue an upload while a synchronous Begin/End block is open");
+		assert(m_device                         && "UploadContext::QueueBufferUpload called before Init");
+		assert(m_recordDepth == 0               && "Cannot queue an upload while a synchronous Begin/End block is open");
 		assert(m_device->m_buffers.IsValid(dst) && "QueueBufferUpload: invalid destination buffer handle");
-		assert(!data.empty()  && "QueueBufferUpload: data vector is empty");
+		assert(!data.empty()                    && "QueueBufferUpload: data vector is empty");
 
 		m_pendingUploads.push_back({ dst, data });
 	}
 
 	void GfxDevice::UploadContext::QueueTextureUpload(TextureHandle dst, const std::vector<byte>& data)
 	{
-		assert(m_device       && "UploadContext::QueueTextureUpload called before Init");
-		assert(!m_isRecording && "Cannot queue an upload while a synchronous Begin/End block is open");
+		assert(m_device                          && "UploadContext::QueueTextureUpload called before Init");
+		assert(m_recordDepth == 0                && "Cannot queue an upload while a synchronous Begin/End block is open");
 		assert(m_device->m_textures.IsValid(dst) && "QueueTextureUpload: invalid destination texture handle");
-		assert(!data.empty()  && "QueueTextureUpload: data vector is empty");
+		assert(!data.empty()                     && "QueueTextureUpload: data vector is empty");
 
 		m_pendingUploads.push_back({ dst, data });
 	}
@@ -170,9 +176,9 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		assert(m_device        && "UploadContext::FlushQueued called before Init");
-		assert(!m_isRecording  && "FlushQueued called while a synchronous Begin/End block is open");
-		assert(graphicsQueue   && "FlushQueued: graphicsQueue is null");
+		assert(m_device           && "UploadContext::FlushQueued called before Init");
+		assert(m_recordDepth == 0 && "FlushQueued called while a synchronous Begin/End block is open");
+		assert(graphicsQueue      && "FlushQueued: graphicsQueue is null");
 
 		// Ensure previous flush's staging buffers are freed before submitting new work.
 		// The copy queue is fast relative to frame rate, so the poll branch is almost always taken.
