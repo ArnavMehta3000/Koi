@@ -10,6 +10,7 @@
 #include "stb_image.h"
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include <cstring>
 
 namespace koi
@@ -30,6 +31,9 @@ namespace koi
 		{
 			fastgltf::Asset* Asset = nullptr;
 			fs::path BasePath;
+
+			// glTF image index -> index into ModelAsset::Images
+			std::unordered_map<u32, u32> LoadedImages;
 
 			std::unique_ptr<ModelAsset> BuildModelAsset();
 			void LoadMeshes(ModelAsset& model);
@@ -341,7 +345,6 @@ namespace koi
 	u32 Loader::LoadTexture(ModelAsset& model, u32 textureIndex)
 	{
 		ZoneScoped;
-		u32 idx = static_cast<u32>(model.Images.size());
 
 		fastgltf::Texture& gltfTexture = Asset->textures[textureIndex];
 		if (!gltfTexture.imageIndex.has_value())
@@ -349,7 +352,12 @@ namespace koi
 			return u32(-1);
 		}
 
-		fastgltf::Image& gltfImage = Asset->images[*gltfTexture.imageIndex];
+		const u32 imageIndex = static_cast<u32>(*gltfTexture.imageIndex);
+		if (auto it = LoadedImages.find(imageIndex); it != LoadedImages.end())
+			return it->second;
+
+		const u32 idx = static_cast<u32>(model.Images.size());
+		fastgltf::Image& gltfImage = Asset->images[imageIndex];
 
 		ImageAsset img{};
 		stbi_uc* pixels = nullptr;
@@ -413,6 +421,7 @@ namespace koi
 
 		img.Name = (gltfTexture.name.empty()) ? fmt::format("Texture_{}", idx) : gltfTexture.name.data();
 		model.Images.push_back(std::move(img));
+		LoadedImages.emplace(imageIndex, idx);
 		return idx;
 	}
 }
