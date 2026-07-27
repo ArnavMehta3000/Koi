@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/GpuFrameBuffer.h"
+#include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include <flecs.h>
 #include <array>
 
@@ -10,10 +12,6 @@ namespace koi
 	struct Camera;
 	struct RendererResources;
 
-	// Full-screen deferred lighting. Each frame it (1) gathers every (Transform, Light)
-	// entity into a ring-buffered StructuredBuffer<GPULight>, then (2) draws a full-screen
-	// triangle that samples the G-buffer, reconstructs world position from depth, and
-	// accumulates Blinn-Phong lighting into the HDR color target.
 	class LightingPass : public RenderPass
 	{
 	public:
@@ -43,7 +41,6 @@ namespace koi
 		[[nodiscard]] inline u32 GetLightCount() const { return m_lightCount; }
 
 	private:
-		void EnsureLightCapacity(u32 frameSlot, u32 requiredCount);
 		void ConfigureECS();
 
 		enum class GBuf { Albedo, Normals, Material, Depth, COUNT };
@@ -58,9 +55,8 @@ namespace koi
 		u32           m_width  = 0;
 		u32           m_height = 0;
 
-		FrameArray<BufferHandle> m_lightBuffers{};   // SRV, grown on demand
-		FrameArray<u32>          m_lightCapacity{};   // element capacity of m_lightBuffers[i]
-		u32                      m_lightCount = 0;    // lights uploaded this frame
+		GpuFrameBuffer<GPULight> m_lightBuffer;     // StructuredBuffer<GPULight>, grown on demand
+		u32                      m_lightCount = 0;  // lights uploaded this frame
 
 		flecs::world_t* m_queryWorld = nullptr;
 		flecs::system   m_gatherSystem;

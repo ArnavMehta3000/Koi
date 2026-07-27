@@ -7,10 +7,8 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
-#include <algorithm>
 #include <array>
 #include <cassert>
-#include <cstring>
 
 namespace koi
 {
@@ -36,16 +34,8 @@ namespace koi
 		ZoneScoped;
 		assert(config.Device && "GBufferPass requires a valid GfxDevice");
 
-		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
-		{
-			m_frameConstantsBuffers[i] = m_config.Device->CreateBuffer(BufferDesc
-			{
-				.Size      = sizeof(FrameConstants),
-				.Usage     = BufferUsage::Constant,
-				.Memory    = MemoryUsage::CpuToGpu,
-				.DebugName = "GBuffer FrameConstants",
-			});
-		}
+		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "GBuffer FrameConstants");
+		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "GBuffer PerObjectData");
 	}
 
 	GBufferPass::~GBufferPass()
@@ -54,12 +44,6 @@ namespace koi
 		if (!m_config.Device) return;
 
 		DestroyRenderTargets();
-		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
-		{
-			m_config.Device->Destroy(m_frameConstantsBuffers[i]);
-			if (m_objectBuffers[i])
-				m_config.Device->Destroy(m_objectBuffers[i]);
-		}
 	}
 
 	void GBufferPass::Execute(CommandList& cmd)
@@ -85,23 +69,13 @@ namespace koi
 		m_renderSystem.run(0.0f, &gather);
 		if (gather.DrawInfos.empty()) return;
 
-		EnsureObjectCapacity(frameSlot, static_cast<u32>(gather.Objects.size()));
+		const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(gather.Objects));
 
-		// Copy per-object data to object buffer.
-		Buffer* objectBuf = device.Get(m_objectBuffers[frameSlot]);
-		assert(objectBuf && objectBuf->Resource && objectBuf->MappedPtr && "Invalid object buffer!");
-		std::memcpy(objectBuf->MappedPtr, gather.Objects.data(), gather.Objects.size() * sizeof(PerObjectData));
-
-		// Copy frame constants.
-		Buffer* frameConstantsBuf = device.Get(m_frameConstantsBuffers[frameSlot]);
-		assert(frameConstantsBuf && frameConstantsBuf->Resource && frameConstantsBuf->MappedPtr && "Invalid frame constants buffer!");
-
-		const FrameConstants frameConstants
+		const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 		{
 			.ViewProjection = m_camera->ViewProjection,
 			.CameraPosition = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
-		};
-		std::memcpy(frameConstantsBuf->MappedPtr, &frameConstants, sizeof(frameConstants));
+		});
 
 		constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		cmd.ClearRenderTarget(albedo,   kClearColor);
@@ -125,8 +99,8 @@ namespace koi
 			{
 				DrawRootConstants pc
 				{
-					.FrameConstantsIndex = frameConstantsBuf->CBVIndex,
-					.ObjectBufferIndex   = objectBuf->SRVIndex,
+					.FrameConstantsIndex = frameConstantsIndex,
+					.ObjectBufferIndex   = objectBufferIndex,
 					.ObjectIndex         = info.ObjectIndex,
 					.MaterialBufferIndex = mesh.MaterialBufferSRV,
 					.MaterialIndex       = d.MaterialIndex,
@@ -145,27 +119,6 @@ namespace koi
 		cmd.TransitionBarrier(material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		if (depth) cmd.TransitionBarrier(depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cmd.FlushBarriers();
-	}
-
-	void GBufferPass::EnsureObjectCapacity(u32 frameSlot, u32 requiredCount)
-	{
-		ZoneScoped;
-		if (requiredCount <= m_objectCapacity[frameSlot]) return;
-
-		const u32 newCapacity = std::max(requiredCount, std::max(64u, m_objectCapacity[frameSlot] * 2));
-
-		if (m_objectBuffers[frameSlot])
-			m_config.Device->Destroy(m_objectBuffers[frameSlot]);
-
-		m_objectBuffers[frameSlot] = m_config.Device->CreateBuffer(BufferDesc
-		{
-			.Size      = newCapacity * sizeof(PerObjectData),
-			.Stride    = sizeof(PerObjectData),
-			.Usage     = BufferUsage::Storage,
-			.Memory    = MemoryUsage::CpuToGpu,
-			.DebugName = "GBuffer PerObjectData",
-		});
-		m_objectCapacity[frameSlot] = newCapacity;
 	}
 
 	void GBufferPass::Reset()

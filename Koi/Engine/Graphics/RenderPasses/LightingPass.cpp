@@ -7,9 +7,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
-#include <algorithm>
 #include <cassert>
-#include <cstring>
 #include <vector>
 
 namespace koi
@@ -20,6 +18,8 @@ namespace koi
 		ZoneScoped;
 		assert(m_config.Device && "LightingPass requires a valid GfxDevice");
 
+		m_lightBuffer.Init(*m_config.Device, BufferUsage::Storage, 16, "GPULight");
+
 		// Input names must match GBufferPass output names for graph connectivity validation.
 		m_gbuffer[size_t(GBuf::Albedo)]   = { {}, "Albedo"   };
 		m_gbuffer[size_t(GBuf::Normals)]  = { {}, "Normals"  };
@@ -27,17 +27,7 @@ namespace koi
 		m_gbuffer[size_t(GBuf::Depth)]    = { {}, "Depth"    };
 	}
 
-	LightingPass::~LightingPass()
-	{
-		ZoneScoped;
-		if (!m_config.Device) return;
-
-		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
-		{
-			if (m_lightBuffers[i])
-				m_config.Device->Destroy(m_lightBuffers[i]);
-		}
-	}
+	LightingPass::~LightingPass() = default;
 
 	void LightingPass::Reset()
 	{
@@ -67,27 +57,6 @@ namespace koi
 		m_width          = width;
 		m_height         = height;
 		return *this;
-	}
-
-	void LightingPass::EnsureLightCapacity(u32 frameSlot, u32 requiredCount)
-	{
-		ZoneScoped;
-		if (requiredCount <= m_lightCapacity[frameSlot]) return;
-
-		const u32 newCapacity = std::max(requiredCount, std::max(16u, m_lightCapacity[frameSlot] * 2));
-
-		if (m_lightBuffers[frameSlot])
-			m_config.Device->Destroy(m_lightBuffers[frameSlot]);
-
-		m_lightBuffers[frameSlot] = m_config.Device->CreateBuffer(BufferDesc
-		{
-			.Size      = newCapacity * sizeof(GPULight),
-			.Stride    = sizeof(GPULight),
-			.Usage     = BufferUsage::Storage,
-			.Memory    = MemoryUsage::CpuToGpu,
-			.DebugName = "GPULight",
-		});
-		m_lightCapacity[frameSlot] = newCapacity;
 	}
 
 	void LightingPass::ConfigureECS()
@@ -136,11 +105,7 @@ namespace koi
 		m_lightCount = static_cast<u32>(lights.size());
 		if (lights.empty()) return;
 
-		EnsureLightCapacity(frameSlot, m_lightCount);
-
-		Buffer* lightBuf = device.Get(m_lightBuffers[frameSlot]);
-		assert(lightBuf && lightBuf->Resource && lightBuf->MappedPtr && "Invalid light buffer!");
-		std::memcpy(lightBuf->MappedPtr, lights.data(), lights.size() * sizeof(GPULight));
+		const DescriptorIndex lightBufferIndex = m_lightBuffer.Upload(frameSlot, std::span<const GPULight>(lights));
 
 		// --- Full-screen lighting draw ---
 		if (!m_colorTarget || !m_camera || !m_config.Resources || !m_config.Resources->LightingPipeline)
@@ -168,7 +133,7 @@ namespace koi
 			.NormalIndex       = normalTex->SRVIndex,
 			.MaterialIndex     = materialTex->SRVIndex,
 			.DepthIndex        = depthTex->SRVIndex,
-			.LightBufferIndex  = lightBuf->SRVIndex,
+			.LightBufferIndex  = lightBufferIndex,
 			.LightCount        = m_lightCount,
 			.SamplerIndex      = m_config.Resources->PointClampSampler,
 			._Pad              = 0,

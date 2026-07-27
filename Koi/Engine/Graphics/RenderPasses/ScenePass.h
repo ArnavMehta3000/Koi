@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/GpuFrameBuffer.h"
+#include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/ECS/Components.h"
 #include <flecs.h>
 #include <array>
@@ -37,7 +39,6 @@ namespace koi
 		[[nodiscard]] inline TextureHandle GetDepthOutput() const { return m_outputs[1].Texture; }
 
 	private:
-		void EnsureObjectCapacity(u32 frameSlot, u32 requiredCount);
 		void ConfigureECS();
 
 		Config        m_config;
@@ -47,10 +48,8 @@ namespace koi
 		u32           m_height = 0;
 		std::array<RenderPassAttachment, 2> m_outputs;
 
-		// Per-frame-in-flight, CPU-mapped (MemoryUsage::CpuToGpu) GPU buffers
-		FrameArray<BufferHandle> m_frameConstantsBuffers{};  // CBV, fixed size (sizeof(FrameConstants))
-		FrameArray<BufferHandle> m_objectBuffers{};          // SRV, grown on demand
-		FrameArray<u32>          m_objectCapacity{};         // element capacity of m_objectBuffers[i]
+		GpuFrameBuffer<FrameConstants> m_frameConstants;  // ConstantBuffer<FrameConstants>
+		GpuFrameBuffer<PerObjectData>  m_objects;         // StructuredBuffer<PerObjectData>, grown on demand
 
 		flecs::world_t* m_queryWorld = nullptr;
 		flecs::system   m_renderSystem;

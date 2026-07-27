@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/GpuFrameBuffer.h"
+#include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include <flecs.h>
 #include <array>
 
@@ -41,7 +43,6 @@ namespace koi
 		void CreateRenderTargets();
 		void DestroyRenderTargets();
 		void ConfigureECS();
-		void EnsureObjectCapacity(u32 frameSlot, u32 requiredCount);
 
 	private:
 		enum class Outputs
@@ -64,9 +65,8 @@ namespace koi
 		flecs::world_t* m_queryWorld = nullptr;
 		flecs::system   m_renderSystem;
 
-		FrameArray<BufferHandle> m_frameConstantsBuffers{};
-		FrameArray<BufferHandle> m_objectBuffers{};
-		FrameArray<u32>          m_objectCapacity{};
+		GpuFrameBuffer<FrameConstants> m_frameConstants;
+		GpuFrameBuffer<PerObjectData>  m_objects;
 
 		std::array<RenderPassAttachment, size_t(Outputs::MAX_COUNT)> m_outputs;
 	};

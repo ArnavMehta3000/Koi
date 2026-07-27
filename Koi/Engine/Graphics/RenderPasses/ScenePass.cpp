@@ -8,7 +8,6 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
 #include <cassert>
-#include <cstring>
 
 namespace koi
 {
@@ -37,52 +36,11 @@ namespace koi
 		m_outputs[0] = { {}, "HDRColor" };
 		m_outputs[1] = { {}, "Depth" };
 
-		// Create buffers for frame constants.
-		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
-		{
-			m_frameConstantsBuffers[i] = m_config.Device->CreateBuffer(BufferDesc
-			{
-				.Size      = sizeof(FrameConstants),
-				.Usage     = BufferUsage::Constant,
-				.Memory    = MemoryUsage::CpuToGpu,
-				.DebugName = "FrameConstants",
-			});
-		}
+		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "FrameConstants");
+		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "PerObjectData");
 	}
 
-	ScenePass::~ScenePass()
-	{
-		ZoneScoped;
-		if (!m_config.Device) return;
-
-		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
-		{
-			m_config.Device->Destroy(m_frameConstantsBuffers[i]);
-			if (m_objectBuffers[i])
-				m_config.Device->Destroy(m_objectBuffers[i]);
-		}
-	}
-
-	void ScenePass::EnsureObjectCapacity(u32 frameSlot, u32 requiredCount)
-	{
-		ZoneScoped;
-		if (requiredCount <= m_objectCapacity[frameSlot]) return;
-
-		const u32 newCapacity = std::max(requiredCount, std::max(64u, m_objectCapacity[frameSlot] * 2));
-
-		if (m_objectBuffers[frameSlot])
-			m_config.Device->Destroy(m_objectBuffers[frameSlot]);
-
-		m_objectBuffers[frameSlot] = m_config.Device->CreateBuffer(BufferDesc
-		{
-			.Size      = newCapacity * sizeof(PerObjectData),
-			.Stride    = sizeof(PerObjectData),
-			.Usage     = BufferUsage::Storage,
-			.Memory    = MemoryUsage::CpuToGpu,
-			.DebugName = "PerObjectData",
-		});
-		m_objectCapacity[frameSlot] = newCapacity;
-	}
+	ScenePass::~ScenePass() = default;
 
 	void ScenePass::ConfigureECS()
 	{
@@ -148,23 +106,13 @@ namespace koi
 		m_renderSystem.run(0.0f, &gather);
 		if (gather.DrawInfos.empty()) return;
 
-		EnsureObjectCapacity(frameSlot, static_cast<u32>(gather.Objects.size()));
+		const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(gather.Objects));
 
-		// Copy per-object data to object buffer
-		Buffer* objectBuf = device.Get(m_objectBuffers[frameSlot]);
-		assert(objectBuf && objectBuf->Resource && objectBuf->MappedPtr && "Invalid object buffer!");
-		std::memcpy(objectBuf->MappedPtr, gather.Objects.data(), gather.Objects.size() * sizeof(PerObjectData));
-
-		// Copy frame constants
-		Buffer* frameConstantsBuf = device.Get(m_frameConstantsBuffers[frameSlot]);
-		assert(frameConstantsBuf && frameConstantsBuf->Resource && frameConstantsBuf->MappedPtr && "Invalid frame constants buffer!");
-
-		const FrameConstants frameConstants
+		const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 		{
 			.ViewProjection = m_camera->ViewProjection,
 			.CameraPosition = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
-		};
-		std::memcpy(frameConstantsBuf->MappedPtr, &frameConstants, sizeof(frameConstants));
+		});
 
 		const PipelineHandle pipeline = m_config.Pipeline ? m_config.Pipeline : m_config.Resources->MeshOpaquePipeline;
 
@@ -182,8 +130,8 @@ namespace koi
 			{
 				DrawRootConstants pc
 				{
-					.FrameConstantsIndex = frameConstantsBuf->CBVIndex,
-					.ObjectBufferIndex   = objectBuf->SRVIndex,
+					.FrameConstantsIndex = frameConstantsIndex,
+					.ObjectBufferIndex   = objectBufferIndex,
 					.ObjectIndex         = info.ObjectIndex,
 					.MaterialBufferIndex = mesh.MaterialBufferSRV,
 					.MaterialIndex       = d.MaterialIndex,
