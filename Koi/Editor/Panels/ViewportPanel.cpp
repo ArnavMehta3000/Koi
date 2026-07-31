@@ -1,5 +1,6 @@
 ﻿#include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Math/Math.h"
@@ -97,29 +98,95 @@ namespace koi
 		return &m_target;
 	}
 
+	void ViewportPanel::DrawToolbar()
+	{
+		static constexpr const char* kCameraLabels[]     = { "Scene", "Game" };
+		static constexpr const char* kResolutionLabels[] = { "Free Aspect", "Window", "1920x1080", "1280x720" };
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 2.0f));
+
+		ImGui::SetNextItemWidth(90.0f);
+		int cameraMode = static_cast<int>(m_cameraMode);
+		if (ImGui::Combo("##camera", &cameraMode, kCameraLabels, IM_ARRAYSIZE(kCameraLabels)))
+			m_cameraMode = static_cast<ViewportCamera>(cameraMode);
+
+		// Resolution only means something for the game camera; the scene camera
+		// always fills the panel
+		if (m_cameraMode == ViewportCamera::Game)
+		{
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(120.0f);
+			int resolution = static_cast<int>(m_resolution);
+			if (ImGui::Combo("##resolution", &resolution, kResolutionLabels, IM_ARRAYSIZE(kResolutionLabels)))
+				m_resolution = static_cast<ViewportResolution>(resolution);
+		}
+
+		ImGui::PopStyleVar();
+	}
+
 	void ViewportPanel::OnDraw()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		if (ImGui::Begin("Viewport"))
 		{
+			DrawToolbar();
+
+			// Nothing to size a target from when collapsed, and the aspect maths
+			// below would divide by zero
 			const ImVec2 avail = ImGui::GetContentRegionAvail();
 			if (avail.x >= 1.0f && avail.y >= 1.0f)
 			{
-				m_desiredWidth  = static_cast<u32>(avail.x);
-				m_desiredHeight = static_cast<u32>(avail.y);
-			}
-
-			if (m_valid)
-			{
-				GfxDevice& device = m_renderer->GetDevice();
-				if (const Texture* tex = device.Get(m_target.ResolvedColorBuffer);
-					tex && tex->SRVIndex != INVALID_DESCRIPTOR)
+				// Scene view always tracks the panel; the fixed modes render at their
+				// own size and get scaled to fit below
+				switch (m_cameraMode == ViewportCamera::Scene ? ViewportResolution::FreeAspect : m_resolution)
 				{
-					const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
-					ImGui::Image(static_cast<ImTextureID>(gpu.ptr), avail);
+					case ViewportResolution::Window:
+						if (const RenderWindow* rw = m_renderer->GetMainRenderWindow())
+						{
+							m_desiredWidth  = rw->GetWidth();
+							m_desiredHeight = rw->GetHeight();
+							break;
+						}
+						[[fallthrough]];  // no window yet, fall back to the panel
 
-					m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
+					case ViewportResolution::FreeAspect:
+						m_desiredWidth  = static_cast<u32>(avail.x);
+						m_desiredHeight = static_cast<u32>(avail.y);
+						break;
+
+					case ViewportResolution::R1920x1080: m_desiredWidth = 1920; m_desiredHeight = 1080; break;
+					case ViewportResolution::R1280x720:  m_desiredWidth = 1280; m_desiredHeight = 720;  break;
 				}
+
+				if (m_valid)
+				{
+					GfxDevice& device = m_renderer->GetDevice();
+					if (const Texture* tex = device.Get(m_target.ResolvedColorBuffer);
+						tex && tex->SRVIndex != INVALID_DESCRIPTOR)
+					{
+						// Fit the target inside the panel without distorting it; when the
+						// aspects already agree this is the full region
+						const f32 targetAspect = static_cast<f32>(m_target.Width) / static_cast<f32>(m_target.Height);
+						const f32 availAspect  = avail.x / avail.y;
+
+						const ImVec2 size = (targetAspect > availAspect)
+							? ImVec2(avail.x, avail.x / targetAspect)
+							: ImVec2(avail.y * targetAspect, avail.y);
+
+						const ImVec2 cursor = ImGui::GetCursorPos();
+						ImGui::SetCursorPos(ImVec2(cursor.x + (avail.x - size.x) * 0.5f,
+						                           cursor.y + (avail.y - size.y) * 0.5f));
+
+						const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
+						ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
+
+						m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
+					}
+				}
+			}
+			else
+			{
+				m_isHovered = false;
 			}
 		}
 		else

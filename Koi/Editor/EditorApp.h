@@ -13,6 +13,7 @@ namespace koi
 	class Engine;
 	class CommandList;
 	class ViewportPanel;
+	enum class ViewportCamera : u8;
 }
 
 namespace koi::editor
@@ -78,5 +79,6 @@ namespace koi::editor
 
 		toml::table                                 m_snapshot;        // the world as it was when Play was pressed
 		std::vector<MeshHandle>                     m_pinnedAssets;    // keeps the snapshot's assets resident across Stop
+		ViewportCamera                              m_cameraBeforePlay{};  // restored on Stop
 	};
 }

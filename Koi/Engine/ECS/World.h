@@ -38,7 +38,6 @@ namespace koi
 		void Clear(GfxDevice& device);
 
 		void Update(f32 dt);
-		void UpdateCamera(f32 aspect);
 
 		[[nodiscard]] const AABB& GetBounds() const { return m_bounds; }
 
@@ -49,6 +48,9 @@ namespace koi
 
 		[[nodiscard]] ECS&       GetECS()       { return m_ecs; }
 		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
+
+	private:
+		void UpdateCamera();
 
 	private:
 		ECS    m_ecs;

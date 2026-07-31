@@ -26,6 +26,40 @@
 
 namespace koi::editor
 {
+	// Layout for the first run, before ImGui has written an imgui.ini of its own.
+	// To change it: arrange the panels in the editor, then copy the resulting ini here
+	static constexpr const char* kDefaultLayout = R"ini(
+[Window][WindowOverViewport_11111111]
+Pos=0,19
+Size=1280,701
+Collapsed=0
+
+[Window][Viewport]
+Pos=0,19
+Size=809,701
+Collapsed=0
+DockId=0x00000003,0
+
+[Window][Scene]
+Pos=811,19
+Size=469,297
+Collapsed=0
+DockId=0x00000001,0
+
+[Window][GBuffer Debug]
+Pos=811,318
+Size=469,402
+Collapsed=0
+DockId=0x00000002,0
+
+[Docking][Data]
+DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
+  DockNode    ID=0x00000003 Parent=0x08BD597D SizeRef=809,701 CentralNode=1 HiddenTabBar=1 Selected=0xC450F867
+  DockNode    ID=0x00000004 Parent=0x08BD597D SizeRef=469,701 Split=Y Selected=0xE601B12F
+    DockNode  ID=0x00000001 Parent=0x00000004 SizeRef=628,420 Selected=0xE601B12F
+    DockNode  ID=0x00000002 Parent=0x00000004 SizeRef=628,568 Selected=0x9AB299C4
+)ini";
+
 	static void ImGuiSrvAlloc(ImGui_ImplDX12_InitInfo* /*info*/,
 	                          D3D12_CPU_DESCRIPTOR_HANDLE* outCpu,
 	                          D3D12_GPU_DESCRIPTOR_HANDLE* outGpu)
@@ -151,6 +185,12 @@ namespace koi::editor
 		io.ConfigWindowsMoveFromTitleBarOnly = true;
 		ImGui::StyleColorsDark();
 
+		// Loading here marks settings as loaded, so ImGui keeps the seeded layout
+		// instead of starting empty. Later runs read the user's own ini from disk
+		const char* iniPath = io.IniFilename ? io.IniFilename : "imgui.ini";
+		if (std::error_code ec; !fs::exists(iniPath, ec))
+			ImGui::LoadIniSettingsFromMemory(kDefaultLayout);
+
 		ImGui_ImplGlfw_InitForOther(window.GetGLFWWindow(), true);
 
 		ImGui_ImplDX12_InitInfo initInfo{};
@@ -187,7 +227,16 @@ namespace koi::editor
 	{
 		const ViewportTarget* target = m_viewportPanel->GetTarget();
 		if (!target) return std::nullopt;
-		return RenderView{ .Camera = &m_viewportPanel->GetCamera(), .Target = *target };
+
+		// Game view swaps the camera but keeps the same viewport texture
+		const Camera* camera = &m_viewportPanel->GetCamera();
+		if (m_viewportPanel->IsGameCamera())
+		{
+			if (World* world = m_game->GetEditorWorld())
+				camera = &world->GetCamera();
+		}
+
+		return RenderView{ .Camera = camera, .Target = *target };
 	}
 
 	void EditorApp::ReloadAll()
@@ -342,6 +391,10 @@ namespace koi::editor
 				m_pinnedAssets.push_back(meshes.Acquire(device, path));
 		});
 
+		// Show the game camera by default; the toolbar can still switch back mid-play
+		m_cameraBeforePlay = m_viewportPanel->GetCameraMode();
+		m_viewportPanel->SetCameraMode(ViewportCamera::Game);
+
 		// Set the state last: it fires OnBeginPlay, and whatever that spawns must land
 		// outside the snapshot so Stop discards it
 		Engine::Get().SetPlayState(PlayState::Playing);
@@ -383,6 +436,8 @@ namespace koi::editor
 		{
 			meshes.Release(device, handle);
 		}
+
+		m_viewportPanel->SetCameraMode(m_cameraBeforePlay);
 
 		m_pinnedAssets.clear();
 		m_snapshot = toml::table{};

@@ -54,6 +54,15 @@ namespace koi
 		OnEndPlay();
 	}
 
+	f32 AppBase::GetRenderAspect() const
+	{
+		// No camera needed: only the target half of the view is being asked about
+		const std::optional<RenderView> view = GetRenderView(nullptr);
+		if (!view || view->Target.Height == 0) return 1.0f;
+
+		return static_cast<f32>(view->Target.Width) / static_cast<f32>(view->Target.Height);
+	}
+
 	std::optional<RenderView> AppBase::GetRenderView(const Camera* gameCamera) const
 	{
 		// Editor owns both the camera and the target (viewport RT)

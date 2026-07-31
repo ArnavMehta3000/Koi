@@ -63,7 +63,6 @@ void SandboxApp::OnTick(koi::f32 dt)
 	koi::InputManager& input = engine.GetInputManager();
 
 	m_world.Update(dt);
-	m_world.UpdateCamera(GetWindow().AspectRatio());  // Not a fan of the way this is being done here
 
 	if (input.IsKeyPressed(koi::KeyCode::Escape))
 		engine.RequestExit();
@@ -113,6 +112,4 @@ void SandboxApp::LoadScene()
 	{
 		m_world = std::move(*result);
 	}
-
-	m_world.UpdateCamera(GetWindow().AspectRatio());
 }

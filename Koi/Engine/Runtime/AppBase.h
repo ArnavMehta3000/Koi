@@ -67,6 +67,11 @@ namespace koi
 		// Resolves the camera + render target for this frame
 		[[nodiscard]] std::optional<RenderView> GetRenderView(const Camera* gameCamera) const;
 
+		// Aspect of whatever is being rendered into this frame: the swapchain standalone,
+		// the viewport texture under the editor. Cameras must project with this, not the
+		// window, or they stretch in the editor
+		[[nodiscard]] f32 GetRenderAspect() const;
+
 	private:
 		AppCreateDesc   m_desc;
 		Engine*         m_engine        = nullptr;
