@@ -13,23 +13,12 @@ namespace koi
 	class IEditorContext;
 	struct Camera;
 
-	// Platform-agnostic depth buffer format option for AppCreateDesc.
-	// Maps to the corresponding Format::D* value internally.
-	enum class DepthBufferFormat : u8
-	{
-		None,   // No depth buffer
-		D16,    // D16_UNORM
-		D32,    // D32_FLOAT (default)
-		D24S8,  // D24_UNORM_S8_UINT
-	};
-
 	struct AppCreateDesc
 	{
-		WindowDesc        WindowDesc{};
-		LoggerConfig      LogConfig{};
-		std::string       AppName      = "Koi Application";
-		std::string       StartupScene;  // path relative to executable, empty = none
-		DepthBufferFormat DepthBuffer  = DepthBufferFormat::D32;
+		WindowDesc   WindowDesc{};
+		LoggerConfig LogConfig{};
+		std::string  AppName      = "Koi Application";
+		std::string  StartupScene;  // path relative to executable, empty = none
 	};
 
 	class AppBase : public NonCopyable, public IAppHost
@@ -64,13 +53,10 @@ namespace koi
 
 		[[nodiscard]] virtual World* GetEditorWorld() { return nullptr; }
 
-		// Resolves the camera + render target for this frame
-		[[nodiscard]] std::optional<RenderView> GetRenderView(const Camera* gameCamera) const;
-
-		// Aspect of whatever is being rendered into this frame: the swapchain standalone,
-		// the viewport texture under the editor. Cameras must project with this, not the
-		// window, or they stretch in the editor
-		[[nodiscard]] f32 GetRenderAspect() const;
+		// Resolves the render target for this frame and the camera to view it through.
+		// The target's aspect is only known here, so the world's camera is projected
+		// against it rather than against the window
+		[[nodiscard]] std::optional<RenderView> GetRenderView(World& world) const;
 
 	private:
 		AppCreateDesc   m_desc;

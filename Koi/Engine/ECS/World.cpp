@@ -4,7 +4,6 @@
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <cassert>
 #include <fstream>
@@ -235,25 +234,23 @@ namespace koi
 		if (!Engine::Get().IsPlaying()) return;
 
 		m_ecs.progress(dt);
-
-		UpdateCamera();
 	}
 
-	void World::UpdateCamera()
+	const Camera* World::ResolveCamera(f32 aspect)
 	{
 		ZoneScoped;
 
-		// Asked for rather than passed in, so game code never has to work out
-		// which surface it is rendering into
-		const f32 aspect = AppBase::Get().GetRenderAspect();
-
+		bool found = false;
 		m_ecs.query<const Transform, const CameraComponent>()
 			.each([&](const Transform& xform, const CameraComponent& cam)
 			{
-				if (!cam.Primary) return;
+				if (!cam.Primary || found) return;
 				m_camera.SetProjection(cam.FovY, aspect, cam.Near, cam.Far);
 				m_camera.SetTransform(xform);
+				found = true;
 			});
+
+		return found ? &m_camera : nullptr;
 	}
 
 	const GPUMesh* World::GetMesh(MeshHandle handle) const

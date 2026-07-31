@@ -226,14 +226,15 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 	std::optional<RenderView> EditorApp::GetEditorRenderView() const
 	{
 		const ViewportTarget* target = m_viewportPanel->GetTarget();
-		if (!target) return std::nullopt;
+		if (!target || target->Height == 0) return std::nullopt;
 
-		// Game view swaps the camera but keeps the same viewport texture
+		// Game view swaps the camera but keeps the same viewport texture. The scene
+		// camera tracks the panel's aspect itself, so only the game one is projected here
 		const Camera* camera = &m_viewportPanel->GetCamera();
 		if (m_viewportPanel->IsGameCamera())
 		{
-			if (World* world = m_game->GetEditorWorld())
-				camera = &world->GetCamera();
+			const f32 aspect = static_cast<f32>(target->Width) / static_cast<f32>(target->Height);
+			camera = m_game->GetEditorWorld() ? m_game->GetEditorWorld()->ResolveCamera(aspect) : nullptr;
 		}
 
 		return RenderView{ .Camera = camera, .Target = *target };

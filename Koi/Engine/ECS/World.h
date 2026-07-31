@@ -41,8 +41,10 @@ namespace koi
 
 		[[nodiscard]] const AABB& GetBounds() const { return m_bounds; }
 
-		[[nodiscard]] Camera&       GetCamera()       { return m_camera; }
-		[[nodiscard]] const Camera& GetCamera() const { return m_camera; }
+		// Projects the primary camera entity for a surface of the given aspect and returns
+		// it. Null if the world has no primary camera. Aspect is a property of the render
+		// target, so this is called by whoever resolved that target, once per frame
+		[[nodiscard]] const Camera* ResolveCamera(f32 aspect);
 
 		[[nodiscard]] const GPUMesh* GetMesh(MeshHandle handle) const;
 
@@ -50,12 +52,9 @@ namespace koi
 		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
 
 	private:
-		void UpdateCamera();
-
-	private:
 		ECS    m_ecs;
 		Entity m_root;
 		AABB   m_bounds;
-		Camera m_camera;
+		Camera m_camera;  // derived from the primary camera entity by ResolveCamera
 	};
 }

@@ -54,18 +54,7 @@ namespace koi
 
 		m_inputManager->Init(window);
 
-		const Format depthFmt = [&]() -> Format
-		{
-			switch (desc.DepthBuffer)
-			{
-				case DepthBufferFormat::D16:    return Format::D16_UNORM;
-				case DepthBufferFormat::D24S8:  return Format::D24_UNORM_S8_UINT;
-				case DepthBufferFormat::None:   return Format::UNKNOWN;
-				default:                        return Format::D32_FLOAT;
-			}
-		}();
-
-		m_renderer->InitMainWindow(window, mainWndDesc.VSync, depthFmt);
+		m_renderer->InitMainWindow(window, mainWndDesc.VSync);
 
 		window.SetCloseCallback([this]() { RequestExit(); });
 

@@ -26,7 +26,7 @@ namespace koi
 		~Renderer();
 
 		// Called once by Engine after the main window is created.
-		void InitMainWindow(Window& window, bool vsync, Format depthFormat = Format::D32_FLOAT);
+		void InitMainWindow(Window& window, bool vsync);
 
 		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                 { return *m_device;              }
 		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept           { return *m_device;              }
@@ -34,8 +34,6 @@ namespace koi
 		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept { return m_defaultResources;     }
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
-		[[nodiscard]] inline TextureHandle            GetDepthBuffer() const noexcept      { return m_depthTexture;         }
-		[[nodiscard]] inline Format                   GetDepthFormat() const noexcept      { return m_depthFormat;          }
 		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_frameGraph;           }
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
@@ -50,8 +48,6 @@ namespace koi
 		void OnDeviceRestored() override;
 		void Reload() override;
 
-		void RebuildDepthBuffer(u32 w, u32 h);
-
 		struct FrameContext
 		{
 			CommandAllocator Allocator;
@@ -65,9 +61,7 @@ namespace koi
 		std::unique_ptr<FrameContext> m_frameContext;
 		RendererResources             m_defaultResources;
 		RenderGraph                   m_frameGraph;
-		TextureHandle                 m_depthTexture;
-		Format                        m_depthFormat = Format::UNKNOWN;
-		u32                           m_frameSlot   = 0;
-		IRendererOverlay*             m_overlay     = nullptr;
+		u32                           m_frameSlot = 0;
+		IRendererOverlay*             m_overlay   = nullptr;
 	};
 }

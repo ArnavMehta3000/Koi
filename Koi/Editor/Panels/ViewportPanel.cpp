@@ -25,7 +25,6 @@ namespace koi
 	{
 		GfxDevice& device = m_renderer->GetDevice();
 		if (m_target.HDRColorBuffer)      device.Destroy(m_target.HDRColorBuffer);
-		if (m_target.DepthBuffer)         device.Destroy(m_target.DepthBuffer);
 		if (m_target.ResolvedColorBuffer) device.Destroy(m_target.ResolvedColorBuffer);
 	}
 
@@ -41,7 +40,6 @@ namespace koi
 
 		GfxDevice& device = m_renderer->GetDevice();
 		if (m_target.HDRColorBuffer)      device.Destroy(m_target.HDRColorBuffer);
-		if (m_target.DepthBuffer)         device.Destroy(m_target.DepthBuffer);
 		if (m_target.ResolvedColorBuffer) device.Destroy(m_target.ResolvedColorBuffer);
 
 		m_target.HDRColorBuffer = device.CreateTexture(TextureDesc{
@@ -51,18 +49,6 @@ namespace koi
 			.Usage  = TextureUsage::RenderTarget | TextureUsage::ShaderRead,
 			.DebugName = "Viewport HDR Color",
 		});
-
-		const Format depthFormat = m_renderer->GetDepthFormat();
-		m_target.DepthBuffer = (depthFormat != Format::UNKNOWN)
-			? device.CreateTexture(TextureDesc
-			{
-				.Width     = width,
-				.Height    = height,
-				.Format    = depthFormat,
-				.Usage     = TextureUsage::DepthStencil,
-				.DebugName = "Viewport Depth",
-			})
-			: TextureHandle{};
 
 		m_target.ResolvedColorBuffer = device.CreateTexture(TextureDesc
 		{
@@ -88,12 +74,6 @@ namespace koi
 		static constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		cmd.TransitionBarrier(m_target.HDRColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		cmd.ClearRenderTarget(m_target.HDRColorBuffer, kClearColor);
-
-		if (m_target.DepthBuffer)
-		{
-			cmd.TransitionBarrier(m_target.DepthBuffer, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-			cmd.ClearDepthStencil(m_target.DepthBuffer);
-		}
 
 		return &m_target;
 	}

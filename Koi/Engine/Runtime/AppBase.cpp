@@ -3,6 +3,7 @@
 #include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
+#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include <cassert>
 
@@ -54,33 +55,24 @@ namespace koi
 		OnEndPlay();
 	}
 
-	f32 AppBase::GetRenderAspect() const
-	{
-		// No camera needed: only the target half of the view is being asked about
-		const std::optional<RenderView> view = GetRenderView(nullptr);
-		if (!view || view->Target.Height == 0) return 1.0f;
-
-		return static_cast<f32>(view->Target.Width) / static_cast<f32>(view->Target.Height);
-	}
-
-	std::optional<RenderView> AppBase::GetRenderView(const Camera* gameCamera) const
+	std::optional<RenderView> AppBase::GetRenderView(World& world) const
 	{
 		// Editor owns both the camera and the target (viewport RT)
 		if (m_editorContext)
 			return m_editorContext->GetEditorRenderView();
 
-		// Standalone: render from the game camera straight into the swapchain
-		Renderer& renderer = m_engine->GetRenderer();
-		RenderWindow* rw = renderer.GetMainRenderWindow();
-		if (!rw) return std::nullopt;
+		// Standalone: render the world's camera straight into the swapchain
+		RenderWindow* rw = m_engine->GetRenderer().GetMainRenderWindow();
+		if (!rw || rw->GetHeight() == 0) return std::nullopt;
+
+		const f32 aspect = static_cast<f32>(rw->GetWidth()) / static_cast<f32>(rw->GetHeight());
 
 		return RenderView
 		{
-			.Camera = gameCamera,
+			.Camera = world.ResolveCamera(aspect),
 			.Target =
 			{
 				.HDRColorBuffer      = rw->GetHDRColorBuffer(),
-				.DepthBuffer         = renderer.GetDepthBuffer(),
 				.ResolvedColorBuffer = rw->CurrentBackBuffer(),
 				.Width               = rw->GetWidth(),
 				.Height              = rw->GetHeight(),

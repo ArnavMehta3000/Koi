@@ -72,7 +72,7 @@ void SandboxApp::OnRender()
 {
 	ZoneScoped;
 
-	const std::optional<koi::RenderView> view = GetRenderView(&m_world.GetCamera());
+	const std::optional<koi::RenderView> view = GetRenderView(m_world);
 	if (!view) return;  // Nothing valid to render into yet this frame
 
 	const koi::ViewportTarget& target = view->Target;
