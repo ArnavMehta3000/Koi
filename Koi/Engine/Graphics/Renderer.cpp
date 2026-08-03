@@ -25,7 +25,7 @@ namespace koi
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
 		m_defaultResources.Init(*m_device);
-		KOI_LOG_INFO("Initializing renderer");
+		KOI_LOG_INFO("Renderer initialized");
 	}
 
 	Renderer::~Renderer()
@@ -42,7 +42,7 @@ namespace koi
 		m_defaultResources.Shutdown(*m_device);
 		m_device = nullptr;
 
-		KOI_LOG_INFO("Shutdown renderer");
+		KOI_LOG_INFO("Renderer shut down");
 	}
 
 	void Renderer::Init(const SubsystemInitContext& ctx)
@@ -63,7 +63,8 @@ namespace koi
 		m_frameContext->Allocator.Init(*m_device, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer Allocator");
 		m_frameContext->List.Init(*m_device, m_frameContext->Allocator, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer CmdList");
 
-		KOI_LOG_TRACE("Renderer: main window initialized");
+		KOI_LOG_DEBUG("Renderer: main render window initialized ({}x{}, vsync {})",
+			window.GetWidth(), window.GetHeight(), ctx.VSync);
 	}
 
 	void Renderer::BeginFrame()
@@ -120,6 +121,7 @@ namespace koi
 
 	void Renderer::Reload()
 	{
+		KOI_LOG_DEBUG("Renderer: rebuilding default pipelines");
 		m_device->WaitForIdle();
 		m_defaultResources.RebuildPipelines(*m_device);
 	}

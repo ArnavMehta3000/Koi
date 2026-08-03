@@ -1,6 +1,7 @@
 ﻿#include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <fstream>
 
 namespace koi
@@ -15,6 +16,7 @@ namespace koi
 	std::optional<std::vector<byte>> FilesystemMount::Read(std::string_view relativePath)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::IO);
 
 		for (const fs::path& root : m_roots)
 		{
@@ -25,14 +27,19 @@ namespace koi
 			std::vector<byte> buffer(static_cast<size_t>(file.tellg()));
 			file.seekg(0, std::ios::beg);
 			file.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+
+			KOI_LOG_TRACE("VFS read '{}' -> '{}' ({} bytes)", relativePath, full.string(), buffer.size());
 			return buffer;
 		}
+
+		KOI_LOG_TRACE("VFS read '{}' missing in all {} root(s)", relativePath, m_roots.size());
 		return std::nullopt;
 	}
 
 	std::optional<fs::path> FilesystemMount::TryResolveToDisk(std::string_view relativePath)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::IO);
 
 		// Return the first root that actually contains the file
 		for (const fs::path& root : m_roots)
@@ -54,12 +61,15 @@ namespace koi
 
 	void VirtualFileSystem::Mount(const std::string& scheme, std::unique_ptr<IMountBackend> backend)
 	{
-		KOI_LOG_INFO("VFS mount '{}://' registered", scheme);
+		KOI_MEM_TAG_SCOPE(MemTag::IO);
+		KOI_LOG_DEBUG("VFS mount '{}://' registered", scheme);
 		m_mounts[std::move(scheme)] = std::move(backend);
 	}
 
 	void VirtualFileSystem::Unmount(std::string_view scheme)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::IO);
+		KOI_LOG_DEBUG("VFS mount '{}://' removed", scheme);
 		m_mounts.erase(std::string(scheme));
 	}
 
@@ -86,6 +96,7 @@ namespace koi
 
 	std::optional<std::vector<byte>> VirtualFileSystem::Read(std::string_view virtualPath)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::IO);
 		const auto [scheme, path] = ResolveScheme(virtualPath);
 
 		auto it = m_mounts.find(std::string(scheme));
@@ -100,10 +111,15 @@ namespace koi
 
 	std::optional<fs::path> VirtualFileSystem::TryResolveToDisk(std::string_view virtualPath)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::IO);
 		const auto [scheme, path] = ResolveScheme(virtualPath);
 
 		auto it = m_mounts.find(std::string(scheme));
-		if (it == m_mounts.end()) return std::nullopt;
+		if (it == m_mounts.end())
+		{
+			KOI_LOG_TRACE("VFS resolve: scheme '{}://' not mounted (path '{}')", scheme, virtualPath);
+			return std::nullopt;
+		}
 
 		return it->second->TryResolveToDisk(path);
 	}

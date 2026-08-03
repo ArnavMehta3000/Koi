@@ -29,7 +29,7 @@ namespace koi
 void SandboxApp::OnInit()
 {
 	ZoneScoped;
-	KOI_LOG_INFO("SandboxApp::OnInit()");
+	KOI_LOG_DEBUG("SandboxApp::OnInit()");
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 
 	koi::Renderer& renderer = GetEngine()->GetSubsystem<koi::Renderer>();
@@ -93,7 +93,7 @@ void SandboxApp::OnRender()
 void SandboxApp::OnShutdown()
 {
 	ZoneScoped;
-	KOI_LOG_INFO("SandboxApp::OnShutdown()");
+	KOI_LOG_DEBUG("SandboxApp::OnShutdown()");
 
 	// Hands back the asset references the scene's entities took when they loaded
 	m_world.Clear(GetEngine()->GetSubsystem<koi::Renderer>().GetDevice());
@@ -103,7 +103,7 @@ void SandboxApp::LoadScene()
 {
 	ZoneScoped;
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
-	KOI_LOG_INFO("SandboxApp::LoadScene()");
+	KOI_LOG_DEBUG("SandboxApp::LoadScene()");
 
 	const std::string& scenePath = GetDesc().StartupScene;
 	assert(!scenePath.empty() && "No startup_scene set in project TOML");

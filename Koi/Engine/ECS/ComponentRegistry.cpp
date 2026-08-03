@@ -5,6 +5,8 @@
 #include "Koi/Engine/Math/TransformSerializer.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {
@@ -43,9 +45,13 @@ namespace koi
 
 	ComponentRegistry::ComponentRegistry()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
+
 		Register<Transform, true>("transform", DrawTransformInspector);
 		Register(ComponentInfo{ .Key = "mesh", .Load = LoadMesh, .Save = SaveMesh, .Draw = DrawMeshInspector });
 		Register<CameraComponent>("camera", DrawCameraInspector);
 		Register<Light>("light", DrawLightInspector);
+
+		KOI_LOG_DEBUG("Component registry: {} component(s) registered", All().size());
 	}
 }

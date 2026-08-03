@@ -6,6 +6,8 @@
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/InputCodes.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Logging/Logger.h"
 
 #include <imgui.h>
 
@@ -30,6 +32,7 @@ namespace koi
 
 	void ViewportPanel::EnsureSize(u32 width, u32 height)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (width == 0 || height == 0)
 		{
 			m_valid = false;
@@ -64,6 +67,8 @@ namespace koi
 		m_valid = true;
 
 		m_camera.SetAspect(static_cast<f32>(width) / static_cast<f32>(height));
+
+		KOI_LOG_DEBUG("Viewport render targets resized to {}x{}", width, height);
 	}
 
 	const ViewportTarget* ViewportPanel::PrepareFrame(CommandList& cmd)
@@ -106,6 +111,7 @@ namespace koi
 
 	void ViewportPanel::OnDraw()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		if (ImGui::Begin("Viewport"))
 		{

@@ -3,6 +3,7 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 #include <imgui.h>
 
@@ -10,6 +11,7 @@ namespace koi
 {
 	void GBufferDebugPanel::OnDraw()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (ImGui::Begin("GBuffer Debug"))
 		{
 			GBufferPass* pass = m_renderer->GetFrameGraph().GetPass<GBufferPass>();

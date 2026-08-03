@@ -5,6 +5,8 @@
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
 #include <cassert>
@@ -31,6 +33,7 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		assert(m_config.Device && "ScenePass requires a valid GfxDevice");
 
 		m_outputs[0] = { {}, "HDRColor" };
@@ -45,6 +48,9 @@ namespace koi
 	void ScenePass::ConfigureECS()
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_LOG_DEBUG("ScenePass: (re)building mesh gather system for new world");
+
 		m_renderSystem = m_world->GetECS().system<const Transform, const MeshRef>("SceneMeshGatherSystem")
 			.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
 			.each([this](flecs::iter& it, size_t, const Transform& xform, const MeshRef& meshRef)
@@ -87,6 +93,7 @@ namespace koi
 	void ScenePass::Execute(CommandList& cmd)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		const TextureHandle colorTarget = m_outputs[0].Texture;
 		const TextureHandle depthTarget = m_outputs[1].Texture;
 		if (!colorTarget || !m_world || !m_camera || !m_config.Resources) return;

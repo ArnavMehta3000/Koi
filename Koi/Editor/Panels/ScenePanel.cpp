@@ -1,6 +1,7 @@
 ﻿#include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <imgui.h>
 #include <functional>
 
@@ -13,6 +14,7 @@ namespace koi
 
 	void ScenePanel::OnDraw()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		World* world = m_game->GetEditorWorld();
 		if (!world) return;
 

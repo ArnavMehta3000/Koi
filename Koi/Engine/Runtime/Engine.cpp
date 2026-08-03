@@ -19,9 +19,10 @@ namespace koi
 		s_instance = this;
 
 		KOI_LOG_INFO("Engine initializing");
-		KOI_LOG_INFO("Angelscript version: {} - {}", ::asGetLibraryVersion(), asGetLibraryOptions());
+		KOI_LOG_DEBUG("Angelscript version: {} - {}", ::asGetLibraryVersion(), asGetLibraryOptions());
 
 		m_systems.ConstructAll();
+		KOI_LOG_DEBUG("Engine subsystems constructed");
 	}
 
 	Engine::~Engine()
@@ -33,12 +34,12 @@ namespace koi
 		// resources in its own destructor, so the device has to still be alive for it
 		GfxDevice& device = GetSubsystem<Renderer>().GetDevice();
 		m_systems.ShutdownAll(device);
+		KOI_LOG_DEBUG("Engine subsystems shut down");
 
 		m_window.reset();
-		KOI_LOG_INFO("Engine shut down");
+		KOI_LOG_INFO("Engine shut down after {:.4f}s ({} frames)", GetStats().TotalTime, GetStats().FrameCount);
 
 		PrintMemSnapshot(DiffSnapshots(m_initSnapshot, GetMemSnapshot()));
-		KOI_LOG_DEBUG("Engine was active for {:4f}s", GetStats().TotalTime);
 		Logger::Shutdown();
 
 		s_instance = nullptr;
@@ -57,6 +58,7 @@ namespace koi
 
 		SubsystemInitContext initCtx{ .MainWindow = window, .VSync = mainWndDesc.VSync };
 		m_systems.InitAll(initCtx);
+		KOI_LOG_DEBUG("Engine subsystems initialized");
 
 		window.SetCloseCallback([this]() { RequestExit(); });
 
@@ -65,12 +67,15 @@ namespace koi
 		host.HostInit();
 		GetSubsystem<Renderer>().GetFrameGraph().Compile(); // One time compile to ensure user-defined render pass succeeds post-init
 
+		KOI_LOG_INFO("Entering main loop");
+
 #if !KOI_WITH_EDITOR
 		// Nothing to press Play with, so a standalone build simulates from the start
 		SetPlayState(PlayState::Playing);
 #endif
 
 		MainLoop(host);
+		KOI_LOG_INFO("Exited main loop");
 
 		SetPlayState(PlayState::Edit);  // fires HostEndPlay when we exit mid-play
 		host.HostShutdown();
@@ -85,6 +90,7 @@ namespace koi
 		const bool wasInPlay = m_playState != PlayState::Edit;
 		const bool nowInPlay = state != PlayState::Edit;
 
+		KOI_LOG_INFO("Play state: {} -> {}", ToString(m_playState), ToString(state));
 		m_playState = state;
 
 		if (!m_host) return;
@@ -117,7 +123,8 @@ namespace koi
 	void Engine::Tick(IAppHost& host)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Engine);  // Maybe remove this tag?
+		// Fallback attribution for tick work: game code pushes its own tag on top
+		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		m_timer.Tick([&host](f32 dt) { host.HostTick(dt); });
 		host.HostRender();
 	}

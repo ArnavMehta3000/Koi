@@ -61,11 +61,10 @@ namespace koi::internal
 
 				vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoots));
 				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
-#if KOI_DEBUG
+
 				KOI_LOG_DEBUG("Editor VFS mounts (working dir {}):", exeDir.string());
 				for (const fs::path& p : engineRoots)  KOI_LOG_DEBUG("\tengine  <- {}", p.string());
 				for (const fs::path& p : projectRoots) KOI_LOG_DEBUG("\tproject <- {}", p.string());
-#endif
 #else
 				fs::path contentRoot = exeDir;
 				if (!fs::exists(contentRoot / "Project" / "Project.toml") &&
@@ -89,18 +88,18 @@ namespace koi::internal
 
 				vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoot));
 				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
-#if KOI_DEBUG
+
 				KOI_LOG_DEBUG("Runtime VFS mounts:");
 				KOI_LOG_DEBUG("\tWorking directory : {}", exeDir.string());
 				KOI_LOG_DEBUG("\tProject file      : {}", cmd->GetProjectFile().string());
 				KOI_LOG_DEBUG("\tEngine root       : {}", engineRoot.string());
 				KOI_LOG_DEBUG("\tProject root      : {}", projectRoot.string());
 #endif
-#endif
 			}
 
 			Engine engine;
 
+			KOI_LOG_DEBUG("Creating application instance");
 			std::unique_ptr<AppBase> app = CreateApplicationInstance(*cmd);
 			if (!app)
 			{
@@ -111,6 +110,7 @@ namespace koi::internal
 			if (adapter)
 			{
 				// Editor build: wrap the game in an EditorApp supplied by the launcher
+				KOI_LOG_DEBUG("Host adapter present; wrapping application for the editor");
 				std::unique_ptr<IAppHost> host = adapter(std::move(app), *cmd);
 				if (!host)
 				{

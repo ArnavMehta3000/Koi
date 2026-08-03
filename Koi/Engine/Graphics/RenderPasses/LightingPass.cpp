@@ -5,6 +5,8 @@
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
 #include <cassert>
@@ -16,6 +18,7 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		assert(m_config.Device && "LightingPass requires a valid GfxDevice");
 
 		m_lightBuffer.Init(*m_config.Device, BufferUsage::Storage, 16, "GPULight");
@@ -62,6 +65,9 @@ namespace koi
 	void LightingPass::ConfigureECS()
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_LOG_DEBUG("LightingPass: (re)building light gather system for new world");
+
 		m_gatherSystem = m_world->GetECS().system<const Transform, const Light>("LightGatherSystem")
 			.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
 			.each([](flecs::iter& it, size_t, const Transform& xform, const Light& light)
@@ -87,6 +93,7 @@ namespace koi
 	void LightingPass::Execute(CommandList& cmd)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_world) return;
 
 		GfxDevice& device = *m_config.Device;

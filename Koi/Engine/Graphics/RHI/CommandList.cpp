@@ -3,6 +3,7 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 #include <ranges>
 
@@ -13,6 +14,7 @@ namespace koi
 {
 	void CommandList::Init(GfxDevice& device, CommandAllocator& allocator, D3D12_COMMAND_LIST_TYPE type, std::wstring_view debugName)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 		m_device = &device;
 		m_allocator = &allocator;
 		m_type = type;

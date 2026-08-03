@@ -23,7 +23,7 @@ namespace koi
 		{
 			if (const AssetHandle<T> existing = AddRef(vfsPath))
 			{
-				//KOI_LOG_DEBUG("Reusing {} asset: {}", AssetTraits<T>::Name, vfsPath);  // Spams log on editor Play/Pause
+				KOI_LOG_TRACE("Reusing {} asset: {}", AssetTraits<T>::Name, vfsPath);
 				return existing;
 			}
 
@@ -44,7 +44,10 @@ namespace koi
 		[[nodiscard]] AssetHandle<T> AcquireFrom(GfxDevice& device, const std::string& key, const typename AssetTraits<T>::Source& source)
 		{
 			if (const AssetHandle<T> existing = AddRef(key))
+			{
+				KOI_LOG_TRACE("Reusing embedded {} asset: {}", AssetTraits<T>::Name, key);
 				return existing;
+			}
 
 			KOI_LOG_DEBUG("Loaded embedded {} asset: {}", AssetTraits<T>::Name, key);
 			return Insert(device, key, source);
@@ -70,7 +73,11 @@ namespace koi
 			if (!entry) return;
 
 			assert(entry->RefCount > 0 && "Released an asset more times than it was acquired");
-			if (--entry->RefCount > 0) return;
+			if (--entry->RefCount > 0)
+			{
+				KOI_LOG_TRACE("Released {} asset: {} ({} ref(s) left)", AssetTraits<T>::Name, entry->Path, entry->RefCount);
+				return;
+			}
 
 			KOI_LOG_DEBUG("Unloaded {} asset: {}", AssetTraits<T>::Name, entry->Path);
 

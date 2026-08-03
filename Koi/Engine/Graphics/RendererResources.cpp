@@ -71,6 +71,7 @@ namespace koi
 		LinearClampSampler = device.CreateSampler(MakeLinearClampDesc());
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
 
+		KOI_LOG_DEBUG("Default textures and samplers created");
 		RebuildPipelines(device);
 	}
 
@@ -97,6 +98,7 @@ namespace koi
 	void RendererResources::RebuildPipelines(GfxDevice& device)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_LOG_DEBUG("Rebuilding default pipelines");
 
 		auto destroyIfValid = [&](PipelineHandle& h)
 		{

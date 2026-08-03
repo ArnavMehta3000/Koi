@@ -111,7 +111,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		KOI_LOG_TRACE("Destroying D3D12 device");
+		KOI_LOG_DEBUG("Destroying D3D12 device");
 
 		m_uploadContext.Shutdown();
 		WaitForIdle();
@@ -139,7 +139,7 @@ namespace koi
 		ReportLiveObjects();
 
 		// [NOTE]: Not clearing resource pool here
-		KOI_LOG_TRACE("Finished destroying D3D12 device");
+		KOI_LOG_DEBUG("Finished destroying D3D12 device");
 	}
 
 	// Anything still here outlived its owner's Destroy() call, or was never destroyed at all.
@@ -290,7 +290,8 @@ namespace koi
 			m_device->CreateRenderTargetView(tex.Resource.Get(), &rtvDesc, m_rtvHeap.CpuHandle(tex.RTVIndex));
 		}
 
-		KOI_LOG_TRACE("Created texture: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG_TRACE("Created texture '{}' ({}x{}, {} mip(s))",
+			desc.DebugName.empty() ? "<unnamed>" : desc.DebugName, desc.Width, desc.Height, desc.MipLevels);
 
 		return m_textures.Emplace(std::move(tex));
 	}
@@ -385,7 +386,8 @@ namespace koi
 			buf.Resource->SetName(wname.c_str());
 		}
 
-		KOI_LOG_TRACE("Created buffer: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG_TRACE("Created buffer '{}' ({} bytes, stride {})",
+			desc.DebugName.empty() ? "<unnamed>" : desc.DebugName, allocSize, desc.Stride);
 
 		return m_buffers.Emplace(std::move(buf));
 	}
@@ -462,6 +464,7 @@ namespace koi
 
 		const u64 value = m_nextFenceValue++;
 		DX_CHECK(m_graphicsQueue->Signal(m_frameFence.Get(), value));
+		KOI_LOG_TRACE("WaitForIdle: draining GPU to fence {}", value);
 		WaitForFence(value);
 	}
 
@@ -620,7 +623,7 @@ namespace koi
 			pipeline.Pso->SetName(wname.c_str());
 		}
 
-		KOI_LOG_TRACE("Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG_DEBUG("Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return m_pipelines.Emplace(std::move(pipeline));
 	}
 
@@ -639,7 +642,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		KOI_LOG_TRACE("Creating bindless root signature");
+		KOI_LOG_DEBUG("Creating bindless root signature");
 
 		const D3D_ROOT_SIGNATURE_VERSION rootSignatureVersion = g_featureSupport.HighestRootSignatureVersion();
 		assert(rootSignatureVersion >= D3D_ROOT_SIGNATURE_VERSION_1_1 && "Bindless requires root signature version 1.1 or higher");
@@ -702,6 +705,7 @@ namespace koi
 		CreateHeaps();
 		CreateRootSignature();
 
+		KOI_LOG_INFO("D3D12 device recreated after device loss");
 		if (m_notify) m_notify->OnDeviceRestored();
 	}
 
@@ -710,7 +714,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		KOI_LOG_TRACE("Creating D3D12 factory");
+		KOI_LOG_DEBUG("Creating D3D12 factory");
 		u32 flags = 0;
 
 #if KOI_DEBUG
@@ -772,7 +776,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		KOI_LOG_TRACE("Selecting D3D12 adapter");
+		KOI_LOG_DEBUG("Selecting D3D12 adapter");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 
 		ComPtr<IDXGIAdapter1> adapter;
@@ -812,7 +816,7 @@ namespace koi
 		dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 		dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 
-		KOI_LOG_TRACE("Creating D3D12 device");
+		KOI_LOG_DEBUG("Creating D3D12 device");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 		DX_CHECK(::D3D12CreateDevice(m_adapter.Get(), MIN_FEATURE_LEVEL, IID_PPV_ARGS(&m_device)));
 		m_device->SetName(L"Koi GfxDevice");
@@ -846,7 +850,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		KOI_LOG_TRACE("Creating D3D12 queues");
+		KOI_LOG_DEBUG("Creating D3D12 queues");
 		D3D12_COMMAND_QUEUE_DESC desc
 		{
 			.Type = D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -861,7 +865,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		KOI_LOG_TRACE("Creating D3D12 fences");
+		KOI_LOG_DEBUG("Creating D3D12 fences");
 		DX_CHECK(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_frameFence)));
 		m_frameFence->SetName(L"Koi Frame Fence");
 
@@ -874,7 +878,7 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
-		KOI_LOG_TRACE("Creating D3D12 heaps");
+		KOI_LOG_DEBUG("Creating D3D12 heaps");
 
 		constexpr u32 rtvHeapSize      = 256;
 		constexpr u32 dsvHeapSize      = 64;
@@ -887,6 +891,9 @@ namespace koi
 		m_dsvHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, dsvHeapSize, false);
 		m_resourceHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, resourceHeapSize, true);
 		m_samplerHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, samplerHeapSize, true);
+
+		KOI_LOG_DEBUG("Descriptor heaps: RTV={} DSV={} CBV/SRV/UAV={} Sampler={}",
+			rtvHeapSize, dsvHeapSize, resourceHeapSize, samplerHeapSize);
 	}
 
 	void GfxDevice::FlushDeferredDeletions(u64 completedFence)

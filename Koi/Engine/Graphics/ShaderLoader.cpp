@@ -29,6 +29,8 @@ namespace koi
 		std::vector<byte> result(static_cast<size_t>(file.tellg()));
 		file.seekg(0, std::ios::beg);
 		file.read(reinterpret_cast<char*>(result.data()), result.size());
+
+		KOI_LOG_TRACE("Loaded shader bytecode '{}' ({} bytes)", path, result.size());
 		return result;
 	}
 
@@ -65,7 +67,10 @@ namespace koi
 		{
 			std::lock_guard lock(g_shaderCacheMutex);
 			if (auto it = g_shaderCache.find(std::string(virtualPathNoExt)); it != g_shaderCache.end())
+			{
+				KOI_LOG_TRACE("Shader cache hit: '{}'", virtualPathNoExt);
 				return it->second;
+			}
 		}
 
 		const ShaderType type = InferShaderTypeFromName(virtualPathNoExt);
@@ -102,14 +107,16 @@ namespace koi
 			std::lock_guard lock(g_shaderCacheMutex);
 			g_shaderCache[std::string(virtualPathNoExt)] = bytes;
 		}
+
+		KOI_LOG_DEBUG("Shader compiled and cached: '{}' ({} bytes)", virtualPathNoExt, bytes.size());
 		return bytes;
 	}
 
 	void InvalidateShaderCache()
 	{
 		std::lock_guard lock(g_shaderCacheMutex);
+		KOI_LOG_INFO("Shader cache invalidated ({} entries dropped)", g_shaderCache.size());
 		g_shaderCache.clear();
-		KOI_LOG_INFO("Shader cache invalidated");
 	}
 #else
 	std::vector<byte> LoadShader(std::string_view virtualPathNoExt)

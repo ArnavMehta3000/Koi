@@ -5,6 +5,8 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Math/Math.h"
 #include <array>
@@ -32,6 +34,7 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		assert(config.Device && "GBufferPass requires a valid GfxDevice");
 
 		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "GBuffer FrameConstants");
@@ -49,6 +52,7 @@ namespace koi
 	void GBufferPass::Execute(CommandList& cmd)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		const TextureHandle albedo   = m_outputs[size_t(Outputs::Albedo)].Texture;
 		const TextureHandle normals  = m_outputs[size_t(Outputs::Normals)].Texture;
 		const TextureHandle material = m_outputs[size_t(Outputs::Material)].Texture;
@@ -160,6 +164,9 @@ namespace koi
 	void GBufferPass::ConfigureECS()
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_LOG_DEBUG("GBufferPass: (re)building mesh gather system for new world");
+
 		m_renderSystem = m_world->GetECS().system<const Transform, const MeshRef>("GBufferMeshGatherSystem")
 			.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
 			.each([this](flecs::iter& it, size_t, const Transform& xform, const MeshRef& meshRef)
@@ -182,6 +189,9 @@ namespace koi
 	void GBufferPass::CreateRenderTargets()
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_LOG_DEBUG("GBufferPass: creating render targets at {}x{}", m_width, m_height);
+
 		TextureDesc baseTexDesc
 		{
 			.Width  = m_width,

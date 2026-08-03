@@ -15,6 +15,7 @@ namespace koi
 	World::World()
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		m_bounds.Min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 		m_bounds.Max = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
@@ -26,9 +27,10 @@ namespace koi
 	std::optional<World> World::Load(const fs::path& path, GfxDevice& device)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		const std::string virtualPath = "project://" + path.generic_string();
+		KOI_LOG_DEBUG("Loading scene '{}'", virtualPath);
 
 		const std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
 		if (!bytes)
@@ -59,7 +61,7 @@ namespace koi
 	bool World::LoadFromTable(const toml::table& scene, GfxDevice& device)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		const toml::array* entities = scene["entity"].as_array();
 		if (!entities)
@@ -85,6 +87,7 @@ namespace koi
 			// Create entity
 			const std::string name = (*entityTable)["name"].value_or<std::string>("Entity_" + std::to_string(i));
 			Entity e = m_ecs.entity(name.c_str());
+			KOI_LOG_TRACE("Scene entity [{}] '{}'", i, name);
 
 			// Load components (use registry for this)
 			for (const ComponentInfo& component : components)
@@ -132,15 +135,18 @@ namespace koi
 			m_ecs.entity("Camera")
 				.set<Transform>(camXform)
 				.set<CameraComponent>({});
+
+			KOI_LOG_DEBUG("Scene has no camera; spawned a default one");
 		}
 
-		KOI_LOG_INFO("Built world from scene table ({} entities)", entities->size());
+		KOI_LOG_DEBUG("Built world from scene table ({} entities)", entities->size());
 		return true;
 	}
 
 	bool World::Save(const fs::path& path)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		const std::string virtualPath = "project://" + path.generic_string();
 
@@ -169,6 +175,7 @@ namespace koi
 	toml::table World::SaveToTable()
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		// Build the document in the same shape LoadFromTable reads
 		toml::table root;
@@ -196,12 +203,14 @@ namespace koi
 		});
 
 		root.insert("entity", std::move(entities));
+		KOI_LOG_TRACE("Serialized world to scene table ({} entities)", root["entity"].as_array()->size());
 		return root;
 	}
 
 	void World::Clear(GfxDevice& device)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		// Give back every asset reference the entities took when they were loaded
 		AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
@@ -223,6 +232,8 @@ namespace koi
 				e.destruct();
 		}
 
+		KOI_LOG_DEBUG("Cleared world ({} entities destroyed)", doomed.size());
+
 		m_bounds.Min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
 		m_bounds.Max = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	}
@@ -230,6 +241,7 @@ namespace koi
 	void World::Update(f32 dt)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 		// NOTE: Might refactor the entire world update system
 		if (!Engine::Get().IsPlaying()) return;
 

@@ -11,7 +11,7 @@ namespace koi
 	void GfxDevice::UploadContext::Init(GfxDevice* device)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(device && "UploadContext::Init requires a valid GfxDevice");
 		m_device = device;
@@ -39,13 +39,13 @@ namespace koi
 		m_fenceEvent = ::CreateEventW(nullptr, FALSE, FALSE, nullptr);
 		assert(m_fenceEvent && "UploadContext: failed to create fence event");
 
-		KOI_LOG_TRACE("UploadContext initialized");
+		KOI_LOG_DEBUG("UploadContext initialized");
 	}
 
 	void GfxDevice::UploadContext::Shutdown()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_recordDepth == 0 && "UploadContext::Shutdown called while a Begin/End block is still open");
 
@@ -79,13 +79,13 @@ namespace koi
 		m_copyFence = nullptr;
 		m_copyQueue = nullptr;
 
-		KOI_LOG_TRACE("UploadContext shut down");
+		KOI_LOG_DEBUG("UploadContext shut down");
 	}
 
 	void GfxDevice::UploadContext::Begin()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_device && "UploadContext::Begin called before Init");
 
@@ -121,7 +121,7 @@ namespace koi
 	void GfxDevice::UploadContext::End()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_recordDepth > 0 && "UploadContext::End called without a matching Begin()");
 
@@ -174,7 +174,7 @@ namespace koi
 	void GfxDevice::UploadContext::FlushQueued(dx12::CommandQueue* graphicsQueue)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_device           && "UploadContext::FlushQueued called before Init");
 		assert(m_recordDepth == 0 && "FlushQueued called while a synchronous Begin/End block is open");
@@ -201,6 +201,8 @@ namespace koi
 		}
 
 		if (m_pendingUploads.empty()) return;
+
+		KOI_LOG_TRACE("UploadContext: flushing {} queued upload(s)", m_pendingUploads.size());
 
 		DX_CHECK(m_allocator->Reset());
 		DX_CHECK(m_cmdList->Reset(m_allocator.Get(), nullptr));

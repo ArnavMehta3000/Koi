@@ -91,13 +91,11 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
-#if KOI_DEBUG
 		KOI_LOG_DEBUG("Initializing Editor");
 		KOI_LOG_DEBUG("\tEngine source path: {}" , m_config.EngineSource.string());
 		KOI_LOG_DEBUG("\tProject source path: {}", m_config.ProjectSource.string());
 		KOI_LOG_DEBUG("\tProject file path: {}"  , m_config.ProjectFile.string());
 		KOI_LOG_DEBUG("\tCook output path: {}"   , m_config.CookedOutput.string());
-#endif
 	}
 
 	const AppCreateDesc& EditorApp::GetDesc() const { return m_game->GetDesc(); }
@@ -204,7 +202,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		ImGui_ImplDX12_Init(&initInfo);
 
 		m_imguiInitialized = true;
-		KOI_LOG_INFO("ImGui (DX12 + GLFW) initialized");
+		KOI_LOG_DEBUG("ImGui (DX12 + GLFW) initialized");
 	}
 
 	void EditorApp::ShutdownImGui()
@@ -217,11 +215,17 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 		m_imguiInitialized = false;
+
+		KOI_LOG_DEBUG("ImGui shut down");
 	}
 
 	void EditorApp::RegisterReloadable(IReloadable* reloadable) { m_reloadables.push_back(reloadable); }
 
-	void EditorApp::RegisterPanel(std::unique_ptr<IEditorPanel> panel) { m_panels.push_back(std::move(panel)); }
+	void EditorApp::RegisterPanel(std::unique_ptr<IEditorPanel> panel)
+	{
+		KOI_LOG_DEBUG("Registered editor panel '{}'", panel->GetName());
+		m_panels.push_back(std::move(panel));
+	}
 
 	std::optional<RenderView> EditorApp::GetEditorRenderView() const
 	{
@@ -242,6 +246,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::ReloadAll()
 	{
+		KOI_LOG_INFO("Hot-reloading {} registered target(s)", m_reloadables.size());
 		for (IReloadable* reloadable : m_reloadables)
 		{
 			reloadable->Reload();
@@ -363,7 +368,10 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 			return;
 		}
 
-		m_lastCookStatus = world->Save(scenePath) ? "Scene saved" : "Scene save FAILED";
+		const bool saved = world->Save(scenePath);
+		m_lastCookStatus = saved ? "Scene saved" : "Scene save FAILED";
+		if (!saved)
+			KOI_LOG_ERROR("Failed to save scene '{}'", scenePath);
 	}
 
 	void EditorApp::Play()
@@ -398,8 +406,8 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 		// Set the state last: it fires OnBeginPlay, and whatever that spawns must land
 		// outside the snapshot so Stop discards it
+		KOI_LOG_DEBUG("Play: pinned {} asset(s) across the snapshot", m_pinnedAssets.size());
 		Engine::Get().SetPlayState(PlayState::Playing);
-		KOI_LOG_INFO("Play");
 	}
 
 	void EditorApp::TogglePause()
@@ -442,7 +450,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 		m_pinnedAssets.clear();
 		m_snapshot = toml::table{};
-		KOI_LOG_INFO("Stop");
+		KOI_LOG_DEBUG("Stop: world restored from snapshot, pinned assets released");
 	}
 
 	void EditorApp::Cook()
@@ -491,7 +499,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 				auto blob = ShaderCompiler::Get().CompileFromFile(entry.path(), args);
 				if (blob && blob->GetBufferSize() > 0)
 				{
-					KOI_LOG_INFO("Cook [{}]: {} OK", label, entry.path().filename().string());
+					KOI_LOG_DEBUG("Cook [{}]: {} OK", label, entry.path().filename().string());
 					++shaderOk;
 				}
 				else
@@ -512,6 +520,8 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 				fs::copy_options::recursive | fs::copy_options::overwrite_existing, cec);
 			if (cec)
 				KOI_LOG_WARN("Cook: copy {} -> {} failed: {}", src.string(), dst.string(), cec.message());
+			else
+				KOI_LOG_DEBUG("Cook: copied {} -> {}", src.string(), dst.string());
 		};
 		copyDir(m_config.ProjectSource / "Assets" / "Models", projRoot / "Assets" / "Models");
 		copyDir(m_config.ProjectSource / "Assets" / "Scenes", projRoot / "Assets" / "Scenes");

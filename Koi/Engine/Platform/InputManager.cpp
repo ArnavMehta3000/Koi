@@ -64,7 +64,7 @@ namespace koi
 			[](GLFWwindow*, f64 dx, f64 dy) noexcept
 			{ InputManager::Get().OnScroll(dx, dy); });
 
-		KOI_LOG_TRACE("InputManager: initialized");
+		KOI_LOG_DEBUG("InputManager initialized");
 	}
 
 	void InputManager::BeginFrame()

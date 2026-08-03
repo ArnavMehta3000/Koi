@@ -2,6 +2,8 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -29,6 +31,7 @@ namespace koi
 
 	void GpuFrameBufferBase::Shutdown()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_device) return;
 
 		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
@@ -56,6 +59,7 @@ namespace koi
 	void GpuFrameBufferBase::Reserve(u32 frameSlot, u32 count)
 	{
 		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (count <= m_capacity[frameSlot]) return;
 
 		// Amortized growth, same idea as std::vector, so a per-frame count that creeps upwards
@@ -74,6 +78,8 @@ namespace koi
 			.DebugName = m_debugName,
 		});
 		m_capacity[frameSlot] = newCapacity;
+
+		KOI_LOG_TRACE("GpuFrameBuffer '{}' slot {} grown to {} element(s)", m_debugName, frameSlot, newCapacity);
 	}
 
 	DescriptorIndex GpuFrameBufferBase::UploadBytes(u32 frameSlot, const void* data, u32 count)

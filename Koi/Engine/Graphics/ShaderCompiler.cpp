@@ -93,6 +93,8 @@ namespace koi
 				HRESULT hr = m_utils->LoadFile(resolved->wstring().c_str(), nullptr, &blob);
 				if (FAILED(hr)) return hr;
 
+				KOI_LOG_TRACE("Shader include '{}' -> '{}'", StringUtils::FromWide(fileName), resolved->string());
+
 				m_searchDirs.push_back(resolved->parent_path());
 
 				*includeSource = blob.Detach();
@@ -140,7 +142,7 @@ namespace koi
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-		KOI_LOG_INFO("Trying to compile shader from file: {}", filePath.string());
+		KOI_LOG_DEBUG("Compiling shader: {}", filePath.string());
 
 		assert(args.Type != ShaderType::Unknown && "Unknown shader type");
 		if (args.Type == ShaderType::Unknown) return nullptr;
@@ -275,7 +277,7 @@ namespace koi
 						hashStr += fmt::format(L"{:02x}", hashDigest[i]);
 					}
 					
-					KOI_LOG_INFO("Compiled shader ({}) hash: {}", StringUtils::FromWide(shaderName), StringUtils::FromWide(hashStr));
+					KOI_LOG_TRACE("Compiled shader ({}) hash: {}", StringUtils::FromWide(shaderName), StringUtils::FromWide(hashStr));
 				}
 			}
 		}
@@ -294,5 +296,7 @@ namespace koi
 
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils)));
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler)));
+
+		KOI_LOG_DEBUG("Shader compiler (DXC) initialized");
 	}
 }

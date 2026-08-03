@@ -60,7 +60,7 @@ namespace koi
 			return nullptr;
 		}
 
-		KOI_LOG_INFO("Loading mesh: {}", path.string().c_str());
+		KOI_LOG_DEBUG("Loading mesh: {}", path.string().c_str());
 
 		fastgltf::Parser parser(fastgltf::Extensions::KHR_materials_variants
 			| fastgltf::Extensions::KHR_texture_transform
@@ -93,6 +93,8 @@ namespace koi
 
 		model->SourcPath = path.string();
 
+		KOI_LOG_DEBUG("Loaded mesh '{}': {} mesh(es), {} material(s), {} image(s)",
+			path.filename().string(), model->Meshes.size(), model->Materials.size(), model->Images.size());
 
 		return model;
 	}
@@ -187,7 +189,7 @@ namespace koi
 			}
 			else
 			{
-				KOI_LOG_WARN("Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
+				KOI_LOG_TRACE("Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
 			}
 
 			// UV
@@ -202,7 +204,7 @@ namespace koi
 			}
 			else
 			{
-				KOI_LOG_WARN("Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
+				KOI_LOG_TRACE("Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
 			}
 
 			// Tangent
@@ -219,7 +221,7 @@ namespace koi
 			}
 			else
 			{
-				KOI_LOG_WARN("Primitive in mesh '{}' has no TANGENT attribute", mesh.Name);
+				KOI_LOG_TRACE("Primitive in mesh '{}' has no TANGENT attribute; generating placeholders", mesh.Name);
 			}
 
 			// Indices
@@ -281,6 +283,9 @@ namespace koi
 		mesh.IndexCount  = static_cast<u32>(allIndices.size());
 		mesh.Vertices    = std::move(allVertices);
 		mesh.Indices     = std::move(allIndices);
+
+		KOI_LOG_TRACE("Mesh '{}': {} submesh(es), {} verts, {} indices",
+			mesh.Name, mesh.SubMeshes.size(), mesh.VertexCount, mesh.IndexCount);
 
 		model.Bounds.Expand(mesh.Bounds);
 		model.Meshes.push_back(std::move(mesh));

@@ -8,7 +8,7 @@ namespace koi
 	void DescriptorHeap::Init(dx12::Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, u32 capacity, bool shaderVisible)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 		assert(device && capacity > 0);
 
 		const D3D12_DESCRIPTOR_HEAP_FLAGS flags = shaderVisible
@@ -43,7 +43,7 @@ namespace koi
 	void DescriptorHeap::Reset()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		m_heap = nullptr;
 		m_freeList.clear();
@@ -55,7 +55,7 @@ namespace koi
 	DescriptorIndex DescriptorHeap::Allocate()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		std::scoped_lock lock(m_mutex);
 
@@ -73,7 +73,7 @@ namespace koi
 	void DescriptorHeap::Free(DescriptorIndex index)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		// Add index to free list
 		if (index == INVALID_DESCRIPTOR)

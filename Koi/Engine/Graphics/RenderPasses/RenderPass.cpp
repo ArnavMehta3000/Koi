@@ -1,12 +1,16 @@
 ﻿#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <unordered_set>
 
 namespace koi
 {
 	void RenderGraph::Compile()
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_LOG_DEBUG("RenderGraph: compiling {} pass(es)", m_passes.size());
+
 		// Check connectivity using names of attachments
 		std::unordered_set<std::string_view> written;
 
@@ -25,6 +29,9 @@ namespace koi
 			{
 				written.insert(output.Name);
 			}
+
+			KOI_LOG_TRACE("RenderGraph: pass '{}' ({} input(s), {} output(s))",
+				pass->GetName(), pass->GetInputs().size(), pass->GetOutputs().size());
 		}
 
 		m_dirty = false;
@@ -50,6 +57,9 @@ namespace koi
 
 	void RenderGraph::OnResize(u32 w, u32 h)
 	{
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		KOI_LOG_DEBUG("RenderGraph: resizing {} pass(es) to {}x{}", m_passes.size(), w, h);
+
 		for (auto& pass : m_passes)
 		{
 			pass->OnResize(w, h);

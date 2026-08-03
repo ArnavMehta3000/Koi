@@ -140,7 +140,7 @@ namespace koi
 		AcquireBackBuffers();
 		CreateHDRBuffer();
 
-		KOI_LOG_TRACE("RenderWindow resize successful");
+		KOI_LOG_TRACE("RenderWindow resize complete");
 	}
 
 	void RenderWindow::Present()
@@ -205,6 +205,9 @@ namespace koi
 
 		DX_CHECK(sc1.As(&m_swapChain));
 		m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
+
+		KOI_LOG_DEBUG("Swapchain created: {}x{}, {} buffers, tearing {}",
+			m_width, m_height, BACK_BUFFER_COUNT, m_tearingAllowed ? "allowed" : "unavailable");
 	}
 
 	void RenderWindow::AcquireBackBuffers()
@@ -294,6 +297,8 @@ namespace koi
 			.Usage     = TextureUsage::RenderTarget | TextureUsage::ShaderRead,
 			.DebugName = "HDR Color Buffer",
 		});
+
+		KOI_LOG_TRACE("HDR color buffer created ({}x{})", m_width, m_height);
 	}
 
 	void RenderWindow::ReleaseHDRBuffer()

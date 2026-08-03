@@ -201,6 +201,7 @@ namespace koi
 		}
 
 		m_mode = newMode;
+		KOI_LOG_DEBUG("Window mode changed to {}", static_cast<i32>(newMode));
 	}
 
 	void Window::SetTitle(std::string_view title)
@@ -355,7 +356,7 @@ namespace koi
 		::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
 			SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
-		KOI_LOG_TRACE("Window created: {}({}x{})", m_title, m_width, m_height);
+		KOI_LOG_INFO("Window created: '{}' ({}x{})", m_title, m_width, m_height);
 	}
 
 	void Window::Destroy()
@@ -368,7 +369,7 @@ namespace koi
 			m_window = nullptr;
 			m_nativeHandle = nullptr;
 
-			KOI_LOG_TRACE("Window destroyed: {}", m_title);
+			KOI_LOG_DEBUG("Window destroyed: '{}'", m_title);
 		}
 	}
 
@@ -380,6 +381,8 @@ namespace koi
 			self->m_width = static_cast<u32>(width);
 			self->m_height = static_cast<u32>(height);
 
+			KOI_LOG_TRACE("Window resized to {}x{}", self->m_width, self->m_height);
+
 			if (self->m_onResize)
 				self->m_onResize(self->m_width, self->m_height);
 		}
@@ -390,6 +393,7 @@ namespace koi
 		ZoneScoped;
 		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
 		{
+			KOI_LOG_DEBUG("Window close requested: '{}'", self->m_title);
 			if (self->m_onClose)
 				self->m_onClose();
 		}
