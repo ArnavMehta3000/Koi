@@ -11,9 +11,11 @@ namespace koi
 		Logging,
 		Platform,
 		Input,
+		IO,
 		Renderer,
 		RHI,
 		Assets,
+		ECS,
 		Scripting,
 		User,
 		Temp,
@@ -34,9 +36,11 @@ namespace koi
 			X(Logging)
 			X(Platform)
 			X(Input)
+			X(IO)
 			X(Renderer)
 			X(RHI)
 			X(Assets)
+			X(ECS)
 			X(Scripting)
 			X(User)
 			X(Temp)
