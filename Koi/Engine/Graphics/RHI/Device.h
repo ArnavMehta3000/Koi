@@ -123,6 +123,7 @@ namespace koi
 		void CreateHeaps();
 		void CreateRootSignature();
 		void FlushDeferredDeletions(u64 completedFence);
+		void ReportLiveResources();
 
 	private:
 		struct PendingDeletion

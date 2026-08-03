@@ -2,6 +2,7 @@
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Platform/InputCodes.h"
+#include "Koi/Engine/Runtime/Subsystems.h"
 #include <array>
 
 namespace koi
@@ -17,7 +18,7 @@ namespace koi
 		[[nodiscard]] static InputManager& Get() { return *s_instance; }
 
 		// Called once by Engine after the main window is created.
-		void Init(Window& window);
+		void Init(const SubsystemInitContext& ctx);
 
 		void BeginFrame();
 

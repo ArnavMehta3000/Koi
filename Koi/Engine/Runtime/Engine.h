@@ -6,6 +6,7 @@
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Timer.h"
+#include "Koi/Engine/Runtime/Subsystems.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include <optional>
 
@@ -38,12 +39,11 @@ namespace koi
 		void RunApp(IAppHost& host);
 		void RequestExit() { m_isRunning = false; }
 
-		[[nodiscard]] inline Window&              GetWindow()       { return *m_window;        }
-		[[nodiscard]] inline const Window&        GetWindow() const { return *m_window;        }
-		[[nodiscard]] inline Renderer&            GetRenderer()     { return *m_renderer;      }
-		[[nodiscard]] inline InputManager&        GetInputManager() { return *m_inputManager;  }
-		[[nodiscard]] inline AssetRegistry&       GetAssets()       { return m_assets;         }
-		[[nodiscard]] inline const AssetRegistry& GetAssets() const { return m_assets;         }
+		[[nodiscard]] inline Window&       GetWindow()       { return *m_window; }
+		[[nodiscard]] inline const Window& GetWindow() const { return *m_window; }
+
+		template <typename T> [[nodiscard]] inline T& GetSubsystem() { return m_systems.Get<T>(); }
+		template <typename T> [[nodiscard]] inline const T& GetSubsystem() const { return m_systems.Get<T>(); }
 
 		[[nodiscard]] Stats GetStats() const;
 
@@ -60,11 +60,12 @@ namespace koi
 	private:
 		static inline Engine* s_instance = nullptr;
 
-		MemTagSnapshotArray           m_initSnapshot{};
-		std::optional<Window>         m_window;
-		std::unique_ptr<InputManager> m_inputManager;
-		std::unique_ptr<Renderer>     m_renderer;
-		AssetRegistry                 m_assets;
+		// Declaration order is init order | shutdown runs in reverse
+		using Subsystems = SubsystemSet<InputManager, Renderer, AssetRegistry>;
+
+		MemTagSnapshotArray   m_initSnapshot{};
+		std::optional<Window> m_window;
+		Subsystems            m_systems;
 
 		IAppHost* m_host = nullptr;  // valid for the duration of RunApp
 

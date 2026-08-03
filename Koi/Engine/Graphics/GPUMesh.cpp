@@ -17,7 +17,7 @@ namespace koi
 
 		const DescriptorIndex fallbackAlbedoSRV = [&device]()
 		{
-			auto handle = Engine::Get().GetRenderer().GetDefaultResources().WhiteTexture;
+			auto handle = Engine::Get().GetSubsystem<Renderer>().GetDefaultResources().WhiteTexture;
 			Texture* tex = device.Get(handle);
 			assert(tex && tex->Resource && "Default white texture is missing");
 			return tex->SRVIndex;
@@ -32,7 +32,7 @@ namespace koi
 		std::vector<DescriptorIndex> imageSRVs;
 		imageSRVs.reserve(model.Images.size());
 
-		AssetCache<GPUTexture>& textures = Engine::Get().GetAssets().Cache<GPUTexture>();
+		AssetCache<GPUTexture>& textures = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUTexture>();
 
 		GfxDevice::UploadContext& upload = device.GetUploadContext();
 		upload.Begin();  // outer batch: each texture's own Begin/End nests into this one
@@ -190,7 +190,7 @@ namespace koi
 		device.Destroy(MaterialBuffer);
 
 		// Each texture is destroyed only once every mesh using it has released it
-		AssetCache<GPUTexture>& textures = Engine::Get().GetAssets().Cache<GPUTexture>();
+		AssetCache<GPUTexture>& textures = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUTexture>();
 		for (GPUTextureHandle handle : Textures)
 		{
 			textures.Release(device, handle);

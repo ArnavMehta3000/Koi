@@ -18,7 +18,7 @@ namespace koi
 			const std::string path = (*meshTable)["path"].value_or(std::string());
 			if (path.empty()) return;
 
-			const MeshHandle handle = Engine::Get().GetAssets().Cache<GPUMesh>().Acquire(device, path);
+			const MeshHandle handle = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>().Acquire(device, path);
 			if (handle) e.set<MeshRef>({ handle });
 		}
 
@@ -27,7 +27,7 @@ namespace koi
 			const MeshRef* meshRef = e.try_get<MeshRef>();
 			if (!meshRef) return;
 
-			const std::string_view path = Engine::Get().GetAssets().Cache<GPUMesh>().GetPath(meshRef->Handle);
+			const std::string_view path = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>().GetPath(meshRef->Handle);
 
 			toml::table meshTable;
 			meshTable.insert("path", std::string(path));

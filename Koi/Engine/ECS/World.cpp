@@ -105,7 +105,7 @@ namespace koi
 		}
 
 		// World bounds come from whichever meshes ended up resident
-		const AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+		const AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 		m_ecs.each<MeshRef>([&](Entity, MeshRef& mesh)
 		{
 			if (const GPUMesh* gpuMesh = meshes.Get(mesh.Handle))
@@ -204,7 +204,7 @@ namespace koi
 		ZoneScoped;
 
 		// Give back every asset reference the entities took when they were loaded
-		AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+		AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 		m_ecs.each<MeshRef>([&](Entity, MeshRef& mesh)
 		{
 			meshes.Release(device, mesh.Handle);
@@ -255,6 +255,6 @@ namespace koi
 
 	const GPUMesh* World::GetMesh(MeshHandle handle) const
 	{
-		return Engine::Get().GetAssets().Cache<GPUMesh>().Get(handle);
+		return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>().Get(handle);
 	}
 }

@@ -62,7 +62,7 @@ namespace koi
 			return m_editorContext->GetEditorRenderView();
 
 		// Standalone: render the world's camera straight into the swapchain
-		RenderWindow* rw = m_engine->GetRenderer().GetMainRenderWindow();
+		RenderWindow* rw = m_engine->GetSubsystem<Renderer>().GetMainRenderWindow();
 		if (!rw || rw->GetHeight() == 0) return std::nullopt;
 
 		const f32 aspect = static_cast<f32>(rw->GetWidth()) / static_cast<f32>(rw->GetHeight());

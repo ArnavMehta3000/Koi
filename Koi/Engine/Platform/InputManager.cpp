@@ -35,9 +35,10 @@ namespace koi
 		s_instance = nullptr;
 	}
 
-	void InputManager::Init(Window& window)
+	void InputManager::Init(const SubsystemInitContext& ctx)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Input);
+		Window& window = ctx.MainWindow;
 		GLFWwindow* glfwWnd = window.GetGLFWWindow();
 		assert(glfwWnd && "Window has a null GLFWwindow");
 		m_glfwWindow = glfwWnd;

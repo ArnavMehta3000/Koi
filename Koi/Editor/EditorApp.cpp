@@ -64,7 +64,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 	                          D3D12_CPU_DESCRIPTOR_HANDLE* outCpu,
 	                          D3D12_GPU_DESCRIPTOR_HANDLE* outGpu)
 	{
-		auto& heap = Engine::Get().GetRenderer().GetDevice().ResourceHeap();
+		auto& heap = Engine::Get().GetSubsystem<Renderer>().GetDevice().ResourceHeap();
 		const DescriptorIndex idx = heap.Allocate();
 		*outCpu = heap.CpuHandle(idx);
 		*outGpu = heap.GpuHandle(idx);
@@ -74,7 +74,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 	                         D3D12_CPU_DESCRIPTOR_HANDLE cpu,
 	                         D3D12_GPU_DESCRIPTOR_HANDLE /*gpu*/)
 	{
-		auto& renderer = Engine::Get().GetRenderer();
+		auto& renderer = Engine::Get().GetSubsystem<Renderer>();
 		auto& device   = renderer.GetDevice();
 		auto& heap     = device.ResourceHeap();
 		auto* native   = heap.GetHeap();
@@ -107,7 +107,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 	void EditorApp::Setup()
 	{
 		// Hook the editor with the engine/renderer
-		Renderer& renderer = Engine::Get().GetRenderer();
+		Renderer& renderer = Engine::Get().GetSubsystem<Renderer>();
 
 		// Set editor as overlay (ImGui)
 		renderer.SetOverlay(this);
@@ -140,7 +140,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::HostTick(f32 dt)
 	{
-		m_viewportPanel->Update(dt, Engine::Get().GetInputManager());
+		m_viewportPanel->Update(dt, Engine::Get().GetSubsystem<InputManager>());
 
 		// The game always ticks. What play state gates is the world's simulation, and
 		// World::Update decides that itself, so nothing here has to know the difference
@@ -149,7 +149,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::HostRender()
 	{
-		if (CommandList* cmd = Engine::Get().GetRenderer().GetCommandList())
+		if (CommandList* cmd = Engine::Get().GetSubsystem<Renderer>().GetCommandList())
 			m_viewportPanel->PrepareFrame(*cmd);
 
 		m_game->HostRender();
@@ -171,7 +171,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		Engine& engine     = Engine::Get();
-		Renderer& renderer = engine.GetRenderer();
+		Renderer& renderer = engine.GetSubsystem<Renderer>();
 		GfxDevice& device  = renderer.GetDevice();
 
 		Window& window = engine.GetWindow();
@@ -212,7 +212,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (!m_imguiInitialized) return;
 
-		Engine::Get().GetRenderer().GetDevice().WaitForIdle();
+		Engine::Get().GetSubsystem<Renderer>().GetDevice().WaitForIdle();
 		ImGui_ImplDX12_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -253,7 +253,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		Engine& engine     = Engine::Get();
-		Renderer& renderer = engine.GetRenderer();
+		Renderer& renderer = engine.GetSubsystem<Renderer>();
 		GfxDevice& device  = renderer.GetDevice();
 
 		ImGui_ImplDX12_NewFrame();
@@ -261,7 +261,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		ImGui::NewFrame();
 
 		// Ask engine and game to recompile shaders and rebuild pipelines
-		if (engine.GetInputManager().IsKeyPressed(KeyCode::F5))
+		if (engine.GetSubsystem<InputManager>().IsKeyPressed(KeyCode::F5))
 		{
 			// TODO: Add proper hotreloading logic instead of reloading everything
 			InvalidateShaderCache();
@@ -377,8 +377,8 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 			return;
 		}
 
-		GfxDevice& device           = Engine::Get().GetRenderer().GetDevice();
-		AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+		GfxDevice& device           = Engine::Get().GetSubsystem<Renderer>().GetDevice();
+		AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 
 		m_snapshot = world->SaveToTable();
 
@@ -423,8 +423,8 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		// Leave play mode first: OnEndPlay still needs the world it ran against
 		engine.SetPlayState(PlayState::Edit);
 
-		GfxDevice& device           = engine.GetRenderer().GetDevice();
-		AssetCache<GPUMesh>& meshes = engine.GetAssets().Cache<GPUMesh>();
+		GfxDevice& device           = engine.GetSubsystem<Renderer>().GetDevice();
+		AssetCache<GPUMesh>& meshes = engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 
 		if (World* world = m_game->GetEditorWorld())
 		{

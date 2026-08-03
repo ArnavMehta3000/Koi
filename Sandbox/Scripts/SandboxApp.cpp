@@ -32,7 +32,7 @@ void SandboxApp::OnInit()
 	KOI_LOG_INFO("SandboxApp::OnInit()");
 	KOI_MEM_TAG_SCOPE(koi::MemTag::User);
 
-	koi::Renderer& renderer = GetEngine()->GetRenderer();
+	koi::Renderer& renderer = GetEngine()->GetSubsystem<koi::Renderer>();
 	koi::RenderGraph& graph = renderer.GetFrameGraph();
 
 	m_gbufferPass = &graph.AddPass<koi::GBufferPass>(koi::GBufferPass::Config
@@ -60,7 +60,7 @@ void SandboxApp::OnTick(koi::f32 dt)
 {
 	ZoneScoped;
 	koi::Engine& engine      = *GetEngine();
-	koi::InputManager& input = engine.GetInputManager();
+	koi::InputManager& input = engine.GetSubsystem<koi::InputManager>();
 
 	m_world.Update(dt);
 
@@ -94,6 +94,9 @@ void SandboxApp::OnShutdown()
 {
 	ZoneScoped;
 	KOI_LOG_INFO("SandboxApp::OnShutdown()");
+
+	// Hands back the asset references the scene's entities took when they loaded
+	m_world.Clear(GetEngine()->GetSubsystem<koi::Renderer>().GetDevice());
 }
 
 void SandboxApp::LoadScene()
@@ -105,7 +108,7 @@ void SandboxApp::LoadScene()
 	const std::string& scenePath = GetDesc().StartupScene;
 	assert(!scenePath.empty() && "No startup_scene set in project TOML");
 
-	koi::Renderer& renderer = GetEngine()->GetRenderer();
+	koi::Renderer& renderer = GetEngine()->GetSubsystem<koi::Renderer>();
 	koi::GfxDevice& device  = renderer.GetDevice();
 
 	if (std::optional<koi::World> result = koi::World::Load(scenePath, device))

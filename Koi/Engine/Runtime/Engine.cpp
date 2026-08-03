@@ -21,16 +21,19 @@ namespace koi
 		KOI_LOG_INFO("Engine initializing");
 		KOI_LOG_INFO("Angelscript version: {} - {}", ::asGetLibraryVersion(), asGetLibraryOptions());
 
-		m_inputManager = std::make_unique<InputManager>();
-		m_renderer     = std::make_unique<Renderer>();
+		m_systems.ConstructAll();
 	}
 
 	Engine::~Engine()
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Engine);
-		m_renderer     = nullptr;
-		m_inputManager = nullptr;
+
+		// Runs here, not at the end of RunApp: the host outlives RunApp and releases GPU
+		// resources in its own destructor, so the device has to still be alive for it
+		GfxDevice& device = GetSubsystem<Renderer>().GetDevice();
+		m_systems.ShutdownAll(device);
+
 		m_window.reset();
 		KOI_LOG_INFO("Engine shut down");
 
@@ -52,16 +55,15 @@ namespace koi
 
 		host.SetWindow(window);
 
-		m_inputManager->Init(window);
-
-		m_renderer->InitMainWindow(window, mainWndDesc.VSync);
+		SubsystemInitContext initCtx{ .MainWindow = window, .VSync = mainWndDesc.VSync };
+		m_systems.InitAll(initCtx);
 
 		window.SetCloseCallback([this]() { RequestExit(); });
 
 		// Init application
 		m_host = &host;
 		host.HostInit();
-		m_renderer->GetFrameGraph().Compile(); // One time compile to ensure user-defined render pass succeeds post-init
+		GetSubsystem<Renderer>().GetFrameGraph().Compile(); // One time compile to ensure user-defined render pass succeeds post-init
 
 #if !KOI_WITH_EDITOR
 		// Nothing to press Play with, so a standalone build simulates from the start
@@ -73,8 +75,6 @@ namespace koi
 		SetPlayState(PlayState::Edit);  // fires HostEndPlay when we exit mid-play
 		host.HostShutdown();
 		m_host = nullptr;
-
-		m_assets.ReleaseAll(m_renderer->GetDevice());
 	}
 
 	void Engine::SetPlayState(PlayState state)
@@ -109,9 +109,9 @@ namespace koi
 	void Engine::BeginFrame()
 	{
 		ZoneScoped;
-		m_inputManager->BeginFrame();
+		GetSubsystem<InputManager>().BeginFrame();
 		Window::PollEvents();
-		m_renderer->BeginFrame();
+		GetSubsystem<Renderer>().BeginFrame();
 	}
 
 	void Engine::Tick(IAppHost& host)
@@ -125,7 +125,7 @@ namespace koi
 	void Engine::EndFrame()
 	{
 		ZoneScoped;
-		m_renderer->EndFrame();
+		GetSubsystem<Renderer>().EndFrame();
 	}
 
 	void Engine::MainLoop(IAppHost& host)

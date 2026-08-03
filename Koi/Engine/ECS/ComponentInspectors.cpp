@@ -47,7 +47,7 @@ namespace koi
 		const MeshRef* meshRef = e.try_get<MeshRef>();
 		if (!meshRef) return;
 
-		const AssetCache<GPUMesh>& meshes = Engine::Get().GetAssets().Cache<GPUMesh>();
+		const AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 
 		ImGui::Separator();
 		const std::string_view source = meshes.GetPath(meshRef->Handle);

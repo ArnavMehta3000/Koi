@@ -8,6 +8,7 @@
 #include "Koi/Engine/Graphics/RHI/CommandQueue.h"
 #include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Interop/Reloadable.h"
+#include "Koi/Engine/Runtime/Subsystems.h"
 #include <memory>
 #include <optional>
 
@@ -26,7 +27,7 @@ namespace koi
 		~Renderer();
 
 		// Called once by Engine after the main window is created.
-		void InitMainWindow(Window& window, bool vsync);
+		void Init(const SubsystemInitContext& ctx);
 
 		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                 { return *m_device;              }
 		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept           { return *m_device;              }

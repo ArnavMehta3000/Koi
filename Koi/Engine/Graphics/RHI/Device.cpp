@@ -116,6 +116,7 @@ namespace koi
 		m_uploadContext.Shutdown();
 		WaitForIdle();
 		FlushDeferredDeletions(~0ull);
+		ReportLiveResources();
 
 		if (m_fenceEvent)
 		{
@@ -139,6 +140,32 @@ namespace koi
 
 		// [NOTE]: Not clearing resource pool here
 		KOI_LOG_TRACE("Finished destroying D3D12 device");
+	}
+
+	// Anything still here outlived its owner's Destroy() call, or was never destroyed at all.
+	void GfxDevice::ReportLiveResources()
+	{
+		std::vector<std::string_view> live;
+
+		m_textures.ForEach([&](TextureHandle, Texture& t)
+		{
+			if (!t.IsSwapChainImage)
+				live.push_back(t.Desc.DebugName.empty() ? "<unnamed texture>" : t.Desc.DebugName);
+		});
+
+		m_buffers.ForEach([&](BufferHandle, Buffer& b)
+		{
+			live.push_back(b.Desc.DebugName.empty() ? "<unnamed buffer>" : b.Desc.DebugName);
+		});
+
+		m_pipelines.ForEach([&](PipelineHandle, Pipeline&) { live.push_back("<pipeline>"); });
+
+		if (live.empty())
+			return;
+
+		KOI_LOG_WARN("{} GPU resource(s) still live at device destruction:", live.size());
+		for (const std::string_view name : live)
+			KOI_LOG_WARN("\t{}", name);
 	}
 
 	u64 GfxDevice::GetCompletedFenceValue() const noexcept

@@ -45,12 +45,13 @@ namespace koi
 		KOI_LOG_INFO("Shutdown renderer");
 	}
 
-	void Renderer::InitMainWindow(Window& window, bool vsync)
+	void Renderer::Init(const SubsystemInitContext& ctx)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		m_renderWindow.emplace(*m_device, window, vsync);
+		Window& window = ctx.MainWindow;
+		m_renderWindow.emplace(*m_device, window, ctx.VSync);
 
 		window.SetResizeCallback([this](u32 w, u32 h)
 		{
