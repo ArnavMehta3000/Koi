@@ -91,5 +91,7 @@ namespace koi
 	MemTagSnapshotArray GetMemSnapshot();
 
 
-#define KOI_MEM_TAG_SCOPE(tag) ::koi::MemTagScope _koi_mem_tag_scope_##__LINE__{tag}
+#define KOI_MEM_TAG_SCOPE_CAT2(a, b) a##b
+#define KOI_MEM_TAG_SCOPE_CAT(a, b)  KOI_MEM_TAG_SCOPE_CAT2(a, b)
+#define KOI_MEM_TAG_SCOPE(tag) ::koi::MemTagScope KOI_MEM_TAG_SCOPE_CAT(_koi_mem_tag_scope_, __LINE__){tag}
 }
