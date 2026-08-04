@@ -6,6 +6,7 @@
 	add_deps(
 		"ImGui",
 		"ImGuiColorTextEdit",
+		"ImGuizmo",
 		"AngelScript",
 		"SimpleMath", { public = true })
 
