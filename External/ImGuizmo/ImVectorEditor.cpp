@@ -1,4 +1,4 @@
-#include "ImVectorEditor.h"
+﻿#include "ImVectorEditor.h"
 
 #include <algorithm>
 #include <cmath>

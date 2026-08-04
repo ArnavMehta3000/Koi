@@ -1,4 +1,4 @@
-// https://github.com/CedricGuillemet/ImGuizmo
+﻿// https://github.com/CedricGuillemet/ImGuizmo
 // v1.92.5 WIP
 //
 // The MIT License(MIT)
@@ -776,7 +776,7 @@ namespace IMGUIZMO_NAMESPACE
 
       ImGuiWindow* mAlternativeWindow = nullptr;
       ImVector<ImGuiID> mIDStack;
-      ImGuiID mEditingID = -1;
+      ImGuiID mEditingID = ImGuiID(-1);
       OPERATION mOperation = OPERATION(0);
 
       // per-id ViewManipulate widget states (see ViewManipulateState)
@@ -789,7 +789,7 @@ namespace IMGUIZMO_NAMESPACE
       {
          if (mIDStack.empty())
          {
-            mIDStack.push_back(-1);
+            mIDStack.push_back(ImGuiID(-1));
          }
          return mIDStack.back();
       }
@@ -2090,7 +2090,7 @@ namespace IMGUIZMO_NAMESPACE
 
          if (!io.MouseDown[0]) {
             gContext.mbUsingBounds = false;
-            gContext.mEditingID = -1;
+            gContext.mEditingID = ImGuiID(-1);
          }
          if (gContext.mbUsingBounds)
          {
@@ -2677,7 +2677,7 @@ namespace IMGUIZMO_NAMESPACE
          if (!io.MouseDown[0])
          {
             gContext.mbUsing = false;
-            gContext.mEditingID = -1;
+            gContext.mEditingID = ImGuiID(-1);
          }
          type = gContext.mCurrentHandleType;
       }
@@ -2742,7 +2742,7 @@ namespace IMGUIZMO_NAMESPACE
    {
       if (gContext.mIDStack.empty())
       {
-         gContext.mIDStack.push_back(-1);
+         gContext.mIDStack.push_back(ImGuiID(-1));
       }
       gContext.mIDStack.back() = id;
    }
@@ -2932,7 +2932,7 @@ namespace IMGUIZMO_NAMESPACE
          frustum[i].Normalize();
       }
    }
-   
+
    void DrawAxes(const float* view, const float* projection, const float* matrices, int matrixCount)
    {
       matrix_t viewM = *(matrix_t*)view;
