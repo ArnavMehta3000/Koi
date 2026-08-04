@@ -21,6 +21,7 @@
 #include <system_error>
 
 #include <imgui.h>
+#include <ImGuizmo.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_dx12.h>
 
@@ -117,9 +118,9 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		m_game->SetEditorContext(this);
 
 		// Register default editor panels
-		RegisterPanel<ScenePanel>(*m_game);
+		RegisterPanel<ScenePanel>(*m_game, m_selection);
 		RegisterPanel<GBufferDebugPanel>(renderer);
-		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer);
+		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer, *m_game, m_selection);
 	}
 
 	void EditorApp::HostInit()
@@ -264,6 +265,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		ImGuizmo::BeginFrame();
 
 		// Ask engine and game to recompile shaders and rebuild pipelines
 		if (engine.GetSubsystem<InputManager>().IsKeyPressed(KeyCode::F5))
@@ -430,6 +432,9 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 		// Leave play mode first: OnEndPlay still needs the world it ran against
 		engine.SetPlayState(PlayState::Edit);
+
+		// The rebuild below recycles entity ids, so a stale selection would resolve to whatever entity happens to land in that slot
+		m_selection.Clear();
 
 		GfxDevice& device           = engine.GetSubsystem<Renderer>().GetDevice();
 		AssetCache<GPUMesh>& meshes = engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>();

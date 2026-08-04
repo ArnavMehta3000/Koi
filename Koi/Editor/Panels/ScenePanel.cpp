@@ -24,6 +24,8 @@ namespace koi
 		Entity pendingChild;
 		Entity pendingParent;
 
+		Entity& selected = m_selection->Selected;
+
 		auto DrawNode = [&](this auto&& self, Entity entity)
 		{
 			bool hasChildren = false;
@@ -36,14 +38,14 @@ namespace koi
 			if (!hasChildren)
 				flags |= ImGuiTreeNodeFlags_Leaf;
 
-			if (m_selected.is_alive() && m_selected.id() == entity.id())
+			if (selected.is_alive() && selected.id() == entity.id())
 				flags |= ImGuiTreeNodeFlags_Selected;
 
 			const char* label = entity.name().length() > 0 ? entity.name().c_str() : "<unnamed>";
 			bool open = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(entity.id())), flags, "%s", label);
 
 			if (ImGui::IsItemClicked())
-				m_selected = entity;
+				selected = entity;
 
 			if (ImGui::BeginDragDropSource())
 			{
@@ -83,16 +85,16 @@ namespace koi
 			// TODO: Replace with create function from the world
 			Entity e = ecs.entity();
 			e.set<Transform>({});
-			if (m_selected.is_alive())
-				e.child_of(m_selected);
-			m_selected = e;
+			if (selected.is_alive())
+				e.child_of(selected);
+			selected = e;
 		}
 		ImGui::SameLine();
-		ImGui::BeginDisabled(!m_selected.is_alive());
+		ImGui::BeginDisabled(!selected.is_alive());
 		if (ImGui::Button("Remove"))
 		{
-			m_selected.destruct();
-			m_selected = Entity{};
+			selected.destruct();
+			selected = Entity{};
 		}
 		ImGui::EndDisabled();
 
@@ -110,9 +112,9 @@ namespace koi
 		ImGui::SameLine();
 
 		ImGui::BeginChild("##props", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
-		if (m_selected.is_alive())
+		if (selected.is_alive())
 		{
-			const char* name = m_selected.name().length() > 0 ? m_selected.name().c_str() : "(unnamed)";
+			const char* name = selected.name().length() > 0 ? selected.name().c_str() : "(unnamed)";
 			ImGui::TextUnformatted(name);
 			ImGui::Separator();
 
@@ -122,7 +124,7 @@ namespace koi
 				if (!component.Draw) continue;
 
 				ImGui::PushID(component.Key.data(), component.Key.data() + component.Key.size());
-				component.Draw(m_selected);
+				component.Draw(selected);
 				ImGui::PopID();
 			}
 		}

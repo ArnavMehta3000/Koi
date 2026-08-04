@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include "Koi/Engine/ECS/World.h"
+#include "Koi/Editor/Selection.h"
 
 namespace koi
 {
@@ -9,13 +10,13 @@ namespace koi
 	class ScenePanel : public IEditorPanel
 	{
 	public:
-		explicit ScenePanel(AppBase& game) : m_game(&game) {}
+		ScenePanel(AppBase& game, EditorSelection& selection) : m_game(&game), m_selection(&selection) {}
 
 		[[nodiscard]] std::string_view GetName() const override { return "Scene"; }
 		void OnDraw() override;
 
 	private:
-		AppBase* m_game = nullptr;
-		Entity   m_selected;
+		AppBase*         m_game      = nullptr;
+		EditorSelection* m_selection = nullptr;
 	};
 }

@@ -24,13 +24,16 @@ namespace koi
 		// Euler angles are UI state: re-deriving them from the quaternion every frame makes
 		// the drag widget snap near gimbal lock, so cache them until the selection changes
 		// NOTE: This might need rework if I want multiple inspector panels
-		static Vector3  s_eulerDeg = Vector3::Zero;
-		static EntityID s_eulerFor = 0;
+		static Vector3    s_eulerDeg = Vector3::Zero;
+		static EntityID   s_eulerFor = 0;
+		static Quaternion s_eulerRot = Quaternion::Identity;
 
-		if (s_eulerFor != e.id())
+		// Also re-derive when something else moved the entity (the viewport gizmo), or the widget would keep showing the angles from before the drag
+		if (s_eulerFor != e.id() || s_eulerRot != local->Rotation)
 		{
 			s_eulerDeg = local->Rotation.ToEuler() * kRadToDeg;
 			s_eulerFor = e.id();
+			s_eulerRot = local->Rotation;
 		}
 
 		ImGui::DragFloat3("Position", &local->Position.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
@@ -38,6 +41,7 @@ namespace koi
 		{
 			local->Rotation = Quaternion::CreateFromYawPitchRoll(
 				s_eulerDeg.y * kDegToRad, s_eulerDeg.x * kDegToRad, s_eulerDeg.z * kDegToRad);
+			s_eulerRot = local->Rotation;
 		}
 		ImGui::DragFloat3("Scale", &local->Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
 	}

@@ -4,6 +4,7 @@
 #include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Editor/Selection.h"
 #include <toml++/toml.hpp>
 #include <filesystem>
 
@@ -74,11 +75,12 @@ namespace koi::editor
 		std::vector<std::unique_ptr<IEditorPanel>>  m_panels;
 		std::vector<IReloadable*>                   m_reloadables;
 		ViewportPanel*                              m_viewportPanel    = nullptr;
+		EditorSelection                             m_selection{};
 		bool                                        m_imguiInitialized = false;
 		std::string                                 m_lastCookStatus;  // shown in menubar after Cook click
 
-		toml::table                                 m_snapshot;        // the world as it was when Play was pressed
-		std::vector<MeshHandle>                     m_pinnedAssets;    // keeps the snapshot's assets resident across Stop
+		toml::table                                 m_snapshot;            // the world as it was when Play was pressed
+		std::vector<MeshHandle>                     m_pinnedAssets;        // keeps the snapshot's assets resident across Stop
 		ViewportCamera                              m_cameraBeforePlay{};  // restored on Stop
 	};
 }

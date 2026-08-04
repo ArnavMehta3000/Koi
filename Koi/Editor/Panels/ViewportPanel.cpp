@@ -1,4 +1,8 @@
 ﻿#include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/Selection.h"
+#include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -8,8 +12,10 @@
 #include "Koi/Engine/Platform/InputCodes.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Logging/Logger.h"
-
 #include <imgui.h>
+#include <ImGuizmo.h>
+#include <cmath>
+#include <limits>
 
 namespace koi
 {
@@ -17,8 +23,13 @@ namespace koi
 	static constexpr Format kHDRFormat = Format::R16G16B16A16_FLOAT;
 	static constexpr Format kResolvedFormat = Format::R8G8B8A8_UNORM;
 
-	ViewportPanel::ViewportPanel(Renderer& renderer)
+	// A click that moves further than this is a camera drag, not a pick
+	static constexpr f32 kPickDragSlop = 4.0f;
+
+	ViewportPanel::ViewportPanel(Renderer& renderer, AppBase& game, EditorSelection& selection)
 		: m_renderer(&renderer)
+		, m_game(&game)
+		, m_selection(&selection)
 		, m_controller(&m_camera, CameraMode::Orbit)
 	{
 	}
@@ -105,6 +116,23 @@ namespace koi
 			if (ImGui::Combo("##resolution", &resolution, kResolutionLabels, IM_ARRAYSIZE(kResolutionLabels)))
 				m_resolution = static_cast<ViewportResolution>(resolution);
 		}
+		else
+		{
+			static constexpr const char* kGizmoLabels[] = { "Translate", "Rotate", "Scale" };
+			static constexpr const char* kSpaceLabels[] = { "World", "Local" };
+
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(100.0f);
+			int op = static_cast<int>(m_gizmoOp);
+			if (ImGui::Combo("##gizmoop", &op, kGizmoLabels, IM_ARRAYSIZE(kGizmoLabels)))
+				m_gizmoOp = static_cast<GizmoOp>(op);
+
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(80.0f);
+			int space = static_cast<int>(m_gizmoSpace);
+			if (ImGui::Combo("##gizmospace", &space, kSpaceLabels, IM_ARRAYSIZE(kSpaceLabels)))
+				m_gizmoSpace = static_cast<GizmoSpace>(space);
+		}
 
 		ImGui::PopStyleVar();
 	}
@@ -163,10 +191,14 @@ namespace koi
 						ImGui::SetCursorPos(ImVec2(cursor.x + (avail.x - size.x) * 0.5f,
 						                           cursor.y + (avail.y - size.y) * 0.5f));
 
+						const ImVec2 imageMin = ImGui::GetCursorScreenPos();
 						const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
 						ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
 
 						m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
+
+						DrawGizmo(imageMin.x, imageMin.y, size.x, size.y);
+						HandlePicking(imageMin.x, imageMin.y, size.x, size.y);
 					}
 				}
 			}
@@ -181,6 +213,119 @@ namespace koi
 		}
 		ImGui::End();
 		ImGui::PopStyleVar();
+	}
+
+	void ViewportPanel::DrawGizmo(f32 x, f32 y, f32 width, f32 height)
+	{
+		m_gizmoActive = false;
+
+		// No gizmo in game view or when no entity is selected
+		if (m_cameraMode != ViewportCamera::Scene || !m_selection->IsValid()) return;
+
+		Transform* xform = m_selection->Selected.try_get_mut<Transform>();
+		if (!xform) return;
+
+		// Right-mouse is the camera - leave the shortcuts alone while it is held
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+		{
+			if (ImGui::IsKeyPressed(ImGuiKey_W)) m_gizmoOp = GizmoOp::Translate;
+			if (ImGui::IsKeyPressed(ImGuiKey_E)) m_gizmoOp = GizmoOp::Rotate;
+			if (ImGui::IsKeyPressed(ImGuiKey_R)) m_gizmoOp = GizmoOp::Scale;
+		}
+
+		static constexpr ImGuizmo::OPERATION kOps[] =
+		{
+			ImGuizmo::TRANSLATE, ImGuizmo::ROTATE, ImGuizmo::SCALE
+		};
+
+		ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+		ImGuizmo::SetRect(x, y, width, height);
+
+		Matrix matrix = xform->ToMatrix();
+		if (ImGuizmo::Manipulate(&m_camera.View._11,
+		                         &m_camera.Projection._11,
+		                         kOps[static_cast<u32>(m_gizmoOp)],
+		                         m_gizmoSpace == GizmoSpace::Local ? ImGuizmo::LOCAL : ImGuizmo::WORLD,
+		                         &matrix._11))
+		{
+			Vector3 scale, position;
+			Quaternion rotation;
+			if (matrix.Decompose(scale, rotation, position))
+			{
+				xform->Position = position;
+				xform->Rotation = rotation;
+				xform->Scale    = scale;
+				m_selection->Selected.modified<Transform>();
+			}
+		}
+
+		m_gizmoActive = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
+	}
+
+	void ViewportPanel::HandlePicking(f32 x, f32 y, f32 width, f32 height)
+	{
+		if (m_cameraMode != ViewportCamera::Scene || m_gizmoActive) return;
+		if (!m_isHovered || !ImGui::IsMouseReleased(ImGuiMouseButton_Left)) return;
+
+		// Orbiting also releases the left button over the image, so only a click that stayed put counts as a pick
+		const ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
+		if (std::abs(drag.x) + std::abs(drag.y) > kPickDragSlop) return;
+
+		const ImVec2 mouse = ImGui::GetIO().MousePos;
+		PickEntity((mouse.x - x) / width  * 2.0f - 1.0f,
+		           1.0f - (mouse.y - y) / height * 2.0f);
+	}
+
+	void ViewportPanel::PickEntity(f32 ndcX, f32 ndcY)
+	{
+		World* world = m_game->GetEditorWorld();
+		if (!world) return;
+
+		const Matrix invViewProj = m_camera.ViewProjection.Invert();
+
+		const Vector4 nearH = Vector4::Transform(Vector4(ndcX, ndcY, 0.0f, 1.0f), invViewProj);
+		const Vector4 farH  = Vector4::Transform(Vector4(ndcX, ndcY, 1.0f, 1.0f), invViewProj);
+
+		const Vector3 origin(nearH.x / nearH.w, nearH.y / nearH.w, nearH.z / nearH.w);
+		const Vector3 target(farH.x / farH.w, farH.y / farH.w, farH.z / farH.w);
+
+		Vector3 direction = target - origin;
+		direction.Normalize();
+
+		Entity hit;
+		f32 best = std::numeric_limits<f32>::max();
+
+		world->GetECS().query<const Transform, const MeshRef>()
+			.each([&](Entity e, const Transform& xform, const MeshRef& meshRef)
+		{
+			const GPUMesh* mesh = world->GetMesh(meshRef.Handle);
+			if (!mesh) return;
+
+			// Bounds are model-space, so the ray goes to the mesh rather than the box to the world
+			const Matrix worldMatrix = xform.ToMatrix();
+			const Matrix invert      = worldMatrix.Invert();
+
+			Ray ray(Vector3::Transform(origin, invert), Vector3::TransformNormal(direction, invert));
+			ray.direction.Normalize();  // non-uniform scale denormalises it
+
+			const Vector3 center  = mesh->Bounds.Center();
+			const Vector3 extents = (mesh->Bounds.Max - mesh->Bounds.Min) * 0.5f;
+			const DirectX::BoundingBox box(center, extents);
+
+			f32 modelDist = 0.0f;
+			if (!ray.Intersects(box, modelDist)) return;
+
+			// Model-space distances are not comparable across different scales
+			const Vector3 point = Vector3::Transform(ray.position + ray.direction * modelDist, worldMatrix);
+			const f32 distance  = Vector3::Distance(point, origin);
+			if (distance < best)
+			{
+				best = distance;
+				hit  = e;
+			}
+		});
+
+		m_selection->Selected = hit;
 	}
 
 	void ViewportPanel::FrameBounds(const AABB& bounds)
@@ -198,10 +343,10 @@ namespace koi
 			|| input.IsMouseButtonDown(MouseButton::Right)
 			|| input.IsMouseButtonDown(MouseButton::Middle);
 
-		if (m_isHovered && anyMouseDown) m_isCapturingInput = true;
+		if (m_isHovered && anyMouseDown && !m_gizmoActive) m_isCapturingInput = true;
 		else if (!anyMouseDown) m_isCapturingInput = false;
 
-		if (m_isHovered || m_isCapturingInput)
+		if (!m_gizmoActive && (m_isHovered || m_isCapturingInput))
 		{
 			m_controller.Update(dt, input);
 		}

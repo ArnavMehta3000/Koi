@@ -10,6 +10,21 @@ namespace koi
 	class Renderer;
 	class CommandList;
 	class InputManager;
+	class AppBase;
+	struct EditorSelection;
+
+	enum class GizmoOp : u8
+	{
+		Translate,
+		Rotate,
+		Scale,
+	};
+
+	enum class GizmoSpace : u8
+	{
+		World,
+		Local,
+	};
 
 	enum class ViewportCamera : u8
 	{
@@ -28,7 +43,7 @@ namespace koi
 	class ViewportPanel : public IEditorPanel
 	{
 	public:
-		explicit ViewportPanel(Renderer& renderer);
+		ViewportPanel(Renderer& renderer, AppBase& game, EditorSelection& selection);
 		~ViewportPanel() override;
 
 		[[nodiscard]] std::string_view GetName() const override { return "Viewport"; }
@@ -48,8 +63,15 @@ namespace koi
 		void EnsureSize(u32 width, u32 height);
 		void DrawToolbar();
 
+		// Image rect in screen space
+		void DrawGizmo(f32 x, f32 y, f32 width, f32 height);
+		void HandlePicking(f32 x, f32 y, f32 width, f32 height);
+		void PickEntity(f32 ndcX, f32 ndcY);
+
 	private:
 		Renderer*         m_renderer;
+		AppBase*          m_game      = nullptr;
+		EditorSelection*  m_selection = nullptr;
 		ViewportTarget    m_target{};
 		bool              m_valid           = false;
 		u32               m_desiredWidth    = 1280;
@@ -62,5 +84,9 @@ namespace koi
 		CameraController  m_controller;
 		bool              m_isHovered        = false;
 		bool              m_isCapturingInput = false;
+
+		GizmoOp           m_gizmoOp    = GizmoOp::Translate;
+		GizmoSpace        m_gizmoSpace = GizmoSpace::World;
+		bool              m_gizmoActive = false;  // gizmo owns the mouse this frame, camera must not
 	};
 }
