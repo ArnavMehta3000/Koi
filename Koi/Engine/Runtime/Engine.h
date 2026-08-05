@@ -59,8 +59,8 @@ namespace koi
 		[[nodiscard]] Stats GetStats() const;
 
 		void SetPlayState(PlayState state);
-		[[nodiscard]] PlayState GetPlayState() const { return m_playState; }
-		[[nodiscard]] bool IsPlaying() const { return m_playState == PlayState::Playing; }
+		[[nodiscard]] inline PlayState GetPlayState() const { return m_playState; }
+		[[nodiscard]] inline bool IsPlaying() const { return m_playState == PlayState::Playing; }
 
 	private:
 		void BeginFrame();
