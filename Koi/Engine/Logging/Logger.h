@@ -1,4 +1,4 @@
-﻿// Contains the static Logger class, using spdlog under the hood
+// Contains the static Logger class, using spdlog under the hood
 
 #pragma once
 #include "Koi/Engine/Core/Core.h"

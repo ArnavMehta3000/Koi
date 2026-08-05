@@ -1,4 +1,4 @@
-﻿#include "SandboxApp.h"
+#include "SandboxApp.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Runtime/CommandLine.h"

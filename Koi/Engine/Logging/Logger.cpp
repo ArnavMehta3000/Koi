@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include "Koi/Engine/Platform/Win32.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"

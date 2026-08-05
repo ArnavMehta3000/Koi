@@ -1,4 +1,4 @@
-﻿#ifndef SCRIPTMATH_H
+#ifndef SCRIPTMATH_H
 #define SCRIPTMATH_H
 
 #ifndef ANGELSCRIPT_H 

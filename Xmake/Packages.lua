@@ -1,4 +1,4 @@
-﻿-- Custom packages
+-- Custom packages
 includes("Packages/SimpleMath.lua")
 includes("Packages/Tracy.lua")
 includes("Packages/dxc.lua")

@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/Math/Transform.h"
 
 namespace koi
 {

@@ -1,4 +1,4 @@
-﻿
+
 option("WithEditor")
     set_default(1)
     set_values(0, 1)

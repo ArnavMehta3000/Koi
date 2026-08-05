@@ -1,4 +1,4 @@
-﻿#ifndef SCRIPTANY_H
+#ifndef SCRIPTANY_H
 #define SCRIPTANY_H
 
 #ifndef ANGELSCRIPT_H

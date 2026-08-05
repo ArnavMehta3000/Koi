@@ -1,4 +1,4 @@
-﻿local _we = get_config("WithEditor")
+local _we = get_config("WithEditor")
 local _with_editor = (_we == 1 or _we == "1" or _we == true)
 
 -- Only one launcher exists per build configuration. The `KoiGame` rule

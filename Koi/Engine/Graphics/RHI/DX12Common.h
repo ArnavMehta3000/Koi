@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Core/Core.h"  // For the Win32 macro
 
 #include "Koi/Engine/Platform/Win32.h"

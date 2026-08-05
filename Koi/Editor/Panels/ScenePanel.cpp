@@ -1,4 +1,4 @@
-﻿#include "Koi/Editor/Panels/ScenePanel.h"
+#include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"

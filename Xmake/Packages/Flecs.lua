@@ -1,4 +1,4 @@
-﻿package("Flecs")
+package("Flecs")
     set_homepage("https://github.com/SanderMertens/flecs")
     set_description("A fast entity component system (ECS) for C & C++")
     set_license("MIT")

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Graphics/Format.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RendererResources.h"

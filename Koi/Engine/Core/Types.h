@@ -1,4 +1,4 @@
-﻿// Contains utility types and functions used throughout the engine
+// Contains utility types and functions used throughout the engine
 #pragma once
 #include <cstdint>
 #include <string_view>

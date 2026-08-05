@@ -1,4 +1,4 @@
-﻿#ifndef CONTEXTMGR_H
+#ifndef CONTEXTMGR_H
 #define CONTEXTMGR_H
 
 // The context manager simplifies the management of multiple concurrent scripts

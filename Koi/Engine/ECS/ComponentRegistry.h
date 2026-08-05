@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 #include <span>

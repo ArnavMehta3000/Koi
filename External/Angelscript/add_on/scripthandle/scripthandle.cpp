@@ -1,4 +1,4 @@
-﻿#include "scripthandle.h"
+#include "scripthandle.h"
 #include <new>
 #include <assert.h>
 #include <string.h>

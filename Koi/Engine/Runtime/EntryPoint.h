@@ -1,4 +1,4 @@
-﻿// Contains macros to create the platform independent main  function
+// Contains macros to create the platform independent main  function
 
 #pragma once
 #include "Koi/Engine/Core/Core.h"

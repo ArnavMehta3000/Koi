@@ -1,4 +1,4 @@
-﻿local _we = get_config("WithEditor")
+local _we = get_config("WithEditor")
 if _we == 1 or _we == "1" or _we == true then
 
 target("Koi.Editor")

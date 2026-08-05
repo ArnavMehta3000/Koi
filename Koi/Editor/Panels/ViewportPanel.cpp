@@ -1,4 +1,4 @@
-﻿#include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/ECS/World.h"

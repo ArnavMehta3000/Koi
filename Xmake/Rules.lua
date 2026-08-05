@@ -1,4 +1,4 @@
-﻿-- User rule to switch between static/object build kind for runtime/editor modes + sets up runargs
+-- User rule to switch between static/object build kind for runtime/editor modes + sets up runargs
 rule("KoiGame")
 	on_load(function(target)
 		local _we = get_config("WithEditor")

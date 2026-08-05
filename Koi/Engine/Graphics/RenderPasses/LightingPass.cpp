@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"

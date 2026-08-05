@@ -1,4 +1,4 @@
-﻿#include "Koi/Editor/Panels/GBufferDebugPanel.h"
+#include "Koi/Editor/Panels/GBufferDebugPanel.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"

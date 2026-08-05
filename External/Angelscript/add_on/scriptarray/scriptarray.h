@@ -1,4 +1,4 @@
-﻿#ifndef SCRIPTARRAY_H
+#ifndef SCRIPTARRAY_H
 #define SCRIPTARRAY_H
 
 #ifndef ANGELSCRIPT_H 

@@ -1,4 +1,4 @@
-﻿//
+//
 // CScriptSocket
 //
 // This class represents a socket. It can be used to set up listeners for 

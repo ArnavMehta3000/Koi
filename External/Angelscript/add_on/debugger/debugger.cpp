@@ -1,4 +1,4 @@
-﻿#include "debugger.h"
+#include "debugger.h"
 #include <iostream>  // cout
 #include <sstream>   // stringstream
 #include <stdlib.h>  // atoi

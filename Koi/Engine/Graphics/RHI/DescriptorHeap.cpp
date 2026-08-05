@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
+#include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>

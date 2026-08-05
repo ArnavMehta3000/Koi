@@ -1,4 +1,4 @@
-﻿#ifndef _GBUFFER_VS_HLSL_
+#ifndef _GBUFFER_VS_HLSL_
 #define _GBUFFER_VS_HLSL_
 
 #include "MeshShaderCommon.hlsl"

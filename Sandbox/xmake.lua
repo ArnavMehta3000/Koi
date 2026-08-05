@@ -1,4 +1,4 @@
-﻿-- Need to 'cook assets' in editor before being able to run in standalone mode
+-- Need to 'cook assets' in editor before being able to run in standalone mode
 -- Doing this so that there is no need to precompile shaders, copy assets, etc.
 
 target("Sandbox")

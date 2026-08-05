@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"

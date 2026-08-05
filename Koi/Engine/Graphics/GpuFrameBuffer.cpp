@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Graphics/GpuFrameBuffer.h"
+#include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"

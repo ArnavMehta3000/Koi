@@ -1,4 +1,4 @@
-﻿//
+//
 // Script std::string
 //
 // This function registers the std::string type with AngelScript to be used as the default string type.

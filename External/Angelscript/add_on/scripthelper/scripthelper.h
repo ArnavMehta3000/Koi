@@ -1,4 +1,4 @@
-﻿#ifndef SCRIPTHELPER_H
+#ifndef SCRIPTHELPER_H
 #define SCRIPTHELPER_H
 
 #include <sstream>

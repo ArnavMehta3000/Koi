@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Assets/AssetCache.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/Assets/TextureAsset.h"

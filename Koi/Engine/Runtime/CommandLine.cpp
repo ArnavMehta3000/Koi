@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Runtime/CommandLine.h"
+#include "Koi/Engine/Runtime/CommandLine.h"
 
 namespace koi::internal
 {

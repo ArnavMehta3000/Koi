@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Graphics/RHI/DX12Common.h"
 #include "Koi/Engine/Graphics/Types.h"
 

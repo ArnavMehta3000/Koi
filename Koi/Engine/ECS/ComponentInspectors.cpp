@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/ECS/ComponentInspectors.h"
+#include "Koi/Engine/ECS/ComponentInspectors.h"
 #include "Koi/Engine/Core/Core.h"
 
 #if KOI_WITH_EDITOR

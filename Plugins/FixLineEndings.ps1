@@ -1,12 +1,13 @@
-# PowerShell script to normalize source file encoding (UTF-8 w/ BOM) and line endings (CRLF).
+# PowerShell script to normalize source file encoding (UTF-8, no BOM) and line endings (CRLF).
 #
 param(
-	[Parameter(Mandatory=$true)]
-	[string]$Root,
+	# Directories to walk recursively, and/or individual files to fix.
+	[Parameter(Mandatory=$true, Position=0, ValueFromRemainingArguments=$true)]
+	[string[]]$Path,
 
-	# Write UTF-8 without a BOM instead. Note that MSVC then assumes the active
-	# code page for the source file unless you also pass /utf-8 to cl.exe.
-	[switch]$NoBom
+	# Write a UTF-8 BOM instead. Only needed if a tool in the chain assumes the
+	# active code page for BOM-less sources (MSVC without /utf-8).
+	[switch]$Bom
 )
 
 $extensions = @(
@@ -15,7 +16,7 @@ $extensions = @(
 )
 
 # Encoding used for writing.
-$encoding = New-Object System.Text.UTF8Encoding((-not $NoBom))
+$encoding = New-Object System.Text.UTF8Encoding($Bom.IsPresent)
 
 # Encoding used for reading: throws on invalid UTF-8 rather than silently
 # substituting U+FFFD, so we never destroy bytes from a legacy-encoded file
@@ -24,7 +25,20 @@ $strictUtf8 = New-Object System.Text.UTF8Encoding($false, $true)
 $updated = 0
 $skipped = 0
 
-Get-ChildItem $Root -Recurse -File |
+# Expand the inputs: directories are walked, explicit files are taken as-is.
+$files = foreach ($p in $Path)
+{
+	if (Test-Path -LiteralPath $p -PathType Container)
+	{
+		Get-ChildItem -LiteralPath $p -Recurse -File
+	}
+	elseif (Test-Path -LiteralPath $p -PathType Leaf)
+	{
+		Get-Item -LiteralPath $p
+	}
+}
+
+$files |
 Where-Object { $extensions -contains $_.Extension.ToLower() } |
 ForEach-Object {
 

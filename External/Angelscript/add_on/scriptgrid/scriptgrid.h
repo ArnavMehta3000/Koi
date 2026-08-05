@@ -1,4 +1,4 @@
-﻿#ifndef SCRIPTGRID_H
+#ifndef SCRIPTGRID_H
 #define SCRIPTGRID_H
 
 #ifndef ANGELSCRIPT_H 

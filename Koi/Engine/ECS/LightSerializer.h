@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Math/MathSerializer.h"
 

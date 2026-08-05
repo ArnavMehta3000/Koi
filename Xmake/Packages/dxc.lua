@@ -1,4 +1,4 @@
-﻿package("dxc")
+package("dxc")
 	set_homepage("https://github.com/microsoft/DirectXShaderCompiler/")
     set_description("DirectX Shader Compiler")
     set_license("LLVM")

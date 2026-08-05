@@ -1,0 +1,13 @@
+# Store LF in the repository, check out CRLF in the working tree.
+# Line-ending differences therefore never show up as a diff.
+* text=auto eol=crlf
+
+# Binaries git might mis-detect as text.
+*.jpg  -text
+*.png  -text
+*.dds  -text
+*.ttf  -text
+*.bin  -text
+*.cso  -text
+*.gltf -text
+*.glb  -text

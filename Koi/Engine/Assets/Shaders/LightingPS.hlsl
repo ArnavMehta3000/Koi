@@ -1,4 +1,4 @@
-﻿cbuffer PushConstants : register(b0)
+cbuffer PushConstants : register(b0)
 {
 	row_major float4x4 InvViewProjection;
 	float4 CameraPosition;   // .xyz used

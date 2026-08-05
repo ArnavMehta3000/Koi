@@ -1,4 +1,4 @@
-﻿#include "scriptany.h"
+#include "scriptany.h"
 #include <new>
 #include <assert.h>
 #include <string.h>

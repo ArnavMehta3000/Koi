@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Assets/TextureAsset.h"
+#include "Koi/Engine/Assets/TextureAsset.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"

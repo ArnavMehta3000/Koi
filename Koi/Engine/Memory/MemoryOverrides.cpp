@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include <new>
 

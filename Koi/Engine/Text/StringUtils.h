@@ -1,4 +1,4 @@
-﻿// Contains utility functions for string manipulation in static StringUtils class
+// Contains utility functions for string manipulation in static StringUtils class
 #pragma once
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Platform/Win32.h"

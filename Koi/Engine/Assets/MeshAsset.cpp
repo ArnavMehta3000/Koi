@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/Graphics/MeshLoader.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 

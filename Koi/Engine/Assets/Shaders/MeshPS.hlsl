@@ -1,4 +1,4 @@
-﻿#ifndef _MESH_PS_HLSL_
+#ifndef _MESH_PS_HLSL_
 #define _MESH_PS_HLSL_
 
 #include "MeshShaderCommon.hlsl"

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"

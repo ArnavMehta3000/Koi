@@ -1,4 +1,4 @@
-﻿target("ImGui")  -- Custom ImGui package
+target("ImGui")  -- Custom ImGui package
 	set_kind("object")
 	set_group("External")
 

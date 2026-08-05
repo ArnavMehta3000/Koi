@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Core/Core.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Platform/InputManager.h"

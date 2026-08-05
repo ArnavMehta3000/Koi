@@ -1,4 +1,4 @@
-﻿#include "Koi/Editor/EditorApp.h"
+#include "Koi/Editor/EditorApp.h"
 #include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/GbufferDebugPanel.h"

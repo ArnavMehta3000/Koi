@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/ECS/World.h"

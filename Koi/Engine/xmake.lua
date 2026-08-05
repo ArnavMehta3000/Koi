@@ -1,4 +1,4 @@
-﻿target("Koi.Engine")
+target("Koi.Engine")
 	set_kind("static")
 
 	add_options("LogLevel", "WithEditor")

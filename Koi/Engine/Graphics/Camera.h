@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Math/Transform.h"
 

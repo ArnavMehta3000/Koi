@@ -1,4 +1,4 @@
-﻿// DirectXTK SimpleMath types + engine math helpers
+// DirectXTK SimpleMath types + engine math helpers
 #pragma once
 
 #include "Koi/Engine/Core/Config.h"

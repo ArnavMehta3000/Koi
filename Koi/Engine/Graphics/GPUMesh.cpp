@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/Renderer.h"

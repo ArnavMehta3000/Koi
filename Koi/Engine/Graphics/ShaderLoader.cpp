@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Graphics/ShaderLoader.h"
+#include "Koi/Engine/Graphics/ShaderLoader.h"
 #include "Koi/Engine/Graphics/ShaderCompiler.h"
 #include "Koi/Engine/Core/Config.h"
 #include <mutex>

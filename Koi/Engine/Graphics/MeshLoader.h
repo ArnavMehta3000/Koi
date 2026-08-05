@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Graphics/Types.h"
 #include <filesystem>
 #include <memory>

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Core/Handle.h"
 #include "Koi/Engine/Assets/AssetTraits.h"
 #include "Koi/Engine/Logging/Logger.h"

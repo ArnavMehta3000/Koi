@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Koi/Engine/Assets/AssetCache.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 

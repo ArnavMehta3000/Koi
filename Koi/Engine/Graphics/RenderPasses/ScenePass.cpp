@@ -1,4 +1,4 @@
-﻿#include "Koi/Engine/Graphics/RenderPasses/ScenePass.h"
+#include "Koi/Engine/Graphics/RenderPasses/ScenePass.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
