@@ -139,7 +139,17 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::HostTick(f32 dt)
 	{
-		m_viewportPanel->Update(dt, Engine::Get().GetSubsystem<InputManager>());
+		InputManager& input = Engine::Get().GetSubsystem<InputManager>();
+
+		// Hot-reload runs before frame so that commandlist invalidation doesn't happen
+		if (input.IsKeyPressed(KeyCode::F5))
+		{
+			// TODO: Add proper hotreloading logic instead of reloading everything
+			InvalidateShaderCache();
+			ReloadAll();
+		}
+
+		m_viewportPanel->Update(dt, input);
 
 		// The game always ticks. What play state gates is the world's simulation, and
 		// World::Update decides that itself, so nothing here has to know the difference
@@ -266,14 +276,6 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGuizmo::BeginFrame();
-
-		// Ask engine and game to recompile shaders and rebuild pipelines
-		if (engine.GetSubsystem<InputManager>().IsKeyPressed(KeyCode::F5))
-		{
-			// TODO: Add proper hotreloading logic instead of reloading everything
-			InvalidateShaderCache();
-			ReloadAll();
-		}
 
 		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 		DrawMenuBar();

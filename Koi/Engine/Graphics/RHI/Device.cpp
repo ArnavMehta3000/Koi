@@ -518,13 +518,14 @@ namespace koi
 		}
 	}
 
-	PipelineHandle GfxDevice::CreatePipeline(const PipelineDesc& desc)
+	ComPtr<dx12::PipelineState> GfxDevice::BuildPipelineState(const PipelineDesc& desc)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(!desc.VertexShader.empty() && "PipelineDesc missing vertex shader");
 		assert(!desc.PixelShader.empty() && "PipelineDesc missing pixel shader");
+		assert(desc.RenderTargetCount <= MAX_RENDER_TARGETS && "Too many render targets");
 		assert(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN &&
 			"PipelineDesc has neither render targets nor a depth target");
 
@@ -614,17 +615,45 @@ namespace koi
 		}
 
 		// Create pipeline/PSO
-		Pipeline pipeline{ .Topology = desc.Topology };
-		DX_CHECK(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline.Pso)));
+		ComPtr<dx12::PipelineState> pso;
+		DX_CHECK(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
 
-		if (!desc.DebugName.empty())
+		if (pso && !desc.DebugName.empty())
 		{
 			const std::wstring wname = StringUtils::ToWide(std::string(desc.DebugName));
-			pipeline.Pso->SetName(wname.c_str());
+			pso->SetName(wname.c_str());
 		}
 
+		return pso;
+	}
+
+	PipelineHandle GfxDevice::CreatePipeline(const PipelineDesc& desc)
+	{
+		ComPtr<dx12::PipelineState> pso = BuildPipelineState(desc);
+		if (!pso)
+			return {};
+
 		KOI_LOG_DEBUG("Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
-		return m_pipelines.Emplace(std::move(pipeline));
+		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(pso), .Topology = desc.Topology });
+	}
+
+	bool GfxDevice::RecreatePipeline(PipelineHandle h, const PipelineDesc& desc)
+	{
+		if (!m_pipelines.Get(h))  // Handle is invalid
+			return false;
+
+		// Rebuild pipeline
+		ComPtr<dx12::PipelineState> pso = BuildPipelineState(desc);
+		if (!pso)
+			return false;
+
+		// Overwrite old pipeline
+		Pipeline* pipeline = m_pipelines.Get(h);  assert(pipeline);
+		pipeline->Pso      = std::move(pso);
+		pipeline->Topology = desc.Topology;
+
+		KOI_LOG_DEBUG("Recreated pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		return true;
 	}
 
 	DescriptorIndex GfxDevice::CreateSampler(const D3D12_SAMPLER_DESC& desc)

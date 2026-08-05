@@ -100,9 +100,12 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		KOI_LOG_DEBUG("Rebuilding default pipelines");
 
-		auto destroyIfValid = [&](PipelineHandle& h)
+		// Rebuild in place when the pipeline already exists
+		auto build = [&](PipelineHandle& h, const PipelineDesc& desc)
 		{
-			if (h) { device.Destroy(h); h = {}; }
+			// On a failed rebuild the existing pipeline is left intact so the frame still renders.
+			if (h) device.RecreatePipeline(h, desc);
+			else h = device.CreatePipeline(desc);
 		};
 
 		// --- Tonemap ---
@@ -115,8 +118,7 @@ namespace koi
 			}
 			else
 			{
-				destroyIfValid(TonemapPipeline);
-				TonemapPipeline = device.CreatePipeline(PipelineDesc
+				build(TonemapPipeline, PipelineDesc
 				{
 					.VertexShader        = vsData,
 					.PixelShader         = psData,
@@ -139,8 +141,7 @@ namespace koi
 			}
 			else
 			{
-				destroyIfValid(MeshOpaquePipeline);
-				MeshOpaquePipeline = device.CreatePipeline(PipelineDesc
+				build(MeshOpaquePipeline, PipelineDesc
 				{
 					.VertexShader        = vsData,
 					.PixelShader         = psData,
@@ -153,8 +154,7 @@ namespace koi
 					.DebugName           = "Mesh.Opaque",
 				});
 
-				destroyIfValid(MeshWireframePipeline);
-				MeshWireframePipeline = device.CreatePipeline(PipelineDesc
+				build(MeshWireframePipeline, PipelineDesc
 				{
 					.VertexShader        = vsData,
 					.PixelShader         = psData,
@@ -178,8 +178,7 @@ namespace koi
 			}
 			else
 			{
-				destroyIfValid(GBufferPipeline);
-				GBufferPipeline = device.CreatePipeline(PipelineDesc
+				build(GBufferPipeline, PipelineDesc
 				{
 					.VertexShader        = vsData,
 					.PixelShader         = psData,
@@ -205,8 +204,7 @@ namespace koi
 			}
 			else
 			{
-				destroyIfValid(LightingPipeline);
-				LightingPipeline = device.CreatePipeline(PipelineDesc
+				build(LightingPipeline, PipelineDesc
 				{
 					.VertexShader        = vsData,
 					.PixelShader         = psData,

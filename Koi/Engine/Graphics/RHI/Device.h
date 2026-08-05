@@ -94,6 +94,10 @@ namespace koi
 		[[nodiscard]] BufferHandle   CreateBuffer(const BufferDesc& desc);
 		[[nodiscard]] PipelineHandle CreatePipeline(const PipelineDesc& desc);
 
+		// Rebuilds an existing pipeline in place | call at a frame boundary: the old PSO is released immediately,
+		// so no command list may still be recording draws against it
+		bool RecreatePipeline(PipelineHandle h, const PipelineDesc& desc);
+
 		// Creates a sampler in the shader-visible sampler heap; returns its bindless index.
 		[[nodiscard]] DescriptorIndex CreateSampler(const D3D12_SAMPLER_DESC& desc);
 
@@ -122,6 +126,7 @@ namespace koi
 		void CreateFences();
 		void CreateHeaps();
 		void CreateRootSignature();
+		[[nodiscard]] ComPtr<dx12::PipelineState> BuildPipelineState(const PipelineDesc& desc);
 		void FlushDeferredDeletions(u64 completedFence);
 		void ReportLiveResources();
 
