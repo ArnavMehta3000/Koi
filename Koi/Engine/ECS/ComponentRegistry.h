@@ -2,7 +2,6 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 #include <span>
-#include <string_view>
 #include <vector>
 
 namespace koi

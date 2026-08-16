@@ -1,8 +1,8 @@
 #include "Koi/Editor/Panels/GBufferDebugPanel.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
-#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 #include <imgui.h>

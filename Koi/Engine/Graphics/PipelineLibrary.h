@@ -1,5 +1,4 @@
 #pragma once
-#include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Graphics/RHI/PipelineDesc.h"
 #include <span>
@@ -10,8 +9,6 @@ namespace koi
 {
 	class GfxDevice;
 
-	// A pipeline described by the shaders it needs rather than the bytecode it was built from,
-	// so it can be rebuilt whenever those shaders change
 	struct PipelineRecipe
 	{
 		std::string  Name;          // debug name, owned here because PipelineDesc only holds a view
@@ -20,8 +17,8 @@ namespace koi
 		PipelineDesc Desc;          // shader bytecode and DebugName are filled in at build time
 	};
 
-	// Owns the recipe behind every pipeline the engine builds. Handles stay valid across a
-	// rebuild (RecreatePipeline swaps the PSO in place), so anything holding one keeps working
+	// Owns the recipe behind every pipeline the engine builds. Handles stay valid across a rebuild
+	// See Device::RecreatePipeline()
 	class PipelineLibrary : public NonCopyable
 	{
 	public:
@@ -46,7 +43,7 @@ namespace koi
 			PipelineHandle Handle;
 		};
 
-		// A failed build leaves any existing pipeline intact, so the frame still renders
+		// A failed build leaves any existing pipeline intact
 		bool Build(GfxDevice& device, Entry& entry);
 
 	private:

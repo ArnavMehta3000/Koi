@@ -1,11 +1,9 @@
 #include "Koi/Engine/Runtime/AppBase.h"
-#include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Interop/EditorContext.h"
+#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
-#include "Koi/Engine/ECS/World.h"
-#include "Koi/Engine/Diagnostics/Profiling.h"
-#include <cassert>
+#include "Koi/Engine/Interop/EditorContext.h"
+#include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi
 {

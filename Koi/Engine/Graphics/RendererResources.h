@@ -28,7 +28,7 @@ namespace koi
 		void Shutdown(GfxDevice& device);
 
 	private:
-		// The library owns the recipes and rebuilds them on reload; we only keep the handles
+		// The library owns the recipes and rebuilds them on reload; we only cache the handles
 		void RegisterPipelines(GfxDevice& device, PipelineLibrary& library);
 	};
 }

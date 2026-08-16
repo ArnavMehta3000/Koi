@@ -18,8 +18,6 @@ namespace koi
 	public:
 		virtual ~IReloadable() = default;
 
-		// Implementations decide what "changed" means for their own sources, so the caller
-		// never has to know which kinds of file exist
 		virtual void Reload(const ReloadRequest& request) = 0;
 	};
 }

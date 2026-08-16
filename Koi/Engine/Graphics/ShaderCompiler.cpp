@@ -1,15 +1,13 @@
 #include "Koi/Engine/Graphics/ShaderCompiler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Text/StringUtils.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
-#include <d3d12shader.h>
+#include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Text/StringUtils.h"
 #include <algorithm>
-#include <unordered_map>
 #include <fstream>
-#include <string_view>
 #include <span>
+#include <unordered_map>
 
 namespace koi
 {
@@ -118,17 +116,8 @@ namespace koi
 				return E_NOINTERFACE;
 			}
 
-			ULONG STDMETHODCALLTYPE AddRef() override
-			{
-				return ++m_refCount;
-			}
-
-			ULONG STDMETHODCALLTYPE Release() override
-			{
-				const ULONG count = --m_refCount;
-				if (count == 0) delete this;
-				return count;
-			}
+			ULONG STDMETHODCALLTYPE AddRef() override { return 1; }
+			ULONG STDMETHODCALLTYPE Release() override { return 1; }
 
 			[[nodiscard]] const std::vector<fs::path>& GetResolvedIncludes() const { return m_resolved; }
 
@@ -136,7 +125,6 @@ namespace koi
 			ComPtr<IDxcUtils>     m_utils;
 			std::vector<fs::path> m_searchDirs;
 			std::vector<fs::path> m_resolved;
-			std::atomic<ULONG>    m_refCount = 1;
 		};
 	}
 
@@ -197,21 +185,21 @@ namespace koi
 			&compilerArgs));
 
 		// Compile
-		auto* includeCollector = new ShaderIncludeHandler(m_dxcUtils, filePath.parent_path());
-		ComPtr<IDxcIncludeHandler> includeHandler;
-		includeHandler.Attach(includeCollector);
+		ShaderIncludeHandler includeHandler(m_dxcUtils, filePath.parent_path());
 
 		ComPtr<IDxcResult> results;
 		DX_CHECK(m_dxcCompiler->Compile(
 			&source,
 			compilerArgs->GetArguments(),
 			compilerArgs->GetCount(),
-			includeHandler.Get(),
+			&includeHandler,
 			IID_PPV_ARGS(&results)));
 
 		// Reported even when the compile fails, so a fix to a bad header still invalidates
 		if (outIncludes)
-			*outIncludes = includeCollector->GetResolvedIncludes();
+		{
+			*outIncludes = includeHandler.GetResolvedIncludes();
+		}
 
 		// Print errors or warnings
 		ComPtr<IDxcBlobUtf8> errors;
@@ -256,7 +244,7 @@ namespace koi
 				}
 			}
 
-			// Save PDB next to the CSO (prioritizing the hash over shader name for the PDB name)s
+			// Save PDB next to the CSO (prioritizing the hash over shader name for the PDB name)
 			{
 				ComPtr<IDxcBlob> pdbBlob;
 				ComPtr<IDxcBlobWide> pdbName;
@@ -289,7 +277,7 @@ namespace koi
 					{
 						hashStr += fmt::format(L"{:02x}", hashDigest[i]);
 					}
-					
+
 					KOI_LOG_TRACE("Compiled shader ({}) hash: {}", StringUtils::FromWide(shaderName), StringUtils::FromWide(hashStr));
 				}
 			}

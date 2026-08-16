@@ -1,7 +1,7 @@
 // Contains macros to create the platform independent main  function
 
 #pragma once
-#include "Koi/Engine/Core/Core.h"
+#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Platform/Win32.h"
 #include <memory>
 

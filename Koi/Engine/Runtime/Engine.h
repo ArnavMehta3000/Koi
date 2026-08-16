@@ -1,17 +1,18 @@
 #pragma once
-#include "Koi/Engine/Core/Core.h"
-#include "Koi/Engine/Platform/Window.h"
-#include "Koi/Engine/Platform/InputManager.h"
-#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Core/Types.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
-#include "Koi/Engine/Runtime/Timer.h"
+#include "Koi/Engine/Platform/InputManager.h"
+#include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
-#include "Koi/Engine/Interop/AppHost.h"
+#include "Koi/Engine/Runtime/Timer.h"
 #include <optional>
 
 namespace koi
 {
+	class IAppHost;
+
 	enum class PlayState : u8
 	{
 		Edit,
@@ -54,7 +55,6 @@ namespace koi
 		[[nodiscard]] inline const Window& GetWindow() const { return *m_window; }
 
 		template <typename T> [[nodiscard]] inline T& GetSubsystem() { return m_systems.Get<T>(); }
-		template <typename T> [[nodiscard]] inline const T& GetSubsystem() const { return m_systems.Get<T>(); }
 
 		[[nodiscard]] Stats GetStats() const;
 

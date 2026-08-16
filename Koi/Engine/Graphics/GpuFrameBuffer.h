@@ -2,7 +2,6 @@
 #include "Koi/Engine/Graphics/Types.h"
 #include <span>
 #include <string>
-#include <string_view>
 
 namespace koi
 {

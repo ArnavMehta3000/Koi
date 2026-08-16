@@ -1,16 +1,16 @@
 #include "Koi/Engine/Runtime/EntryPoint.h"
-#include "Koi/Engine/Runtime/AppBase.h"
-#include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Interop/AppHost.h"
-#include "Koi/Engine/Text/StringUtils.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
+#include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/CommandLine.h"
+#include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Text/StringUtils.h"
+#include <cassert>
 #include <filesystem>
 #include <memory>
-#include <span>
-#include <vector>
 #include <string>
-#include <cassert>
+#include <vector>
 
 namespace koi::internal
 {

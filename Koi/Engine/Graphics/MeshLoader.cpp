@@ -1,17 +1,16 @@
 #include "Koi/Engine/Graphics/MeshLoader.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include <fastgltf/core.hpp>
-#include <fastgltf/types.hpp>
 #include <fastgltf/tools.hpp>
+#include <fastgltf/types.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <vector>
-#include <string>
-#include <unordered_map>
+
 #include <cstring>
+#include <unordered_map>
 
 namespace koi
 {

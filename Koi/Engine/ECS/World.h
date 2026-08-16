@@ -1,12 +1,10 @@
 #pragma once
-#include "Koi/Engine/Math/Math.h"
-#include "Koi/Engine/Math/Transform.h"
-#include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/ECS/Components.h"
+#include "Koi/Engine/Graphics/Camera.h"
 #include <flecs.h>
 #include <toml++/toml.hpp>
-#include <optional>
 #include <filesystem>
+#include <optional>
 
 namespace koi
 {

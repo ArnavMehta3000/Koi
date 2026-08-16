@@ -1,8 +1,8 @@
 #include "Koi/Engine/Runtime/EntryPoint.h"
+#include "Koi/Editor/EditorApp.h"
+#include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/CommandLine.h"
-#include "Koi/Engine/Interop/AppHost.h"
-#include "Koi/Editor/EditorApp.h"
 #include <filesystem>
 #include <memory>
 

@@ -1,16 +1,11 @@
 // Contains the static Logger class, using spdlog under the hood
 
 #pragma once
-#include "Koi/Engine/Core/Core.h"
+#include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Core/LogLevel.h"
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/msvc_sink.h>
 #include <memory>
 #include <string>
-#include <string_view>
-#include <unordered_map>
 
 namespace koi
 {

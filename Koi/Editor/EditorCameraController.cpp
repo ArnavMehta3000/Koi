@@ -1,10 +1,9 @@
 #include "Koi/Editor/EditorCameraController.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Platform/InputManager.h"
-#include "Koi/Engine/Math/Math.h"
 #include <algorithm>
-#include <numbers>
 #include <cassert>
+#include <numbers>
 
 namespace koi
 {

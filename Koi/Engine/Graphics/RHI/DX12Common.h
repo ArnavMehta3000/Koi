@@ -7,7 +7,7 @@
 #define D3DX12_USE_ARRAY_COM_PTR
 #include <directx/d3dx12.h>
 #include <dxgi1_6.h>
-#include <concepts>
+#include <type_traits>
 
 namespace koi
 {

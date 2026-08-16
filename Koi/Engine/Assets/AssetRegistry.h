@@ -14,8 +14,7 @@ namespace koi
 	class AssetRegistryFor : public NonCopyable
 	{
 	public:
-		// Assets are released against the device, so the Renderer must outlive us
-		using Dependencies = TypeList<Renderer>;
+		using Dependencies = TypeList<Renderer>;  // Used by engine subsystems
 
 		template<typename T> [[nodiscard]] AssetCache<T>&       Cache()       { return std::get<AssetCache<T>>(m_caches); }
 		template<typename T> [[nodiscard]] const AssetCache<T>& Cache() const { return std::get<AssetCache<T>>(m_caches); }

@@ -3,8 +3,6 @@
 
 namespace koi
 {
-	class World;
-
 	struct Transform
 	{
 		Vector3 Position    = Vector3::Zero;

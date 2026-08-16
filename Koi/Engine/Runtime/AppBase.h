@@ -1,17 +1,18 @@
 #pragma once
-#include "Koi/Engine/Platform/Window.h"
-#include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Runtime/CommandLine.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Interop/ViewportTarget.h"
+#include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Platform/Window.h"
+#include <cassert>
+#include <memory>
 #include <optional>
 
 namespace koi
 {
+	class CommandLine;
 	class Engine;
-	class World;
 	class IEditorContext;
-	struct Camera;
+	class World;
 
 	struct AppCreateDesc
 	{

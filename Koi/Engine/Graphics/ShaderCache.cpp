@@ -1,11 +1,10 @@
 #include "Koi/Engine/Graphics/ShaderCache.h"
-#include "Koi/Engine/Graphics/ShaderCompiler.h"
 #include "Koi/Engine/Core/Config.h"
+#include "Koi/Engine/Graphics/ShaderCompiler.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <algorithm>
-#include <filesystem>
 
 namespace koi
 {
@@ -30,7 +29,7 @@ namespace koi
 		}
 	}
 
-	size_t ShaderKeyHash::operator()(const ShaderKey& key) const noexcept
+	size_t ShaderKey::Hash::operator()(const ShaderKey& key) const noexcept
 	{
 		size_t seed = std::hash<std::string>{}(key.Path);
 		HashCombine(seed, static_cast<size_t>(key.Type));

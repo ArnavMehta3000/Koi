@@ -1,14 +1,11 @@
 #include "Koi/Engine/ECS/World.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
-#include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
-#include <cassert>
+#include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include <fstream>
-#include <sstream>
-#include <vector>
 
 namespace koi
 {

@@ -1,15 +1,18 @@
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Text/StringUtils.h"
-#include "Koi/Engine/Platform/Win32.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Platform/Win32.h"
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/msvc_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <cassert>
 #include <filesystem>
-#include <io.h>
-#include <fcntl.h>
+#include <iostream>
+#include <unordered_map>
+
+namespace fs = std::filesystem;
 
 namespace koi
 {
-	namespace fs = std::filesystem;
 	namespace
 	{
 		struct LoggerData

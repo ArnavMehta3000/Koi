@@ -1,5 +1,5 @@
 #include "Koi/Engine/ECS/ComponentInspectors.h"
-#include "Koi/Engine/Core/Core.h"
+#include "Koi/Engine/Core/Config.h"
 
 #if KOI_WITH_EDITOR
 

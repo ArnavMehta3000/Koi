@@ -1,8 +1,8 @@
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
-#include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 
 namespace koi
@@ -13,7 +13,9 @@ namespace koi
 
 		Entry& entry = m_entries.emplace_back(Entry{ .Recipe = std::move(recipe) });
 		if (!Build(device, entry))
+		{
 			KOI_LOG_ERROR("PipelineLibrary: failed to build '{}'", entry.Recipe.Name);
+		}
 
 		return entry.Handle;
 	}
@@ -26,9 +28,13 @@ namespace koi
 		for (Entry& entry : m_entries)
 		{
 			if (Build(device, entry))
+			{
 				++rebuilt;
+			}
 			else
+			{
 				KOI_LOG_ERROR("PipelineLibrary: failed to rebuild '{}'", entry.Recipe.Name);
+			}
 		}
 
 		KOI_LOG_DEBUG("PipelineLibrary: rebuilt {}/{} pipeline(s)", rebuilt, m_entries.size());

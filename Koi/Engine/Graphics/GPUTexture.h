@@ -1,5 +1,4 @@
 #pragma once
-#include "Koi/Engine/Core/Handle.h"
 #include "Koi/Engine/Graphics/Types.h"
 
 namespace koi

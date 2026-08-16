@@ -1,14 +1,13 @@
 #pragma once
-#include "Koi/Engine/Graphics/Format.h"
-#include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/CommandAllocator.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/CommandQueue.h"
-#include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Interop/Reloadable.h"
+#include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
 #include <memory>
 #include <optional>
@@ -37,12 +36,12 @@ namespace koi
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_frameGraph;           }
-		[[nodiscard]] inline PipelineLibrary&        GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
-		[[nodiscard]] inline const PipelineLibrary&  GetPipelineLibrary() const noexcept  { return m_pipelineLibrary;      }
+		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
+		[[nodiscard]] inline const PipelineLibrary&   GetPipelineLibrary() const noexcept  { return m_pipelineLibrary;      }
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
 
-		void SetOverlay(IRendererOverlay* overlay) noexcept { m_overlay = overlay; }
+		inline void SetOverlay(IRendererOverlay* overlay) noexcept { m_overlay = overlay; }
 
 		void BeginFrame();
 		void EndFrame();

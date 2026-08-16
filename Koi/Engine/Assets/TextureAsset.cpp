@@ -1,10 +1,9 @@
 #include "Koi/Engine/Assets/TextureAsset.h"
-#include "Koi/Engine/IO/VirtualFileSystem.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "stb_image.h"
-#include <filesystem>
 
 namespace koi
 {
@@ -21,8 +20,8 @@ namespace koi
 
 		// glTF texture URIs resolve to real files on disk already; anything authored as a VFS path
 		// goes through the mount table first.
-		const std::filesystem::path diskPath =
-			VirtualFileSystem::Get().TryResolveToDisk(vfsPath).value_or(std::filesystem::path(vfsPath));
+		const fs::path diskPath =
+			VirtualFileSystem::Get().TryResolveToDisk(vfsPath).value_or(fs::path(vfsPath));
 
 		auto image = std::make_unique<ImageAsset>();
 

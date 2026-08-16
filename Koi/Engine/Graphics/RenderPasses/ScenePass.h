@@ -2,7 +2,6 @@
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
-#include "Koi/Engine/ECS/Components.h"
 #include <flecs.h>
 #include <array>
 

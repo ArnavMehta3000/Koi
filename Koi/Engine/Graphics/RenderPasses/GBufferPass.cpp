@@ -1,15 +1,12 @@
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
-#include "Koi/Engine/Graphics/GPUSceneTypes.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Graphics/Camera.h"
-#include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/ECS/World.h"
-#include "Koi/Engine/Math/Math.h"
-#include <array>
+#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 
 namespace koi

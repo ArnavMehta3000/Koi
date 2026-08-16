@@ -4,7 +4,6 @@
 #include <compare>
 #include <limits>
 #include <vector>
-#include <array>
 #include <span>
 
 namespace koi

@@ -1,16 +1,13 @@
 #pragma once
-#include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Graphics/Types.h"
 #include <filesystem>
-#include <functional>
 #include <span>
-#include <string>
-#include <string_view>
 #include <unordered_map>
-#include <vector>
 
 namespace koi
 {
+	namespace fs = std::filesystem;
+
 	struct ShaderDefine
 	{
 		std::string Name;
@@ -20,16 +17,16 @@ namespace koi
 	// Identifies one compiled variant of one shader source
 	struct ShaderKey
 	{
-		std::string Path;                      // virtual path, no extension
+		std::string Path;       // virtual path, no extension
 		ShaderType  Type        = ShaderType::Unknown;
 		u64         DefinesHash = 0;
 
 		bool operator==(const ShaderKey&) const = default;
-	};
 
-	struct ShaderKeyHash 
-	{
-		[[nodiscard]] size_t operator()(const ShaderKey& key) const noexcept;
+		struct Hash
+		{
+			[[nodiscard]] size_t operator()(const ShaderKey& key) const noexcept;
+		};
 	};
 
 	// *VS -> Vertex, *PS -> Pixel, etc
@@ -59,11 +56,10 @@ namespace koi
 		void InvalidateAll();
 
 	private:
-		// One file an entry was compiled from, with the timestamp it had at the time
 		struct Dependency
 		{
-			std::filesystem::path           Path;
-			std::filesystem::file_time_type Stamp{};
+			fs::path           Path;
+			fs::file_time_type Stamp{};
 		};
 
 		struct Entry
@@ -77,11 +73,11 @@ namespace koi
 		[[nodiscard]] bool LoadBytecode(const ShaderKey& key, std::span<const ShaderDefine> defines, Entry& outEntry) const;
 
 		// The first dependency that no longer matches its recorded timestamp, or null if none
-		[[nodiscard]] static const std::filesystem::path* FindChangedDependency(const Entry& entry);
+		[[nodiscard]] static const fs::path* FindChangedDependency(const Entry& entry);
 
-		static void AddDependency(Entry& entry, const std::filesystem::path& path);
+		static void AddDependency(Entry& entry, const fs::path& path);
 
 	private:
-		std::unordered_map<ShaderKey, Entry, ShaderKeyHash> m_entries;
+		std::unordered_map<ShaderKey, Entry, ShaderKey::Hash> m_entries;
 	};
 }

@@ -25,8 +25,7 @@ namespace koi
 
 		// When outIncludes is given, it receives every file resolved through #include
 		// during this compile, in the order DXC asked for them
-		ComPtr<IDxcBlob> CompileFromFile(const fs::path& filePath, const Args& args = {},
-		                                 std::vector<fs::path>* outIncludes = nullptr);
+		ComPtr<IDxcBlob> CompileFromFile(const fs::path& filePath, const Args& args = {}, std::vector<fs::path>* outIncludes = nullptr);
 
 	private:
 		ShaderCompiler();

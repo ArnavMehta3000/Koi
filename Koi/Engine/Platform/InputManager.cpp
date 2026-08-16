@@ -1,8 +1,8 @@
 #include "Koi/Engine/Platform/InputManager.h"
-#include "Koi/Engine/Platform/Window.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include <cassert>
+#include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Platform/Window.h"
 
 #ifndef GLFW_INCLUDE_NONE
 	#define GLFW_INCLUDE_NONE
@@ -12,6 +12,8 @@
 #if KOI_WITH_EDITOR
 	#include <imgui.h>
 #endif
+
+#include <cassert>
 
 namespace koi
 {

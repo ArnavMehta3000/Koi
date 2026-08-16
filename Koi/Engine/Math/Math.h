@@ -1,15 +1,11 @@
 // DirectXTK SimpleMath types + engine math helpers
 #pragma once
 
-#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Core/Types.h"
-
 #include <SimpleMath.h>
 
 namespace koi
 {
-	class World;
-
 	using Vector2    = DirectX::SimpleMath::Vector2;
 	using Vector3    = DirectX::SimpleMath::Vector3;
 	using Vector4    = DirectX::SimpleMath::Vector4;

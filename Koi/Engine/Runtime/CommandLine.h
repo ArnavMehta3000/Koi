@@ -1,6 +1,8 @@
 #pragma once
+#include "Koi/Engine/Platform/Win32.h"
 #include <CLI/CLI.hpp>
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <memory>
 

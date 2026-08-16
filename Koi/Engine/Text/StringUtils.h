@@ -1,12 +1,10 @@
 // Contains utility functions for string manipulation in static StringUtils class
 #pragma once
-#include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Platform/Win32.h"
-#include <string>
-#include <string_view>
-#include <vector>
-#include <optional>
 #include <charconv>
+#include <optional>
+#include <ranges>
+#include <string>
+#include <vector>
 
 namespace koi
 {

@@ -1,27 +1,20 @@
 #include "Koi/Engine/Platform/Window.h"
-#include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
-#include <windowsx.h>
-#include <dwmapi.h>
-
-#undef IsMinimized
-#undef IsMaximized
+#include "Koi/Engine/Platform/Win32.h"
 
 #ifndef GLFW_INCLUDE_NONE
 	#define GLFW_INCLUDE_NONE
 #endif
-
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+#include <dwmapi.h>
+
 #include <cassert>
 #include <stdexcept>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
-#include "Koi/Engine/Platform/Win32.h"
-#include <windowsx.h>
-#include <dwmapi.h>
-#undef IsMinimized
-#undef IsMaximized
 
 namespace koi
 {

@@ -1,12 +1,11 @@
 #pragma once
-#include "Koi/Engine/Core/Core.h"
-#include "Koi/Engine/Core/Handle.h"
-#include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Core/EnumFlags.h"
+#include "Koi/Engine/Core/Handle.h"
+#include "Koi/Engine/Core/Macros.h"
 #include "Koi/Engine/Graphics/Format.h"
-#include <string>
-#include <string_view>
+#include "Koi/Engine/Math/Math.h"
 #include <array>
+#include <string>
 #include <vector>
 
 namespace koi

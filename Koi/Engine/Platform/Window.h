@@ -1,18 +1,9 @@
 // Contains GLFW wrapper window class
 
 #pragma once
-#include "Koi/Engine/Core/Core.h"
-#include "Koi/Engine/Platform/Win32.h"
-#include <string>
-#include <memory>
+#include "Koi/Engine/Core/Types.h"
 #include <functional>
-
-#ifndef GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_NONE
-#endif
-#include <GLFW/glfw3.h>
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include <GLFW/glfw3native.h>
+#include <string>
 
 struct GLFWwindow;
 
