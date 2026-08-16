@@ -5,6 +5,7 @@
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include <d3d12shader.h>
+#include <algorithm>
 #include <unordered_map>
 #include <fstream>
 #include <string_view>
@@ -97,6 +98,10 @@ namespace koi
 
 				m_searchDirs.push_back(resolved->parent_path());
 
+				// Include guards don't stop DXC asking twice, so keep the list unique
+				if (std::ranges::find(m_resolved, *resolved) == m_resolved.end())
+					m_resolved.push_back(*resolved);
+
 				*includeSource = blob.Detach();
 				return S_OK;
 			}
@@ -125,9 +130,12 @@ namespace koi
 				return count;
 			}
 
+			[[nodiscard]] const std::vector<fs::path>& GetResolvedIncludes() const { return m_resolved; }
+
 		private:
 			ComPtr<IDxcUtils>     m_utils;
 			std::vector<fs::path> m_searchDirs;
+			std::vector<fs::path> m_resolved;
 			std::atomic<ULONG>    m_refCount = 1;
 		};
 	}
@@ -138,7 +146,7 @@ namespace koi
 		return instance;
 	}
 
-	ComPtr<IDxcBlob> ShaderCompiler::CompileFromFile(const fs::path& filePath, const Args& args)
+	ComPtr<IDxcBlob> ShaderCompiler::CompileFromFile(const fs::path& filePath, const Args& args, std::vector<fs::path>* outIncludes)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
@@ -189,8 +197,9 @@ namespace koi
 			&compilerArgs));
 
 		// Compile
+		auto* includeCollector = new ShaderIncludeHandler(m_dxcUtils, filePath.parent_path());
 		ComPtr<IDxcIncludeHandler> includeHandler;
-		includeHandler.Attach(new ShaderIncludeHandler(m_dxcUtils, filePath.parent_path()));
+		includeHandler.Attach(includeCollector);
 
 		ComPtr<IDxcResult> results;
 		DX_CHECK(m_dxcCompiler->Compile(
@@ -199,6 +208,10 @@ namespace koi
 			compilerArgs->GetCount(),
 			includeHandler.Get(),
 			IID_PPV_ARGS(&results)));
+
+		// Reported even when the compile fails, so a fix to a bad header still invalidates
+		if (outIncludes)
+			*outIncludes = includeCollector->GetResolvedIncludes();
 
 		// Print errors or warnings
 		ComPtr<IDxcBlobUtf8> errors;

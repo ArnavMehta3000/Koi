@@ -10,7 +10,9 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/ShaderCompiler.h"
-#include "Koi/Engine/Graphics/ShaderLoader.h"
+#include "Koi/Engine/Graphics/ShaderCache.h"
+#include "Koi/Engine/Graphics/PipelineLibrary.h"
+#include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/InputCodes.h"
@@ -144,9 +146,11 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		// Hot-reload runs before frame so that commandlist invalidation doesn't happen
 		if (input.IsKeyPressed(KeyCode::F5))
 		{
-			// TODO: Add proper hotreloading logic instead of reloading everything
-			InvalidateShaderCache();
-			ReloadAll();
+			// Shift forces everything; plain F5 leaves each target to reload what changed
+			ReloadAll(ReloadRequest
+			{
+				.Scope = input.IsModifierDown(Modifier::Shift) ? ReloadScope::All : ReloadScope::Changed
+			});
 		}
 
 		m_viewportPanel->Update(dt, input);
@@ -255,12 +259,12 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		return RenderView{ .Camera = camera, .Target = *target };
 	}
 
-	void EditorApp::ReloadAll()
+	void EditorApp::ReloadAll(const ReloadRequest& request)
 	{
 		KOI_LOG_INFO("Hot-reloading {} registered target(s)", m_reloadables.size());
 		for (IReloadable* reloadable : m_reloadables)
 		{
-			reloadable->Reload();
+			reloadable->Reload(request);
 		}
 	}
 
@@ -473,50 +477,61 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		// Cook layout: <out>/Engine/... and <out>/Project/
 		const fs::path projRoot = outRoot / "Project";
 
-		// Compile engine shaders -> <out>/Engine/Shaders/*.cso
-		const fs::path engineShaderSrc = m_config.EngineSource / "Shaders";
-		const fs::path engineShaderOut = outRoot / "Engine" / "Shaders";
-		fs::create_directories(engineShaderOut, ec);
-
-		// Compile project shaders -> <out>/Project/Assets/Shaders/*.cso
-		const fs::path projShaderSrc = m_config.ProjectSource / "Assets" / "Shaders";
-		const fs::path projShaderOut = projRoot / "Assets" / "Shaders";
-		fs::create_directories(projShaderOut, ec);
+		// Cook exactly the shaders the registered pipelines use, mirroring the virtual path
+		// layout, since that is what the runtime VFS resolves against
+		const std::vector<std::string> shaderPaths =
+			Engine::Get().GetSubsystem<Renderer>().GetPipelineLibrary().CollectShaderPaths();
 
 		u32 shaderOk = 0, shaderTotal = 0;
-		auto compileDir = [&](const fs::path& srcDir, const fs::path& outDir, const char* label)
+		for (const std::string& virtualPath : shaderPaths)
 		{
-			if (!fs::exists(srcDir)) return;
-			for (auto& entry : fs::directory_iterator(srcDir))
+			++shaderTotal;
+
+			const auto split = VirtualFileSystem::SplitVirtualPath(virtualPath);
+			if (!split)
 			{
-				if (!entry.is_regular_file()) continue;
-				if (entry.path().extension() != ".hlsl") continue;
-
-				const ShaderType type = InferShaderTypeFromName(entry.path().filename().string());
-				if (type == ShaderType::Unknown)
-				{
-					KOI_LOG_WARN("Cook: skipping '{}' (no VS/PS/CS suffix)", entry.path().filename().string());
-					continue;
-				}
-
-				++shaderTotal;
-				ShaderCompiler::Args args{};
-				args.Type   = type;
-				args.OutDir = outDir;
-				auto blob = ShaderCompiler::Get().CompileFromFile(entry.path(), args);
-				if (blob && blob->GetBufferSize() > 0)
-				{
-					KOI_LOG_DEBUG("Cook [{}]: {} OK", label, entry.path().filename().string());
-					++shaderOk;
-				}
-				else
-				{
-					KOI_LOG_ERROR("Cook [{}]: {} FAILED", label, entry.path().filename().string());
-				}
+				KOI_LOG_ERROR("Cook: '{}' is not a virtual path", virtualPath);
+				continue;
 			}
-		};
-		compileDir(engineShaderSrc, engineShaderOut, "engine");
-		compileDir(projShaderSrc,   projShaderOut,   "project");
+
+			const auto [scheme, relative] = *split;
+			if (scheme != "engine" && scheme != "project")
+			{
+				KOI_LOG_ERROR("Cook: unknown scheme '{}://' on '{}'", scheme, virtualPath);
+				continue;
+			}
+
+			const ShaderType type = InferShaderTypeFromName(virtualPath);
+			if (type == ShaderType::Unknown)
+			{
+				KOI_LOG_ERROR("Cook: cannot infer stage from '{}'", virtualPath);
+				continue;
+			}
+
+			const auto source = VirtualFileSystem::Get().TryResolveToDisk(std::string(virtualPath) + ".hlsl");
+			if (!source || !fs::exists(*source))
+			{
+				KOI_LOG_ERROR("Cook: source for '{}' not found on disk", virtualPath);
+				continue;
+			}
+
+			const fs::path outDir = outRoot
+				/ (scheme == "engine" ? "Engine" : "Project")
+				/ fs::path(relative).parent_path();
+			fs::create_directories(outDir, ec);
+
+			ShaderCompiler::Args args{ .Type = type, .OutDir = outDir };
+			auto blob = ShaderCompiler::Get().CompileFromFile(*source, args);
+			if (blob && blob->GetBufferSize() > 0)
+			{
+				KOI_LOG_DEBUG("Cook: {} OK", virtualPath);
+				++shaderOk;
+			}
+			else
+			{
+				KOI_LOG_ERROR("Cook: {} FAILED", virtualPath);
+			}
+		}
 
 		// non-shader project assets
 		auto copyDir = [&](const fs::path& src, const fs::path& dst)

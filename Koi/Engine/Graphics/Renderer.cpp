@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
+#include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Platform/Window.h"
@@ -24,7 +25,7 @@ namespace koi
 		m_device->SetDeviceNotify(this);
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
-		m_defaultResources.Init(*m_device);
+		m_defaultResources.Init(*m_device, m_pipelineLibrary);
 		KOI_LOG_INFO("Renderer initialized");
 	}
 
@@ -39,6 +40,7 @@ namespace koi
 		m_frameGraph.Clear();
 		m_frameContext.reset();
 		m_renderWindow.reset();
+		m_pipelineLibrary.Shutdown(*m_device);
 		m_defaultResources.Shutdown(*m_device);
 		m_device = nullptr;
 
@@ -119,10 +121,23 @@ namespace koi
 		KOI_LOG_INFO("Graphics device restored");
 	}
 
-	void Renderer::Reload()
+	void Renderer::Reload(const ReloadRequest& request)
 	{
-		KOI_LOG_DEBUG("Renderer: rebuilding default pipelines");
+		ShaderCache& shaders = ShaderCache::Get();
+
+		if (request.Scope == ReloadScope::All)
+		{
+			shaders.InvalidateAll();
+			m_device->WaitForIdle();
+			m_pipelineLibrary.RebuildAll(*m_device);
+			return;
+		}
+
+		const std::vector<std::string> changed = shaders.InvalidateStale();
+		if (changed.empty())
+			return;  // nothing recompiled, so nothing to rebuild and no reason to stall
+
 		m_device->WaitForIdle();
-		m_defaultResources.RebuildPipelines(*m_device);
+		m_pipelineLibrary.RebuildUsing(*m_device, changed);
 	}
 }

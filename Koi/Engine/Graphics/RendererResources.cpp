@@ -1,7 +1,7 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/PipelineDesc.h"
-#include "Koi/Engine/Graphics/ShaderLoader.h"
+#include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Logging/Logger.h"
 
@@ -34,7 +34,7 @@ namespace koi
 		return d;
 	}
 
-	void RendererResources::Init(GfxDevice& device)
+	void RendererResources::Init(GfxDevice& device, PipelineLibrary& library)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
@@ -72,19 +72,15 @@ namespace koi
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
 
 		KOI_LOG_DEBUG("Default textures and samplers created");
-		RebuildPipelines(device);
+		RegisterPipelines(device, library);
 	}
 
 	void RendererResources::Shutdown(GfxDevice& device)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		// Pipelines belong to the PipelineLibrary, which destroys them itself
 		device.Destroy(WhiteTexture);
 		device.Destroy(FlatNormalTexture);
-		device.Destroy(TonemapPipeline);
-		device.Destroy(MeshOpaquePipeline);
-		device.Destroy(MeshWireframePipeline);
-		device.Destroy(GBufferPipeline);
-		device.Destroy(LightingPipeline);
 		WhiteTexture          = {};
 		FlatNormalTexture     = {};
 		TonemapPipeline       = {};
@@ -95,126 +91,89 @@ namespace koi
 		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
 	}
 
-	void RendererResources::RebuildPipelines(GfxDevice& device)
+	void RendererResources::RegisterPipelines(GfxDevice& device, PipelineLibrary& library)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-		KOI_LOG_DEBUG("Rebuilding default pipelines");
-
-		// Rebuild in place when the pipeline already exists
-		auto build = [&](PipelineHandle& h, const PipelineDesc& desc)
-		{
-			// On a failed rebuild the existing pipeline is left intact so the frame still renders.
-			if (h) device.RecreatePipeline(h, desc);
-			else h = device.CreatePipeline(desc);
-		};
+		KOI_LOG_DEBUG("Registering default pipelines");
 
 		// --- Tonemap ---
+		TonemapPipeline = library.Register(device, PipelineRecipe
 		{
-			auto vsData = LoadShader("engine://Assets/Shaders/TonemapVS");
-			auto psData = LoadShader("engine://Assets/Shaders/TonemapPS");
-			if (vsData.empty() || psData.empty())
+			.Name         = "Tonemap",
+			.VertexShader = "engine://Assets/Shaders/TonemapVS",
+			.PixelShader  = "engine://Assets/Shaders/TonemapPS",
+			.Desc         =
 			{
-				KOI_LOG_ERROR("RendererResources: failed to load tonemap shaders");
-			}
-			else
-			{
-				build(TonemapPipeline, PipelineDesc
-				{
-					.VertexShader        = vsData,
-					.PixelShader         = psData,
-					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
-					.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
-					.RenderTargetFormats = { Format::R8G8B8A8_UNORM },
-					.RenderTargetCount   = 1,
-					.DebugName           = "Tonemap",
-				});
-			}
-		}
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+				.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
+				.RenderTargetFormats = { Format::R8G8B8A8_UNORM },
+				.RenderTargetCount   = 1,
+			},
+		});
 
 		// --- Mesh (opaque + wireframe share the same VS/PS) ---
+		MeshOpaquePipeline = library.Register(device, PipelineRecipe
 		{
-			auto vsData = LoadShader("engine://Assets/Shaders/MeshVS");
-			auto psData = LoadShader("engine://Assets/Shaders/MeshPS");
-			if (vsData.empty() || psData.empty())
+			.Name         = "Mesh.Opaque",
+			.VertexShader = "engine://Assets/Shaders/MeshVS",
+			.PixelShader  = "engine://Assets/Shaders/MeshPS",
+			.Desc         =
 			{
-				KOI_LOG_ERROR("RendererResources: failed to load mesh shaders");
-			}
-			else
-			{
-				build(MeshOpaquePipeline, PipelineDesc
-				{
-					.VertexShader        = vsData,
-					.PixelShader         = psData,
-					// Right-handed view/projection: front faces wind counter-clockwise on screen
-					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
-					.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-					.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
-					.RenderTargetCount   = 1,
-					.DepthFormat         = Format::D32_FLOAT,
-					.DebugName           = "Mesh.Opaque",
-				});
+				// Right-handed view/projection: front faces wind counter-clockwise on screen
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
+				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+				.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
+				.RenderTargetCount   = 1,
+				.DepthFormat         = Format::D32_FLOAT,
+			},
+		});
 
-				build(MeshWireframePipeline, PipelineDesc
-				{
-					.VertexShader        = vsData,
-					.PixelShader         = psData,
-					.Rasterizer          = { .FillMode = D3D12_FILL_MODE_WIREFRAME, .CullMode = D3D12_CULL_MODE_NONE },
-					.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-					.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
-					.RenderTargetCount   = 1,
-					.DepthFormat         = Format::D32_FLOAT,
-					.DebugName           = "Mesh.Wireframe",
-				});
-			}
-		}
+		MeshWireframePipeline = library.Register(device, PipelineRecipe
+		{
+			.Name         = "Mesh.Wireframe",
+			.VertexShader = "engine://Assets/Shaders/MeshVS",
+			.PixelShader  = "engine://Assets/Shaders/MeshPS",
+			.Desc         =
+			{
+				.Rasterizer          = { .FillMode = D3D12_FILL_MODE_WIREFRAME, .CullMode = D3D12_CULL_MODE_NONE },
+				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+				.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
+				.RenderTargetCount   = 1,
+				.DepthFormat         = Format::D32_FLOAT,
+			},
+		});
 
 		// --- G-buffer (deferred geometry: 3 color MRT + depth) ---
+		GBufferPipeline = library.Register(device, PipelineRecipe
 		{
-			auto vsData = LoadShader("engine://Assets/Shaders/GBufferVS");
-			auto psData = LoadShader("engine://Assets/Shaders/GBufferPS");
-			if (vsData.empty() || psData.empty())
+			.Name         = "GBuffer",
+			.VertexShader = "engine://Assets/Shaders/GBufferVS",
+			.PixelShader  = "engine://Assets/Shaders/GBufferPS",
+			.Desc         =
 			{
-				KOI_LOG_ERROR("RendererResources: failed to load gbuffer shaders");
-			}
-			else
-			{
-				build(GBufferPipeline, PipelineDesc
-				{
-					.VertexShader        = vsData,
-					.PixelShader         = psData,
-					// Same winding/cull as the opaque mesh pass (RH, front faces wind CCW).
-					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
-					.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-					// Must match GBufferPass::CreateRenderTargets and the shader's SV_Target formats.
-					.RenderTargetFormats = { Format::R8G8B8A8_UNORM, Format::R16G16B16A16_UNORM, Format::R8G8B8A8_UNORM },
-					.RenderTargetCount   = 3,
-					.DepthFormat         = Format::D32_FLOAT,
-					.DebugName           = "GBuffer",
-				});
-			}
-		}
+				// Same winding/cull as the opaque mesh pass (RH, front faces wind CCW).
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
+				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+				// Must match GBufferPass::CreateRenderTargets and the shader's SV_Target formats.
+				.RenderTargetFormats = { Format::R8G8B8A8_UNORM, Format::R16G16B16A16_UNORM, Format::R8G8B8A8_UNORM },
+				.RenderTargetCount   = 3,
+				.DepthFormat         = Format::D32_FLOAT,
+			},
+		});
 
 		// --- Deferred lighting (full-screen triangle: samples G-buffer -> HDR color) ---
+		LightingPipeline = library.Register(device, PipelineRecipe
 		{
-			auto vsData = LoadShader("engine://Assets/Shaders/LightingVS");
-			auto psData = LoadShader("engine://Assets/Shaders/LightingPS");
-			if (vsData.empty() || psData.empty())
+			.Name         = "DeferredLighting",
+			.VertexShader = "engine://Assets/Shaders/LightingVS",
+			.PixelShader  = "engine://Assets/Shaders/LightingPS",
+			.Desc         =
 			{
-				KOI_LOG_ERROR("RendererResources: failed to load lighting shaders");
-			}
-			else
-			{
-				build(LightingPipeline, PipelineDesc
-				{
-					.VertexShader        = vsData,
-					.PixelShader         = psData,
-					.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
-					.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
-					.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
-					.RenderTargetCount   = 1,
-					.DebugName           = "DeferredLighting",
-				});
-			}
-		}
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+				.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
+				.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
+				.RenderTargetCount   = 1,
+			},
+		});
 	}
 }

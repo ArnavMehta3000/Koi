@@ -3,6 +3,7 @@
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Interop/EditorContext.h"
+#include "Koi/Engine/Interop/Reloadable.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Editor/Selection.h"
 #include <toml++/toml.hpp>
@@ -61,7 +62,7 @@ namespace koi::editor
 		void InitImGui();
 		void ShutdownImGui();
 		void DrawMenuBar();
-		void ReloadAll();
+		void ReloadAll(const ReloadRequest& request);
 		void SaveScene();
 		void Cook();
 

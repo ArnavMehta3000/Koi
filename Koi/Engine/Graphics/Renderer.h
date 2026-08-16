@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Engine/Graphics/Format.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
+#include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/RHI/CommandAllocator.h"
@@ -36,6 +37,8 @@ namespace koi
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_frameGraph;           }
+		[[nodiscard]] inline PipelineLibrary&        GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
+		[[nodiscard]] inline const PipelineLibrary&  GetPipelineLibrary() const noexcept  { return m_pipelineLibrary;      }
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
 
@@ -47,7 +50,7 @@ namespace koi
 	private:
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
-		void Reload() override;
+		void Reload(const ReloadRequest& request) override;
 
 		struct FrameContext
 		{
@@ -60,6 +63,7 @@ namespace koi
 		CommandQueue                  m_graphicsQueue;
 		std::optional<RenderWindow>   m_renderWindow;
 		std::unique_ptr<FrameContext> m_frameContext;
+		PipelineLibrary               m_pipelineLibrary;
 		RendererResources             m_defaultResources;
 		RenderGraph                   m_frameGraph;
 		u32                           m_frameSlot = 0;

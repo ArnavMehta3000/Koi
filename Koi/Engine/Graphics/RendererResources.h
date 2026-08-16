@@ -4,6 +4,7 @@
 namespace koi
 {
 	class GfxDevice;
+	class PipelineLibrary;
 
 	struct RendererResources
 	{
@@ -23,10 +24,11 @@ namespace koi
 		PipelineHandle GBufferPipeline{};           // deferred geometry: 3 MRT (albedo/normals/material) + depth
 		PipelineHandle LightingPipeline{};          // full-screen deferred lighting: samples G-buffer -> HDR
 
-		void Init(GfxDevice& device);
+		void Init(GfxDevice& device, PipelineLibrary& library);
 		void Shutdown(GfxDevice& device);
 
-		// Reloads all pipelines from disk - call from OnShaderReload hook.
-		void RebuildPipelines(GfxDevice& device);
+	private:
+		// The library owns the recipes and rebuilds them on reload; we only keep the handles
+		void RegisterPipelines(GfxDevice& device, PipelineLibrary& library);
 	};
 }
