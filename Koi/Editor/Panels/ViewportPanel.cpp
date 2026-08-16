@@ -16,7 +16,7 @@
 #include <cmath>
 #include <limits>
 
-namespace koi
+namespace koi::editor
 {
 	// Must match the RT formats RendererResources bakes into MeshOpaquePipeline / TonemapPipeline
 	static constexpr Format kHDRFormat = Format::R16G16B16A16_FLOAT;
@@ -25,7 +25,7 @@ namespace koi
 	// A click that moves further than this is a camera drag, not a pick
 	static constexpr f32 kPickDragSlop = 4.0f;
 
-	ViewportPanel::ViewportPanel(Renderer& renderer, AppBase& game, EditorSelection& selection)
+	ViewportPanel::ViewportPanel(Renderer& renderer, AppBase& game, Selection& selection)
 		: m_renderer(&renderer)
 		, m_game(&game)
 		, m_selection(&selection)

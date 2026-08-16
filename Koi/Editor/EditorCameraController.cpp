@@ -5,7 +5,7 @@
 #include <cassert>
 #include <numbers>
 
-namespace koi
+namespace koi::editor
 {
 	static constexpr f32 kPi                     = std::numbers::pi_v<f32>;
 	static constexpr f32 kTwoPi                  = 2.0f * kPi;

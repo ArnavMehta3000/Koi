@@ -4,7 +4,7 @@
 #include <imgui.h>
 #include <deque>
 
-namespace koi
+namespace koi::editor
 {
 	class LogPanel : public IEditorPanel
 	{

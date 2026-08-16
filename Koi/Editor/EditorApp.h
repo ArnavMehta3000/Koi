@@ -14,13 +14,14 @@ namespace koi
 	class AppBase;
 	class Engine;
 	class CommandList;
-	class ViewportPanel;
-	enum class ViewportCamera : u8;
 }
 
 namespace koi::editor
 {
 	namespace fs = std::filesystem;
+
+	class ViewportPanel;
+	enum class ViewportCamera : u8;
 
 	struct EditorConfig
 	{
@@ -76,7 +77,7 @@ namespace koi::editor
 		std::vector<std::unique_ptr<IEditorPanel>>  m_panels;
 		std::vector<IReloadable*>                   m_reloadables;
 		ViewportPanel*                              m_viewportPanel    = nullptr;
-		EditorSelection                             m_selection{};
+		Selection                                   m_selection{};
 		bool                                        m_imguiInitialized = false;
 		std::string                                 m_lastCookStatus;  // shown in menubar after Cook click
 

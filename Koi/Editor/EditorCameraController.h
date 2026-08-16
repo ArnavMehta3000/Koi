@@ -6,7 +6,10 @@ namespace koi
 {
 	struct Camera;
 	class  InputManager;
+}
 
+namespace koi::editor
+{
 	enum class CameraMode : u8 { FirstPerson, Orbit };
 
 	class CameraController

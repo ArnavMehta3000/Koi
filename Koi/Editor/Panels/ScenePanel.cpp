@@ -4,7 +4,7 @@
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <imgui.h>
 
-namespace koi
+namespace koi::editor
 {
 	namespace
 	{

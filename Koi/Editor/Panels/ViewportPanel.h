@@ -10,7 +10,11 @@ namespace koi
 	class CommandList;
 	class InputManager;
 	class AppBase;
-	struct EditorSelection;
+}
+
+namespace koi::editor
+{
+	struct Selection;
 
 	enum class GizmoOp : u8
 	{
@@ -42,7 +46,7 @@ namespace koi
 	class ViewportPanel : public IEditorPanel
 	{
 	public:
-		ViewportPanel(Renderer& renderer, AppBase& game, EditorSelection& selection);
+		ViewportPanel(Renderer& renderer, AppBase& game, Selection& selection);
 		~ViewportPanel() override;
 
 		[[nodiscard]] std::string_view GetName() const override { return "Viewport"; }
@@ -70,7 +74,7 @@ namespace koi
 	private:
 		Renderer*         m_renderer;
 		AppBase*          m_game      = nullptr;
-		EditorSelection*  m_selection = nullptr;
+		Selection*        m_selection = nullptr;
 		ViewportTarget    m_target{};
 		bool              m_valid           = false;
 		u32               m_desiredWidth    = 1280;

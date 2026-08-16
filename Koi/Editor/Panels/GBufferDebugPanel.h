@@ -2,10 +2,10 @@
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include "Koi/Engine/Core/Types.h"
 
-namespace koi
-{
-	class Renderer;
+namespace koi { class Renderer; }
 
+namespace koi::editor
+{
 	class GBufferDebugPanel : public IEditorPanel
 	{
 	public:

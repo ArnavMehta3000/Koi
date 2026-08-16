@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <cstdio>
 
-namespace koi
+namespace koi::editor
 {
 	namespace
 	{

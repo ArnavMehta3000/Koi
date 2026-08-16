@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <imgui.h>
 
-namespace koi
+namespace koi::editor
 {
 	void GBufferDebugPanel::OnDraw()
 	{

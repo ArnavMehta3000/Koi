@@ -1,9 +1,9 @@
 #pragma once
 #include "Koi/Engine/ECS/World.h"
 
-namespace koi
+namespace koi::editor
 {
-	struct EditorSelection
+	struct Selection
 	{
 		Entity Selected;
 
