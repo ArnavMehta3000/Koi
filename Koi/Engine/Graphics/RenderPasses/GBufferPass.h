@@ -28,7 +28,6 @@ namespace koi
 		std::span<const RenderPassAttachment> GetOutputs() const override { return m_outputs; }
 		void Execute(CommandList& cmd) override;
 		void Reset() override;
-		void OnResize(u32 w, u32 h) override;
 
 		inline GBufferPass& SetWorld(World* world) { m_world = world; return *this; }
 		inline GBufferPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }

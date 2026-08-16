@@ -57,7 +57,12 @@ namespace koi
 
 		host.SetWindow(window);
 
-		SubsystemInitContext initCtx{ .MainWindow = window, .VSync = mainWndDesc.VSync };
+		SubsystemInitContext initCtx
+		{
+			.MainWindow     = window,
+			.VSync          = mainWndDesc.VSync,
+			.RenderPipeline = desc.RenderPipeline,
+		};
 		m_systems.InitAll(initCtx);
 		KOI_LOG_DEBUG("Engine subsystems initialized");
 
@@ -66,7 +71,7 @@ namespace koi
 		// Init application
 		m_host = &host;
 		host.HostInit();
-		GetSubsystem<Renderer>().GetFrameGraph().Compile(); // One time compile to ensure user-defined render pass succeeds post-init
+		GetSubsystem<Renderer>().GetFrameGraph().Compile(); // One time validation of the pipeline's pass set, plus anything the game added
 
 		KOI_LOG_INFO("Entering main loop");
 

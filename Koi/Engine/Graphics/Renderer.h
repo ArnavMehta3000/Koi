@@ -14,7 +14,10 @@
 
 namespace koi
 {
+	class IRenderPipeline;
 	class Window;
+	class World;
+	struct RenderView;
 
 	class Renderer
 		: NonCopyable
@@ -35,11 +38,17 @@ namespace koi
 		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept { return m_defaultResources;     }
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
-		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_frameGraph;           }
+		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_renderGraph;           }
 		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
 		[[nodiscard]] inline const PipelineLibrary&   GetPipelineLibrary() const noexcept  { return m_pipelineLibrary;      }
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
+		[[nodiscard]] inline IRenderPipeline* GetPipeline() noexcept { return m_pipeline.get(); }
+
+		void SetPipeline(std::unique_ptr<IRenderPipeline> pipeline);  // Clears the graph and rebuilds it
+
+		// Per-frame wiring, driven from the view the app host resolved
+		void SetupFrame(const RenderView& view, World& world);
 
 		inline void SetOverlay(IRendererOverlay* overlay) noexcept { m_overlay = overlay; }
 
@@ -58,14 +67,15 @@ namespace koi
 		};
 
 	private:
-		std::unique_ptr<GfxDevice>    m_device;
-		CommandQueue                  m_graphicsQueue;
-		std::optional<RenderWindow>   m_renderWindow;
-		std::unique_ptr<FrameContext> m_frameContext;
-		PipelineLibrary               m_pipelineLibrary;
-		RendererResources             m_defaultResources;
-		RenderGraph                   m_frameGraph;
-		u32                           m_frameSlot = 0;
-		IRendererOverlay*             m_overlay   = nullptr;
+		std::unique_ptr<GfxDevice>       m_device;
+		CommandQueue                     m_graphicsQueue;
+		std::optional<RenderWindow>      m_renderWindow;
+		std::unique_ptr<FrameContext>    m_frameContext;
+		PipelineLibrary                  m_pipelineLibrary;
+		RendererResources                m_defaultResources;
+		RenderGraph                      m_renderGraph;
+		std::unique_ptr<IRenderPipeline> m_pipeline;
+		u32                              m_frameSlot = 0;
+		IRendererOverlay*                m_overlay   = nullptr;
 	};
 }

@@ -6,6 +6,7 @@
 #include "Koi/Engine/Runtime/CommandLine.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Text/StringUtils.h"
+#include <toml++/toml.hpp>
 #include <cassert>
 #include <filesystem>
 #include <memory>
@@ -19,6 +20,27 @@ namespace koi::internal
 		// Custom scoped function for profiling reasons
 		ZoneScoped;
 		return CreateApplication(cmd);
+	}
+
+	static AppCreateDesc LoadProjectDesc(const fs::path& projectFile)
+	{
+		ZoneScoped;
+		const toml::table project = toml::parse_file(projectFile.string());
+
+		// Engine-defined data only
+		return AppCreateDesc
+		{
+			.WindowDesc =
+			{
+				.Title  = project["window"]["title"].value_or("Koi"),
+				.Width  = project["window"]["width"].value_or(1280u),
+				.Height = project["window"]["height"].value_or(720u),
+				.VSync  = project["window"]["vsync"].value_or(true),
+			},
+			.AppName        = project["project"]["name"].value_or("Koi Application"),
+			.RenderPipeline = project["rendering"]["pipeline"].value_or("deferred"),
+			.StartupScene   = project["assets"]["startup_scene"].value_or(""),
+		};
 	}
 
 	int RunApplication(int argc, char* argv[], HostAdapter adapter)
@@ -106,6 +128,8 @@ namespace koi::internal
 				KOI_LOG_CRITICAL("Failed to create application");
 				return -1;
 			}
+
+			app->SetDesc(LoadProjectDesc(cmd->GetProjectFile()));
 
 			if (adapter)
 			{

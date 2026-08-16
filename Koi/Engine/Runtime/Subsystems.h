@@ -12,8 +12,9 @@ namespace koi
 	// Handed to every subsystem's Init, once the main window exists
 	struct SubsystemInitContext
 	{
-		Window& MainWindow;
-		bool    VSync = false;
+		Window&          MainWindow;
+		bool             VSync = false;
+		std::string_view RenderPipeline;
 	};
 
 	template<typename... Ts>

@@ -55,17 +55,6 @@ namespace koi
 		}
 	}
 
-	void RenderGraph::OnResize(u32 w, u32 h)
-	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-		KOI_LOG_DEBUG("RenderGraph: resizing {} pass(es) to {}x{}", m_passes.size(), w, h);
-
-		for (auto& pass : m_passes)
-		{
-			pass->OnResize(w, h);
-		}
-	}
-
 	void RenderGraph::Clear()
 	{
 		m_passes.clear();

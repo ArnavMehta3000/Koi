@@ -129,12 +129,6 @@ namespace koi
 		m_camera = nullptr;
 	}
 
-	void GBufferPass::OnResize(u32 w, u32 h)
-	{
-		ZoneScoped;
-		SetTarget(w, h);  // This will trigger a resize
-	}
-
 	GBufferPass& GBufferPass::SetTarget(u32 width, u32 height)
 	{
 		ZoneScoped;

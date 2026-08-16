@@ -14,10 +14,7 @@ namespace koi
 	void ScenePanel::OnDraw()
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-		World* world = m_game->GetEditorWorld();
-		if (!world) return;
-
-		ECS& ecs = world->GetECS();
+		ECS& ecs = m_game->GetWorld().GetECS();
 
 		// Make modifications at end of draw
 		Entity pendingChild;

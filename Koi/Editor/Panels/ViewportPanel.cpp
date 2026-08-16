@@ -276,8 +276,7 @@ namespace koi
 
 	void ViewportPanel::PickEntity(f32 ndcX, f32 ndcY)
 	{
-		World* world = m_game->GetEditorWorld();
-		if (!world) return;
+		World& world = m_game->GetWorld();
 
 		const Matrix invViewProj = m_camera.ViewProjection.Invert();
 
@@ -293,10 +292,11 @@ namespace koi
 		Entity hit;
 		f32 best = std::numeric_limits<f32>::max();
 
-		world->GetECS().query<const Transform, const MeshRef>()
+		world.GetECS()
+			.query<const Transform, const MeshRef>()
 			.each([&](Entity e, const Transform& xform, const MeshRef& meshRef)
 		{
-			const GPUMesh* mesh = world->GetMesh(meshRef.Handle);
+			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 			if (!mesh) return;
 
 			// Bounds are model-space, so the ray goes to the mesh rather than the box to the world

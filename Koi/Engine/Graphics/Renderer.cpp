@@ -1,6 +1,7 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Graphics/IRenderPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
@@ -37,7 +38,8 @@ namespace koi
 		if (m_device)
 			m_device->WaitForIdle();
 
-		m_frameGraph.Clear();
+		m_pipeline.reset();  // holds raw pointers into the graph
+		m_renderGraph.Clear();
 		m_frameContext.reset();
 		m_renderWindow.reset();
 		m_pipelineLibrary.Shutdown(*m_device);
@@ -55,15 +57,17 @@ namespace koi
 		Window& window = ctx.MainWindow;
 		m_renderWindow.emplace(*m_device, window, ctx.VSync);
 
+		// Only the swapchain needs the OS event | render passes size themselves off the RenderView
 		window.SetResizeCallback([this](u32 w, u32 h)
 		{
 			if (m_renderWindow) m_renderWindow->Resize(w, h);
-			m_frameGraph.OnResize(w, h);
 		});
 
 		m_frameContext = std::make_unique<FrameContext>();
 		m_frameContext->Allocator.Init(*m_device, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer Allocator");
 		m_frameContext->List.Init(*m_device, m_frameContext->Allocator, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer CmdList");
+
+		SetPipeline(CreateRenderPipeline(ctx.RenderPipeline));
 
 		KOI_LOG_DEBUG("Renderer: main render window initialized ({}x{}, vsync {})",
 			window.GetWidth(), window.GetHeight(), ctx.VSync);
@@ -75,7 +79,7 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_renderWindow || !m_frameContext) return;
 
-		m_frameGraph.ResetAll();
+		m_renderGraph.ResetAll();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_frameSlot);
@@ -93,7 +97,7 @@ namespace koi
 
 		CommandList& cmd = m_frameContext->List;
 
-		m_frameGraph.Execute(cmd);
+		m_renderGraph.Execute(cmd);
 
 		if (m_overlay) m_overlay->OnOverlayRender(cmd);
 
@@ -104,6 +108,27 @@ namespace koi
 		m_renderWindow->Present();
 
 		m_frameSlot = (m_frameSlot + 1) % FRAMES_IN_FLIGHT;
+	}
+
+	void Renderer::SetPipeline(std::unique_ptr<IRenderPipeline> pipeline)
+	{
+		ZoneScoped;
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+
+		m_device->WaitForIdle();
+		m_pipeline.reset();
+		m_renderGraph.Clear();
+
+		m_pipeline = std::move(pipeline);
+		if (m_pipeline)
+			m_pipeline->Build(*this, m_renderGraph);
+	}
+
+	void Renderer::SetupFrame(const RenderView& view, World& world)
+	{
+		ZoneScoped;
+		if (m_pipeline)
+			m_pipeline->Setup(view, world);
 	}
 
 	CommandList* Renderer::GetCommandList() noexcept

@@ -132,8 +132,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		m_game->HostInit();
 		InitImGui();
 
-		if (World* world = m_game->GetEditorWorld())
-			m_viewportPanel->FrameBounds(world->GetBounds());
+		m_viewportPanel->FrameBounds(m_game->GetWorld().GetBounds());
 
 		KOI_LOG_INFO("Editor initialized");
 	}
@@ -252,7 +251,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		if (m_viewportPanel->IsGameCamera())
 		{
 			const f32 aspect = static_cast<f32>(target->Width) / static_cast<f32>(target->Height);
-			camera = m_game->GetEditorWorld() ? m_game->GetEditorWorld()->ResolveCamera(aspect) : nullptr;
+			camera = m_game->GetWorld().ResolveCamera(aspect);
 		}
 
 		return RenderView{ .Camera = camera, .Target = *target };
@@ -361,13 +360,6 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
-		World* world = m_game->GetEditorWorld();
-		if (!world)
-		{
-			m_lastCookStatus = "Save: no editor world";
-			return;
-		}
-
 		const std::string& scenePath = m_game->GetDesc().StartupScene;
 		if (scenePath.empty())
 		{
@@ -375,36 +367,31 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 			return;
 		}
 
-		const bool saved = world->Save(scenePath);
+		const bool saved = m_game->GetWorld().Save(scenePath);
 		m_lastCookStatus = saved ? "Scene saved" : "Scene save FAILED";
 		if (!saved)
+		{
 			KOI_LOG_ERROR("Failed to save scene '{}'", scenePath);
+		}
 	}
 
 	void EditorApp::Play()
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
-		World* world = m_game->GetEditorWorld();
-		if (!world)
-		{
-			KOI_LOG_WARN("Play: game exposes no editor world");
-			return;
-		}
-
+		World& world                = m_game->GetWorld();
 		GfxDevice& device           = Engine::Get().GetSubsystem<Renderer>().GetDevice();
 		AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 
-		m_snapshot = world->SaveToTable();
+		m_snapshot = world.SaveToTable();
 
 		// Hold a reference to everything the snapshot names. Stop tears the world down
 		// before rebuilding it, and without this the last reference to each mesh would
 		// drop to zero and the same files would be re-read from disk a moment later
-		world->GetECS().each<MeshRef>([&](Entity, MeshRef& mesh)
+		world.GetECS().each<MeshRef>([&](Entity, MeshRef& mesh)
 		{
 			const std::string path(meshes.GetPath(mesh.Handle));
-			if (!path.empty())
-				m_pinnedAssets.push_back(meshes.Acquire(device, path));
+			if (!path.empty()) m_pinnedAssets.push_back(meshes.Acquire(device, path));
 		});
 
 		// Show the game camera by default; the toolbar can still switch back mid-play
@@ -444,11 +431,9 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		GfxDevice& device           = engine.GetSubsystem<Renderer>().GetDevice();
 		AssetCache<GPUMesh>& meshes = engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 
-		if (World* world = m_game->GetEditorWorld())
-		{
-			world->Clear(device);
-			world->LoadFromTable(m_snapshot, device);
-		}
+		World& world = m_game->GetWorld();
+		world.Clear(device);
+		world.LoadFromTable(m_snapshot, device);
 
 		// The rebuilt world took its own references, so the play-time pins can go
 		for (const MeshHandle handle : m_pinnedAssets)

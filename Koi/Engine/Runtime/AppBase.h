@@ -18,20 +18,25 @@ namespace koi
 	{
 		WindowDesc   WindowDesc{};
 		LoggerConfig LogConfig{};
-		std::string  AppName      = "Koi Application";
+		std::string  AppName        = "Koi Application";
+		std::string  RenderPipeline = "deferred";
 		std::string  StartupScene;  // path relative to executable, empty = none
 	};
 
 	class AppBase : public NonCopyable, public IAppHost
 	{
 	public:
-		explicit AppBase(const AppCreateDesc& desc);
+		AppBase();
 		virtual ~AppBase();
 
 		[[nodiscard]] static AppBase& Get() { return *s_instance; }
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override { return m_desc; }
 		[[nodiscard]] Engine* GetEngine() const { return m_engine; }
 		[[nodiscard]] Window& GetWindow() const { assert(m_window); return *m_window; }
+		[[nodiscard]] World& GetWorld() const { return *m_world; }
+
+		// Filled from the project TOML by RunApplication, before the engine starts
+		inline void SetDesc(AppCreateDesc desc) { m_desc = std::move(desc); }
 
 		void SetWindow(Window& window) override { m_window = &window; }
 
@@ -52,22 +57,25 @@ namespace koi
 		[[nodiscard]] IEditorContext* GetEditorContext() const { return m_editorContext; }
 		void SetEditorContext(IEditorContext* context) { m_editorContext = context; }
 
-		[[nodiscard]] virtual World* GetEditorWorld() { return nullptr; }
-
 		// Resolves the render target for this frame and the camera to view it through.
 		// The target's aspect is only known here, so the world's camera is projected
 		// against it rather than against the window
-		[[nodiscard]] std::optional<RenderView> GetRenderView(World& world) const;
+		[[nodiscard]] std::optional<RenderView> GetRenderView() const;
 
 	private:
-		AppCreateDesc   m_desc;
-		Engine*         m_engine        = nullptr;
-		Window*         m_window        = nullptr;
-		IEditorContext* m_editorContext = nullptr;
+		void LoadStartupScene();
+
+	private:
+		AppCreateDesc          m_desc;
+		std::unique_ptr<World> m_world;
+		Engine*                m_engine        = nullptr;
+		Window*                m_window        = nullptr;
+		IEditorContext*        m_editorContext = nullptr;
 
 		static inline AppBase* s_instance = nullptr;
 	};
 
+	// Runs before the project TOML is applied
 	std::unique_ptr<AppBase> CreateApplication(CommandLine& cmd);
 
 	namespace internal
