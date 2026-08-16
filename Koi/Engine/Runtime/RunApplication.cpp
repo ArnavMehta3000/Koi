@@ -27,6 +27,8 @@ namespace koi::internal
 		ZoneScoped;
 		const toml::table project = toml::parse_file(projectFile.string());
 
+		const LoggerConfig defaults{};
+
 		// Engine-defined data only
 		return AppCreateDesc
 		{
@@ -37,21 +39,35 @@ namespace koi::internal
 				.Height = project["window"]["height"].value_or(720u),
 				.VSync  = project["window"]["vsync"].value_or(true),
 			},
+			.LogConfig =
+			{
+				.FilePath        = project["logging"]["file"].value_or(defaults.FilePath),
+				.RuntimeLevel    = LogLevelFromString(project["logging"]["level"].value_or(ToString(defaults.RuntimeLevel))),
+				.HistoryCapacity = project["logging"]["history"].value_or(defaults.HistoryCapacity),
+				.SpawnConsole    = project["logging"]["console"].value_or(defaults.SpawnConsole),
+				.UseDebugSink    = project["logging"]["debug_sink"].value_or(defaults.UseDebugSink),
+			},
 			.AppName        = project["project"]["name"].value_or("Koi Application"),
 			.RenderPipeline = project["rendering"]["pipeline"].value_or("deferred"),
 			.StartupScene   = project["assets"]["startup_scene"].value_or(""),
 		};
 	}
 
+	// Owns the logger for the whole of RunApplication so it outlives the Engine and
+	// stays alive inside the catch handlers during stack unwinding
+	struct LoggerScope
+	{
+		LoggerScope()  { Logger::Init(); }
+		~LoggerScope() { Logger::Shutdown(); }
+	};
+
 	int RunApplication(int argc, char* argv[], HostAdapter adapter)
 	{
 		assert(argc > 0 && "argc must be > 0");
 		assert(argv != nullptr && "argv must not be nullptr");
 
-		// Initialize the logger before the Engine so it outlives it during
-		// stack unwinding - Engine::~Engine calls Logger::Shutdown(), which
-		// would otherwise make IsInitialized() return false in catch blocks.
-		Logger::Init();
+		// Declared before the try so the logger is still alive in the catch handlers
+		LoggerScope logger;
 
 		try
 		{
@@ -131,6 +147,9 @@ namespace koi::internal
 
 			app->SetDesc(LoadProjectDesc(cmd->GetProjectFile()));
 
+			// Only now is the project's [logging] table known; still single-threaded here
+			Logger::Configure(app->GetDesc().LogConfig);
+
 			if (adapter)
 			{
 				// Editor build: wrap the game in an EditorApp supplied by the launcher
@@ -153,13 +172,11 @@ namespace koi::internal
 		catch (const std::exception& e)
 		{
 			KOI_LOG_CRITICAL("Unhandled exception: {}", e.what());
-			Logger::Shutdown();
 			return 1;
 		}
 		catch (...)
 		{
 			KOI_LOG_CRITICAL("Unhandled unknown exception");
-			Logger::Shutdown();
 			return 2;
 		}
 	}

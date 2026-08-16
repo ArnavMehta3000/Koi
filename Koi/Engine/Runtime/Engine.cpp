@@ -41,7 +41,6 @@ namespace koi
 		KOI_LOG_INFO("Engine shut down after {:.4f}s ({} frames)", GetStats().TotalTime, GetStats().FrameCount);
 
 		PrintMemSnapshot(DiffSnapshots(m_initSnapshot, GetMemSnapshot()));
-		Logger::Shutdown();
 
 		s_instance = nullptr;
 	}
