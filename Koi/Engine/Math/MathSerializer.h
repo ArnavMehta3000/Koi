@@ -9,12 +9,12 @@ namespace koi
 	{
 		static toml::array Serialize(const Vector2& f)
 		{
-			return toml::array{ f.x, f.y };
+			return toml::array{ ToTomlFloat(f.x), ToTomlFloat(f.y) };
 		}
 
 		static std::optional<Vector2> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* asArr = node.as_array(); asArr->size() == 2)
+			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 2)
 			{
 				const toml::array& arr = *asArr;
 				return Vector2(
@@ -30,12 +30,12 @@ namespace koi
 	{
 		static toml::array Serialize(const Vector3& f)
 		{
-			return toml::array{ f.x, f.y, f.z };
+			return toml::array{ ToTomlFloat(f.x), ToTomlFloat(f.y), ToTomlFloat(f.z) };
 		}
 
 		static std::optional<Vector3> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* asArr = node.as_array(); asArr->size() == 3)
+			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 3)
 			{
 				const toml::array& arr = *asArr;
 				return Vector3(
@@ -52,12 +52,12 @@ namespace koi
 	{
 		static toml::array Serialize(const Vector4& f)
 		{
-			return toml::array{ f.x, f.y, f.z, f.w };
+			return toml::array{ ToTomlFloat(f.x), ToTomlFloat(f.y), ToTomlFloat(f.z), ToTomlFloat(f.w) };
 		}
 
 		static std::optional<Vector4> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* asArr = node.as_array(); asArr->size() == 4)
+			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 4)
 			{
 				const toml::array& arr = *asArr;
 				return Vector4(
@@ -75,12 +75,12 @@ namespace koi
 	{
 		static toml::array Serialize(const Quaternion& q)
 		{
-			return toml::array{ q.x, q.y, q.z, q.w };
+			return toml::array{ ToTomlFloat(q.x), ToTomlFloat(q.y), ToTomlFloat(q.z), ToTomlFloat(q.w) };
 		}
 
 		static std::optional<Quaternion> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* asArr = node.as_array(); asArr->size() == 4)
+			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 4)
 			{
 				const toml::array& arr = *asArr;
 				return Quaternion(

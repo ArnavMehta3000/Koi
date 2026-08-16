@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Types.h"
 
 #include <toml++/toml.hpp>
 
@@ -14,6 +15,11 @@ namespace koi
 {
 	template <typename T>
 	struct Serializer;
+
+	// toml has no f32: everything lands in the file as a double. This re-derives the
+	// double from the shortest text that still recovers the same f32, which loses nothing and
+	// keeps hand-edited scene files readable
+	[[nodiscard]] f64 ToTomlFloat(f32 value);
 
 	// Types toml++ stores directly, without a table or array wrapper.
 	template <typename T>
@@ -89,6 +95,14 @@ namespace koi
 	{
 		static T Serialize(const T& value) { return value; }
 		static std::optional<T> Deserialize(const toml::node& node) { return node.value_exact<T>(); }
+	};
+
+	// f32 needs its own: the default above would widen on write
+	template <>
+	struct Serializer<f32>
+	{
+		static f64 Serialize(f32 value) { return ToTomlFloat(value); }
+		static std::optional<f32> Deserialize(const toml::node& node) { return node.value<f32>(); }
 	};
 
 	// Enums
