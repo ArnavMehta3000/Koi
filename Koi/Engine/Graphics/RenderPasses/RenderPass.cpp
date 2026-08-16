@@ -39,6 +39,7 @@ namespace koi
 
 	void RenderGraph::Execute(CommandList& cmd)
 	{
+		ZoneScoped;
 		if (m_dirty) Compile();
 
 		for (auto& pass : m_passes)
@@ -49,6 +50,7 @@ namespace koi
 
 	void RenderGraph::ResetAll()
 	{
+		ZoneScoped;
 		for (auto& pass : m_passes)
 		{
 			pass->Reset();

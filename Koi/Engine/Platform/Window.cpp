@@ -259,6 +259,7 @@ namespace koi
 
 	void Window::PollEvents() noexcept
 	{
+		ZoneScoped;
 		::glfwPollEvents();
 	}
 

@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 
@@ -28,6 +29,7 @@ namespace koi
 
 	void TonemapPass::Execute(CommandList& cmd)
 	{
+		ZoneScoped;
 		if (!m_colorTarget || !m_config.Pipeline || !m_config.Device) return;
 
 		cmd.TransitionBarrier(m_input.Texture, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);

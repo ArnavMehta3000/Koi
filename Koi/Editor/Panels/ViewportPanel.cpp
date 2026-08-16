@@ -1,5 +1,6 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Selection.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -41,6 +42,7 @@ namespace koi
 
 	void ViewportPanel::EnsureSize(u32 width, u32 height)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (width == 0 || height == 0)
 		{
@@ -82,6 +84,7 @@ namespace koi
 
 	const ViewportTarget* ViewportPanel::PrepareFrame(CommandList& cmd)
 	{
+		ZoneScoped;
 		EnsureSize(m_desiredWidth, m_desiredHeight);
 		if (!m_valid) return nullptr;
 
@@ -276,6 +279,7 @@ namespace koi
 
 	void ViewportPanel::PickEntity(f32 ndcX, f32 ndcY)
 	{
+		ZoneScoped;
 		World& world = m_game->GetWorld();
 
 		const Matrix invViewProj = m_camera.ViewProjection.Invert();

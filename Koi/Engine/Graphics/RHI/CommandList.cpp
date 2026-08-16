@@ -33,6 +33,7 @@ namespace koi
 
 	void CommandList::Begin(u32 frameSlot)
 	{
+		ZoneScoped;
 		assert(!m_recording);
 		assert(m_allocator && m_cmdList);
 
@@ -53,6 +54,7 @@ namespace koi
 
 	void CommandList::End()
 	{
+		ZoneScoped;
 		assert(m_recording);
 		FlushBarriers();
 		DX_CHECK(m_cmdList->Close());
