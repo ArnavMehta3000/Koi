@@ -1,8 +1,7 @@
 #pragma once
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
-#include "Koi/Engine/Graphics/GPUSceneTypes.h"
-#include <flecs.h>
+#include "Koi/Engine/Graphics/MeshGather.h"
 #include <array>
 
 namespace koi
@@ -10,7 +9,6 @@ namespace koi
 	class  World;
 	class  GfxDevice;
 	struct Camera;
-	struct GPUMesh;
 	struct RendererResources;
 
 	class GBufferPass : public RenderPass
@@ -39,25 +37,12 @@ namespace koi
 		[[nodiscard]] inline TextureHandle GetMaterial() const { return m_outputs[size_t(Outputs::Material)].Texture; }
 		[[nodiscard]] inline TextureHandle GetDepth()    const { return m_outputs[size_t(Outputs::Depth)].Texture;    }
 
+		[[nodiscard]] inline u32 GetDrawCount()   const { return static_cast<u32>(m_gather.Draws.size()); }
+		[[nodiscard]] inline u32 GetCulledCount() const { return m_gather.Culled; }
+
 	private:
 		void CreateRenderTargets();
 		void DestroyRenderTargets();
-		void ConfigureECS();
-
-	private:
-		struct DrawInfo
-		{
-			const GPUMesh* Mesh;
-			u32            ObjectIndex;
-		};
-
-		struct GatherContext
-		{
-			std::vector<PerObjectData> Objects;  // World + Normal Matrix
-			std::vector<DrawInfo>      DrawInfos;
-
-			void Clear() { Objects.clear(); DrawInfos.clear(); }
-		};
 
 	private:
 		enum class Outputs
@@ -77,12 +62,10 @@ namespace koi
 		u32           m_width  = 0;
 		u32           m_height = 0;
 
-		flecs::world_t* m_queryWorld = nullptr;
-		flecs::system   m_renderSystem;
-
 		GpuFrameBuffer<FrameConstants> m_frameConstants;
 		GpuFrameBuffer<PerObjectData>  m_objects;
-		GatherContext                  m_gather;
+		MeshGatherer                   m_gatherer;
+		MeshGatherResult               m_gather;
 
 		std::array<RenderPassAttachment, size_t(Outputs::MAX_COUNT)> m_outputs;
 	};

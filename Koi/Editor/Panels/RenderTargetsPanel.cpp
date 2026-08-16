@@ -1,5 +1,7 @@
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
@@ -23,8 +25,19 @@ namespace koi::editor
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (ImGui::Begin("Render Targets"))
 		{
+			RenderGraph& graph = m_renderer->GetFrameGraph();
+
+			// Culling is invisible when it works, so the counts are the only way to see it
+			if (ImGui::CollapsingHeader("Culling", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				if (const GBufferPass* pass = graph.GetPass<GBufferPass>())
+					ImGui::Text("GBuffer: %u drawn, %u culled", pass->GetDrawCount(), pass->GetCulledCount());
+				if (const ShadowPass* pass = graph.GetPass<ShadowPass>())
+					ImGui::Text("Shadow:  %u drawn, %u culled", pass->GetDrawCount(), pass->GetCulledCount());
+			}
+
 			std::vector<Entry> entries;
-			for (const auto& pass : m_renderer->GetFrameGraph().GetPasses())
+			for (const auto& pass : graph.GetPasses())
 			{
 				for (const RenderPassAttachment& out : pass->GetOutputs())
 				{

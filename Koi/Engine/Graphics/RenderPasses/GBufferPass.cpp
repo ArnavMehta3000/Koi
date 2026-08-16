@@ -43,24 +43,7 @@ namespace koi
 		GfxDevice& device   = *m_config.Device;
 		const u32 frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
 
-		if (flecs::world_t* ecsWorld = m_world->GetECS().c_ptr(); m_queryWorld != ecsWorld)
-		{
-			m_queryWorld = ecsWorld;
-			ConfigureECS();
-		}
-
-		// Gather this frame's per-object data + draw list
-		m_gather.Clear();
-		m_renderSystem.run(0.0f, &m_gather);
-		if (m_gather.DrawInfos.empty()) return;
-
-		const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(m_gather.Objects));
-
-		const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
-		{
-			.ViewProjection = m_camera->ViewProjection,
-			.CameraPosition = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
-		});
+		m_gatherer.Gather(*m_world, CullVolume::FromCamera(m_camera->View, m_camera->Projection), true, m_gather);
 
 		constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		cmd.ClearRenderTarget(albedo,   kClearColor);
@@ -68,28 +51,40 @@ namespace koi
 		cmd.ClearRenderTarget(material, kClearColor);
 		if (depth) cmd.ClearDepthStencil(depth);
 
-		// Bind
-		std::array colorRTs{ albedo, normals, material };
-		cmd.SetRenderTarget(colorRTs, depth);
-		cmd.SetViewportAndScissor(m_width, m_height);
-		cmd.SetPipeline(m_config.Resources->GBufferPipeline);
-
-		// Issue draws
-		for (const DrawInfo& info : m_gather.DrawInfos)
+		if (!m_gather.Draws.empty())
 		{
-			const GPUMesh& mesh = *info.Mesh;
-			cmd.SetIndexBuffer(mesh.IndexBuffer);
+			const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(m_gather.Objects));
 
-			for (const GPUMeshDraw& d : mesh.DrawItems)
+			const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 			{
+				.ViewProjection = m_camera->ViewProjection,
+				.CameraPosition = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
+			});
+
+			std::array colorRTs{ albedo, normals, material };
+			cmd.SetRenderTarget(colorRTs, depth);
+			cmd.SetViewportAndScissor(m_width, m_height);
+			cmd.SetPipeline(m_config.Resources->GBufferPipeline);
+
+			// Draws arrive grouped by entity, so the index buffer only rebinds on a mesh change
+			const GPUMesh* boundMesh = nullptr;
+			for (const MeshDrawItem& item : m_gather.Draws)
+			{
+				if (item.Mesh != boundMesh)
+				{
+					cmd.SetIndexBuffer(item.Mesh->IndexBuffer);
+					boundMesh = item.Mesh;
+				}
+
+				const GPUMeshDraw& d = *item.Draw;
 				DrawRootConstants pc
 				{
 					.FrameConstantsIndex = frameConstantsIndex,
 					.ObjectBufferIndex   = objectBufferIndex,
-					.ObjectIndex         = info.ObjectIndex,
-					.MaterialBufferIndex = mesh.MaterialBufferSRV,
+					.ObjectIndex         = item.ObjectIndex,
+					.MaterialBufferIndex = item.Mesh->MaterialBufferSRV,
 					.MaterialIndex       = d.MaterialIndex,
-					.VertexBufferIndex   = mesh.VertexBufferSRV,
+					.VertexBufferIndex   = item.Mesh->VertexBufferSRV,
 					.SamplerIndex        = m_config.Resources->LinearWrapSampler,
 					.VertexOffset        = static_cast<u32>(d.VertexOffset),
 				};
@@ -134,31 +129,6 @@ namespace koi
 			if (o.Texture) m_config.Device->Destroy(o.Texture);
 			o.Texture = TextureHandle();
 		}
-	}
-
-	void GBufferPass::ConfigureECS()
-	{
-		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-		KOI_LOG_DEBUG("GBufferPass: (re)building mesh gather system for new world");
-
-		m_renderSystem = m_world->GetECS().system<const Transform, const MeshRef>("GBufferMeshGatherSystem")
-			.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
-			.each([this](flecs::iter& it, size_t, const Transform& xform, const MeshRef& meshRef)
-			{
-				GatherContext* gather = it.param<GatherContext>();
-				const GPUMesh* mesh   = m_world->GetMesh(meshRef.Handle);
-				if (!mesh) return;
-
-				const Matrix world = xform.ToMatrix();
-				const u32 objectIndex = static_cast<u32>(gather->Objects.size());
-				gather->Objects.push_back(PerObjectData
-				{
-					.World        = world,
-					.NormalMatrix = world.Invert().Transpose(),
-				});
-				gather->DrawInfos.push_back(DrawInfo{ mesh, objectIndex });
-			});
 	}
 
 	void GBufferPass::CreateRenderTargets()

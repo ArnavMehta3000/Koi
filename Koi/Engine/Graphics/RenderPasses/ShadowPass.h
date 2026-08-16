@@ -1,14 +1,12 @@
 #pragma once
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
-#include "Koi/Engine/Graphics/GPUSceneTypes.h"
-#include <flecs.h>
+#include "Koi/Engine/Graphics/MeshGather.h"
 
 namespace koi
 {
 	class  World;
 	class  GfxDevice;
-	struct GPUMesh;
 	struct RendererResources;
 
 	class ShadowPass : public RenderPass
@@ -36,40 +34,25 @@ namespace koi
 		[[nodiscard]] inline TextureHandle GetShadowMap() const { return m_hasShadow ? m_output.Texture : TextureHandle(); }
 		[[nodiscard]] inline const Matrix& GetLightViewProjection() const { return m_lightViewProjection; }
 
-	private:
-		void ConfigureECS();
+		[[nodiscard]] inline u32 GetDrawCount()   const { return static_cast<u32>(m_gather.Draws.size()); }
+		[[nodiscard]] inline u32 GetCulledCount() const { return m_gather.Culled; }
 
-		// Ortho light-space view-projection fitted to the world bounds. False when no caster
+	private:
+		// Ortho light-space view-projection fitted to the world bounds
 		bool ComputeLightMatrix();
-
-	private:
-		struct DrawInfo
-		{
-			const GPUMesh* Mesh;
-			u32            ObjectIndex;
-		};
-
-		struct GatherContext
-		{
-			std::vector<PerObjectData> Objects;
-			std::vector<DrawInfo>      DrawInfos;
-
-			void Clear() { Objects.clear(); DrawInfos.clear(); }
-		};
 
 	private:
 		Config m_config;
 		World* m_world = nullptr;
 
-		Matrix m_lightViewProjection = Matrix::Identity;
-		bool   m_hasShadow           = false;
-
-		flecs::world_t* m_queryWorld = nullptr;
-		flecs::system   m_renderSystem;
+		Matrix     m_lightViewProjection = Matrix::Identity;
+		CullVolume m_cullVolume;                 // the ortho volume, as an oriented box
+		bool       m_hasShadow           = false;
 
 		GpuFrameBuffer<FrameConstants> m_frameConstants;
 		GpuFrameBuffer<PerObjectData>  m_objects;
-		GatherContext                  m_gather;
+		MeshGatherer                   m_gatherer;
+		MeshGatherResult               m_gather;
 
 		RenderPassAttachment m_output{ {}, "ShadowMap" };
 	};

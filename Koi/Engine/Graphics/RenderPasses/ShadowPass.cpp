@@ -49,11 +49,13 @@ namespace koi
 
 	bool ShadowPass::ComputeLightMatrix()
 	{
+		// Returns false when there is no caster
+
 		ZoneScoped;
 		if (!m_world) return false;
 
-		const AABB& bounds = m_world->GetBounds();
-		if (bounds.Min.x > bounds.Max.x) return false;  // nothing loaded yet
+		const BoundingBox& bounds = m_world->GetBounds();
+		if (IsEmpty(bounds)) return false;  // nothing loaded yet
 
 		Vector3 lightDir;
 		bool found = false;
@@ -73,8 +75,8 @@ namespace koi
 		// Fit the ortho box to the scene's bounding sphere rather than the camera frustum:
 		// the map stays stable as the camera moves, at the cost of texel density
 		// [NOTE]: Maybe I can move the ortho box around the camera once the world gets bigger
-		const Vector3 center = bounds.Center();
-		const f32     radius = bounds.Radius() > 0.001f ? bounds.Radius() : 0.001f;
+		const Vector3 center(bounds.Center);
+		const f32     radius = BoundsRadius(bounds);
 		const Vector3 eye    = center - lightDir * (radius * 2.0f);
 
 		// Any up vector works except one parallel to the light
@@ -84,29 +86,21 @@ namespace koi
 		const Matrix proj = Matrix::CreateOrthographic(radius * 2.0f, radius * 2.0f, 0.0f, radius * 4.0f);
 
 		m_lightViewProjection = view * proj;
+
+		// The ortho volume as a world-space box. BoundingFrustum only understands perspective
+		// projections, so a directional light has to cull against a box instead
+		const Matrix invView = view.Invert();
+
+		BoundingOrientedBox volume;
+		BoundingOrientedBox::CreateFromBoundingBox(volume, 
+			BoundingBox(
+				Vector3(0.0f, 0.0f, -radius * 2.0f),
+				Vector3(radius, radius, radius * 2.0f)));
+
+		volume.Transform(volume, invView);
+
+		m_cullVolume = CullVolume(volume);
 		return true;
-	}
-
-	void ShadowPass::ConfigureECS()
-	{
-		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-		KOI_LOG_DEBUG("ShadowPass: (re)building mesh gather system for new world");
-
-		m_renderSystem = m_world->GetECS()
-			.system<const Transform, const MeshRef>("ShadowMeshGatherSystem")
-			.kind(0)  // never auto-scheduled by world.progress() | only invoked via run() below
-			.each([this](flecs::iter& it, size_t, const Transform& xform, const MeshRef& meshRef)
-			{
-				GatherContext* gather = it.param<GatherContext>();
-				const GPUMesh* mesh   = m_world->GetMesh(meshRef.Handle);
-				if (!mesh) return;
-
-				// Depth-only, so the normal matrix is left identity
-				const u32 objectIndex = static_cast<u32>(gather->Objects.size());
-				gather->Objects.push_back(PerObjectData{ .World = xform.ToMatrix() });
-				gather->DrawInfos.push_back(DrawInfo{ mesh, objectIndex });
-			});
 	}
 
 	void ShadowPass::Execute(CommandList& cmd)
@@ -119,20 +113,14 @@ namespace koi
 		GfxDevice& device   = *m_config.Device;
 		const u32  frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
 
-		if (flecs::world_t* ecsWorld = m_world->GetECS().c_ptr(); m_queryWorld != ecsWorld)
-		{
-			m_queryWorld = ecsWorld;
-			ConfigureECS();
-		}
-
-		m_gather.Clear();
-		m_renderSystem.run(0.0f, &m_gather);
+		// Depth-only, so the normal matrix is never needed
+		m_gatherer.Gather(*m_world, m_cullVolume, false, m_gather);
 
 		// Clear unconditionally: LightingPass samples the map whenever m_hasShadow, so an
 		// empty draw list still has to leave a valid RT/Depth map behind
 		cmd.ClearDepthStencil(shadowMap);
 
-		if (!m_gather.DrawInfos.empty())
+		if (!m_gather.Draws.empty())
 		{
 			const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(m_gather.Objects));
 
@@ -147,27 +135,31 @@ namespace koi
 			cmd.SetViewportAndScissor(m_config.Resolution, m_config.Resolution);
 			cmd.SetPipeline(m_config.Resources->ShadowPipeline);
 
-			for (const DrawInfo& info : m_gather.DrawInfos)
+			const GPUMesh* boundMesh = nullptr;
+			for (const MeshDrawItem& item : m_gather.Draws)
 			{
-				const GPUMesh& mesh = *info.Mesh;
-				cmd.SetIndexBuffer(mesh.IndexBuffer);
+				assert(item.Mesh && "Invalid mesh pointer");
 
-				for (const GPUMeshDraw& d : mesh.DrawItems)
+				if (item.Mesh && item.Mesh != boundMesh)
 				{
-					DrawRootConstants pc
-					{
-						.FrameConstantsIndex = frameConstantsIndex,
-						.ObjectBufferIndex   = objectBufferIndex,
-						.ObjectIndex         = info.ObjectIndex,
-						.MaterialBufferIndex = INVALID_DESCRIPTOR,
-						.MaterialIndex       = 0,
-						.VertexBufferIndex   = mesh.VertexBufferSRV,
-						.SamplerIndex        = INVALID_DESCRIPTOR,
-						.VertexOffset        = static_cast<u32>(d.VertexOffset),
-					};
-					cmd.SetRootConstants(&pc, sizeof(pc) / sizeof(u32));
-					cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);
+					cmd.SetIndexBuffer(item.Mesh->IndexBuffer);
+					boundMesh = item.Mesh;
 				}
+
+				const GPUMeshDraw& d = *item.Draw;
+				DrawRootConstants pc
+				{
+					.FrameConstantsIndex = frameConstantsIndex,
+					.ObjectBufferIndex   = objectBufferIndex,
+					.ObjectIndex         = item.ObjectIndex,
+					.MaterialBufferIndex = INVALID_DESCRIPTOR,
+					.MaterialIndex       = 0,
+					.VertexBufferIndex   = item.Mesh ? item.Mesh->VertexBufferSRV : INVALID_DESCRIPTOR,
+					.SamplerIndex        = INVALID_DESCRIPTOR,
+					.VertexOffset        = static_cast<u32>(d.VertexOffset),
+				};
+				cmd.SetRootConstants(&pc, sizeof(pc) / sizeof(u32));
+				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);
 			}
 		}
 
