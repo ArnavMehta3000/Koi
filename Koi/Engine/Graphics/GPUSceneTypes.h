@@ -27,6 +27,11 @@ namespace koi
 		f32     Range;      // point-light attenuation cutoff
 		Vector3 Color;      // linear RGB
 		f32     Intensity;
+
+		Matrix  ShadowMatrix;    // world -> shadow clip
+		u32     ShadowMapIndex;  // INVALID_DESCRIPTOR when this light casts no shadow
+		f32     ShadowBias;
+		u32     _Pad[2];
 	};
 
 	// StructuredBuffer element, one per material
@@ -60,7 +65,8 @@ namespace koi
 		u32     DepthIndex;
 		u32     LightBufferIndex;       // StructuredBuffer<GPULight>
 		u32     LightCount;
-		u32     _Pad[2];
+		u32     ShadowSamplerIndex;     // comparison sampler, in the global sampler heap
+		u32     _Pad;
 	};
 
 #pragma warning(disable : 4324) // structure was padded due to alignment specifier

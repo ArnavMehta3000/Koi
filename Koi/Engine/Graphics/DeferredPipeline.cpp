@@ -2,6 +2,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Interop/ViewportTarget.h"
@@ -12,6 +13,12 @@ namespace koi
 	void DeferredPipeline::Build(Renderer& renderer, RenderGraph& graph)
 	{
 		ZoneScoped;
+
+		m_shadowPass = &graph.AddPass<ShadowPass>(ShadowPass::Config
+		{
+			.Device    = &renderer.GetDevice(),
+			.Resources = &renderer.GetDefaultResources(),
+		});
 
 		m_gbufferPass = &graph.AddPass<GBufferPass>(GBufferPass::Config
 		{
@@ -37,6 +44,9 @@ namespace koi
 		ZoneScoped;
 		const ViewportTarget& target = view.Target;
 
+		// Fits the light matrix up front, so the lighting pass can read it below
+		m_shadowPass->SetWorld(&world);
+
 		m_gbufferPass->SetWorld(&world)
 			.SetCamera(view.Camera)
 			.SetTarget(target.Width, target.Height);
@@ -44,6 +54,7 @@ namespace koi
 		m_lightingPass->SetWorld(&world)
 			.SetCamera(view.Camera)
 			.SetGBuffer(m_gbufferPass->GetAlbedo(), m_gbufferPass->GetNormals(), m_gbufferPass->GetMaterial(), m_gbufferPass->GetDepth())
+			.SetShadow(m_shadowPass->GetShadowMap(), m_shadowPass->GetLightViewProjection())
 			.SetTarget(target.HDRColorBuffer, target.Width, target.Height);
 
 		m_tonemapPass->SetInput(m_lightingPass->GetColorOutput())

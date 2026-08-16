@@ -16,6 +16,7 @@ namespace koi
 		DescriptorIndex LinearWrapSampler  = INVALID_DESCRIPTOR;
 		DescriptorIndex LinearClampSampler = INVALID_DESCRIPTOR;
 		DescriptorIndex PointClampSampler  = INVALID_DESCRIPTOR;
+		DescriptorIndex ShadowSampler      = INVALID_DESCRIPTOR;  // comparison sampler for SampleCmp
 
 		// Default pipelines
 		PipelineHandle TonemapPipeline{};           // fullscreen HDR -> swapchain ACES tonemap
@@ -23,6 +24,7 @@ namespace koi
 		PipelineHandle MeshWireframePipeline{};     // wireframe fill, no cull, depth read/write, HDR RT
 		PipelineHandle GBufferPipeline{};           // deferred geometry: 3 MRT (albedo/normals/material) + depth
 		PipelineHandle LightingPipeline{};          // full-screen deferred lighting: samples G-buffer -> HDR
+		PipelineHandle ShadowPipeline{};            // depth-only shadow map: no pixel shader, no render targets
 
 		void Init(GfxDevice& device, PipelineLibrary& library);
 		void Shutdown(GfxDevice& device);

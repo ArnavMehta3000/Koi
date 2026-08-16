@@ -550,10 +550,9 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(!desc.VertexShader.empty() && "PipelineDesc missing vertex shader");
-		assert(!desc.PixelShader.empty() && "PipelineDesc missing pixel shader");
+		assert((!desc.PixelShader.empty() || desc.RenderTargetCount == 0) && "PipelineDesc missing pixel shader");  // Depth-only pipelines (shadow maps, depth prepass) have no pixel shader at all
 		assert(desc.RenderTargetCount <= MAX_RENDER_TARGETS && "Too many render targets");
-		assert(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN &&
-			"PipelineDesc has neither render targets nor a depth target");
+		assert(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN && "PipelineDesc has neither render targets nor a depth target");
 
 		// Vertex input layout
 		std::array<D3D12_INPUT_ELEMENT_DESC, MAX_VERTEX_ATTRIBUTES> inputElements{};
