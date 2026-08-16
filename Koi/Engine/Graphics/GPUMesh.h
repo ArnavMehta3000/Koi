@@ -15,6 +15,8 @@ namespace koi
 		i32 VertexOffset;
 
 		u32 MaterialIndex; // element index into the owning GPUMesh's MaterialBuffer
+
+		BoundingBox Bounds{ {}, {} };  // model-space, per submesh: the culling granularity
 	};
 
 	struct GPUMesh
@@ -32,7 +34,7 @@ namespace koi
 		DescriptorIndex MaterialBufferSRV = INVALID_DESCRIPTOR;
 		std::vector<GPUTextureHandle> Textures;  // referenced, not owned: the texture AssetCache owns them
 		std::vector<GPUMeshDraw> DrawItems;
-		AABB Bounds;                           // model-space, carried over from the source ModelAsset
+		BoundingBox Bounds{ {}, {} };          // model-space, carried over from the source ModelAsset
 
 		// Synchronous upload
 		[[nodiscard]] static GPUMesh Upload(GfxDevice& device, const ModelAsset& model);

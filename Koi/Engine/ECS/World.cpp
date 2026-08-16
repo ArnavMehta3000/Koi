@@ -14,9 +14,6 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
-		m_bounds.Min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
-		m_bounds.Max = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-
 		// Add root entity, disabled by default. Every other entity is parented to this
 		m_root = m_ecs.entity("WorldRoot");
 	}
@@ -109,7 +106,9 @@ namespace koi
 		m_ecs.each<MeshRef>([&](Entity, MeshRef& mesh)
 		{
 			if (const GPUMesh* gpuMesh = meshes.Get(mesh.Handle))
-				m_bounds.Expand(gpuMesh->Bounds);
+			{
+				MergeBounds(m_bounds, gpuMesh->Bounds);
+			}
 		});
 
 		// If no deserialized camera exists, create one centered on the scene world bounds
@@ -118,11 +117,11 @@ namespace koi
 		if (!hasCamera)
 		{
 			Transform camXform;
-			if (m_bounds.Min.x <= m_bounds.Max.x)
+			if (!IsEmpty(m_bounds))
 			{
-				const Vector3 center = m_bounds.Center();
-				const f32 radius     = m_bounds.Radius();
-				camXform.Position    = center + Vector3(0.0f, 0.0f, radius * 2.5f);
+				const Vector3 center(m_bounds.Center);
+				const f32 radius  = BoundsRadius(m_bounds);
+				camXform.Position = center + Vector3(0.0f, 0.0f, radius * 2.5f);
 			}
 			else
 			{
@@ -231,8 +230,7 @@ namespace koi
 
 		KOI_LOG_DEBUG("Cleared world ({} entities destroyed)", doomed.size());
 
-		m_bounds.Min = Vector3(FLT_MAX, FLT_MAX, FLT_MAX);
-		m_bounds.Max = Vector3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		m_bounds = BoundingBox{ {}, {} };
 	}
 
 	void World::Update(f32 dt)

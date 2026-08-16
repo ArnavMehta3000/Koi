@@ -37,7 +37,7 @@ namespace koi
 
 		void Update(f32 dt);
 
-		[[nodiscard]] const AABB& GetBounds() const { return m_bounds; }
+		[[nodiscard]] const BoundingBox& GetBounds() const { return m_bounds; }
 
 		// Projects the primary camera entity for a surface of the given aspect and returns
 		// it. Null if the world has no primary camera. Aspect is a property of the render
@@ -52,7 +52,7 @@ namespace koi
 	private:
 		ECS    m_ecs;
 		Entity m_root;
-		AABB   m_bounds;
+		BoundingBox m_bounds{ {}, {} };  // zero extents until meshes resolve
 		Camera m_camera;  // derived from the primary camera entity by ResolveCamera
 	};
 }

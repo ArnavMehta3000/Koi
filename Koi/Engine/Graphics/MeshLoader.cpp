@@ -270,11 +270,15 @@ namespace koi
 				Vector3 tangent = Vector3::TransformNormal(Vector3(v.Tangent.x, v.Tangent.y, v.Tangent.z), worldXform);
 				tangent.Normalize();
 				v.Tangent = Vector4(tangent.x, tangent.y, tangent.z, v.Tangent.w * handednessFlip);
-
-				sub.Bounds.Expand(v.Position);
 			}
 
-			mesh.Bounds.Expand(sub.Bounds);
+			if (vertexCount > 0)
+			{
+				BoundingBox::CreateFromPoints(sub.Bounds, vertexCount,
+					reinterpret_cast<const DirectX::XMFLOAT3*>(&vertices[0].Position), sizeof(Vertex));
+			}
+
+			MergeBounds(mesh.Bounds, sub.Bounds);
 			mesh.SubMeshes.push_back(std::move(sub));
 		}
 
@@ -286,7 +290,7 @@ namespace koi
 		KOI_LOG_TRACE("Mesh '{}': {} submesh(es), {} verts, {} indices",
 			mesh.Name, mesh.SubMeshes.size(), mesh.VertexCount, mesh.IndexCount);
 
-		model.Bounds.Expand(mesh.Bounds);
+		MergeBounds(model.Bounds, mesh.Bounds);
 		model.Meshes.push_back(std::move(mesh));
 	}
 

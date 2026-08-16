@@ -310,12 +310,8 @@ namespace koi::editor
 			Ray ray(Vector3::Transform(origin, invert), Vector3::TransformNormal(direction, invert));
 			ray.direction.Normalize();  // non-uniform scale denormalises it
 
-			const Vector3 center  = mesh->Bounds.Center();
-			const Vector3 extents = (mesh->Bounds.Max - mesh->Bounds.Min) * 0.5f;
-			const DirectX::BoundingBox box(center, extents);
-
 			f32 modelDist = 0.0f;
-			if (!ray.Intersects(box, modelDist)) return;
+			if (!ray.Intersects(mesh->Bounds, modelDist)) return;
 
 			// Model-space distances are not comparable across different scales
 			const Vector3 point = Vector3::Transform(ray.position + ray.direction * modelDist, worldMatrix);
@@ -330,10 +326,10 @@ namespace koi::editor
 		m_selection->Selected = hit;
 	}
 
-	void ViewportPanel::FrameBounds(const AABB& bounds)
+	void ViewportPanel::FrameBounds(const BoundingBox& bounds)
 	{
-		const Vector3 center = bounds.Center();
-		const f32 radius = bounds.Radius();
+		const Vector3 center(bounds.Center);
+		const f32 radius = BoundsRadius(bounds);
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
 		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, 0.3f);

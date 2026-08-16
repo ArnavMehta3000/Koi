@@ -139,6 +139,7 @@ namespace koi
 					.IndexOffset   = baseIndex  + sub.IndexOffset,
 					.VertexOffset  = static_cast<i32>(baseVertex + sub.VertexOffset),
 					.MaterialIndex = validMaterial ? static_cast<u32>(sub.MaterialIndex) : defaultMaterialIndex,
+					.Bounds        = sub.Bounds,
 				});
 			}
 		}

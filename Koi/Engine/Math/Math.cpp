@@ -1,35 +1,48 @@
 #include "Koi/Engine/Math/Math.h"
-#include <algorithm>
-#include <cmath>
 
 namespace koi
 {
-
-	void AABB::Expand(const Vector3& point)
+	void MergeBounds(BoundingBox& inOutBox, const BoundingBox& other)
 	{
-		Min = Vector3::Min(Min, point);
-		Max = Vector3::Max(Max, point);
+		if (IsEmpty(other)) return;
+
+		if (IsEmpty(inOutBox))
+		{
+			inOutBox = other;
+		}
+		else
+		{
+			BoundingBox::CreateMerged(inOutBox, inOutBox, other);
+		}
 	}
 
-	void AABB::Expand(const AABB& other)
+	f32 BoundsRadius(const BoundingBox& b)
 	{
-		Expand(other.Min);
-		Expand(other.Max);
+		BoundingSphere sphere;
+		BoundingSphere::CreateFromBoundingBox(sphere, b);
+		return sphere.Radius > 0.001f ? sphere.Radius : 0.001f;
 	}
 
-	Vector3 AABB::Center() const
+	CullVolume CullVolume::FromCamera(const Matrix& view, const Matrix& projection)
 	{
-		return (Min + Max) * 0.5f;
+		// CreateFromMatrix builds the frustum in view space, then the inverse view puts it in the world
+		BoundingFrustum frustum;
+		BoundingFrustum::CreateFromMatrix(frustum, projection, true /*rhcoords*/);
+
+		const Matrix invView = view.Invert();
+		frustum.Transform(frustum, DirectX::XMLoadFloat4x4(&invView));
+
+		return CullVolume(frustum);
 	}
 
-	f32 AABB::Radius() const
+	bool CullVolume::Intersects(const BoundingBox& worldBounds) const
 	{
-		const Vector3 extent = (Max - Min) * 0.5f;
-		return std::max(
-			std::sqrt(
-				extent.x * extent.x
-				+ extent.y * extent.y
-				+ extent.z * extent.z),
-			0.001f);
+		switch (m_kind)
+		{
+			case Kind::Frustum: return m_frustum.Intersects(worldBounds);
+			case Kind::Box:     return m_box.Intersects(worldBounds);
+			case Kind::None:    break;
+		}
+		return true;
 	}
 }

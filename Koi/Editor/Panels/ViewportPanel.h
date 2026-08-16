@@ -59,7 +59,7 @@ namespace koi::editor
 		inline void SetCameraMode(ViewportCamera mode) { m_cameraMode = mode; }
 
 		const ViewportTarget* PrepareFrame(CommandList& cmd);
-		void FrameBounds(const AABB& bounds);
+		void FrameBounds(const BoundingBox& bounds);
 		void Update(f32 dt, const InputManager& input);
 
 	private:

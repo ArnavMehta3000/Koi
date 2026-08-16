@@ -166,7 +166,7 @@ namespace koi
 		u32 IndexCount    = 0;
 		u32 VertexOffset  = 0;
 		i32 MaterialIndex = -1;   // index into Scene::Materials, -1 = default
-		AABB Bounds;
+		BoundingBox Bounds{ {}, {} };
 	};
 
 	struct Mesh
@@ -175,7 +175,7 @@ namespace koi
 		std::vector<SubMesh> SubMeshes;
 		std::vector<Vertex> Vertices;
 		std::vector<u32> Indices;
-		AABB Bounds;
+		BoundingBox Bounds{ {}, {} };
 		u32 VertexCount = 0;
 		u32 IndexCount = 0;
 	};
@@ -186,7 +186,7 @@ namespace koi
 		std::vector<Mesh> Meshes;
 		std::vector<Material> Materials;
 		std::vector<ImageAsset> Images;
-		AABB Bounds;
+		BoundingBox Bounds{ {}, {} };
 	};
 }
 KOI_ENABLE_ENUM_FLAGS(koi::TextureUsage);
