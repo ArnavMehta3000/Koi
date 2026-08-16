@@ -586,6 +586,9 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 		{
 			if (!fs::exists(src)) return;
 			std::error_code cec;
+
+			// A recursive directory copy needs the destination's parent to already exist
+			fs::create_directories(dst, cec);
 			fs::copy(src, dst,
 				fs::copy_options::recursive | fs::copy_options::overwrite_existing, cec);
 			if (cec)
