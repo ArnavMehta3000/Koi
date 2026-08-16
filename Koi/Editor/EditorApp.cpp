@@ -238,8 +238,12 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,42 Size=1920,990 Split=X
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 		io.ConfigWindowsMoveFromTitleBarOnly = true;
+		io.ConfigDpiScaleFonts     = true;  // style.FontScaleDpi tracks the viewport's monitor
+		io.ConfigDpiScaleViewports = true;  // platform windows scale with it too
 		ImGui::StyleColorsDark();
 
+		ImGui::GetStyle().FontSizeBase = 13.0f;
+		io.Fonts->AddFontDefaultVector();
 		// Loading here marks settings as loaded, so ImGui keeps the seeded layout
 		// instead of starting empty. Later runs read the user's own ini from disk
 		const char* iniPath = io.IniFilename ? io.IniFilename : "imgui.ini";

@@ -58,6 +58,8 @@ namespace koi
 					KOI_LOG_ERROR("GLFW Error {}: {}", code, desc);
 				});
 
+			::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
 			if (!::glfwInit())
 			{
 				throw std::runtime_error("Failed to initialize GLFW");
