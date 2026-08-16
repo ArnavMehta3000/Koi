@@ -97,6 +97,13 @@ namespace koi
 		ImGui::DragFloat("Intensity", &light->Intensity, 0.05f, 0.0f, 100.0f);
 		if (light->Type == LightType::Point)
 			ImGui::DragFloat("Range", &light->Range, 0.1f, 0.0f, 1000.0f);
+
+		if (light->Type == LightType::Directional)
+		{
+			ImGui::Checkbox("Casts Shadows", &light->CastsShadows);
+			if (light->CastsShadows)
+				ImGui::DragFloat("Shadow Bias", &light->ShadowBias, 0.0001f, 0.0f, 0.05f, "%.4f");
+		}
 	}
 }
 

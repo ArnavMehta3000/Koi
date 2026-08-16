@@ -29,5 +29,9 @@ namespace koi
 		Vector3   Color     = Vector3(1.0f, 1.0f, 1.0f);
 		f32       Intensity = 1.0f;
 		f32       Range     = 10.0f;  // point lights only (attenuation cutoff)
+
+		// Directional only. The first caster in query order is the one ShadowPass renders
+		bool      CastsShadows = false;
+		f32       ShadowBias   = 0.0015f;  // constant offset in light-space depth
 	};
 }

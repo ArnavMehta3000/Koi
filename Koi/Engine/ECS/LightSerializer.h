@@ -35,6 +35,8 @@ namespace koi
 			SerializeInto(out, "color", l.Color);
 			out.insert("intensity", static_cast<f64>(l.Intensity));
 			out.insert("range", static_cast<f64>(l.Range));
+			out.insert("casts_shadows", l.CastsShadows);
+			out.insert("shadow_bias", static_cast<f64>(l.ShadowBias));
 			return out;
 		}
 
@@ -49,6 +51,9 @@ namespace koi
 				.Color     = DeserializeOr(*tbl, "color", Vector3(1.0f, 1.0f, 1.0f)),
 				.Intensity = (*tbl)["intensity"].value_or(1.0f),
 				.Range     = (*tbl)["range"].value_or(10.0f),
+
+				.CastsShadows = (*tbl)["casts_shadows"].value_or(false),
+				.ShadowBias   = (*tbl)["shadow_bias"].value_or(0.0015f),
 			};
 		}
 	};
