@@ -8,8 +8,7 @@ cbuffer PushConstants : register(b0)
 	uint   DepthIndex;
 	uint   LightBufferIndex;
 	uint   LightCount;
-	uint   SamplerIndex;
-	uint   _Pad;
+	uint2  _Pad;
 };
 
 // Must match koi::GPULight (scalar-packed). Type: 0 = directional, 1 = point.
@@ -29,9 +28,13 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 	Texture2D<float4> normalTex   = ResourceDescriptorHeap[NormalIndex];
 	Texture2D<float4> materialTex = ResourceDescriptorHeap[MaterialIndex];
 	Texture2D<float>  depthTex    = ResourceDescriptorHeap[DepthIndex];
-	SamplerState      samp        = SamplerDescriptorHeap[SamplerIndex];
 
-	float depth = depthTex.Sample(samp, uv).r;
+	// The G-buffer is the same size as this pass's target, so SV_Position already names the exact texel
+	// Normals and material IDs must not be blended
+	// `uv` is still needed below, where the clip-space reconstruction wants it
+	int3 texel = int3(pos.xy, 0);
+
+	float depth = depthTex.Load(texel).r;
 	if (depth >= 1.0) return float4(0.0, 0.0, 0.0, 1.0);  // background: no geometry here
 
 	// Reconstruct world position from clip space
@@ -39,20 +42,20 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 	float4 world    = mul(clip, InvViewProjection);
 	float3 worldPos = world.xyz / world.w;
 
-	float4 albedoSample = albedoTex.Sample(samp, uv);
+	float4 albedoSample = albedoTex.Load(texel);
 	float3 albedo       = albedoSample.rgb;
 	float  ao           = albedoSample.a;
 
 	// Decode normals to [-1, 1]
-	float3 N = normalize(normalTex.Sample(samp, uv).xyz * 2.0 - 1.0);
+	float3 N = normalize(normalTex.Load(texel).xyz * 2.0 - 1.0);
 
-	float  roughness = materialTex.Sample(samp, uv).r;  // .g = metallic (unused for now)
+	float  roughness = materialTex.Load(texel).r;  // .g = metallic (unused for now)
 	float3 V         = normalize(CameraPosition.xyz - worldPos);
 
 	// TODO: Maybe this is not needed?
 	// Small ambient so unlit areas aren't pure black; modulated by baked AO
 	float3 color = albedo * 0.03 * ao;
-	
+
 	StructuredBuffer<GPULight> lights = ResourceDescriptorHeap[LightBufferIndex];
 	for (uint i = 0; i < LightCount; ++i)
 	{

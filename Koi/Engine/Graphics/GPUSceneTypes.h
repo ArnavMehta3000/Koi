@@ -60,8 +60,7 @@ namespace koi
 		u32     DepthIndex;
 		u32     LightBufferIndex;       // StructuredBuffer<GPULight>
 		u32     LightCount;
-		u32     SamplerIndex;           // point-clamp sampler
-		u32     _Pad;
+		u32     _Pad[2];
 	};
 
 #pragma warning(disable : 4324) // structure was padded due to alignment specifier

@@ -58,6 +58,8 @@ namespace koi
 		GpuFrameBuffer<GPULight> m_lightBuffer;     // StructuredBuffer<GPULight>, grown on demand
 		u32                      m_lightCount = 0;  // lights uploaded this frame
 
+		std::vector<GPULight>    m_lights;
+
 		flecs::world_t* m_queryWorld = nullptr;
 		flecs::system   m_gatherSystem;
 	};

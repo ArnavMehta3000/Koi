@@ -10,6 +10,7 @@ namespace koi
 	class  World;
 	class  GfxDevice;
 	struct Camera;
+	struct GPUMesh;
 	struct RendererResources;
 
 	class GBufferPass : public RenderPass
@@ -44,6 +45,21 @@ namespace koi
 		void ConfigureECS();
 
 	private:
+		struct DrawInfo
+		{
+			const GPUMesh* Mesh;
+			u32            ObjectIndex;
+		};
+
+		struct GatherContext
+		{
+			std::vector<PerObjectData> Objects;  // World + Normal Matrix
+			std::vector<DrawInfo>      DrawInfos;
+
+			void Clear() { Objects.clear(); DrawInfos.clear(); }
+		};
+
+	private:
 		enum class Outputs
 		{
 			Albedo,    // RGB + AO (RGBA8_UNORM)
@@ -66,6 +82,7 @@ namespace koi
 
 		GpuFrameBuffer<FrameConstants> m_frameConstants;
 		GpuFrameBuffer<PerObjectData>  m_objects;
+		GatherContext                  m_gather;
 
 		std::array<RenderPassAttachment, size_t(Outputs::MAX_COUNT)> m_outputs;
 	};

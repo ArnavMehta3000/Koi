@@ -103,13 +103,13 @@ namespace koi
 			ConfigureECS();
 		}
 
-		std::vector<GPULight> lights;
-		m_gatherSystem.run(0.0f, &lights);
+		m_lights.clear();
+		m_gatherSystem.run(0.0f, &m_lights);
 
-		m_lightCount = static_cast<u32>(lights.size());
-		if (lights.empty()) return;
+		m_lightCount = static_cast<u32>(m_lights.size());
+		if (m_lights.empty()) return;
 
-		const DescriptorIndex lightBufferIndex = m_lightBuffer.Upload(frameSlot, std::span<const GPULight>(lights));
+		const DescriptorIndex lightBufferIndex = m_lightBuffer.Upload(frameSlot, std::span<const GPULight>(m_lights));
 
 		// --- Full-screen lighting draw ---
 		if (!m_colorTarget || !m_camera || !m_config.Resources || !m_config.Resources->LightingPipeline)
@@ -139,8 +139,7 @@ namespace koi
 			.DepthIndex        = depthTex->SRVIndex,
 			.LightBufferIndex  = lightBufferIndex,
 			.LightCount        = m_lightCount,
-			.SamplerIndex      = m_config.Resources->PointClampSampler,
-			._Pad              = 0,
+			._Pad              = {},
 		};
 		cmd.SetRootConstants(&pc, sizeof(pc) / sizeof(u32));
 		cmd.Draw(3);

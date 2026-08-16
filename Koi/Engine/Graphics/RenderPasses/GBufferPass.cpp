@@ -11,22 +11,6 @@
 
 namespace koi
 {
-	namespace  // Duplicated from scene pass
-	{
-		// Gathered once per Execute() by the flecs system below, then drained to issue draws.
-		struct DrawInfo
-		{
-			const GPUMesh* Mesh;
-			u32            ObjectIndex;
-		};
-
-		struct GatherContext
-		{
-			std::vector<PerObjectData> Objects;  // World + Normal Matrix
-			std::vector<DrawInfo>      DrawInfos;
-		};
-	}
-
 	GBufferPass::GBufferPass(const Config& config)
 		: m_config(config)
 	{
@@ -66,11 +50,11 @@ namespace koi
 		}
 
 		// Gather this frame's per-object data + draw list
-		GatherContext gather;
-		m_renderSystem.run(0.0f, &gather);
-		if (gather.DrawInfos.empty()) return;
+		m_gather.Clear();
+		m_renderSystem.run(0.0f, &m_gather);
+		if (m_gather.DrawInfos.empty()) return;
 
-		const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(gather.Objects));
+		const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(m_gather.Objects));
 
 		const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 		{
@@ -91,7 +75,7 @@ namespace koi
 		cmd.SetPipeline(m_config.Resources->GBufferPipeline);
 
 		// Issue draws
-		for (const DrawInfo& info : gather.DrawInfos)
+		for (const DrawInfo& info : m_gather.DrawInfos)
 		{
 			const GPUMesh& mesh = *info.Mesh;
 			cmd.SetIndexBuffer(mesh.IndexBuffer);
