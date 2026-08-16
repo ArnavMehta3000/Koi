@@ -13,7 +13,7 @@ option("WithEditor")
 option_end()
 
 option("LogLevel")
-    set_default(2)
+    set_default(0)
     set_values(0, 1, 2, 3, 4)
     set_description([[Compile time switch to set log level (levels below the floor compile out):
         0 - trace (very verbose: per-resource, per-primitive, per-entity)
