@@ -305,7 +305,10 @@ namespace koi::editor
 
 			// Bounds are model-space, so the ray goes to the mesh rather than the box to the world
 			const Matrix worldMatrix = xform.ToMatrix();
-			const Matrix invert      = worldMatrix.Invert();
+
+			if (std::abs(worldMatrix.Determinant()) < 1e-12f) return;
+
+			const Matrix invert = worldMatrix.Invert();
 
 			Ray ray(Vector3::Transform(origin, invert), Vector3::TransformNormal(direction, invert));
 			ray.direction.Normalize();  // non-uniform scale denormalises it
