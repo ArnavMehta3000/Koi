@@ -5,6 +5,7 @@
 
 namespace koi
 {
+	// Values match spdlog::level::level_enum one-for-one
 	enum class LogLevel
 	{
 		Trace,
@@ -15,17 +16,30 @@ namespace koi
 		Critical,
 	};
 
+	inline constexpr int LogLevelCount = 6;
+
 	inline std::string_view ToString(LogLevel level)
 	{
 		switch (level)
 		{
-		case LogLevel::Trace: return "Trace";
-		case LogLevel::Debug: return "Debug";
-		case LogLevel::Info: return "Info";
-		case LogLevel::Warn: return "Warn";
-		case LogLevel::Error: return "Error";
+		case LogLevel::Trace:    return "Trace";
+		case LogLevel::Debug:    return "Debug";
+		case LogLevel::Info:     return "Info";
+		case LogLevel::Warn:     return "Warn";
+		case LogLevel::Error:    return "Error";
 		case LogLevel::Critical: return "Critical";
-		default: return "<Unknown>";
+		default:                 return "<Unknown>";
 		}
+	}
+
+	// Case-sensitive, falls back to Trace
+	inline LogLevel LogLevelFromString(std::string_view name)
+	{
+		for (int i = 0; i < LogLevelCount; ++i)
+		{
+			const auto level = static_cast<LogLevel>(i);
+			if (ToString(level) == name) return level;
+		}
+		return LogLevel::Trace;
 	}
 }
