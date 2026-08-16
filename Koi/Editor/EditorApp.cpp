@@ -1,6 +1,6 @@
 #include "Koi/Editor/EditorApp.h"
-#include "Koi/Editor/Panels/GBufferDebugPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
+#include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
@@ -34,62 +34,61 @@ namespace koi::editor
 	// To change it: arrange the panels in the editor, then copy the resulting ini here
 	static constexpr const char* kDefaultLayout = R"ini(
 [Window][WindowOverViewport_11111111]
-Pos=0,19
-Size=1920,990
+Pos=0,22
+Size=2560,1489
 Collapsed=0
-LastUsed=20260816
+LastUsed=20260817
 
 [Window][Viewport]
-Pos=0,19
-Size=1406,701
+Pos=0,22
+Size=2046,1200
 Collapsed=0
 DockId=0x00000005,0
-LastUsed=20260816
+LastUsed=20260817
 
 [Window][Scene]
-Pos=1408,19
-Size=512,420
+Pos=2048,22
+Size=512,632
 Collapsed=0
 DockId=0x00000001,0
-LastUsed=20260816
+LastUsed=20260817
 
-[Window][GBuffer Debug]
-Pos=1408,441
-Size=512,568
+[Window][Render Targets]
+Pos=2048,656
+Size=512,855
 Collapsed=0
 DockId=0x00000002,0
-LastUsed=20260816
+LastUsed=20260817
 
 [Window][Debug##Default]
 Pos=60,60
 Size=400,400
 Collapsed=0
-LastUsed=20260816
+LastUsed=20260817
 
 [Window][Log]
-Pos=0,722
-Size=1406,287
+Pos=0,1224
+Size=2046,287
 Collapsed=0
 DockId=0x00000006,0
-LastUsed=20260816
+LastUsed=20260817
 
 [Table][0x584826A8,4]
-RefScale=13
-Column 0  Width=64 ID=0xDE21DBF3
-Column 1  Width=64 ID=0xFBE609D2
-Column 2  Width=200 ID=0x26563918
-Column 3  Weight=1.0000 ID=0xA5F9976D
-LastUsed=20260816
+RefScale=16
+Column 0  Width=78 ID=0xDE21DBF3
+Column 1  Width=78 ID=0xFBE609D2
+Column 2  Width=246 ID=0x26563918
+Column 3  Width=612 ID=0xA5F9976D
+LastUsed=20260817
 
 [Docking][Data]
-DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,42 Size=1920,990 Split=X
+DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
   DockNode    ID=0x00000003 Parent=0x08BD597D SizeRef=1406,701 Split=Y Selected=0xC450F867
     DockNode  ID=0x00000005 Parent=0x00000003 SizeRef=1360,1203 CentralNode=1 HiddenTabBar=1 Selected=0xC450F867
     DockNode  ID=0x00000006 Parent=0x00000003 SizeRef=1360,287 HiddenTabBar=1 Selected=0x139FDA3F
   DockNode    ID=0x00000004 Parent=0x08BD597D SizeRef=512,701 Split=Y Selected=0xE601B12F
     DockNode  ID=0x00000001 Parent=0x00000004 SizeRef=628,420 Selected=0xE601B12F
-    DockNode  ID=0x00000002 Parent=0x00000004 SizeRef=628,568 Selected=0x9AB299C4
-
+    DockNode  ID=0x00000002 Parent=0x00000004 SizeRef=628,568 Selected=0x884BBC23
 
 )ini";
 
@@ -151,7 +150,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,42 Size=1920,990 Split=X
 
 		// Register default editor panels
 		RegisterPanel<ScenePanel>(*m_game, m_selection);
-		RegisterPanel<GBufferDebugPanel>(renderer);
+		RegisterPanel<RenderTargetsPanel>(renderer);
 		RegisterPanel<LogPanel>();
 		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer, *m_game, m_selection);
 	}

@@ -49,6 +49,8 @@ namespace koi
 			return nullptr;
 		}
 
+		[[nodiscard]] inline std::span<const std::unique_ptr<RenderPass>> GetPasses() const { return m_passes; }
+
 		// Validates that every declared input name is produced as an output by a prior pass
 		// Inputs not covered by any prior pass are assumed externally produced and logged at trace level
 		void Compile();
