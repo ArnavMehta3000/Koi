@@ -1,54 +1,80 @@
-// Contains the static Logger class, using spdlog under the hood
-
 #pragma once
-#include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Core/LogLevel.h"
-#include <spdlog/spdlog.h>
-#include <memory>
+#include "Koi/Engine/Core/Types.h"
+#include <spdlog/logger.h>
 #include <string>
 
 namespace koi
 {
 	struct LoggerConfig
 	{
-		bool SpawnConsole = false; // force-allocate a console on Windows
-		bool UseDebugSink = true;  // OutputDebugString sink (Win only)
+		std::string FilePath        = "Logs/Koi.log";   // empty disables the file sink
+		LogLevel    RuntimeLevel    = LogLevel::Trace;  // floor on top of the compile-time KOI_LOG_LEVEL
+		u32         HistoryCapacity = 4096;             // in-memory ring the editor console reads; 0 disables
+		bool        SpawnConsole    = false;            // force-allocate a console on Windows
+		bool        UseDebugSink    = true;             // OutputDebugString sink
+	};
+
+	struct LogCategoryInfo
+	{
+		std::string_view Path;  // as interned: __FILE__, or a AngelScript section name
+		std::string_view Name;  // basename, for display
 	};
 
 	class Logger
 	{
 	public:
 		static void Init(const LoggerConfig& cfg = {});
-		inline static bool IsInitialized() { return g_initialized; }
-		static void Shutdown();
 
-		static std::shared_ptr<spdlog::logger> GetLogger(std::string_view category);
-		static std::shared_ptr<spdlog::logger> GetOrCreateLogger(std::string_view category);
+		// Re-applies config once the project TOML is known. Rebuilds the sink set, so it must run before any worker threads exist
+		static void Configure(const LoggerConfig& cfg);
+
+		static void Shutdown();
+		[[nodiscard]] static bool IsInitialized() { return s_logger != nullptr; }
 
 		static void SetLevel(LogLevel level);
-		static void SetCategoryLevel(std::string_view category, LogLevel level);
-		static void SetPattern(const std::string& pattern);
 		static void Flush();
 
-	private:
-		static std::shared_ptr<spdlog::logger> CreateLogger(std::string_view category);
-		static spdlog::level::level_enum ToSpdlogLevel(LogLevel level);
+		// Ids are stable for the process lifetime and usable before Init / after Shutdown
+		[[nodiscard]] static u16 InternCategory(std::string_view path);
+		[[nodiscard]] static LogCategoryInfo GetCategory(u16 id);
+		[[nodiscard]] static u16 CategoryCount();
+
+		// Runtime: AngelScript sections, plugins, anything without __FILE__
+		static void Log(LogLevel level, std::string_view category, u32 line, std::string_view message);
+		static void Log(LogLevel level, u16 category, u32 line, std::string_view message);
+
+		template<typename... Args>
+		static void Log(LogLevel level, u16 category, u32 line, spdlog::format_string_t<Args...> fmt, Args&&... args)
+		{
+			if (!ShouldLog(level)) return;
+			const std::string message = fmt::format(fmt, std::forward<Args>(args)...);
+			Log(level, category, line, message);
+		}
+
+		[[nodiscard]] static bool ShouldLog(LogLevel level)
+		{
+			return s_logger && s_logger->should_log(static_cast<spdlog::level::level_enum>(level));
+		}
 
 	private:
-		static inline bool g_initialized = false;
+		static inline spdlog::logger* s_logger = nullptr;
 	};
 }
 
-#define KOI_LOG_IMPL(func, ...)                                          \
-	do                                                                   \
-	{                                                                    \
-		auto _logger = ::koi::Logger::GetOrCreateLogger(KOI_FILE);       \
-		if (_logger) _logger->func(__VA_ARGS__);                         \
-	} while(0)
+#define KOI_LOG_IMPL(lvl, ...)                                                                \
+	do                                                                                        \
+	{                                                                                         \
+		if (::koi::Logger::ShouldLog(lvl))                                                    \
+		{                                                                                     \
+			static const ::koi::u16 _koiLogCat = ::koi::Logger::InternCategory(__FILE__);      \
+			::koi::Logger::Log(lvl, _koiLogCat, static_cast<::koi::u32>(__LINE__), __VA_ARGS__); \
+		}                                                                                     \
+	} while (0)
 
-#define KOI_LOG_TRACE(...)    do { if constexpr (KOI_LOG_LEVEL <= 0) KOI_LOG_IMPL(trace,    __VA_ARGS__); } while(0)
-#define KOI_LOG_DEBUG(...)    do { if constexpr (KOI_LOG_LEVEL <= 1) KOI_LOG_IMPL(debug,    __VA_ARGS__); } while(0)
-#define KOI_LOG_INFO(...)     do { if constexpr (KOI_LOG_LEVEL <= 2) KOI_LOG_IMPL(info,     __VA_ARGS__); } while(0)
-#define KOI_LOG_WARN(...)     do { if constexpr (KOI_LOG_LEVEL <= 3) KOI_LOG_IMPL(warn,     __VA_ARGS__); } while(0)
-#define KOI_LOG_ERROR(...)    do { if constexpr (KOI_LOG_LEVEL <= 4) KOI_LOG_IMPL(error,    __VA_ARGS__); } while(0)
-#define KOI_LOG_CRITICAL(...) do { if constexpr (KOI_LOG_LEVEL <= 5) KOI_LOG_IMPL(critical, __VA_ARGS__); } while(0)
+#define KOI_LOG_TRACE(...)    do { if constexpr (KOI_LOG_LEVEL <= 0) KOI_LOG_IMPL(::koi::LogLevel::Trace,    __VA_ARGS__); } while(0)
+#define KOI_LOG_DEBUG(...)    do { if constexpr (KOI_LOG_LEVEL <= 1) KOI_LOG_IMPL(::koi::LogLevel::Debug,    __VA_ARGS__); } while(0)
+#define KOI_LOG_INFO(...)     do { if constexpr (KOI_LOG_LEVEL <= 2) KOI_LOG_IMPL(::koi::LogLevel::Info,     __VA_ARGS__); } while(0)
+#define KOI_LOG_WARN(...)     do { if constexpr (KOI_LOG_LEVEL <= 3) KOI_LOG_IMPL(::koi::LogLevel::Warn,     __VA_ARGS__); } while(0)
+#define KOI_LOG_ERROR(...)    do { if constexpr (KOI_LOG_LEVEL <= 4) KOI_LOG_IMPL(::koi::LogLevel::Error,    __VA_ARGS__); } while(0)
+#define KOI_LOG_CRITICAL(...) do { if constexpr (KOI_LOG_LEVEL <= 5) KOI_LOG_IMPL(::koi::LogLevel::Critical, __VA_ARGS__); } while(0)
