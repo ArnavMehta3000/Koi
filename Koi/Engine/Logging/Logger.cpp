@@ -7,6 +7,7 @@
 #include <cassert>
 #include <filesystem>
 #include <iostream>
+#include <shared_mutex>
 #include <unordered_map>
 
 namespace fs = std::filesystem;
@@ -22,6 +23,8 @@ namespace koi
 		};
 
 		std::unique_ptr<LoggerData> g_loggerData;
+
+		std::shared_mutex g_loggersMutex; // Logger category map is not thread-safe
 	}
 
 	static bool HasConsoleAttached()
@@ -107,6 +110,7 @@ namespace koi
 	std::shared_ptr<spdlog::logger> Logger::GetLogger(std::string_view category)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Logging);
+		std::shared_lock lock(g_loggersMutex);
 		auto it = g_loggerData->g_loggers.find(std::string(category));
 		return (it != g_loggerData->g_loggers.end()) ? it->second : nullptr;
 	}
@@ -128,6 +132,15 @@ namespace koi
 		try
 		{
 			std::string name(category);
+
+			std::unique_lock lock(g_loggersMutex);
+
+			// Another thread may have won the race between GetLogger and here
+			if (auto it = g_loggerData->g_loggers.find(name); it != g_loggerData->g_loggers.end())
+			{
+				return it->second;
+			}
+
 			auto logger = std::make_shared<spdlog::logger>(name, g_loggerData->g_sinks.begin(), g_loggerData->g_sinks.end());
 			logger->set_level(spdlog::level::trace);
 			logger->flush_on(spdlog::level::err);
@@ -148,6 +161,8 @@ namespace koi
 		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		auto lvl = ToSpdlogLevel(level);
 		for (auto& s : g_loggerData->g_sinks) s->set_level(lvl);
+
+		std::shared_lock lock(g_loggersMutex);
 		for (auto& [_, logger] : g_loggerData->g_loggers) logger->set_level(lvl);
 	}
 
@@ -165,6 +180,7 @@ namespace koi
 
 	void Logger::Flush()
 	{
+		std::shared_lock lock(g_loggersMutex);
 		for (auto& [_, logger] : g_loggerData->g_loggers)
 		{
 			logger->flush();
