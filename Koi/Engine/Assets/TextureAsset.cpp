@@ -9,7 +9,7 @@ namespace koi
 {
 	std::unique_ptr<ImageAsset> AssetTraits<GPUTexture>::Load(const std::string& vfsPath)
 	{
-		ZoneScoped;
+		KOI_ZONE_UNMUTED;  // Texture decode can arrive here from a parallel-for loop
 		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
 		if (vfsPath.contains('#'))

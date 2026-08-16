@@ -24,12 +24,16 @@ namespace koi
 		[[nodiscard]] inline TextureHandle CurrentBackBuffer() const noexcept { return m_backBuffers[m_currentBackBuffer]; }
 		[[nodiscard]] inline TextureHandle GetHDRColorBuffer() const noexcept { return m_hdrColorBuffer; }
 
-		void Resize(u32 width, u32 height);
+		// Functions to delay the actual resize until Win32 WM_SIZE pump ends
+		void QueueResize(u32 width, u32 height) noexcept;
+		void ApplyPendingResize();
+
 		void Present();
 
 		void SetVSync(bool enabled) noexcept { m_vsync = enabled; }
 
 	private:
+		void Resize(u32 width, u32 height);
 		void CreateSwapChain();
 		void AcquireBackBuffers();
 		void ReleaseBackBuffers();
@@ -49,6 +53,8 @@ namespace koi
 		FrameArray<u64>            m_frameFenceValues{};
 		u32                        m_width             = 0;
 		u32                        m_height            = 0;
+		u32                        m_pendingWidth      = 0;  // 0 => nothing latched
+		u32                        m_pendingHeight     = 0;
 		u32                        m_currentBackBuffer = 0;
 		Format                     m_format            = Format::R8G8B8A8_UNORM;
 	};

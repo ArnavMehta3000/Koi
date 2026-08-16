@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/CommandAllocator.h"
 #include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -29,6 +30,11 @@ namespace koi
 			m_cmdList->SetName(debugName.data());
 
 		m_pendingBarriers.reserve(16);
+	}
+
+	TracyD3D12Ctx CommandList::GetProfilerCtx() const noexcept
+	{
+		return m_device ? m_device->GetProfilerCtx() : nullptr;
 	}
 
 	void CommandList::Begin(u32 frameSlot)

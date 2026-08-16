@@ -2,6 +2,7 @@
 #include "Koi/Editor/Panels/GBufferDebugPanel.h"
 #include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -139,6 +140,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::HostTick(f32 dt)
 	{
+		ZoneScoped;
 		InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 
 		// Hot-reload runs before frame so that commandlist invalidation doesn't happen
@@ -160,6 +162,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::HostRender()
 	{
+		ZoneScoped;
 		if (CommandList* cmd = Engine::Get().GetSubsystem<Renderer>().GetCommandList())
 			m_viewportPanel->PrepareFrame(*cmd);
 
@@ -188,6 +191,16 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 		Window& window = engine.GetWindow();
 
 		IMGUI_CHECKVERSION();
+
+		// Route ImGui allocations through operator new so they're tracked by MemoryTracker
+		ImGui::SetAllocatorFunctions(
+			[](size_t size, void*) -> void*
+			{
+				KOI_MEM_TAG_SCOPE(MemTag::Editor);
+				return ::operator new(size);
+			},
+			[](void* ptr, void*) { ::operator delete(ptr); });
+
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -268,31 +281,41 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::OnOverlayRender(CommandList& cmd)
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		Engine& engine     = Engine::Get();
 		Renderer& renderer = engine.GetSubsystem<Renderer>();
 		GfxDevice& device  = renderer.GetDevice();
 
-		ImGui_ImplDX12_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		ImGuizmo::BeginFrame();
-
-		ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
-		DrawMenuBar();
-
-		// Draw the panels
-		for (auto& panel : m_panels)
+		// Scope-tracked ImGui new frame
 		{
-			panel->OnDraw();
+			ZoneScopedN("ImGui NewFrame");
+			{ ZoneScopedN("Backend DX12"); ImGui_ImplDX12_NewFrame(); }
+			{ ZoneScopedN("Backend GLFW"); ImGui_ImplGlfw_NewFrame(); }
+			{ ZoneScopedN("Core");         ImGui::NewFrame();         }
+			{ ZoneScopedN("ImGuizmo");     ImGuizmo::BeginFrame();    }
 		}
 
-		// Render ImGui
-		ImGui::Render();
+		{
+			ZoneScopedN("Panels");
+			ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+			DrawMenuBar();
 
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
+			for (auto& panel : m_panels)
+			{
+				ZoneTransientN(panelZone, panel->GetName().data(), true);  // every GetName() is a literal
+				panel->OnDraw();
+			}
+		}
+
+		{
+			ZoneScopedN("ImGui Render");
+			ImGui::Render();
+
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
 
 		// ScenePass/TonemapPass render into the Viewport panel's offscreen target rather than
 		// the swapchain back buffer, so the back buffer needs to be bound/cleared explicitly here
@@ -309,10 +332,13 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 			cmd.SetViewportAndScissor(rw->GetWidth(), rw->GetHeight());
 		}
 
-		auto* native = cmd.GetNative();
-		ID3D12DescriptorHeap* heaps[] = { device.ResourceHeap().GetHeap() };
-		native->SetDescriptorHeaps(1, heaps);
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), native);
+		{
+			ZoneScopedN("ImGui RecordDrawData");
+			auto* native = cmd.GetNative();
+			ID3D12DescriptorHeap* heaps[] = { device.ResourceHeap().GetHeap() };
+			native->SetDescriptorHeaps(1, heaps);
+			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), native);
+		}
 	}
 
 	void EditorApp::DrawMenuBar()
@@ -358,6 +384,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::SaveScene()
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		const std::string& scenePath = m_game->GetDesc().StartupScene;
@@ -377,6 +404,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::Play()
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		World& world                = m_game->GetWorld();
@@ -406,6 +434,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::TogglePause()
 	{
+		ZoneScoped;
 		Engine& engine = Engine::Get();
 		switch (engine.GetPlayState())
 		{
@@ -417,6 +446,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,19 Size=1280,701 Split=X
 
 	void EditorApp::Stop()
 	{
+		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		Engine& engine = Engine::Get();

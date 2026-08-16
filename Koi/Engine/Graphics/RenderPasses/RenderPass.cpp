@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
+#include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include <unordered_set>
@@ -44,6 +45,7 @@ namespace koi
 
 		for (auto& pass : m_passes)
 		{
+			KOI_GPU_ZONE_TRANSIENT(cmd, passZone, pass->GetName().data());
 			pass->Execute(cmd);
 		}
 	}

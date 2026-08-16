@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Graphics/RHI/DX12Common.h"
+#include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/RHI/PipelineDesc.h"
@@ -78,6 +79,7 @@ namespace koi
 		[[nodiscard]] inline DescriptorHeap&      ResourceHeap()         noexcept       { return m_resourceHeap;        }
 		[[nodiscard]] inline DescriptorHeap&      SamplerHeap()          noexcept       { return m_samplerHeap;         }
 		[[nodiscard]] inline UploadContext&       GetUploadContext()      noexcept      { return m_uploadContext;       }
+		[[nodiscard]] inline TracyD3D12Ctx        GetProfilerCtx()       const noexcept { return m_gpuProfilerCtx;     }
 
 		[[nodiscard]] u64 GetCompletedFenceValue () const noexcept;
 
@@ -109,6 +111,11 @@ namespace koi
 		// Removes resources from descriptor heaps
 		void FreeResource(TextureHandle h);
 		void FreeResource(BufferHandle h);
+
+		// Closes off the previous frame's timestamp payload / drains any that the GPU has finished.
+		// Must stay 1:1 per frame: NewFrame signals the graphics queue, Collect reads the results back.
+		void GpuProfilerNewFrame();
+		void GpuProfilerCollect();
 
 		u64 SignalFrame();
 		void WaitForFence(u64 fenceValue);
@@ -158,6 +165,8 @@ namespace koi
 
 		std::queue<PendingDeletion> m_deletionQueue;
 		UploadContext               m_uploadContext;
+
+		TracyD3D12Ctx               m_gpuProfilerCtx  = nullptr;
 
 		u64                         m_nextFenceValue  = 1;
 		u64                         m_frameIndex      = 0;

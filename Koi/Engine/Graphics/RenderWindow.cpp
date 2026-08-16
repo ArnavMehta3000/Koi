@@ -57,6 +57,8 @@ namespace koi
 		, m_frameFenceValues(other.m_frameFenceValues)
 		, m_width(other.m_width)
 		, m_height(other.m_height)
+		, m_pendingWidth(other.m_pendingWidth)
+		, m_pendingHeight(other.m_pendingHeight)
 		, m_currentBackBuffer(other.m_currentBackBuffer)
 		, m_format(other.m_format)
 		, m_vsync(other.m_vsync)
@@ -97,6 +99,8 @@ namespace koi
 			m_frameFenceValues  = other.m_frameFenceValues;
 			m_width             = other.m_width;
 			m_height            = other.m_height;
+			m_pendingWidth      = other.m_pendingWidth;
+			m_pendingHeight     = other.m_pendingHeight;
 			m_currentBackBuffer = other.m_currentBackBuffer;
 			m_format            = other.m_format;
 			m_vsync             = other.m_vsync;
@@ -110,6 +114,27 @@ namespace koi
 			other.m_hdrColorBuffer = TextureHandle{};
 		}
 		return *this;
+	}
+
+	void RenderWindow::QueueResize(u32 width, u32 height) noexcept
+	{
+		// Minimize reports 0x0, dropping it also keeps an already-latched size alive across one
+		if (width == 0 || height == 0) return;
+
+		m_pendingWidth  = width;
+		m_pendingHeight = height;
+	}
+
+	void RenderWindow::ApplyPendingResize()
+	{
+		if (m_pendingWidth == 0) return;
+
+		const u32 width  = m_pendingWidth;
+		const u32 height = m_pendingHeight;
+		m_pendingWidth   = 0;
+		m_pendingHeight  = 0;
+
+		Resize(width, height);  // no-ops if the drag ended back on the current size
 	}
 
 	void RenderWindow::Resize(u32 width, u32 height)

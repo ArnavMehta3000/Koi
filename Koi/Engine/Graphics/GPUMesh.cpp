@@ -34,16 +34,30 @@ namespace koi
 
 		AssetCache<GPUTexture>& textures = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUTexture>();
 
+		// Decode every standalone image up front, in parallel. stb_image is the bulk of scene load
+		// and it doesn't touch the device, so the GPU-side work below stays single-threaded
+		std::vector<std::string> diskPaths;
+		diskPaths.reserve(model.Images.size());
+		for (const ImageAsset& img : model.Images)
+		{
+			diskPaths.push_back(img.Pixels.empty() ? img.Path : std::string());
+		}
+
+		const std::vector<std::unique_ptr<ImageAsset>> decoded = textures.DecodeParallel(diskPaths);
+
 		GfxDevice::UploadContext& upload = device.GetUploadContext();
 		upload.Begin();  // outer batch: each texture's own Begin/End nests into this one
 
-		for (const ImageAsset& img : model.Images)
+		for (size_t i = 0; i < model.Images.size(); ++i)
 		{
-			// Pixels are only carried inline for images embedded in the glTF; anything else is
-			// decoded by the cache from img.Path
-			const GPUTextureHandle handle = img.Pixels.empty()
-				? textures.Acquire(device, img.Path)
-				: textures.AcquireFrom(device, img.Path, img);
+			const ImageAsset& img = model.Images[i];
+
+			// Pixels are carried inline only for images embedded in the glTF. Everything else was
+			// prefetched above; a null slot means resident, duplicated, or failed, and Acquire resolves all three
+			const GPUTextureHandle handle =
+				  !img.Pixels.empty() ? textures.AcquireFrom(device, img.Path, img)
+				: decoded[i]          ? textures.AcquireFrom(device, img.Path, *decoded[i])
+				:                       textures.Acquire(device, img.Path);
 
 			const GPUTexture* texture = textures.Get(handle);
 			imageSRVs.push_back(texture ? texture->SRVIndex : INVALID_DESCRIPTOR);
@@ -161,7 +175,7 @@ namespace koi
 			.DebugName = "Mesh Materials",
 		});
 
-		// Fill the GPU-only buffers with their data	
+		// Fill the GPU-only buffers with their data
 		upload.UploadBuffer(mesh.VertexBuffer,   vertices.data(),  vbSize);
 		upload.UploadBuffer(mesh.IndexBuffer,    indices.data(),   ibSize);
 		upload.UploadBuffer(mesh.MaterialBuffer, materials.data(), matSize);

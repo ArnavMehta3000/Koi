@@ -1,8 +1,8 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Core/Config.h"
-#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/IRenderPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -57,10 +57,10 @@ namespace koi
 		Window& window = ctx.MainWindow;
 		m_renderWindow.emplace(*m_device, window, ctx.VSync);
 
-		// Only the swapchain needs the OS event | render passes size themselves off the RenderView
+		// Only the swapchain needs the OS event | render passes size themselves off the RenderView.
 		window.SetResizeCallback([this](u32 w, u32 h)
 		{
-			if (m_renderWindow) m_renderWindow->Resize(w, h);
+			if (m_renderWindow) m_renderWindow->QueueResize(w, h);
 		});
 
 		m_frameContext = std::make_unique<FrameContext>();
@@ -78,6 +78,12 @@ namespace koi
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_renderWindow || !m_frameContext) return;
+
+		// Before anything records against the back buffers this frame
+		m_renderWindow->ApplyPendingResize();
+
+		// Closes off the previous frame's timestamp payload and signals the graphics queue for it
+		m_device->GpuProfilerNewFrame();
 
 		m_renderGraph.ResetAll();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
@@ -99,13 +105,21 @@ namespace koi
 
 		m_renderGraph.Execute(cmd);
 
-		if (m_overlay) m_overlay->OnOverlayRender(cmd);
+		if (m_overlay)
+		{
+			ZoneScopedN("Overlay");
+			KOI_GPU_ZONE(cmd, "Overlay");
+			m_overlay->OnOverlayRender(cmd);
+		}
 
 		cmd.TransitionBarrier(m_renderWindow->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);
 		cmd.End();
 
 		m_graphicsQueue.Submit(cmd);
 		m_renderWindow->Present();
+
+		// After Present, since that waits on the back buffer fence and the payload is ready by then
+		m_device->GpuProfilerCollect();
 
 		m_frameSlot = (m_frameSlot + 1) % FRAMES_IN_FLIGHT;
 	}

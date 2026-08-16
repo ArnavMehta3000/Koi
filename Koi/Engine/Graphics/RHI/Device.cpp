@@ -115,6 +115,15 @@ namespace koi
 
 		m_uploadContext.Shutdown();
 		WaitForIdle();
+
+		// Drains outstanding timestamps and releases its query heap; must outlive nothing but
+		// itself, and must go before the queue and device it was built against
+		if (m_gpuProfilerCtx)
+		{
+			TracyD3D12Destroy(m_gpuProfilerCtx);
+			m_gpuProfilerCtx = nullptr;
+		}
+
 		FlushDeferredDeletions(~0ull);
 		ReportLiveResources();
 
@@ -421,6 +430,23 @@ namespace koi
 		else
 		{
 			KOI_LOG_WARN("Trying to mark invalid buffer for deletion (Handle: {})", h.GetId());
+		}
+	}
+
+	void GfxDevice::GpuProfilerNewFrame()
+	{
+		if (m_gpuProfilerCtx)
+		{
+			TracyD3D12NewFrame(m_gpuProfilerCtx);
+		}
+	}
+
+	void GfxDevice::GpuProfilerCollect()
+	{
+		if (m_gpuProfilerCtx)
+		{
+			ZoneScoped;
+			TracyD3D12Collect(m_gpuProfilerCtx);
 		}
 	}
 
@@ -887,6 +913,11 @@ namespace koi
 		};
 		DX_CHECK(m_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&m_graphicsQueue)));
 		m_graphicsQueue->SetName(L"Koi Graphics Queue");
+
+		// Owns a timestamp query heap + readback buffer; only DIRECT/COMPUTE queues can carry
+		// timestamps, so the copy queue in UploadContext is deliberately left uninstrumented
+		m_gpuProfilerCtx = TracyD3D12Context(m_device.Get(), m_graphicsQueue.Get());
+		TracyD3D12ContextName(m_gpuProfilerCtx, "Graphics", 8);
 	}
 
 	void GfxDevice::CreateFences()

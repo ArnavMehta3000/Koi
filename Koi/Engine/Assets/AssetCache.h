@@ -1,8 +1,13 @@
 #pragma once
 #include "Koi/Engine/Core/Handle.h"
 #include "Koi/Engine/Assets/AssetTraits.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include <algorithm>
 #include <cassert>
+#include <execution>
+#include <memory>
+#include <string>
 #include <unordered_map>
 
 namespace koi
@@ -51,6 +56,44 @@ namespace koi
 
 			KOI_LOG_DEBUG("Loaded embedded {} asset: {}", AssetTraits<T>::Name, key);
 			return Insert(device, key, source);
+		}
+
+		// Decodes a batch of paths concurrently, ahead of the Acquire loop that consumes them.
+		// Results line up index-for-index with `paths`; an entry is null when the path is empty
+		// (caller opted out), already resident, a duplicate of an earlier one, or failed to decode.
+		[[nodiscard]] std::vector<std::unique_ptr<typename AssetTraits<T>::Source>>
+		DecodeParallel(std::span<const std::string> paths) const
+		{
+			ZoneScoped;
+			using Source = typename AssetTraits<T>::Source;
+
+			std::vector<std::unique_ptr<Source>> decoded(paths.size());
+
+			std::vector<u32> work;
+			work.reserve(paths.size());
+			for (u32 i = 0; i < paths.size(); ++i)
+			{
+				if (paths[i].empty() || m_pathToHandle.contains(paths[i])) continue;
+
+				const bool duplicate = std::ranges::any_of(work,
+					[&](u32 j) { return paths[j] == paths[i]; });
+
+				if (!duplicate) work.push_back(i);
+			}
+
+			// A couple of decodes isn't worth the dispatch, the Acquire loop handles it inline
+			if (work.size() < 2) return decoded;
+
+			ZoneValue(work.size());
+
+			std::for_each(std::execution::par, work.begin(), work.end(), [&](u32 i)
+			{
+				// par runs on system thread-pool threads
+				const MuteZonesScope quiet;  // Mute tracy's thread-pool dump
+				decoded[i] = AssetTraits<T>::Load(paths[i]);
+			});
+
+			return decoded;
 		}
 
 		[[nodiscard]] const T* Get(AssetHandle<T> handle) const

@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Graphics/RHI/DX12Common.h"
+#include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include <span>
 
 namespace koi
@@ -16,6 +17,7 @@ namespace koi
 
 		[[nodiscard]] inline dx12::GraphicsCommandList* GetNative() const noexcept { return m_cmdList.Get(); }
 		[[nodiscard]] inline dx12::CommandList* GetNativeBase() const noexcept { return m_cmdList.Get(); }
+		[[nodiscard]] TracyD3D12Ctx GetProfilerCtx() const noexcept;
 
 		void Init(GfxDevice& device, CommandAllocator& allocator, D3D12_COMMAND_LIST_TYPE type, std::wstring_view debugName = L"");
 

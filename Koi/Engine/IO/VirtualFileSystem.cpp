@@ -38,7 +38,7 @@ namespace koi
 
 	std::optional<fs::path> FilesystemMount::TryResolveToDisk(std::string_view relativePath)
 	{
-		ZoneScoped;
+		KOI_ZONE_UNMUTED;  // Texture decode can arrive here from a parallel-for loop
 		KOI_MEM_TAG_SCOPE(MemTag::IO);
 
 		// Return the first root that actually contains the file
