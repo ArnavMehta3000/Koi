@@ -33,10 +33,10 @@ namespace koi
 			toml::table out;
 			SerializeInto(out, "type", l.Type);
 			SerializeInto(out, "color", l.Color);
-			out.insert("intensity", static_cast<f64>(l.Intensity));
-			out.insert("range", static_cast<f64>(l.Range));
+			out.insert("intensity", ToTomlFloat(l.Intensity));
+			out.insert("range", ToTomlFloat(l.Range));
 			out.insert("casts_shadows", l.CastsShadows);
-			out.insert("shadow_bias", static_cast<f64>(l.ShadowBias));
+			out.insert("shadow_bias", ToTomlFloat(l.ShadowBias));
 			return out;
 		}
 

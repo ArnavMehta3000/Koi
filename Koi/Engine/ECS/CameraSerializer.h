@@ -10,9 +10,9 @@ namespace koi
 		static toml::table Serialize(const CameraComponent& c)
 		{
 			toml::table out;
-			out.insert("fov", static_cast<f64>(c.FovY));
-			out.insert("near", static_cast<f64>(c.Near));
-			out.insert("far", static_cast<f64>(c.Far));
+			out.insert("fov", ToTomlFloat(c.FovY));
+			out.insert("near", ToTomlFloat(c.Near));
+			out.insert("far", ToTomlFloat(c.Far));
 			out.insert("primary", c.Primary);
 			return out;
 		}
