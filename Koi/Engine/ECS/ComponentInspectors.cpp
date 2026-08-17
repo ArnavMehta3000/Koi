@@ -4,6 +4,7 @@
 #if KOI_WITH_EDITOR
 
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <numbers>
@@ -46,6 +47,134 @@ namespace koi
 		ImGui::DragFloat3("Scale", &local->Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
 	}
 
+	namespace
+	{
+		// One widget per params entry, dispatched on the node type
+		bool DrawParam(const toml::key& key, toml::node& node, bool liveEdit)
+		{
+			const std::string label(key.str());
+
+			if (toml::value<bool>* asBool = node.as_boolean())
+				return ImGui::Checkbox(label.c_str(), &asBool->get());
+
+			bool edited = false;
+
+			if (toml::value<i64>* asInt = node.as_integer())
+			{
+				i32 value = static_cast<i32>(asInt->get());
+				edited = ImGui::DragInt(label.c_str(), &value, 0.25f);
+				if (edited) asInt->get() = value;
+			}
+			else if (toml::value<f64>* asFloat = node.as_floating_point())
+			{
+				f32 value = static_cast<f32>(asFloat->get());
+				edited = ImGui::DragFloat(label.c_str(), &value, 0.01f);
+				if (edited) asFloat->get() = ToTomlFloat(value);
+			}
+			else
+			{
+				// Vector2/3/4 arrive as arrays of floats
+				toml::array* arr = node.as_array();
+				if (!arr || arr->empty() || arr->size() > 4) return false;
+
+				std::array<f32, 4> values{};
+				for (size_t i = 0; i < arr->size(); ++i)
+				{
+					values[i] = static_cast<f32>((*arr)[i].value_or(0.0));
+				}
+
+				edited = ImGui::DragScalarN(label.c_str(), ImGuiDataType_Float, values.data(), static_cast<int>(arr->size()), 0.05f);
+
+				if (edited)
+				{
+					toml::array replacement;
+					for (size_t i = 0; i < arr->size(); ++i)
+					{
+						replacement.push_back(ToTomlFloat(values[i]));
+					}
+
+					*arr = std::move(replacement);
+				}
+			}
+
+			return liveEdit ? edited : ImGui::IsItemDeactivatedAfterEdit();
+		}
+
+		void ReacquireMesh(Entity e, const std::string& uri)
+		{
+			GfxDevice& device = Engine::Get().GetSubsystem<Renderer>().GetDevice();
+			AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
+
+			const MeshHandle handle = meshes.Acquire(device, uri);
+			if (!handle) return;
+
+			if (const MeshRef* previous = e.try_get<MeshRef>())
+				meshes.Release(device, previous->Handle);
+
+			e.set<MeshRef>({ handle });
+		}
+
+		void DrawProceduralInspector(Entity e, std::string_view source)
+		{
+			// The edited params are UI state: a drag only commits on release
+			static EntityID    s_owner = 0;
+			static std::string s_committed;
+			static std::string s_generator;
+			static toml::table s_params;
+
+			if (s_owner != e.id() || s_committed != source)
+			{
+				std::optional parsed = ParseProceduralUri(source);
+				if (!parsed) return;
+
+				s_generator = std::move(parsed->first);
+				s_params    = std::move(parsed->second);
+				s_owner     = e.id();
+				s_committed = source;
+			}
+
+			// Off by default because every committed edit regenerates the mesh and re-uploads it
+			static bool s_liveUpdate = false;
+
+			bool changed = false;
+
+			if (ImGui::BeginCombo("Generator", s_generator.c_str()))
+			{
+				for (const MeshGeneratorInfo& info : MeshGeneratorRegistry::Get().All())
+				{
+					if (!ImGui::Selectable(info.Name.c_str(), info.Name == s_generator)) continue;
+
+					// A different generator takes a different params set, so start from its defaults
+					s_generator = info.Name;
+					s_params    = info.Defaults();
+					changed     = true;
+				}
+
+				ImGui::EndCombo();
+			}
+
+			ImGui::Checkbox("Live update", &s_liveUpdate);
+			ImGui::SetItemTooltip("Rebuild and re-upload the mesh on every frame of a drag, "
+			                      "instead of once when the drag ends");
+
+			for (auto&& [key, node] : s_params)
+			{
+				changed |= DrawParam(key, node, s_liveUpdate);
+			}
+
+			// Clamp the params to the generator's range, so the widget cannot be dragged out of bounds
+			if (const MeshGeneratorInfo* info = MeshGeneratorRegistry::Get().Find(s_generator))
+			{
+				if (info->Clamp) info->Clamp(s_params);
+			}
+
+			if (!changed) return;
+
+			s_committed = ToProceduralUri(s_generator, s_params);
+			ReacquireMesh(e, s_committed);
+		}
+	}
+
 	void DrawMeshInspector(Entity e)
 	{
 		const MeshRef* meshRef = e.try_get<MeshRef>();
@@ -62,6 +191,9 @@ namespace koi
 			ImGui::Text("Draw calls  %d", static_cast<i32>(mesh->DrawItems.size()));
 			ImGui::Text("Textures    %d", static_cast<i32>(mesh->Textures.size()));
 		}
+
+		if (source.starts_with(kProceduralScheme))
+			DrawProceduralInspector(e, source);
 	}
 
 	void DrawCameraInspector(Entity e)
