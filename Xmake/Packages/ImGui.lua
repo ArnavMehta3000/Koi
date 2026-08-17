@@ -10,9 +10,9 @@ target("ImGui")  -- Custom ImGui package
 	add_packages("glfw")
 	add_syslinks("imm32")
 
-	-- Remove misc directory
-	remove_files("$(projectdir)/External/ImGui/misc/**.cpp")
-	remove_headerfiles("$(projectdir)/External/ImGui/misc/**.h")
+	-- Standalone CLI tool with its own main() - everything else under misc/ is fair game
+	-- (imgui_stdlib.cpp in particular, which ImGui::InputText(std::string*) needs)
+	remove_files("$(projectdir)/External/ImGui/misc/fonts/binary_to_compressed_c.cpp")
 target_end()
 
 target("ImGuiColorTextEdit")

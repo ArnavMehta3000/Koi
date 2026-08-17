@@ -12,6 +12,9 @@ target("AngelScript")
 
 	add_files(
 		"$(projectdir)/External/AngelScript/source/**.cpp",
-		"$(projectdir)/External/AngelScript/source/**.asm", { public = true })
+		"$(projectdir)/External/AngelScript/source/**.asm",
+		"$(projectdir)/External/Angelscript/add_on/scriptbuilder/scriptbuilder.cpp",
+		"$(projectdir)/External/Angelscript/add_on/scriptstdstring/scriptstdstring.cpp",
+		"$(projectdir)/External/Angelscript/add_on/weakref/weakref.cpp", { public = true })
 
 target_end()
