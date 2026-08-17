@@ -16,7 +16,7 @@ name = 'Sponza 2'
     path = 'project://Assets/Models/Sponza/Sponza.gltf'
 
     [entity.transform]
-    position = [ -5.449999809265137, 0.0, 18.649999618530273 ]
+    position = [ -5.45, 0.0, 18.65 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
@@ -27,22 +27,37 @@ name = 'Damaged Helmet 2'
     path = 'project://Assets/Models/DamagedHelmet.gltf'
 
     [entity.transform]
-    position = [ 1.1074185371398926, 15.899999618530273, 0.0 ]
-    rotation = [ -0.0, -0.7071066498756409, -0.0, 0.7071069478988647 ]
+    position = [ 1.1074185, 15.9, 0.0 ]
+    rotation = [ -0.0, -0.70710665, -0.0, 0.70710695 ]
     scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Torus'
+
+    [entity.mesh.procedural]
+    generator = 'torus'
+    radius = 2.55
+    segments = 32
+    sides = 16
+    tube_radius = 0.061
+
+    [entity.transform]
+    position = [ 3.790697, 12.711526, -10.753848 ]
+    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
+    scale = [ 5.0, 5.0, 5.0 ]
 
 [[entity]]
 name = 'Camera'
 
     [entity.camera]
     far = 1000.0
-    fov = 0.8261690139770508
-    near = 0.05000000074505806
+    fov = 0.826169
+    near = 0.05
     primary = true
 
     [entity.transform]
-    position = [ 6.599999904632568, 1.350000023841858, -0.30000001192092896 ]
-    rotation = [ 0.0, 0.7071067690849304, 0.0, 0.7071067094802856 ]
+    position = [ 6.6, 1.35, -0.3 ]
+    rotation = [ 0.0, 0.70710677, 0.0, 0.7071067 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -50,15 +65,15 @@ name = 'Sun'
 
     [entity.light]
     casts_shadows = true
-    color = [ 1.0, 0.9279123544692993, 0.8774510025978088 ]
-    intensity = 2.799999952316284
+    color = [ 1.0, 0.92791235, 0.877451 ]
+    intensity = 2.8
     range = 0.0
-    shadow_bias = 0.001500000013038516
+    shadow_bias = 0.0015
     type = 'directional'
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
-    rotation = [ 0.49426501989364624, 0.46951165795326233, 0.6215905547142029, -0.38585755228996277 ]
+    rotation = [ 0.49426502, 0.46951166, 0.62159055, -0.38585755 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -66,13 +81,13 @@ name = 'Point Light'
 
     [entity.light]
     casts_shadows = false
-    color = [ 0.6000000238418579, 0.47058823704719543, 1.0 ]
-    intensity = 8.850000381469727
-    range = 33.099998474121094
-    shadow_bias = 0.001500000013038516
+    color = [ 0.6, 0.47058824, 1.0 ]
+    intensity = 8.85
+    range = 33.1
+    shadow_bias = 0.0015
     type = 'point'
 
     [entity.transform]
-    position = [ -1.149999976158142, 15.149999618530273, 7.449999809265137 ]
+    position = [ -1.15, 15.15, 7.45 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
