@@ -91,9 +91,13 @@ namespace koi
 
 		const f32 aspect = static_cast<f32>(rw->GetWidth()) / static_cast<f32>(rw->GetHeight());
 
+		// No primary camera in the world (e.g. an empty scene) - nothing to render yet
+		const Camera* camera = m_world->ResolveCamera(aspect);
+		if (!camera) return std::nullopt;
+
 		return RenderView
 		{
-			.Camera = m_world->ResolveCamera(aspect),
+			.Camera = camera,
 			.Target =
 			{
 				.HDRColorBuffer      = rw->GetHDRColorBuffer(),
