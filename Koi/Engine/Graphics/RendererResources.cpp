@@ -113,8 +113,8 @@ namespace koi
 		TonemapPipeline = library.Register(device, PipelineRecipe
 		{
 			.Name         = "Tonemap",
-			.VertexShader = "engine://Assets/Shaders/TonemapVS",
-			.PixelShader  = "engine://Assets/Shaders/TonemapPS",
+			.VertexShader = "engine://Content/Shaders/TonemapVS",
+			.PixelShader  = "engine://Content/Shaders/TonemapPS",
 			.Desc         =
 			{
 				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
@@ -128,8 +128,8 @@ namespace koi
 		MeshOpaquePipeline = library.Register(device, PipelineRecipe
 		{
 			.Name         = "Mesh.Opaque",
-			.VertexShader = "engine://Assets/Shaders/MeshVS",
-			.PixelShader  = "engine://Assets/Shaders/MeshPS",
+			.VertexShader = "engine://Content/Shaders/MeshVS",
+			.PixelShader  = "engine://Content/Shaders/MeshPS",
 			.Desc         =
 			{
 				// Right-handed view/projection: front faces wind counter-clockwise on screen
@@ -144,8 +144,8 @@ namespace koi
 		MeshWireframePipeline = library.Register(device, PipelineRecipe
 		{
 			.Name         = "Mesh.Wireframe",
-			.VertexShader = "engine://Assets/Shaders/MeshVS",
-			.PixelShader  = "engine://Assets/Shaders/MeshPS",
+			.VertexShader = "engine://Content/Shaders/MeshVS",
+			.PixelShader  = "engine://Content/Shaders/MeshPS",
 			.Desc         =
 			{
 				.Rasterizer          = { .FillMode = D3D12_FILL_MODE_WIREFRAME, .CullMode = D3D12_CULL_MODE_NONE },
@@ -160,8 +160,8 @@ namespace koi
 		GBufferPipeline = library.Register(device, PipelineRecipe
 		{
 			.Name         = "GBuffer",
-			.VertexShader = "engine://Assets/Shaders/GBufferVS",
-			.PixelShader  = "engine://Assets/Shaders/GBufferPS",
+			.VertexShader = "engine://Content/Shaders/GBufferVS",
+			.PixelShader  = "engine://Content/Shaders/GBufferPS",
 			.Desc         =
 			{
 				// Same winding/cull as the opaque mesh pass (RH, front faces wind CCW).
@@ -178,7 +178,7 @@ namespace koi
 		ShadowPipeline = library.Register(device, PipelineRecipe
 		{
 			.Name         = "ShadowMap",
-			.VertexShader = "engine://Assets/Shaders/ShadowVS",
+			.VertexShader = "engine://Content/Shaders/ShadowVS",
 			.Desc         =
 			{
 				// Raster-stage depth bias pushes fragments away from the light before the
@@ -194,8 +194,8 @@ namespace koi
 		LightingPipeline = library.Register(device, PipelineRecipe
 		{
 			.Name         = "DeferredLighting",
-			.VertexShader = "engine://Assets/Shaders/LightingVS",
-			.PixelShader  = "engine://Assets/Shaders/LightingPS",
+			.VertexShader = "engine://Content/Shaders/LightingVS",
+			.PixelShader  = "engine://Content/Shaders/LightingPS",
 			.Desc         =
 			{
 				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
