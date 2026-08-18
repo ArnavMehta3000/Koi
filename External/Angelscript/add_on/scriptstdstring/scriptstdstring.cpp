@@ -37,19 +37,19 @@ class CStdStringFactory : public asIStringFactory
 {
 public:
 	CStdStringFactory() {}
-	~CStdStringFactory() 
+	~CStdStringFactory()
 	{
-		// The script engine must release each string 
+		// The script engine must release each string
 		// constant that it has requested
 		assert(stringCache.size() == 0);
 	}
 
 	const void *GetStringConstant(const char *data, asUINT length)
 	{
-		// The string factory might be modified from multiple 
+		// The string factory might be modified from multiple
 		// threads, so it is necessary to use a mutex.
 		asAcquireExclusiveLock();
-		
+
 		string str(data, length);
 		map_t::iterator it = stringCache.find(str);
 		if (it != stringCache.end())
@@ -58,7 +58,7 @@ public:
 			it = stringCache.insert(map_t::value_type(str, 1)).first;
 
 		asReleaseExclusiveLock();
-		
+
 		return reinterpret_cast<const void*>(&it->first);
 	}
 
@@ -68,11 +68,11 @@ public:
 			return asERROR;
 
 		int ret = asSUCCESS;
-		
-		// The string factory might be modified from multiple 
+
+		// The string factory might be modified from multiple
 		// threads, so it is necessary to use a mutex.
 		asAcquireExclusiveLock();
-		
+
 		map_t::iterator it = stringCache.find(*reinterpret_cast<const string*>(str));
 		if (it == stringCache.end())
 			ret = asERROR;
@@ -82,9 +82,9 @@ public:
 			if (it->second == 0)
 				stringCache.erase(it);
 		}
-		
+
 		asReleaseExclusiveLock();
-		
+
 		return ret;
 	}
 
@@ -108,7 +108,7 @@ public:
 
 static CStdStringFactory *stringFactory = 0;
 
-// TODO: Make this public so the application can also use the string 
+// TODO: Make this public so the application can also use the string
 //       factory and share the string constants if so desired, or to
 //       monitor the size of the string factory cache.
 CStdStringFactory *GetStdStringFactorySingleton()
@@ -119,7 +119,7 @@ CStdStringFactory *GetStdStringFactorySingleton()
 		asAcquireExclusiveLock();
 		if (stringFactory == 0)
 		{
-			// The following instance will be destroyed by the global 
+			// The following instance will be destroyed by the global
 			// CStdStringFactoryCleaner instance upon application shutdown
 			stringFactory = new CStdStringFactory();
 		}
@@ -394,17 +394,17 @@ static int StringRegexFind(const string& rex, asUINT start, asUINT& outLengthOfM
 	// However on with MSVC it doesn't seem that std::regex works with utf8
 	// This works with MSVC, but I don't want to have to convert the string to UTF-16 first because the position and length will not work
 	// https://www.regular-expressions.info/stdregex.html
-	// 
+	//
 	//  std::wregex pattern(L"[[:alpha:]]+");
-	//  bool result = std::regex_match(std::wstring(L"abcdéfg"), pattern);
+	//  bool result = std::regex_match(std::wstring(L"abcdï¿½fg"), pattern);
 	//
 	// The solution from stack overflow doesn't work with MSVC
 	// https://stackoverflow.com/questions/11254232/do-c11-regular-expressions-work-with-utf-8-strings
-	// 
+	//
 	//  std::locale old;
 	//  std::locale::global(std::locale("en_US.UTF-8"));
 	//  std::regex pattern("[[:alpha:]]+", std::regex_constants::extended);
-	//  bool result = std::regex_match(std::string(u8"abcdéfg"), pattern);
+	//  bool result = std::regex_match(std::string(u8"abcdï¿½fg"), pattern);
 	//
 	// I've tried setting the manifest to use utf8 code page but it also doesn't work with MSVC
 	// https://learn.microsoft.com/en-us/windows/apps/design/globalizing/use-utf8-code-page
@@ -421,7 +421,7 @@ static int StringRegexFind(const string& rex, asUINT start, asUINT& outLengthOfM
 
 	outLengthOfMatch = (asUINT)match[0].length();
 	return (int)match.prefix().length();
-#else 
+#else
 	return -1;
 #endif
 }
@@ -1643,7 +1643,3 @@ void RegisterStdString(asIScriptEngine * engine)
 }
 
 END_AS_NAMESPACE
-
-
-
-
