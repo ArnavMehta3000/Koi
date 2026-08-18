@@ -1,8 +1,9 @@
 #include "Koi/Editor/EditorApp.h"
+#include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
-#include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Editor/ImGui/Themes.h"
 #include "Koi/Engine/ECS/World.h"
@@ -151,7 +152,8 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 		m_game->SetEditorContext(this);
 
 		// Register default editor panels
-		RegisterPanel<ScenePanel>(*m_game, m_selection);
+		RegisterPanel<WorldOutlinePanel>(*m_game, m_selection);
+		RegisterPanel<InspectorPanel>(m_selection);
 		RegisterPanel<RenderTargetsPanel>(renderer);
 		RegisterPanel<LogPanel>();
 		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer, *m_game, m_selection);
