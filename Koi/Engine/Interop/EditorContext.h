@@ -19,6 +19,9 @@ namespace koi
 
 		[[nodiscard]] virtual std::optional<RenderView> GetEditorRenderView() const = 0;
 
+		// Opens a script (VFS path) in the script text editor panel
+		virtual void OpenScriptEditor(std::string_view vfsPath) = 0;
+
 		template<typename T, typename... Args>
 		T& RegisterPanel(Args&&... args)
 		{
