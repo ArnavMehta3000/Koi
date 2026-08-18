@@ -4,6 +4,7 @@
 #include "Koi/Editor/Panels/ScenePanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Editor/ImGui/Themes.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -120,6 +121,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 	EditorApp::EditorApp(std::unique_ptr<AppBase> game, EditorConfig config)
 		: m_game(std::move(game))
 		, m_config(std::move(config))
+		, m_theme(Theme::CatppuccinMocha)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
@@ -239,7 +241,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 		io.ConfigWindowsMoveFromTitleBarOnly = true;
 		io.ConfigDpiScaleFonts     = true;  // style.FontScaleDpi tracks the viewport's monitor
 		io.ConfigDpiScaleViewports = true;  // platform windows scale with it too
-		ImGui::StyleColorsDark();
+		ApplyTheme(m_theme);
 
 		ImGui::GetStyle().FontSizeBase = 13.0f;
 		io.Fonts->AddFontDefaultVector();
@@ -386,6 +388,26 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 				SaveScene();
 			if (ImGui::MenuItem("Cook"))
 				Cook();
+			ImGui::EndMenu();
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::BeginMenu("View"))
+		{
+			if (ImGui::BeginMenu("Theme"))
+			{
+				for (size_t i = 0; i < kThemes.size(); ++i)
+				{
+					const Theme theme = static_cast<Theme>(i);
+					if (ImGui::MenuItem(kThemes[i].Name, nullptr, theme == m_theme))
+					{
+						m_theme = theme;
+						ApplyTheme(m_theme);
+					}
+				}
+				ImGui::EndMenu();
+			}
 			ImGui::EndMenu();
 		}
 

@@ -21,6 +21,7 @@ namespace koi::editor
 	namespace fs = std::filesystem;
 
 	class ViewportPanel;
+	enum class Theme : u8;
 	enum class ViewportCamera : u8;
 
 	struct EditorConfig
@@ -78,6 +79,7 @@ namespace koi::editor
 		std::vector<IReloadable*>                   m_reloadables;
 		ViewportPanel*                              m_viewportPanel    = nullptr;
 		Selection                                   m_selection{};
+		Theme                                       m_theme;
 		bool                                        m_imguiInitialized = false;
 		std::string                                 m_lastCookStatus;  // shown in menubar after Cook click
 
