@@ -102,6 +102,9 @@ namespace koi
 			return entry ? &entry->Resource : nullptr;
 		}
 
+		// Whether anything currently holds this key resident
+		[[nodiscard]] bool IsResident(const std::string& key) const { return m_pathToHandle.contains(key); }
+
 		// The VFS path this asset was loaded from; empty for an invalid handle
 		[[nodiscard]] std::string_view GetPath(AssetHandle<T> handle) const
 		{

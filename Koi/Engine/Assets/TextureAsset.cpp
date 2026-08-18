@@ -18,8 +18,7 @@ namespace koi
 			return nullptr;
 		}
 
-		// glTF texture URIs resolve to real files on disk already; anything authored as a VFS path
-		// goes through the mount table first.
+		// Keys are VFS paths, glTF-sourced or otherwise. The fallback covers a raw disk path
 		const fs::path diskPath =
 			VirtualFileSystem::Get().TryResolveToDisk(vfsPath).value_or(fs::path(vfsPath));
 
