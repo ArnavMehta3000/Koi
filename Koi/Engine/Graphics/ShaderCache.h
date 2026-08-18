@@ -42,7 +42,7 @@ namespace koi
 	public:
 		static ShaderCache& Get();
 
-		// Bytecode for a virtual path WITHOUT extension ("engine://Assets/Shaders/MeshVS").
+		// Bytecode for a virtual path WITHOUT extension ("engine://Content/Shaders/MeshVS").
 		// The span points into cache storage and stays valid until the cache is invalidated.
 		// Empty on failure
 		[[nodiscard]] std::span<const byte> GetShader(std::string_view virtualPathNoExt, std::span<const ShaderDefine> defines = {});
@@ -51,6 +51,9 @@ namespace koi
 		// were compiled, leaving the rest alone. Returns the virtual paths dropped, so
 		// callers can rebuild just what depended on them
 		std::vector<std::string> InvalidateStale();
+
+		// Whether any variant of this shader is currently compiled. Path carries no extension
+		[[nodiscard]] bool IsCompiled(std::string_view virtualPathNoExt) const;
 
 		// Drops every entry, so the next GetShader recompiles
 		void InvalidateAll();

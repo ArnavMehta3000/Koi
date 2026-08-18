@@ -1,4 +1,5 @@
 #include "Koi/Engine/Runtime/EntryPoint.h"
+#include "Koi/Engine/Assets/AssetIdentity.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
@@ -132,6 +133,8 @@ namespace koi::internal
 				KOI_LOG_DEBUG("\tProject file      : {}", cmd->GetProjectFile().string());
 				KOI_LOG_DEBUG("\tEngine root       : {}", engineRoot.string());
 				KOI_LOG_DEBUG("\tProject root      : {}", projectRoot.string());
+
+				AssetIdentity::Get().LoadFromVfs("project://AssetRegistry.toml");
 #endif
 			}
 

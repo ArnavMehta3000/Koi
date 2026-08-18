@@ -134,6 +134,14 @@ namespace koi
 		return dropped;
 	}
 
+	bool ShaderCache::IsCompiled(std::string_view virtualPathNoExt) const
+	{
+		return std::ranges::any_of(m_entries, [&](const auto& entry)
+		{
+			return entry.first.Path == virtualPathNoExt;
+		});
+	}
+
 	void ShaderCache::InvalidateAll()
 	{
 		KOI_LOG_INFO("Shader cache invalidated ({} entries dropped)", m_entries.size());
