@@ -46,5 +46,5 @@ target("Koi.Engine")
 		"d3dcompiler", { public = true })
 	end
 
-	add_extrafiles("Assets/Shaders/**.hlsl")
+	add_extrafiles("Content/Shaders/**.hlsl")
 target_end()
