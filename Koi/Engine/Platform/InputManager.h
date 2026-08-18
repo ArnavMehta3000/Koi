@@ -43,6 +43,12 @@ namespace koi
 		void SetCursorVisible(bool visible);
 		void SetCursorLocked(bool locked);
 
+		// Whether the game (as opposed to some other editor panel) should see input this frame.
+		// Standalone builds never touch this - it stays true, since there is no other panel to lose
+		// focus to. The editor's viewport panel drives it from its own hover/capture state
+		void SetGameFocused(bool focused) noexcept { m_gameFocused = focused; }
+		[[nodiscard]] bool IsGameFocused() const noexcept { return m_gameFocused; }
+
 	private:
 		void OnKey(i32 key, i32 action, i32 mods) noexcept;
 		void OnMouseButton(i32 btn, i32 action, i32 mods) noexcept;
@@ -58,6 +64,8 @@ namespace koi
 		std::array<bool, kMaxMouseButton> m_mouseDownPrev{};
 
 		EnumFlag<Modifier> m_modifiers{};
+
+		bool m_gameFocused = true;
 
 		Vector2 m_mousePos{};
 		Vector2 m_mouseDelta{};

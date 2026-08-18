@@ -107,9 +107,23 @@ class ScriptBehaviour
 		void ConstructQuaternionXYZW(f32 x, f32 y, f32 z, f32 w, Quaternion* self) { new (self) Quaternion(x, y, z, w); }
 		void ConstructQuaternionCopy(const Quaternion& other, Quaternion* self)    { new (self) Quaternion(other); }
 
-		bool Input_IsKeyDown(KeyCode key)       { return InputManager::Get().IsKeyDown(key); }
-		bool Input_IsKeyPressed(KeyCode key)    { return InputManager::Get().IsKeyPressed(key); }
-		bool Input_IsKeyReleased(KeyCode key)   { return InputManager::Get().IsKeyReleased(key); }
+		bool Input_IsKeyDown(KeyCode key)
+		{
+			InputManager& input = InputManager::Get();
+			return input.IsGameFocused() && input.IsKeyDown(key);
+		}
+
+		bool Input_IsKeyPressed(KeyCode key)
+		{
+			InputManager& input = InputManager::Get();
+			return input.IsGameFocused() && input.IsKeyPressed(key);
+		}
+
+		bool Input_IsKeyReleased(KeyCode key)
+		{
+			InputManager& input = InputManager::Get();
+			return input.IsGameFocused() && input.IsKeyReleased(key);
+		}
 
 		// name/value table for RegisterEnumValue - mirrors Platform/InputCodes.h
 		constexpr std::array kKeyCodes
