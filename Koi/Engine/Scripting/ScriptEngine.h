@@ -36,6 +36,9 @@ namespace koi
 		// Compiles (or returns the cached) module for a script at a VFS path. Null on compile failure
 		[[nodiscard]] asIScriptModule* GetOrCompileModule(std::string_view scriptPath);
 
+		// Whether a script at this VFS path has a compiled module resident
+		[[nodiscard]] bool IsModuleLoaded(const std::string& scriptPath) const { return m_modules.contains(scriptPath); }
+
 	private:
 		struct ModuleEntry
 		{
