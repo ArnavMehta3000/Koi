@@ -9,6 +9,8 @@ namespace koi
 	// Version 4, from a process-wide generator seeded once
 	[[nodiscard]] UUID NewUUID();
 
+	[[nodiscard]] UUID UUIDFromName(std::string_view name);
+
 	// A nil UUID stringifies to all zeroes
 	[[nodiscard]] inline std::string ToString(const UUID& id) { return uuids::to_string(id); }
 
