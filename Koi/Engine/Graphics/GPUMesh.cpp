@@ -36,14 +36,14 @@ namespace koi
 
 		// Decode every standalone image up front, in parallel. stb_image is the bulk of scene load
 		// and it doesn't touch the device, so the GPU-side work below stays single-threaded
-		std::vector<std::string> diskPaths;
-		diskPaths.reserve(model.Images.size());
+		std::vector<std::string> imagePaths;
+		imagePaths.reserve(model.Images.size());
 		for (const ImageAsset& img : model.Images)
 		{
-			diskPaths.push_back(img.Pixels.empty() ? img.Path : std::string());
+			imagePaths.push_back(img.Pixels.empty() ? img.Path : std::string());
 		}
 
-		const std::vector<std::unique_ptr<ImageAsset>> decoded = textures.DecodeParallel(diskPaths);
+		const std::vector<std::unique_ptr<ImageAsset>> decoded = textures.DecodeParallel(imagePaths);
 
 		GfxDevice::UploadContext& upload = device.GetUploadContext();
 		upload.Begin();  // outer batch: each texture's own Begin/End nests into this one

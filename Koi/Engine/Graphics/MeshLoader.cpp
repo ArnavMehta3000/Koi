@@ -30,7 +30,9 @@ namespace koi
 		{
 			fastgltf::Asset* Asset = nullptr;
 			fs::path BasePath;
-			fs::path SourcePath;  // the glTF itself; used to key images embedded inside it
+			fs::path SourcePath;      // the glTF itself; used to key images embedded inside it
+			std::string VirtualPath;  // the glTF's VFS path
+			std::string VirtualBase;  // ...and its parent, for keying sibling image files
 
 			// glTF image index -> index into ModelAsset::Images
 			std::unordered_map<u32, u32> LoadedImages;
@@ -72,7 +74,16 @@ namespace koi
 			return nullptr;
 		}
 
-		Loader loader{ .BasePath = path.parent_path(), .SourcePath = path };
+		const std::string virtualPath = modelPath.generic_string();
+		const size_t       lastSlash   = virtualPath.find_last_of('/');
+
+		Loader loader
+		{
+			.BasePath    = path.parent_path(),
+			.SourcePath  = path,
+			.VirtualPath = virtualPath,
+			.VirtualBase = lastSlash == std::string::npos ? virtualPath : virtualPath.substr(0, lastSlash),
+		};
 
 		// Deliberately no LoadExternalImages: it would pull URI-referenced images into memory as
 		// embedded blobs, and then two models sharing a texture file could no longer be recognised
@@ -382,7 +393,8 @@ namespace koi
 			assert(uri.fileByteOffset == 0);
 			assert(uri.uri.isLocalPath());  // Needs to be a local file to be loaded
 
-			img.Path = (BasePath / uri.uri.fspath()).generic_string();
+			// Using virtual path to prevent texture loading process try to query from VFS path
+			img.Path = VirtualBase + "/" + uri.uri.fspath().generic_string();
 			img.Name = uri.uri.fspath().filename().string();
 		}
 		else
@@ -443,7 +455,7 @@ namespace koi
 			img.Pixels.assign(pixels, pixels + byteCount);
 			stbi_image_free(pixels);
 
-			img.Path = fmt::format("{}#image{}", SourcePath.generic_string(), imageIndex);
+			img.Path = fmt::format("{}#image{}", VirtualPath, imageIndex);
 			img.Name = gltfTexture.name.empty() ? fmt::format("Image_{}", imageIndex) : std::string(gltfTexture.name);
 		}
 
