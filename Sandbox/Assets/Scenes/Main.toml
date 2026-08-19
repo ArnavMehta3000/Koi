@@ -3,6 +3,7 @@ name = 'Sponza'
 
     [entity.mesh]
     path = 'project://Assets/Models/Sponza/Sponza.gltf'
+    uuid = 'c8e3a869-c9c8-495f-887d-675b7b4a12b6'
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
@@ -14,6 +15,7 @@ name = 'Sponza 2'
 
     [entity.mesh]
     path = 'project://Assets/Models/Sponza/Sponza.gltf'
+    uuid = 'c8e3a869-c9c8-495f-887d-675b7b4a12b6'
 
     [entity.transform]
     position = [ -5.45, 0.0, 18.65 ]
@@ -40,6 +42,7 @@ name = 'Damaged Helmet'
 
     [entity.mesh]
     path = 'project://Assets/Models/DamagedHelmet.gltf'
+    uuid = '2c1a8483-177c-494f-96dd-1a66b346ad7b'
 
     [entity.script]
     path = 'project://Assets/Scripts/MoveWithArrows.as'
