@@ -20,6 +20,8 @@ namespace koi::editor
 {
 	namespace fs = std::filesystem;
 
+	class AssetDatabase;
+	class ScriptEditorPanel;
 	class ViewportPanel;
 	enum class Theme : u8;
 	enum class ViewportCamera : u8;
@@ -40,7 +42,7 @@ namespace koi::editor
 	{
 	public:
 		EditorApp(std::unique_ptr<AppBase> game, EditorConfig config);
-		~EditorApp() override = default;
+		~EditorApp() override;  // out of line: m_assetDatabase is forward-declared
 
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override;
 		void SetWindow(Window& window) override;
@@ -58,6 +60,7 @@ namespace koi::editor
 		using IEditorContext::RegisterPanel;
 
 		[[nodiscard]] std::optional<RenderView> GetEditorRenderView() const override;
+		void OpenScriptEditor(std::string_view vfsPath) override;
 
 	private:
 		void Setup();
@@ -74,10 +77,13 @@ namespace koi::editor
 
 	private:
 		std::unique_ptr<AppBase>                    m_game;
+		std::unique_ptr<AssetDatabase>              m_assetDatabase;
 		EditorConfig                                m_config{};
 		std::vector<std::unique_ptr<IEditorPanel>>  m_panels;
+		std::vector<bool>                           m_panelOpen;  // parallel to m_panels
 		std::vector<IReloadable*>                   m_reloadables;
-		ViewportPanel*                              m_viewportPanel    = nullptr;
+		ViewportPanel*                              m_viewportPanel     = nullptr;
+		ScriptEditorPanel*                          m_scriptEditorPanel = nullptr;
 		Selection                                   m_selection{};
 		Theme                                       m_theme;
 		bool                                        m_imguiInitialized = false;

@@ -1,7 +1,10 @@
 #include "Koi/Editor/EditorApp.h"
+#include "Koi/Editor/Assets/AssetDatabase.h"
+#include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
+#include "Koi/Editor/Panels/ScriptEditorPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
@@ -35,63 +38,112 @@ namespace koi::editor
 	// Layout for the first run, before ImGui has written an imgui.ini of its own.
 	// To change it: arrange the panels in the editor, then copy the resulting ini here
 	static constexpr const char* kDefaultLayout = R"ini(
-[Window][WindowOverViewport_11111111]
-Pos=0,22
-Size=2560,1489
-Collapsed=0
-LastUsed=20260817
+		[Window][WindowOverViewport_11111111]
+		Pos=0,22
+		Size=2560,1489
+		Collapsed=0
+		LastUsed=20260819
 
-[Window][Viewport]
-Pos=0,22
-Size=2046,1200
-Collapsed=0
-DockId=0x00000005,0
-LastUsed=20260817
+		[Window][Viewport]
+		Pos=0,22
+		Size=1839,1059
+		Collapsed=0
+		DockId=0x00000005,0
+		LastUsed=20260819
 
-[Window][Scene]
-Pos=2048,22
-Size=512,632
-Collapsed=0
-DockId=0x00000001,0
-LastUsed=20260817
+		[Window][World Outline]
+		Pos=1841,22
+		Size=719,316
+		Collapsed=0
+		DockId=0x00000009,0
+		LastUsed=20260819
 
-[Window][Render Targets]
-Pos=2048,656
-Size=512,855
-Collapsed=0
-DockId=0x00000002,0
-LastUsed=20260817
+		[Window][Inspector]
+		Pos=1841,340
+		Size=719,527
+		Collapsed=0
+		DockId=0x0000000A,0
+		LastUsed=20260819
 
-[Window][Debug##Default]
-Pos=60,60
-Size=400,400
-Collapsed=0
-LastUsed=20260817
+		[Window][Render Targets]
+		Pos=1841,869
+		Size=719,642
+		Collapsed=0
+		DockId=0x00000002,0
+		LastUsed=20260819
 
-[Window][Log]
-Pos=0,1224
-Size=2046,287
-Collapsed=0
-DockId=0x00000006,0
-LastUsed=20260817
+		[Window][Debug##Default]
+		Pos=60,60
+		Size=400,400
+		Collapsed=0
+		LastUsed=20260819
 
-[Table][0x584826A8,4]
-RefScale=16
-Column 0  Width=78 ID=0xDE21DBF3
-Column 1  Width=78 ID=0xFBE609D2
-Column 2  Width=246 ID=0x26563918
-Column 3  Width=612 ID=0xA5F9976D
-LastUsed=20260817
+		[Window][Log]
+		Pos=0,1083
+		Size=961,428
+		Collapsed=0
+		DockId=0x00000007,0
+		LastUsed=20260819
 
-[Docking][Data]
-DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
-  DockNode    ID=0x00000003 Parent=0x08BD597D SizeRef=1406,701 Split=Y Selected=0xC450F867
-    DockNode  ID=0x00000005 Parent=0x00000003 SizeRef=1360,1203 CentralNode=1 HiddenTabBar=1 Selected=0xC450F867
-    DockNode  ID=0x00000006 Parent=0x00000003 SizeRef=1360,287 HiddenTabBar=1 Selected=0x139FDA3F
-  DockNode    ID=0x00000004 Parent=0x08BD597D SizeRef=512,701 Split=Y Selected=0xE601B12F
-    DockNode  ID=0x00000001 Parent=0x00000004 SizeRef=628,420 Selected=0xE601B12F
-    DockNode  ID=0x00000002 Parent=0x00000004 SizeRef=628,568 Selected=0x884BBC23
+		[Window][Text Editor]
+		Pos=1841,340
+		Size=719,527
+		Collapsed=0
+		DockId=0x0000000A,1
+		LastUsed=20260819
 
+		[Window][Assets]
+		Pos=963,1083
+		Size=876,428
+		Collapsed=0
+		DockId=0x00000008,0
+		LastUsed=20260819
+
+		[Window][Assets/FolderTree_942ADF46]
+		IsChild=1
+		Size=190,368
+		LastUsed=20260818
+
+		[Table][0x584826A8,4]
+		RefScale=16
+		Column 0  Width=78 ID=0xDE21DBF3
+		Column 1  Width=78 ID=0xFBE609D2
+		Column 2  Width=155 ID=0x26563918
+		Column 3  Width=612 ID=0xA5F9976D
+		LastUsed=20260819
+
+		[Table][0x4FE63A1D,3]
+		RefScale=16
+		Column 0  Weight=1.0000 ID=0x4637146C
+		Column 1  Width=111 ID=0x517A6DEB
+		Column 2  Width=298 ID=0x7D73DD88
+		LastUsed=20260818
+
+		[Table][0x26345F36,3]
+		RefScale=16
+		Column 0  Weight=1.0000 ID=0x4637146C
+		Column 1  Width=161 ID=0x517A6DEB
+		Column 2  Width=154 ID=0x7D73DD88
+		LastUsed=20260819
+
+		[Table][0xCC434132,2]
+		RefScale=16
+		Column 0  Width=228 ID=0x30C046FC
+		Column 1  Weight=1.0000 ID=0x24966EC5
+		LastUsed=20260819
+
+		[Docking][Data]
+		DockSpace       ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
+  DockNode      ID=0x00000003 Parent=0x08BD597D SizeRef=1839,701 Split=Y Selected=0xC450F867
+    DockNode    ID=0x00000005 Parent=0x00000003 SizeRef=1360,1059 CentralNode=1 Selected=0xC450F867
+    DockNode    ID=0x00000006 Parent=0x00000003 SizeRef=1360,428 Split=X Selected=0x139FDA3F
+      DockNode  ID=0x00000007 Parent=0x00000006 SizeRef=961,428 Selected=0x139FDA3F
+      DockNode  ID=0x00000008 Parent=0x00000006 SizeRef=876,428 Selected=0x42C24103
+  DockNode      ID=0x00000004 Parent=0x08BD597D SizeRef=719,701 Split=Y Selected=0xE601B12F
+    DockNode    ID=0x00000001 Parent=0x00000004 SizeRef=628,845 Split=Y Selected=0x73D9A15B
+      DockNode  ID=0x00000009 Parent=0x00000001 SizeRef=512,316 Selected=0x73D9A15B
+      DockNode  ID=0x0000000A Parent=0x00000001 SizeRef=512,527 Selected=0x36DC96AB
+    DockNode    ID=0x00000002 Parent=0x00000004 SizeRef=628,642 Selected=0x884BBC23
 )ini";
 
 	static void ImGuiSrvAlloc(ImGui_ImplDX12_InitInfo* /*info*/,
@@ -135,6 +187,8 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 
 	const AppCreateDesc& EditorApp::GetDesc() const { return m_game->GetDesc(); }
 
+	EditorApp::~EditorApp() = default;
+
 	void EditorApp::SetWindow(Window& window) { m_game->SetWindow(window); }
 
 	void EditorApp::Setup()
@@ -147,16 +201,23 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 
 		// Register the renderer as reloadable so that it can recompile shaders and rebuild pipelines
 		RegisterReloadable(&renderer);
+		RegisterReloadable(&Engine::Get().GetSubsystem<ScriptEngine>());  // Similarly to above
 
 		// Register the editor context with the game so that it can register panels and reloadables
 		m_game->SetEditorContext(this);
+
+		// Scan content and reconcile the manifest before any panel can query it
+		m_assetDatabase = std::make_unique<AssetDatabase>(m_config.EngineSource, m_config.ProjectSource);
+		m_assetDatabase->Refresh();
 
 		// Register default editor panels
 		RegisterPanel<WorldOutlinePanel>(*m_game, m_selection);
 		RegisterPanel<InspectorPanel>(m_selection);
 		RegisterPanel<RenderTargetsPanel>(renderer);
 		RegisterPanel<LogPanel>();
-		m_viewportPanel = &RegisterPanel<ViewportPanel>(renderer, *m_game, m_selection);
+		m_viewportPanel     = &RegisterPanel<ViewportPanel>(renderer, *m_game, m_selection);
+		m_scriptEditorPanel = &RegisterPanel<ScriptEditorPanel>([this](const ReloadRequest& r) { ReloadAll(r); });
+		RegisterPanel<AssetsPanel>(*m_assetDatabase, [this](std::string_view vfsPath) { OpenScriptEditor(vfsPath); });
 	}
 
 	void EditorApp::HostInit()
@@ -289,6 +350,7 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 	{
 		KOI_LOG_DEBUG("Registered editor panel '{}'", panel->GetName());
 		m_panels.push_back(std::move(panel));
+		m_panelOpen.push_back(true);
 	}
 
 	std::optional<RenderView> EditorApp::GetEditorRenderView() const
@@ -302,11 +364,16 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 		if (m_viewportPanel->IsGameCamera())
 		{
 			const f32 aspect = static_cast<f32>(target->Width) / static_cast<f32>(target->Height);
-			camera = m_game->GetWorld().ResolveCamera(aspect);
+
+			// No primary camera in the world yet
+			if (const Camera* gameCamera = m_game->GetWorld().ResolveCamera(aspect))
+				camera = gameCamera;
 		}
 
 		return RenderView{ .Camera = camera, .Target = *target };
 	}
+
+	void EditorApp::OpenScriptEditor(std::string_view vfsPath) { m_scriptEditorPanel->Open(vfsPath); }
 
 	void EditorApp::ReloadAll(const ReloadRequest& request)
 	{
@@ -340,10 +407,13 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 			ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 			DrawMenuBar();
 
-			for (auto& panel : m_panels)
+			for (size_t i = 0; i < m_panels.size(); ++i)
 			{
-				ZoneTransientN(panelZone, panel->GetName().data(), true);  // every GetName() is a literal
-				panel->OnDraw();
+				if (!m_panelOpen[i]) continue;
+
+				IEditorPanel& panel = *m_panels[i];
+				ZoneTransientN(panelZone, panel.GetName().data(), true);  // every GetName() is a literal
+				panel.OnDraw();
 			}
 		}
 
@@ -397,6 +467,18 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 
 		if (ImGui::BeginMenu("View"))
 		{
+			for (size_t i = 0; i < m_panels.size(); ++i)
+			{
+				const IEditorPanel& panel = *m_panels[i];
+				if (!panel.IsClosable()) continue;
+
+				bool open = m_panelOpen[i];
+				if (ImGui::MenuItem(panel.GetName().data(), nullptr, open))
+					m_panelOpen[i] = !open;
+			}
+
+			ImGui::Separator();
+
 			if (ImGui::BeginMenu("Theme"))
 			{
 				for (size_t i = 0; i < kThemes.size(); ++i)
@@ -622,6 +704,14 @@ DockSpace     ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
 		};
 		copyDir(m_config.ProjectSource / "Assets" / "Models", projRoot / "Assets" / "Models");
 		copyDir(m_config.ProjectSource / "Assets" / "Scenes", projRoot / "Assets" / "Scenes");
+		copyDir(m_config.ProjectSource / "Assets" / "Scripts", projRoot / "Assets" / "Scripts");
+
+		// Identity manifest: what lets a cooked build resolve the uuids a scene references
+		if (m_assetDatabase)
+		{
+			fs::create_directories(projRoot, ec);
+			m_assetDatabase->SaveIdentityManifest(projRoot / "AssetRegistry.toml");
+		}
 
 		// Copy the project TOML as <out>/Project/Project.toml
 		if (fs::exists(m_config.ProjectFile))

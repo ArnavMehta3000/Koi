@@ -51,6 +51,7 @@ namespace koi::editor
 
 		[[nodiscard]] std::string_view GetName() const override { return "Viewport"; }
 		void OnDraw() override;
+		[[nodiscard]] bool IsClosable() const override { return false; }
 
 		[[nodiscard]] inline const ViewportTarget* GetTarget() const { return m_valid ? &m_target : nullptr; }
 		[[nodiscard]] inline const Camera& GetCamera() const { return m_camera; }
@@ -60,7 +61,7 @@ namespace koi::editor
 
 		const ViewportTarget* PrepareFrame(CommandList& cmd);
 		void FrameBounds(const BoundingBox& bounds);
-		void Update(f32 dt, const InputManager& input);
+		void Update(f32 dt, InputManager& input);
 
 	private:
 		void EnsureSize(u32 width, u32 height);

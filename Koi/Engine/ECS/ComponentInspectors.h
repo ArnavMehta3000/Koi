@@ -7,4 +7,5 @@ namespace koi
 	void DrawMeshInspector(Entity e);
 	void DrawCameraInspector(Entity e);
 	void DrawLightInspector(Entity e);
+	void DrawScriptInspector(Entity e);
 }

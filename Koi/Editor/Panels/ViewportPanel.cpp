@@ -100,6 +100,7 @@ namespace koi::editor
 		static constexpr const char* kCameraLabels[]     = { "Scene", "Game" };
 		static constexpr const char* kResolutionLabels[] = { "Free Aspect", "Window", "1920x1080", "1280x720" };
 
+		ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 2.0f));
 
 		ImGui::SetNextItemWidth(90.0f);
@@ -136,6 +137,7 @@ namespace koi::editor
 		}
 
 		ImGui::PopStyleVar();
+		ImGui::PopItemFlag();
 	}
 
 	void ViewportPanel::OnDraw()
@@ -338,7 +340,7 @@ namespace koi::editor
 		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, 0.3f);
 	}
 
-	void ViewportPanel::Update(f32 dt, const InputManager& input)
+	void ViewportPanel::Update(f32 dt, InputManager& input)
 	{
 		const bool anyMouseDown = input.IsMouseButtonDown(MouseButton::Left)
 			|| input.IsMouseButtonDown(MouseButton::Right)
@@ -346,6 +348,8 @@ namespace koi::editor
 
 		if (m_isHovered && anyMouseDown && !m_gizmoActive) m_isCapturingInput = true;
 		else if (!anyMouseDown) m_isCapturingInput = false;
+
+		input.SetGameFocused(m_isHovered || m_isCapturingInput);
 
 		if (!m_gizmoActive && (m_isHovered || m_isCapturingInput))
 		{
