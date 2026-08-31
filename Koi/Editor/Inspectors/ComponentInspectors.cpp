@@ -1,63 +1,47 @@
-#include "Koi/Engine/ECS/ComponentInspectors.h"
-#include "Koi/Engine/Core/Config.h"
-
-#if KOI_WITH_EDITOR
-
+#include "Koi/Editor/Inspectors/ComponentInspectors.h"
+#include "Koi/Editor/Inspectors/InspectorRegistry.h"
+#include "Koi/Engine/Core/Patterns/Match.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
+#include "Koi/Engine/Graphics/Procedural/ProceduralMeshSpec.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Scripting/ScriptComponent.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <array>
 #include <numbers>
 #include <type_traits>
 
-namespace koi
+namespace koi::editor
 {
 	namespace
 	{
 		constexpr f32 kRadToDeg = 180.0f / static_cast<f32>(std::numbers::pi);
 		constexpr f32 kDegToRad = static_cast<f32>(std::numbers::pi) / 180.0f;
-	}
 
-	void DrawTransformInspector(Entity e)
-	{
-		Transform* local = e.try_get_mut<Transform>();
-		if (!local) return;
+		AssetCache<GPUMesh>& Meshes() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
+		GfxDevice&           Device() { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
 
-		// Euler angles are UI state: re-deriving them from the quaternion every frame makes
-		// the drag widget snap near gimbal lock, so cache them until the selection changes
-		// NOTE: This might need rework if I want multiple inspector panels
-		static Vector3    s_eulerDeg = Vector3::Zero;
-		static EntityID   s_eulerFor = 0;
-		static Quaternion s_eulerRot = Quaternion::Identity;
-
-		// Also re-derive when something else moved the entity (the viewport gizmo), or the widget would keep showing the angles from before the drag
-		if (s_eulerFor != e.id() || s_eulerRot != local->Rotation)
+		// Acquire before remove: if the new uri is the one already held, the extra reference
+		// keeps the mesh resident across the removal that releases the old handle
+		static void ReacquireMesh(Entity e, const std::string& uri)
 		{
-			s_eulerDeg = local->Rotation.ToEuler() * kRadToDeg;
-			s_eulerFor = e.id();
-			s_eulerRot = local->Rotation;
+			const MeshHandle handle = Meshes().Acquire(Device(), uri);
+			if (!handle) return;
+
+			e.remove<MeshRef>();  // World's on_remove hook releases whatever was there
+			e.set<MeshRef>({ handle });
 		}
 
-		ImGui::DragFloat3("Position", &local->Position.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
-		if (ImGui::DragFloat3("Rotation", &s_eulerDeg.x, 0.5f))
-		{
-			local->Rotation = Quaternion::CreateFromYawPitchRoll(
-				s_eulerDeg.y * kDegToRad, s_eulerDeg.x * kDegToRad, s_eulerDeg.z * kDegToRad);
-			s_eulerRot = local->Rotation;
-		}
-		ImGui::DragFloat3("Scale", &local->Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
-	}
-
-	namespace
-	{
 		// One widget per params entry, dispatched on the node type
-		bool DrawParam(const toml::key& key, toml::node& node, bool liveEdit)
+		static bool DrawParam(const toml::key& key, toml::node& node, bool liveEdit)
 		{
 			const std::string label(key.str());
 
@@ -106,90 +90,38 @@ namespace koi
 
 			return liveEdit ? edited : ImGui::IsItemDeactivatedAfterEdit();
 		}
-
-		void ReacquireMesh(Entity e, const std::string& uri)
-		{
-			GfxDevice& device = Engine::Get().GetSubsystem<Renderer>().GetDevice();
-			AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
-
-			const MeshHandle handle = meshes.Acquire(device, uri);
-			if (!handle) return;
-
-			if (const MeshRef* previous = e.try_get<MeshRef>())
-				meshes.Release(device, previous->Handle);
-
-			e.set<MeshRef>({ handle });
-		}
-
-		void DrawProceduralInspector(Entity e, std::string_view source)
-		{
-			// The edited params are UI state: a drag only commits on release
-			static EntityID    s_owner = 0;
-			static std::string s_committed;
-			static std::string s_generator;
-			static toml::table s_params;
-
-			if (s_owner != e.id() || s_committed != source)
-			{
-				std::optional parsed = ParseProceduralUri(source);
-				if (!parsed) return;
-
-				s_generator = std::move(parsed->first);
-				s_params    = std::move(parsed->second);
-				s_owner     = e.id();
-				s_committed = source;
-			}
-
-			// Off by default because every committed edit regenerates the mesh and re-uploads it
-			static bool s_liveUpdate = false;
-
-			bool changed = false;
-
-			if (ImGui::BeginCombo("Generator", s_generator.c_str()))
-			{
-				for (const MeshGeneratorInfo& info : MeshGeneratorRegistry::Get().All())
-				{
-					if (!ImGui::Selectable(info.Name.c_str(), info.Name == s_generator)) continue;
-
-					// A different generator takes a different params set, so start from its defaults
-					s_generator = info.Name;
-					s_params    = info.Defaults();
-					changed     = true;
-				}
-
-				ImGui::EndCombo();
-			}
-
-			ImGui::Checkbox("Live update", &s_liveUpdate);
-			ImGui::SetItemTooltip("Rebuild and re-upload the mesh on every frame of a drag, "
-			                      "instead of once when the drag ends");
-
-			for (auto&& [key, node] : s_params)
-			{
-				changed |= DrawParam(key, node, s_liveUpdate);
-			}
-
-			// Clamp the params to the generator's range, so the widget cannot be dragged out of bounds
-			if (const MeshGeneratorInfo* info = MeshGeneratorRegistry::Get().Find(s_generator))
-			{
-				if (info->Clamp) info->Clamp(s_params);
-			}
-
-			if (!changed) return;
-
-			s_committed = ToProceduralUri(s_generator, s_params);
-			ReacquireMesh(e, s_committed);
-		}
 	}
 
-	void DrawMeshInspector(Entity e)
+	void TransformInspector::Draw(Entity e)
+	{
+		Transform* local = e.try_get_mut<Transform>();
+		if (!local) return;
+
+		// Also re-derive when something else moved the entity (the viewport gizmo), or the widget would keep showing the angles from before the drag
+		if (m_eulerFor != e.id() || m_eulerRot != local->Rotation)
+		{
+			m_eulerDeg = local->Rotation.ToEuler() * kRadToDeg;
+			m_eulerFor = e.id();
+			m_eulerRot = local->Rotation;
+		}
+
+		ImGui::DragFloat3("Position", &local->Position.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
+
+		if (ImGui::DragFloat3("Rotation", &m_eulerDeg.x, 0.5f))
+		{
+			local->Rotation = Quaternion::CreateFromYawPitchRoll(
+				m_eulerDeg.y * kDegToRad, m_eulerDeg.x * kDegToRad, m_eulerDeg.z * kDegToRad);
+			m_eulerRot = local->Rotation;
+		}
+		ImGui::DragFloat3("Scale", &local->Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
+	}
+
+	void MeshInspector::Draw(Entity e)
 	{
 		const MeshRef* meshRef = e.try_get<MeshRef>();
 		if (!meshRef) return;
 
-		const AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
-
-		const std::string_view source = meshes.GetPath(meshRef->Handle);
+		const std::string_view source = Meshes().GetPath(meshRef->Handle);
 
 		// Doubles as the drop zone for a mesh dragged out of the Assets panel
 		const std::string label = source.empty() ? std::string("(none)") : std::string(source);
@@ -225,30 +157,85 @@ namespace koi
 		// The old handle was just released, so meshRef and source are stale - resume next frame
 		if (replaced) return;
 
-		if (const GPUMesh* mesh = meshes.Get(meshRef->Handle))
+		if (const GPUMesh* mesh = Meshes().Get(meshRef->Handle))
 		{
 			ImGui::Text("Draw calls  %d", static_cast<i32>(mesh->DrawItems.size()));
 			ImGui::Text("Textures    %d", static_cast<i32>(mesh->Textures.size()));
 		}
 
 		if (source.starts_with(kProceduralScheme))
-			DrawProceduralInspector(e, source);
+			DrawProcedural(e, source);
 	}
 
-	void DrawCameraInspector(Entity e)
+	void MeshInspector::DrawProcedural(Entity e, std::string_view source)
+	{
+		if (m_owner != e.id() || m_committed != source)
+		{
+			std::optional parsed = ParseProceduralUri(source);
+			if (!parsed) return;
+
+			m_generator = std::move(parsed->first);
+			m_params    = std::move(parsed->second);
+			m_owner     = e.id();
+			m_committed = source;
+		}
+
+		bool changed = false;
+
+		if (ImGui::BeginCombo("Generator", m_generator.c_str()))
+		{
+			for (const MeshGeneratorInfo& info : MeshGeneratorRegistry::Get().All())
+			{
+				if (!ImGui::Selectable(info.Name.c_str(), info.Name == m_generator)) continue;
+
+				// A different generator takes a different params set, so start from its defaults
+				m_generator = info.Name;
+				m_params    = info.Defaults();
+				changed     = true;
+			}
+
+			ImGui::EndCombo();
+		}
+
+		// Off by default because every committed edit regenerates the mesh and re-uploads it
+		ImGui::Checkbox("Live update", &m_liveUpdate);
+		ImGui::SetItemTooltip("Rebuild and re-upload the mesh on every frame of a drag, "
+		                      "instead of once when the drag ends");
+
+		for (auto&& [key, node] : m_params)
+		{
+			changed |= DrawParam(key, node, m_liveUpdate);
+		}
+
+		// Clamp the params to the generator's range, so the widget cannot be dragged out of bounds
+		if (const MeshGeneratorInfo* info = MeshGeneratorRegistry::Get().Find(m_generator))
+		{
+			if (info->Clamp) info->Clamp(m_params);
+		}
+
+		if (!changed) return;
+
+		m_committed = ToProceduralUri(m_generator, m_params);
+		ReacquireMesh(e, m_committed);
+	}
+
+	void CameraInspector::Draw(Entity e)
 	{
 		CameraComponent* cam = e.try_get_mut<CameraComponent>();
 		if (!cam) return;
 
 		f32 fovDeg = cam->FovY * kRadToDeg;
 		if (ImGui::DragFloat("FOV", &fovDeg, 0.5f, 1.0f, 179.0f))
+		{
 			cam->FovY = fovDeg * kDegToRad;
+		}
+
 		ImGui::DragFloat("Near", &cam->Near, 0.01f, 0.001f, cam->Far);
 		ImGui::DragFloat("Far", &cam->Far, 1.0f, cam->Near, 100000.0f);
 		ImGui::Checkbox("Primary", &cam->Primary);
 	}
 
-	void DrawLightInspector(Entity e)
+	void LightInspector::Draw(Entity e)
 	{
 		Light* light = e.try_get_mut<Light>();
 		if (!light) return;
@@ -256,22 +243,28 @@ namespace koi
 		const char* types[] = { "Directional", "Point" };
 		int type = static_cast<int>(light->Type);
 		if (ImGui::Combo("Type", &type, types, IM_ARRAYSIZE(types)))
+		{
 			light->Type = static_cast<LightType>(type);
+		}
 
 		ImGui::ColorEdit3("Color", &light->Color.x);
 		ImGui::DragFloat("Intensity", &light->Intensity, 0.05f, 0.0f, 100.0f);
 		if (light->Type == LightType::Point)
+		{
 			ImGui::DragFloat("Range", &light->Range, 0.1f, 0.0f, 1000.0f);
+		}
 
 		if (light->Type == LightType::Directional)
 		{
 			ImGui::Checkbox("Casts Shadows", &light->CastsShadows);
 			if (light->CastsShadows)
+			{
 				ImGui::DragFloat("Shadow Bias", &light->ShadowBias, 0.0001f, 0.0f, 0.05f, "%.4f");
+			}
 		}
 	}
 
-	void DrawScriptInspector(Entity e)
+	void ScriptInspector::Draw(Entity e)
 	{
 		ScriptComponent* sc = e.try_get_mut<ScriptComponent>();
 		if (!sc) return;
@@ -282,7 +275,9 @@ namespace koi
 		if (ImGui::SmallButton("Edit"))
 		{
 			if (IEditorContext* editor = AppBase::Get().GetEditorContext())
+			{
 				editor->OpenScriptEditor(sc->ScriptPath);
+			}
 		}
 		ImGui::EndDisabled();
 
@@ -290,31 +285,22 @@ namespace koi
 		// that needs a metadata contract for which fields are script-exposed (a later milestone)
 		for (ScriptProperty& prop : sc->Properties)
 		{
-			std::visit([&](auto& value)
-			{
-				using T = std::decay_t<decltype(value)>;
-				if constexpr (std::is_same_v<T, bool>)
-					ImGui::Checkbox(prop.Name.c_str(), &value);
-				else if constexpr (std::is_same_v<T, i32>)
-					ImGui::DragInt(prop.Name.c_str(), &value);
-				else if constexpr (std::is_same_v<T, f32>)
-					ImGui::DragFloat(prop.Name.c_str(), &value, 0.01f);
-				else if constexpr (std::is_same_v<T, std::string>)
-					ImGui::InputText(prop.Name.c_str(), &value);
-			}, prop.Value);
+			std::visit(Match
+				{
+					[&](bool& value)        { ImGui::Checkbox(prop.Name.c_str(), &value);         },
+					[&](i32& value)         { ImGui::DragInt(prop.Name.c_str(), &value);          },
+					[&](f32& value)         { ImGui::DragFloat(prop.Name.c_str(), &value, 0.01f); },
+					[&](std::string& value) { ImGui::InputText(prop.Name.c_str(), &value);        },
+				}, prop.Value);
 		}
 	}
+
+	void RegisterBuiltinInspectors(InspectorRegistry& registry)
+	{
+		registry.Emplace<TransformInspector>();
+		registry.Emplace<MeshInspector>();
+		registry.Emplace<CameraInspector>();
+		registry.Emplace<LightInspector>();
+		registry.Emplace<ScriptInspector>();
+	}
 }
-
-#else
-
-namespace koi
-{
-	void DrawTransformInspector(Entity) {}
-	void DrawMeshInspector(Entity)      {}
-	void DrawCameraInspector(Entity)    {}
-	void DrawLightInspector(Entity)     {}
-	void DrawScriptInspector(Entity)    {}
-}
-
-#endif

@@ -5,6 +5,9 @@
 #include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Interop/Reloadable.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Editor/ImGui/ImGuiLayer.h"
+#include "Koi/Editor/Inspectors/InspectorRegistry.h"
+#include "Koi/Editor/Panels/PanelHost.h"
 #include "Koi/Editor/Selection.h"
 #include <toml++/toml.hpp>
 #include <filesystem>
@@ -23,7 +26,6 @@ namespace koi::editor
 	class AssetDatabase;
 	class ScriptEditorPanel;
 	class ViewportPanel;
-	enum class Theme : u8;
 	enum class ViewportCamera : u8;
 
 	struct EditorConfig
@@ -57,15 +59,15 @@ namespace koi::editor
 
 		void RegisterReloadable(IReloadable* reloadable) override;
 		void RegisterPanel(std::unique_ptr<IEditorPanel> panel) override;
+		void RegisterInspector(std::unique_ptr<IComponentInspector> inspector) override;
 		using IEditorContext::RegisterPanel;
+		using IEditorContext::RegisterInspector;
 
 		[[nodiscard]] std::optional<RenderView> GetEditorRenderView() const override;
 		void OpenScriptEditor(std::string_view vfsPath) override;
 
 	private:
 		void Setup();
-		void InitImGui();
-		void ShutdownImGui();
 		void DrawMenuBar();
 		void ReloadAll(const ReloadRequest& request);
 		void SaveScene();
@@ -76,21 +78,20 @@ namespace koi::editor
 		void Stop();
 
 	private:
-		std::unique_ptr<AppBase>                    m_game;
-		std::unique_ptr<AssetDatabase>              m_assetDatabase;
-		EditorConfig                                m_config{};
-		std::vector<std::unique_ptr<IEditorPanel>>  m_panels;
-		std::vector<bool>                           m_panelOpen;  // parallel to m_panels
-		std::vector<IReloadable*>                   m_reloadables;
-		ViewportPanel*                              m_viewportPanel     = nullptr;
-		ScriptEditorPanel*                          m_scriptEditorPanel = nullptr;
-		Selection                                   m_selection{};
-		Theme                                       m_theme;
-		bool                                        m_imguiInitialized = false;
-		std::string                                 m_lastCookStatus;  // shown in menubar after Cook click
+		std::unique_ptr<AppBase>        m_game;
+		std::unique_ptr<AssetDatabase>  m_assetDatabase;
+		EditorConfig                    m_config{};
+		ImGuiLayer                      m_imgui;
+		PanelHost                       m_panels;
+		InspectorRegistry               m_inspectors;
+		std::vector<IReloadable*>       m_reloadables;
+		ViewportPanel*                  m_viewportPanel     = nullptr;
+		ScriptEditorPanel*              m_scriptEditorPanel = nullptr;
+		Selection                       m_selection{};
+		std::string                     m_lastCookStatus;  // shown in menubar after Cook click
 
-		toml::table                                 m_snapshot;            // the world as it was when Play was pressed
-		std::vector<MeshHandle>                     m_pinnedAssets;        // keeps the snapshot's assets resident across Stop
-		ViewportCamera                              m_cameraBeforePlay{};  // restored on Stop
+		toml::table                     m_snapshot;            // the world as it was when Play was pressed
+		std::vector<MeshHandle>         m_pinnedAssets;        // keeps the snapshot's assets resident across Stop
+		ViewportCamera                  m_cameraBeforePlay{};  // restored on Stop
 	};
 }

@@ -1,8 +1,7 @@
 #include "Koi/Editor/Panels/InspectorPanel.h"
+#include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
-#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
-#include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <cctype>
 
@@ -42,12 +41,11 @@ namespace koi::editor
 
 		if (ImGui::BeginPopup("##addComponent"))
 		{
-			GfxDevice& device = Engine::Get().GetSubsystem<Renderer>().GetDevice();
-			for (const ComponentInfo& component : ComponentRegistry::Get().All())
+			for (const std::unique_ptr<IComponentType>& type : ComponentRegistry::Get().All())
 			{
-				if (!component.Add || !component.Has || component.Has(selected)) continue;
-				if (ImGui::Selectable(Capitalize(component.Key).c_str()))
-					component.Add(selected, device);
+				if (type->Has(selected)) continue;
+				if (ImGui::Selectable(Capitalize(type->Key()).c_str()))
+					type->Add(selected);
 			}
 			ImGui::EndPopup();
 		}
@@ -55,24 +53,31 @@ namespace koi::editor
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		for (const ComponentInfo& component : ComponentRegistry::Get().All())
+		for (const std::unique_ptr<IComponentType>& type : ComponentRegistry::Get().All())
 		{
-			if (!component.Draw || !component.Has || !component.Has(selected)) continue;
+			if (!type->Has(selected)) continue;
 
-			ImGui::PushID(component.Key.data(), component.Key.data() + component.Key.size());
+			const std::string_view key = type->Key();
+			ImGui::PushID(key.data(), key.data() + key.size());
 
 			bool keepOpen = true;
-			const bool expanded = ImGui::CollapsingHeader(Capitalize(component.Key).c_str(),
-				component.Removable ? &keepOpen : nullptr, ImGuiTreeNodeFlags_DefaultOpen);
+			const bool expanded = ImGui::CollapsingHeader(Capitalize(key).c_str(),
+				type->Removable() ? &keepOpen : nullptr, ImGuiTreeNodeFlags_DefaultOpen);
 
-			if (component.Removable && !keepOpen)
+			if (type->Removable() && !keepOpen)
 			{
-				component.Remove(selected);
+				type->Remove(selected);
 			}
 			else if (expanded)
 			{
 				ImGui::Indent();
-				component.Draw(selected);
+
+				// A component is free to have no inspector; it still serializes and can be removed
+				if (IComponentInspector* inspector = m_inspectors->Find(key))
+					inspector->Draw(selected);
+				else
+					ImGui::TextDisabled("No inspector registered");
+
 				ImGui::Unindent();
 			}
 

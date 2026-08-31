@@ -47,6 +47,8 @@ namespace koi
 		void HostBeginPlay() override;
 		void HostEndPlay() override;
 
+		virtual void OnRegisterComponents() {}  // Runs before the startup scene loads
+
 		virtual void OnInit() {}
 		virtual void OnShutdown() {}
 		virtual void OnTick(f32 /*dt*/) {}

@@ -4,15 +4,22 @@
 
 namespace koi::editor
 {
+	class InspectorRegistry;
+
 	class InspectorPanel : public IEditorPanel
 	{
 	public:
-		explicit InspectorPanel(Selection& selection) : m_selection(&selection) {}
+		InspectorPanel(Selection& selection, InspectorRegistry& inspectors)
+			: m_selection(&selection)
+			, m_inspectors(&inspectors)
+		{
+		}
 
 		[[nodiscard]] std::string_view GetName() const override { return "Inspector"; }
 		void OnDraw() override;
 
 	private:
-		Selection* m_selection = nullptr;
+		Selection*         m_selection  = nullptr;
+		InspectorRegistry* m_inspectors = nullptr;
 	};
 }

@@ -16,9 +16,25 @@ namespace koi
 
 		// Add root entity, disabled by default. Every other entity is parented to this
 		m_root = m_ecs.entity("WorldRoot");
+
+		ConfigureComponentHooks();
 	}
 
-	std::optional<World> World::Load(const fs::path& path, GfxDevice& device)
+	void World::ConfigureComponentHooks()
+	{
+		// Whatever drops a MeshRef - a removed component, a destroyed entity, a torn-down
+		// world - gives the cache reference back here, so no call site has to remember to
+		m_ecs.component<MeshRef>().on_remove([](Entity, MeshRef& mesh)
+		{
+			if (!mesh.Handle) return;
+
+			Engine& engine = Engine::Get();
+			engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>()
+				.Release(engine.GetSubsystem<Renderer>().GetDevice(), mesh.Handle);
+		});
+	}
+
+	std::optional<World> World::Load(const fs::path& path)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::ECS);
@@ -40,7 +56,7 @@ namespace koi
 			const toml::table scene = toml::parse(text);
 
 			World world;
-			world.LoadFromTable(scene, device);
+			world.LoadFromTable(scene);
 
 			KOI_LOG_INFO("Loaded scene '{}'", virtualPath);
 			return world;
@@ -52,7 +68,7 @@ namespace koi
 		}
 	}
 
-	bool World::LoadFromTable(const toml::table& scene, GfxDevice& device)
+	bool World::LoadFromTable(const toml::table& scene)
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::ECS);
@@ -69,7 +85,7 @@ namespace koi
 		struct PendingParent { Entity Child; std::string ParentName; };
 		std::vector<PendingParent> pendingParents;
 
-		const std::span<const ComponentInfo> components = ComponentRegistry::Get().All();
+		const auto components = ComponentRegistry::Get().All();
 		u32 index = 0;
 		for (const toml::node& node : *entities)
 		{
@@ -84,8 +100,10 @@ namespace koi
 			KOI_LOG_TRACE("Scene entity [{}] '{}'", i, name);
 
 			// Load components (use registry for this)
-			for (const ComponentInfo& component : components)
-				component.Load(e, *entityTable, component.Key, device);
+			for (const std::unique_ptr<IComponentType>& component : components)
+			{
+				component->Load(e, *entityTable);
+			}
 
 			// Configure parents if they exist
 			if (const std::string parentName = (*entityTable)["parent"].value_or(std::string()); !parentName.empty())
@@ -96,9 +114,13 @@ namespace koi
 		for (const PendingParent& link : pendingParents)
 		{
 			if (const Entity parent = m_ecs.lookup(link.ParentName.c_str()))
+			{
 				link.Child.child_of(parent);
+			}
 			else
+			{
 				KOI_LOG_WARN("Scene entity parent '{}' not found", link.ParentName);
+			}
 		}
 
 		// World bounds come from whichever meshes ended up resident
@@ -177,7 +199,7 @@ namespace koi
 		toml::table root;
 		toml::array entities;
 
-		const std::span<const ComponentInfo> components = ComponentRegistry::Get().All();
+		const auto components = ComponentRegistry::Get().All();
 		m_ecs.query<const Transform>().each([&](Entity e, const Transform&)
 		{
 			if (e == m_root) return;  // skip the internal WorldRoot
@@ -192,8 +214,10 @@ namespace koi
 				entity.insert("parent", std::string(parent.name().c_str()));
 
 			// Save components (use registry for this)
-			for (const ComponentInfo& component : components)
-				component.Save(e, entity, component.Key);
+			for (const std::unique_ptr<IComponentType>& component : components)
+			{
+				component->Save(e, entity);
+			}
 
 			entities.push_back(std::move(entity));
 		});
@@ -203,17 +227,12 @@ namespace koi
 		return root;
 	}
 
-	void World::Clear(GfxDevice& device)
+	void World::Clear()
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
-		// Give back every asset reference the entities took when they were loaded
-		AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
-		m_ecs.each<MeshRef>([&](Entity, MeshRef& mesh)
-		{
-			meshes.Release(device, mesh.Handle);
-		});
+		// Destructing an entity fires the component hooks, which is what releases its assets
 
 		// Collect first to prevent iterator invalidation
 		std::vector<EntityID> doomed;
@@ -225,7 +244,9 @@ namespace koi
 		for (const EntityID id : doomed)
 		{
 			if (const Entity e = m_ecs.entity(id); e.is_alive())
+			{
 				e.destruct();
+			}
 		}
 
 		KOI_LOG_DEBUG("Cleared world ({} entities destroyed)", doomed.size());

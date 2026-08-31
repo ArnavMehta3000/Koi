@@ -8,7 +8,6 @@
 
 namespace koi
 {
-	class GfxDevice;
 	namespace fs = std::filesystem;
 
 	using ECS      = flecs::world;
@@ -25,15 +24,15 @@ namespace koi
 		World(World&&) noexcept = default;
 		World& operator=(World&&) noexcept = default;
 
-		[[nodiscard]] static std::optional<World> Load(const fs::path& path, GfxDevice& device);
+		[[nodiscard]] static std::optional<World> Load(const fs::path& path);
 
 		bool Save(const fs::path& path);
 
-		bool LoadFromTable(const toml::table& scene, GfxDevice& device);
+		bool LoadFromTable(const toml::table& scene);
 		[[nodiscard]] toml::table SaveToTable();
 
-		// Destroys every entity and releases the assets they held references on
-		void Clear(GfxDevice& device);
+		// Destroys every entity. The assets they referenced are released by component hooks
+		void Clear();
 
 		void Update(f32 dt);
 
@@ -48,6 +47,9 @@ namespace koi
 
 		[[nodiscard]] ECS&       GetECS()       { return m_ecs; }
 		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
+
+	private:
+		void ConfigureComponentHooks();
 
 	private:
 		ECS    m_ecs;

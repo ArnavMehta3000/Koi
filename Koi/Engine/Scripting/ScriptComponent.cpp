@@ -30,7 +30,7 @@ namespace koi
 		}
 	}
 
-	void LoadScript(Entity e, const toml::table& entityTable, std::string_view key, GfxDevice&)
+	void LoadScript(Entity e, const toml::table& entityTable, std::string_view key)
 	{
 		const toml::table* scriptTable = entityTable[key].as_table();
 		if (!scriptTable) return;

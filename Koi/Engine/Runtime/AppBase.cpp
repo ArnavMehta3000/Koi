@@ -26,6 +26,9 @@ namespace koi
 	void AppBase::HostInit()
 	{
 		KOI_LOG_INFO("Initializing application: {}", m_desc.AppName);
+
+		OnRegisterComponents();
+
 		LoadStartupScene();
 		OnInit();
 	}
@@ -53,7 +56,7 @@ namespace koi
 		OnShutdown();
 
 		// Hands back the asset references the scene's entities took when they loaded
-		m_world->Clear(m_engine->GetSubsystem<Renderer>().GetDevice());
+		m_world->Clear();
 		KOI_LOG_INFO("Shutting down application: {}", m_desc.AppName);
 	}
 
@@ -78,8 +81,7 @@ namespace koi
 			return;
 		}
 
-		GfxDevice& device = m_engine->GetSubsystem<Renderer>().GetDevice();
-		if (std::optional<World> loaded = World::Load(m_desc.StartupScene, device))
+		if (std::optional<World> loaded = World::Load(m_desc.StartupScene))
 		{
 			*m_world = std::move(*loaded);
 		}

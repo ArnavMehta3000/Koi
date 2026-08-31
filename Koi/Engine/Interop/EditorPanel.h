@@ -13,5 +13,11 @@ namespace koi
 
 		// Whether this panel can be toggled off
 		[[nodiscard]] virtual bool IsClosable() const { return true; }
+
+		[[nodiscard]] bool IsOpen() const { return m_open; }
+		void SetOpen(bool open) { m_open = open; }
+
+	private:
+		bool m_open = true;
 	};
 }

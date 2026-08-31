@@ -9,8 +9,6 @@ class asIScriptFunction;
 
 namespace koi
 {
-	class GfxDevice;
-
 	struct ScriptComponent
 	{
 		std::string ScriptPath;  // VFS path
@@ -22,6 +20,6 @@ namespace koi
 		asIScriptFunction* OnUpdateFn = nullptr;
 	};
 
-	void LoadScript(Entity e, const toml::table& entityTable, std::string_view key, GfxDevice&);
+	void LoadScript(Entity e, const toml::table& entityTable, std::string_view key);
 	void SaveScript(Entity e, toml::table& entityTable, std::string_view key);
 }

@@ -1,6 +1,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Memory/MemoryDebug.h"
@@ -24,6 +25,8 @@ namespace koi
 
 		m_systems.ConstructAll();
 		KOI_LOG_DEBUG("Engine subsystems constructed");
+
+		RegisterEngineComponents();
 	}
 
 	Engine::~Engine()
