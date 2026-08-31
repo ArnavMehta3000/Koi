@@ -106,15 +106,15 @@ namespace koi::internal
 				for (const fs::path& p : projectRoots) KOI_LOG_DEBUG("\tproject <- {}", p.string());
 #else
 				fs::path contentRoot = exeDir;
-				if (!fs::exists(contentRoot / "Project" / "Project.toml") &&
-				     fs::exists(exeDir / "Cooked" / "Project" / "Project.toml"))
+				if (!fs::exists(contentRoot / "Project" / "Project.koi.toml") &&
+				     fs::exists(exeDir / "Cooked" / "Project" / "Project.koi.toml"))
 				{
 					contentRoot = exeDir / "Cooked";
 				}
 
 				if (cmd->GetProjectFile().empty())
 				{
-					const fs::path defaultProject = contentRoot / "Project" / "Project.toml";
+					const fs::path defaultProject = contentRoot / "Project" / "Project.koi.toml";
 					if (fs::exists(defaultProject))
 					{
 						KOI_LOG_INFO("No --project specified; defaulting to {}", defaultProject.string());

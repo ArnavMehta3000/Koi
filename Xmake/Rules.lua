@@ -25,7 +25,7 @@ rule("KoiGame")
 
 		-- Add self as dependency + get project TOML filepath
 		launcher:add("deps", target:name())
-		local project_file = path.join(target:scriptdir(), target:name() .. ".toml")
+		local project_file = path.join(target:scriptdir(), target:name() .. ".koi.toml")
 
 		if with_editor then
 			-- Source-tree roots let the editor read .hlsl / .gltf / scene

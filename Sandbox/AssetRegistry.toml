@@ -143,7 +143,7 @@ path = 'Assets/Models/Sponza/1219024358953944284.jpg'
 type = 'texture'
 
 [7927a629-3593-4336-b3e9-6ded15f1d571]
-path = 'Assets/Scenes/Main.toml'
+path = 'Assets/Scenes/Main.scene.toml'
 type = 'scene'
 
 [87e26ee5-0026-42c2-b30e-864e7f747e2e]

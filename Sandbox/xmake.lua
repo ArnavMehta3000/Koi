@@ -11,6 +11,6 @@ target("Sandbox")
 	-- Use project:// to refer to these assets
 	add_extrafiles("Assets/Shaders/**.hlsl")
 	add_extrafiles("Assets/Models/**.gltf")
-	add_extrafiles("Assets/Scenes/**.toml")
-	add_extrafiles("Sandbox.toml")
+	add_extrafiles("Assets/Scenes/**.scene.toml")
+	add_extrafiles("Sandbox.koi.toml")
 target_end()

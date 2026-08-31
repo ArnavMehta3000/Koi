@@ -20,4 +20,4 @@ debug_sink = true
 pipeline = "deferred"
 
 [assets]
-startup_scene = "Assets/Scenes/Main.toml"
+startup_scene = "Assets/Scenes/Main.scene.toml"
