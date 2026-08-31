@@ -35,115 +35,99 @@
 
 namespace koi::editor
 {
-	// Layout for the first run, before ImGui has written an imgui.ini of its own.
-	// To change it: arrange the panels in the editor, then copy the resulting ini here
 	static constexpr const char* kDefaultLayout = R"ini(
 		[Window][WindowOverViewport_11111111]
-		Pos=0,22
-		Size=2560,1489
+		Pos=0,24
+		Size=2560,1487
 		Collapsed=0
-		LastUsed=20260819
-
-		[Window][Viewport]
-		Pos=0,22
-		Size=1839,1059
-		Collapsed=0
-		DockId=0x00000005,0
-		LastUsed=20260819
-
-		[Window][World Outline]
-		Pos=1841,22
-		Size=719,316
-		Collapsed=0
-		DockId=0x00000009,0
-		LastUsed=20260819
-
-		[Window][Inspector]
-		Pos=1841,340
-		Size=719,527
-		Collapsed=0
-		DockId=0x0000000A,0
-		LastUsed=20260819
-
-		[Window][Render Targets]
-		Pos=1841,869
-		Size=719,642
-		Collapsed=0
-		DockId=0x00000002,0
-		LastUsed=20260819
+		LastUsed=20260828
 
 		[Window][Debug##Default]
 		Pos=60,60
 		Size=400,400
 		Collapsed=0
-		LastUsed=20260819
+		LastUsed=20260828
 
-		[Window][Log]
-		Pos=0,1083
-		Size=961,428
+		[Window][World Outline]
+		Pos=0,24
+		Size=331,708
 		Collapsed=0
 		DockId=0x00000007,0
-		LastUsed=20260819
+		LastUsed=20260828
 
-		[Window][Text Editor]
-		Pos=1841,340
-		Size=719,527
-		Collapsed=0
-		DockId=0x0000000A,1
-		LastUsed=20260819
-
-		[Window][Assets]
-		Pos=963,1083
-		Size=876,428
+		[Window][Inspector]
+		Pos=0,734
+		Size=331,777
 		Collapsed=0
 		DockId=0x00000008,0
-		LastUsed=20260819
+		LastUsed=20260828
 
-		[Window][Assets/FolderTree_942ADF46]
-		IsChild=1
-		Size=190,368
-		LastUsed=20260818
+		[Window][Render Targets]
+		Pos=1963,24
+		Size=597,1139
+		Collapsed=0
+		DockId=0x00000004,0
+		LastUsed=20260828
+
+		[Window][Viewport]
+		Pos=333,24
+		Size=1628,1139
+		Collapsed=0
+		DockId=0x00000003,0
+		LastUsed=20260828
+
+		[Window][Text Editor]
+		Pos=333,24
+		Size=1628,1139
+		Collapsed=0
+		DockId=0x00000003,1
+		LastUsed=20260828
+
+		[Window][Assets]
+		Pos=333,1165
+		Size=692,346
+		Collapsed=0
+		DockId=0x00000009,0
+		LastUsed=20260828
+
+		[Window][Log]
+		Pos=1027,1165
+		Size=1533,346
+		Collapsed=0
+		DockId=0x0000000A,0
+		LastUsed=20260828
 
 		[Table][0x584826A8,4]
 		RefScale=16
-		Column 0  Width=78 ID=0xDE21DBF3
-		Column 1  Width=78 ID=0xFBE609D2
-		Column 2  Width=155 ID=0x26563918
-		Column 3  Width=612 ID=0xA5F9976D
-		LastUsed=20260819
-
-		[Table][0x4FE63A1D,3]
-		RefScale=16
-		Column 0  Weight=1.0000 ID=0x4637146C
-		Column 1  Width=111 ID=0x517A6DEB
-		Column 2  Width=298 ID=0x7D73DD88
-		LastUsed=20260818
+		LastUsed=20260828
 
 		[Table][0x26345F36,3]
 		RefScale=16
 		Column 0  Weight=1.0000 ID=0x4637146C
-		Column 1  Width=161 ID=0x517A6DEB
-		Column 2  Width=154 ID=0x7D73DD88
-		LastUsed=20260819
+		Column 1  Width=70 ID=0x517A6DEB
+		Column 2  Width=70 ID=0x7D73DD88
+		LastUsed=20260828
 
 		[Table][0xCC434132,2]
 		RefScale=16
-		Column 0  Width=228 ID=0x30C046FC
+		Column 0  Width=190 ID=0x30C046FC
 		Column 1  Weight=1.0000 ID=0x24966EC5
-		LastUsed=20260819
+		LastUsed=20260828
 
 		[Docking][Data]
-		DockSpace       ID=0x08BD597D Window=0x1BBC0F80 Pos=0,51 Size=2560,1489 Split=X
-  DockNode      ID=0x00000003 Parent=0x08BD597D SizeRef=1839,701 Split=Y Selected=0xC450F867
-    DockNode    ID=0x00000005 Parent=0x00000003 SizeRef=1360,1059 CentralNode=1 Selected=0xC450F867
-    DockNode    ID=0x00000006 Parent=0x00000003 SizeRef=1360,428 Split=X Selected=0x139FDA3F
-      DockNode  ID=0x00000007 Parent=0x00000006 SizeRef=961,428 Selected=0x139FDA3F
-      DockNode  ID=0x00000008 Parent=0x00000006 SizeRef=876,428 Selected=0x42C24103
-  DockNode      ID=0x00000004 Parent=0x08BD597D SizeRef=719,701 Split=Y Selected=0xE601B12F
-    DockNode    ID=0x00000001 Parent=0x00000004 SizeRef=628,845 Split=Y Selected=0x73D9A15B
-      DockNode  ID=0x00000009 Parent=0x00000001 SizeRef=512,316 Selected=0x73D9A15B
-      DockNode  ID=0x0000000A Parent=0x00000001 SizeRef=512,527 Selected=0x36DC96AB
-    DockNode    ID=0x00000002 Parent=0x00000004 SizeRef=628,642 Selected=0x884BBC23
+		DockSpace       ID=0x08BD597D Window=0x1BBC0F80 Pos=0,53 Size=2560,1487 Split=X
+  DockNode      ID=0x00000005 Parent=0x08BD597D SizeRef=331,1487 Split=Y Selected=0x36DC96AB
+    DockNode    ID=0x00000007 Parent=0x00000005 SizeRef=331,708 Selected=0x73D9A15B
+    DockNode    ID=0x00000008 Parent=0x00000005 SizeRef=331,777 Selected=0x36DC96AB
+  DockNode      ID=0x00000006 Parent=0x08BD597D SizeRef=2227,1487 Split=Y
+    DockNode    ID=0x00000001 Parent=0x00000006 SizeRef=1280,348 Split=X Selected=0x54B0B812
+      DockNode  ID=0x00000003 Parent=0x00000001 SizeRef=1628,1139 CentralNode=1 Selected=0xC450F867
+      DockNode  ID=0x00000004 Parent=0x00000001 SizeRef=597,1139 Selected=0x884BBC23
+    DockNode    ID=0x00000002 Parent=0x00000006 SizeRef=1280,346 Split=X Selected=0x139FDA3F
+      DockNode  ID=0x00000009 Parent=0x00000002 SizeRef=692,346 Selected=0x42C24103
+      DockNode  ID=0x0000000A Parent=0x00000002 SizeRef=1533,346 Selected=0x139FDA3F
+
+
 )ini";
 
 	static void ImGuiSrvAlloc(ImGui_ImplDX12_InitInfo* /*info*/,
