@@ -23,21 +23,6 @@ name = 'Sponza 2'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-name = 'Torus'
-
-    [entity.mesh.procedural]
-    generator = 'torus'
-    radius = 2.55
-    segments = 32
-    sides = 16
-    tube_radius = 0.061
-
-    [entity.transform]
-    position = [ 3.790697, 12.711526, -10.753848 ]
-    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
-    scale = [ 5.0, 5.0, 5.0 ]
-
-[[entity]]
 name = 'Damaged Helmet'
 
     [entity.mesh]
@@ -113,3 +98,22 @@ name = 'Child Light'
     position = [ 3.35, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Torus'
+
+    [entity.mesh.procedural]
+    generator = 'torus'
+    radius = 2.55
+    segments = 32
+    sides = 16
+    tube_radius = 0.061
+
+    [entity.spin]
+    axis = [ 1.0, 0.0, 1.0 ]
+    speed = 90.0
+
+    [entity.transform]
+    position = [ 3.790697, 12.711526, -10.753848 ]
+    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
+    scale = [ 5.0, 5.0, 5.0 ]
