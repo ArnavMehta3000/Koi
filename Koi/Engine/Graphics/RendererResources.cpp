@@ -55,41 +55,12 @@ namespace koi
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
-		WhiteTexture = device.CreateTexture(TextureDesc
-		{
-			.Width     = 1,
-			.Height    = 1,
-			.Format    = Format::R8G8B8A8_UNORM,
-			.Usage     = TextureUsage::ShaderRead,
-			.DebugName = "Default White 1x1",
-		});
-
-		FlatNormalTexture = device.CreateTexture(TextureDesc
-		{
-			.Width     = 1,
-			.Height    = 1,
-			.Format    = Format::R8G8B8A8_UNORM,
-			.Usage     = TextureUsage::ShaderRead,
-			.DebugName = "Default Flat Normal 1x1",
-		});
-
-		// R8G8B8A8_UNORM: byte[0]=R, byte[1]=G, byte[2]=B, byte[3]=A
-		// As a little-endian u32: bits[7:0]=R, bits[15:8]=G, bits[23:16]=B, bits[31:24]=A
-		constexpr u32 kWhite      = 0xFFFFFFFFu;
-		constexpr u32 kFlatNormal = 0xFFFF8080u;  // R=0x80, G=0x80, B=0xFF, A=0xFF
-
-		GfxDevice::UploadContext& upload = device.GetUploadContext();
-		upload.Begin();
-		upload.UploadTexture(WhiteTexture,      &kWhite,      sizeof(kWhite));
-		upload.UploadTexture(FlatNormalTexture, &kFlatNormal, sizeof(kFlatNormal));
-		upload.End();
-
 		LinearWrapSampler  = device.CreateSampler(MakeLinearWrapDesc());
 		LinearClampSampler = device.CreateSampler(MakeLinearClampDesc());
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
 		ShadowSampler      = device.CreateSampler(MakeShadowCompareDesc());
 
-		KOI_LOG_DEBUG("Default textures and samplers created");
+		KOI_LOG_DEBUG("Default samplers created");
 		RegisterPipelines(device, library);
 	}
 
@@ -131,6 +102,10 @@ namespace koi
 		FallbackTexture = textures.AcquireFrom(device, AssetKey::FromUri(std::string(kFallbackTextureUri)), checker);
 		textures.SetFallback(FallbackTexture);
 
+		// Every material row that binds no albedo samples this, so the shader never reads a null index
+		const GPUTexture* checkerTexture = textures.Get(FallbackTexture);
+		FallbackTextureSRV = checkerTexture ? checkerTexture->SRVIndex : INVALID_DESCRIPTOR;
+
 		// Fallback mesh: A unit box
 		AssetCache<GPUMesh>& meshes = assets.Cache<GPUMesh>();
 		FallbackMesh = meshes.Acquire(device, AssetKey::FromUri(ProceduralUriFor<BoxGenerator>()));
@@ -139,17 +114,14 @@ namespace koi
 		KOI_LOG_DEBUG("Fallback mesh and texture registered");
 	}
 
-	void RendererResources::Shutdown(GfxDevice& device)
+	void RendererResources::Shutdown()
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		// Pipelines belong to the PipelineLibrary, which destroys them itself
-		device.Destroy(WhiteTexture);
-		device.Destroy(FlatNormalTexture);
-		WhiteTexture          = {};
-		FlatNormalTexture     = {};
 		// The asset caches shut down first and have already released these
 		FallbackMesh          = {};
 		FallbackTexture       = {};
+		FallbackTextureSRV    = INVALID_DESCRIPTOR;
 		TonemapPipeline       = {};
 		MeshOpaquePipeline    = {};
 		MeshWireframePipeline = {};
@@ -165,99 +137,37 @@ namespace koi
 		KOI_LOG_DEBUG("Registering default pipelines");
 
 		// --- Tonemap ---
-		TonemapPipeline = library.Register(device, PipelineRecipe
-		{
-			.Name         = "Tonemap",
-			.VertexShader = "engine://Content/Shaders/TonemapVS",
-			.PixelShader  = "engine://Content/Shaders/TonemapPS",
-			.Desc         =
-			{
-				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
-				.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
-				.RenderTargetFormats = { Format::R8G8B8A8_UNORM },
-				.RenderTargetCount   = 1,
-			},
-		});
+		TonemapPipeline = library.Register(device, PipelineRecipe::FullScreen(
+			"Tonemap",
+			"engine://Content/Shaders/TonemapVS",
+			"engine://Content/Shaders/TonemapPS",
+			Format::R8G8B8A8_UNORM));
 
 		// --- Mesh (opaque + wireframe share the same VS/PS) ---
-		MeshOpaquePipeline = library.Register(device, PipelineRecipe
+		const auto meshRecipe = []
 		{
-			.Name         = "Mesh.Opaque",
-			.VertexShader = "engine://Content/Shaders/MeshVS",
-			.PixelShader  = "engine://Content/Shaders/MeshPS",
-			.Desc         =
-			{
-				// Right-handed view/projection: front faces wind counter-clockwise on screen
-				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
-				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-				.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
-				.RenderTargetCount   = 1,
-				.DepthFormat         = Format::D32_FLOAT,
-			},
-		});
+			return PipelineRecipe::Forward("Mesh.Opaque",
+				"engine://Content/Shaders/MeshVS",
+				"engine://Content/Shaders/MeshPS");
+		};
 
-		MeshWireframePipeline = library.Register(device, PipelineRecipe
-		{
-			.Name         = "Mesh.Wireframe",
-			.VertexShader = "engine://Content/Shaders/MeshVS",
-			.PixelShader  = "engine://Content/Shaders/MeshPS",
-			.Desc         =
-			{
-				.Rasterizer          = { .FillMode = D3D12_FILL_MODE_WIREFRAME, .CullMode = D3D12_CULL_MODE_NONE },
-				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-				.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
-				.RenderTargetCount   = 1,
-				.DepthFormat         = Format::D32_FLOAT,
-			},
-		});
+		MeshOpaquePipeline    = library.Register(device, meshRecipe());
+		MeshWireframePipeline = library.Register(device, meshRecipe().Named("Mesh.Wireframe").Wireframe());
 
-		// --- G-buffer (deferred geometry: 3 color MRT + depth) ---
-		GBufferPipeline = library.Register(device, PipelineRecipe
-		{
-			.Name         = "GBuffer",
-			.VertexShader = "engine://Content/Shaders/GBufferVS",
-			.PixelShader  = "engine://Content/Shaders/GBufferPS",
-			.Desc         =
-			{
-				// Same winding/cull as the opaque mesh pass (RH, front faces wind CCW).
-				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
-				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-				// Must match GBufferPass::CreateRenderTargets and the shader's SV_Target formats.
-				.RenderTargetFormats = { Format::R8G8B8A8_UNORM, Format::R16G16B16A16_UNORM, Format::R8G8B8A8_UNORM },
-				.RenderTargetCount   = 3,
-				.DepthFormat         = Format::D32_FLOAT,
-			},
-		});
+		// The G-buffer pipeline is a material template, registered by the Renderer
 
-		// --- Shadow map (depth-only: no pixel shader, no render targets) ---
-		ShadowPipeline = library.Register(device, PipelineRecipe
-		{
-			.Name         = "ShadowMap",
-			.VertexShader = "engine://Content/Shaders/ShadowVS",
-			.Desc         =
-			{
-				// Raster-stage depth bias pushes fragments away from the light before the
-				// depth test, which removes most self-shadowing acne for free
-				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true, .DepthBias = 100, .SlopeScaledDepthBias = 2.0f },
-				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-				.RenderTargetCount   = 0,
-				.DepthFormat         = Format::D32_FLOAT,
-			},
-		});
+		// Raster-stage depth bias pushes fragments away from the light before the depth test,
+		// which removes most self-shadowing acne for free
+		ShadowPipeline = library.Register(device, PipelineRecipe::DepthOnly(
+			"ShadowMap",
+			"engine://Content/Shaders/ShadowVS")
+			.DepthBias(100, 2.0f));
 
 		// --- Deferred lighting (full-screen triangle: samples G-buffer -> HDR color) ---
-		LightingPipeline = library.Register(device, PipelineRecipe
-		{
-			.Name         = "DeferredLighting",
-			.VertexShader = "engine://Content/Shaders/LightingVS",
-			.PixelShader  = "engine://Content/Shaders/LightingPS",
-			.Desc         =
-			{
-				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
-				.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
-				.RenderTargetFormats = { Format::R16G16B16A16_FLOAT },
-				.RenderTargetCount   = 1,
-			},
-		});
+		LightingPipeline = library.Register(device, PipelineRecipe::FullScreen(
+			"DeferredLighting",
+			"engine://Content/Shaders/LightingVS",
+			"engine://Content/Shaders/LightingPS",
+			Format::R16G16B16A16_FLOAT));
 	}
 }

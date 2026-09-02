@@ -11,10 +11,20 @@ namespace koi
 
 	struct PipelineRecipe
 	{
-		std::string  Name;          // debug name, owned here because PipelineDesc only holds a view
-		std::string  VertexShader;  // virtual path without extension; empty when unused
+		std::string  Name;
+		std::string  VertexShader;  // virtual path without extension | empty when unused
 		std::string  PixelShader;
 		PipelineDesc Desc;          // shader bytecode and DebugName are filled in at build time
+
+		[[nodiscard]] static PipelineRecipe GBuffer   (std::string name, std::string vs, std::string ps);
+		[[nodiscard]] static PipelineRecipe Forward   (std::string name, std::string vs, std::string ps);
+		[[nodiscard]] static PipelineRecipe FullScreen(std::string name, std::string vs, std::string ps, Format target);
+		[[nodiscard]] static PipelineRecipe DepthOnly (std::string name, std::string vs);
+
+		PipelineRecipe& Named(std::string name);
+		PipelineRecipe& Cull(D3D12_CULL_MODE mode);
+		PipelineRecipe& Wireframe();
+		PipelineRecipe& DepthBias(i32 bias, f32 slopeScaled);
 	};
 
 	// Owns the recipe behind every pipeline the engine builds. Handles stay valid across a rebuild

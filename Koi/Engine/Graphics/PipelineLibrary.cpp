@@ -7,6 +7,111 @@
 
 namespace koi
 {
+	namespace
+	{
+		// Must match GBufferPass::CreateRenderTargets and the shader's SV_Target formats
+		constexpr Format kGBufferFormats[] = { Format::R8G8B8A8_UNORM, Format::R16G16B16A16_UNORM, Format::R8G8B8A8_UNORM };
+		constexpr Format kHDRFormat        = Format::R16G16B16A16_FLOAT;
+		constexpr Format kDepthFormat      = Format::D32_FLOAT;
+	}
+
+	PipelineRecipe PipelineRecipe::GBuffer(std::string name, std::string vs, std::string ps)
+	{
+		PipelineRecipe recipe
+		{
+			.Name         = std::move(name),
+			.VertexShader = std::move(vs),
+			.PixelShader  = std::move(ps),
+			.Desc         =
+			{
+				.Rasterizer        = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
+				.DepthStencil      = { .DepthEnable = true, .DepthWrite = true },
+				.RenderTargetCount = static_cast<u32>(std::size(kGBufferFormats)),
+				.DepthFormat       = kDepthFormat,
+			},
+		};
+
+		std::ranges::copy(kGBufferFormats, recipe.Desc.RenderTargetFormats);
+		return recipe;
+	}
+
+	PipelineRecipe PipelineRecipe::Forward(std::string name, std::string vs, std::string ps)
+	{
+		return PipelineRecipe
+		{
+			.Name         = std::move(name),
+			.VertexShader = std::move(vs),
+			.PixelShader  = std::move(ps),
+			.Desc         =
+			{
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
+				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
+				.RenderTargetFormats = { kHDRFormat },
+				.RenderTargetCount   = 1,
+				.DepthFormat         = kDepthFormat,
+			},
+		};
+	}
+
+	PipelineRecipe PipelineRecipe::FullScreen(std::string name, std::string vs, std::string ps, Format target)
+	{
+		return PipelineRecipe
+		{
+			.Name         = std::move(name),
+			.VertexShader = std::move(vs),
+			.PixelShader  = std::move(ps),
+			.Desc         =
+			{
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+				.DepthStencil        = { .DepthEnable = false, .DepthWrite = false },
+				.RenderTargetFormats = { target },
+				.RenderTargetCount   = 1,
+			},
+		};
+	}
+
+	PipelineRecipe PipelineRecipe::DepthOnly(std::string name, std::string vs)
+	{
+		return PipelineRecipe
+		{
+			.Name         = std::move(name),
+			.VertexShader = std::move(vs),
+			.Desc         =
+			{
+				.Rasterizer        = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
+				.DepthStencil      = { .DepthEnable = true, .DepthWrite = true },
+				.RenderTargetCount = 0,
+				.DepthFormat       = kDepthFormat,
+			},
+		};
+	}
+
+	PipelineRecipe& PipelineRecipe::Named(std::string name)
+	{
+		Name = std::move(name);
+		return *this;
+	}
+
+	PipelineRecipe& PipelineRecipe::Cull(D3D12_CULL_MODE mode)
+	{
+		Desc.Rasterizer.CullMode = mode;
+		return *this;
+	}
+
+	PipelineRecipe& PipelineRecipe::Wireframe()
+	{
+		Desc.Rasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		Desc.Rasterizer.CullMode = D3D12_CULL_MODE_NONE;
+		return *this;
+	}
+
+	PipelineRecipe& PipelineRecipe::DepthBias(i32 bias, f32 slopeScaled)
+	{
+		Desc.Rasterizer.DepthBias            = bias;
+		Desc.Rasterizer.SlopeScaledDepthBias = slopeScaled;
+		return *this;
+	}
+
 	PipelineHandle PipelineLibrary::Register(GfxDevice& device, PipelineRecipe recipe)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
@@ -101,11 +206,11 @@ namespace koi
 
 	bool PipelineLibrary::Build(GfxDevice& device, Entry& entry)
 	{
-		ShaderCache& shaders = ShaderCache::Get();
+		ShaderCache& shaders         = ShaderCache::Get();
 		const PipelineRecipe& recipe = entry.Recipe;
 
 		PipelineDesc desc = recipe.Desc;
-		desc.DebugName = recipe.Name;
+		desc.DebugName    = recipe.Name;
 
 		if (!recipe.VertexShader.empty())
 		{

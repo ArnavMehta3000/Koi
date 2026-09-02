@@ -10,13 +10,10 @@ namespace koi
 
 	struct RendererResources
 	{
-		// Default textures
-		TextureHandle   WhiteTexture{};       // 1x1 opaque white (0xFFFFFFFF)
-		TextureHandle   FlatNormalTexture{};  // 1x1 flat normal (128, 128, 255, 255)
-
 		// Asset cache fallback resources
 		MeshHandle       FallbackMesh{};
 		GPUTextureHandle FallbackTexture{};
+		DescriptorIndex  FallbackTextureSRV = INVALID_DESCRIPTOR;  // the albedo an unbound material row samples
 
 		// Default samplers (indices into the bindless sampler heap)
 		DescriptorIndex LinearWrapSampler  = INVALID_DESCRIPTOR;
@@ -33,7 +30,7 @@ namespace koi
 		PipelineHandle ShadowPipeline{};            // depth-only shadow map: no pixel shader, no render targets
 
 		void Init(GfxDevice& device, PipelineLibrary& library);
-		void Shutdown(GfxDevice& device);
+		void Shutdown();
 		void RegisterFallbackAssets(GfxDevice& device);
 
 	private:
