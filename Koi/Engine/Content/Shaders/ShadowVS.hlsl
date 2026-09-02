@@ -11,12 +11,6 @@ struct Vertex
 	float2 UV;
 };
 
-struct FrameConstants
-{
-	row_major float4x4 ViewProjection;  // light-space, not camera-space
-	float4             CameraPosition;  // unused here
-};
-
 struct PerObjectData
 {
 	row_major float4x4 World;

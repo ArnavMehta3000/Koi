@@ -7,8 +7,10 @@ namespace koi
 	// CBV, one per frame-in-flight
 	struct  FrameConstants
 	{
-		Matrix ViewProjection;
-		Vector4 CameraPosition; // .xyz used, .w unused
+		Matrix  ViewProjection;
+		Vector4 CameraPosition;       // .xyz used, .w unused
+		u32     MaterialBufferIndex;  // the one material table, StructuredBuffer<GPUMaterialData>
+		u32     _Pad[3];
 	};
 
 	// StructuredBuffer element, one per drawn entity. Rebuilt every frame
@@ -75,8 +77,7 @@ namespace koi
 	    u32 FrameConstantsIndex;   // which CBV, in the global heap
 	    u32 ObjectBufferIndex;     // which StructuredBuffer<PerObjectData>, in the global heap
 	    u32 ObjectIndex;           // which element inside that buffer
-	    u32 MaterialBufferIndex;   // which StructuredBuffer<GPUMaterialData>
-	    u32 MaterialIndex;         // which element inside that buffer
+	    u32 MaterialIndex;         // which slot in the material table
 	    u32 VertexBufferIndex;     // which StructuredBuffer<Vertex>
 	    u32 SamplerIndex;          // which sampler, in the global sampler heap
 	    u32 VertexOffset;          // added to SV_VertexID to index the shared vertex buffer

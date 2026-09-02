@@ -19,12 +19,6 @@ struct VSOutput
 	float2 UV          : TEXCOORD0;
 };
 
-struct FrameConstants
-{
-	row_major float4x4 ViewProjection;
-	float4             CameraPosition;
-};
-
 struct PerObjectData
 {
 	row_major float4x4 World;

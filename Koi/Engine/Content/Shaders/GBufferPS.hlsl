@@ -19,7 +19,8 @@ struct PSOutput
 
 PSOutput PSMain(PSInput input)
 {
-	StructuredBuffer<GPUMaterialData> materials = ResourceDescriptorHeap[MaterialBufferIndex];
+	ConstantBuffer<FrameConstants>    frame     = ResourceDescriptorHeap[FrameConstantsIndex];
+	StructuredBuffer<GPUMaterialData> materials = ResourceDescriptorHeap[frame.MaterialBufferIndex];
 	GPUMaterialData mat = materials[MaterialIndex];
 
 	Texture2D baseColorTex = ResourceDescriptorHeap[mat.BaseColorIndex];
