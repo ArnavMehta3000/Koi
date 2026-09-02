@@ -2,6 +2,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
+#include "Koi/Engine/Diagnostics/ResizeLogging.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/Window.h"
@@ -146,7 +147,7 @@ namespace koi
 		if (width == m_width && height == m_height) return;
 		assert(m_device && "Render Window has been moved-from");
 
-		KOI_LOG_DEBUG("Resizing RenderWindow ({}x{}) -> ({}x{})",
+		KOI_LOG_RESIZE("Resizing RenderWindow ({}x{}) -> ({}x{})",
 			m_width, m_height, width, height);
 
 		m_device->WaitForIdle();

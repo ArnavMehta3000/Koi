@@ -7,7 +7,7 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Diagnostics/ResizeLogging.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/AppBase.h"
@@ -79,7 +79,7 @@ namespace koi::editor
 
 		m_camera.SetAspect(static_cast<f32>(width) / static_cast<f32>(height));
 
-		KOI_LOG_DEBUG("Viewport render targets resized to {}x{}", width, height);
+		KOI_LOG_RESIZE("Viewport render targets resized to {}x{}", width, height);
 	}
 
 	const ViewportTarget* ViewportPanel::PrepareFrame(CommandList& cmd)
