@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/UUID.h"
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include <functional>
 #include <string>
@@ -9,8 +10,7 @@ namespace koi::editor
 	class AssetDatabase;
 	struct AssetEntry;
 
-	// Folder tree on the left, contents of the selected folder on the right. Everything it
-	// lists comes from AssetDatabase - the panel knows nothing about extensions or the disk.
+	// Queries the asset database to draw
 	class AssetsPanel : public IEditorPanel
 	{
 	public:
@@ -24,9 +24,16 @@ namespace koi::editor
 		void DrawFolderTree();
 		void DrawAssetTable();
 		void DrawRow(const AssetEntry& entry);
+		void DrawNameCell(const AssetEntry& entry);
+		void DrawContextMenu(const AssetEntry& entry);
+		void DrawDeleteModal();
+		void ApplyPendingAction();  // Called outside the draw loop to prevent span invalidation
 
-		// Search spans every folder; with no search, only the selected folder is listed
+		// Search spans every folder, with no search, only the selected folder is listed
 		[[nodiscard]] bool PassesFilter(const AssetEntry& entry) const;
+
+	private:
+		enum class Action { None, Rename, Move, Delete };
 
 	private:
 		AssetDatabase&                        m_database;
@@ -35,5 +42,16 @@ namespace koi::editor
 		std::string m_selectedFolder;
 		std::string m_selectedAsset;   // virtual path; empty when nothing is selected
 		std::string m_search;
+
+		UUID        m_renamingId{};
+		std::string m_renameBuffer;
+		bool        m_renameFocusPending = false;
+
+		bool        m_openDeleteModal = false;
+		Action      m_pending         = Action::None;
+		UUID        m_pendingId{};
+		std::string m_pendingArg;            // new base name for Rename, target folder for Move
+		std::string m_pendingLabel;          // what the delete modal names
+		bool        m_pendingForce = false;  // delete past the referencer check
 	};
 }

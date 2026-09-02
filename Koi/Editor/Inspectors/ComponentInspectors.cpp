@@ -1,6 +1,7 @@
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Engine/Core/Patterns/Match.h"
+#include "Koi/Engine/Assets/AssetIdentity.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/ECS/Components.h"
@@ -29,11 +30,11 @@ namespace koi::editor
 		AssetCache<GPUMesh>& Meshes() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
 		GfxDevice&           Device() { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
 
-		// Acquire before remove: if the new uri is the one already held, the extra reference
+		// Acquire before remove: if the new key is the one already held, the extra reference
 		// keeps the mesh resident across the removal that releases the old handle
-		static void ReacquireMesh(Entity e, const std::string& uri)
+		static void ReacquireMesh(Entity e, const AssetKey& key)
 		{
-			const MeshHandle handle = Meshes().Acquire(Device(), uri);
+			const MeshHandle handle = Meshes().Acquire(Device(), key);
 			if (!handle) return;
 
 			e.remove<MeshRef>();  // World's on_remove hook releases whatever was there
@@ -135,15 +136,9 @@ namespace koi::editor
 			{
 				const std::string dropped(static_cast<const char*>(payload->Data));
 
-				// The panel drags every asset kind, so reject anything that is not a mesh
-				const size_t dot = dropped.find_last_of('.');
-				const AssetTypeInfo* type = dot == std::string::npos
-					? nullptr
-					: FindAssetType(dropped.substr(dot));
-
-				if (type && type->Kind == AssetKind::Mesh)
+				if (const AssetTypeInfo* type = FindAssetTypeForFile(dropped); type->Kind == AssetKind::Mesh)
 				{
-					ReacquireMesh(e, dropped);
+					ReacquireMesh(e, AssetIdentity::Get().KeyForPath(dropped));
 					replaced = true;
 				}
 				else
@@ -216,7 +211,7 @@ namespace koi::editor
 		if (!changed) return;
 
 		m_committed = ToProceduralUri(m_generator, m_params);
-		ReacquireMesh(e, m_committed);
+		ReacquireMesh(e, AssetKey::FromUri(m_committed));
 	}
 
 	void CameraInspector::Draw(Entity e)

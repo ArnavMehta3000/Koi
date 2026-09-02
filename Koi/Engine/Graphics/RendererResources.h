@@ -1,4 +1,6 @@
 #pragma once
+#include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/Assets/TextureAsset.h"
 #include "Koi/Engine/Graphics/Types.h"
 
 namespace koi
@@ -11,6 +13,10 @@ namespace koi
 		// Default textures
 		TextureHandle   WhiteTexture{};       // 1x1 opaque white (0xFFFFFFFF)
 		TextureHandle   FlatNormalTexture{};  // 1x1 flat normal (128, 128, 255, 255)
+
+		// Asset cache fallback resources
+		MeshHandle       FallbackMesh{};
+		GPUTextureHandle FallbackTexture{};
 
 		// Default samplers (indices into the bindless sampler heap)
 		DescriptorIndex LinearWrapSampler  = INVALID_DESCRIPTOR;
@@ -28,6 +34,7 @@ namespace koi
 
 		void Init(GfxDevice& device, PipelineLibrary& library);
 		void Shutdown(GfxDevice& device);
+		void RegisterFallbackAssets(GfxDevice& device);
 
 	private:
 		// The library owns the recipes and rebuilds them on reload; we only cache the handles

@@ -5,7 +5,7 @@ namespace koi
 {
 	namespace
 	{
-		// Not thread-safe; minting is a load/edit-time operation, never a frame path
+		// Not thread-safe
 		uuids::uuid_random_generator& Generator()
 		{
 			static std::mt19937 engine = []

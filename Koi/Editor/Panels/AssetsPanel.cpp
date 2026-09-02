@@ -1,6 +1,5 @@
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Scripting/ScriptEngine.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
@@ -37,16 +36,16 @@ namespace koi::editor
 		{
 			if (entry.State == AssetState::Missing) return AssetState::Missing;
 
-			const auto resident = [](bool yes) { return yes ? AssetState::Loaded : AssetState::Unloaded; };
+			const auto resident = [](bool yes) -> AssetState { return yes ? AssetState::Loaded : AssetState::Unloaded; };
 
 			Engine& engine = Engine::Get();
 			switch (entry.Kind)
 			{
 			case AssetKind::Mesh:
-				return resident(engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>().IsResident(entry.VirtualPath));
+				return resident(engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>().IsResident(entry.Key()));
 
 			case AssetKind::Texture:
-				return resident(engine.GetSubsystem<AssetRegistry>().Cache<GPUTexture>().IsResident(entry.VirtualPath));
+				return resident(engine.GetSubsystem<AssetRegistry>().Cache<GPUTexture>().IsResident(entry.Key()));
 
 			case AssetKind::Shader:
 			{
@@ -93,8 +92,6 @@ namespace koi::editor
 		{
 			DrawToolbar();
 
-			// A resizable table beats two sibling children here: the column divider is a real,
-			// visible drag handle instead of a few pixels of child border
 			constexpr ImGuiTableFlags kSplitFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV;
 			const f32 height = ImGui::GetContentRegionAvail().y;
 
@@ -116,6 +113,9 @@ namespace koi::editor
 
 				ImGui::EndTable();
 			}
+
+			DrawDeleteModal();
+			ApplyPendingAction();
 		}
 		ImGui::End();
 	}
@@ -155,6 +155,22 @@ namespace koi::editor
 			if (ImGui::Selectable(std::string(LeafName(folder)).c_str(), selected)) m_selectedFolder = folder;
 
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", folder.c_str());
+
+			// Dropping a row here moves the file. Only project folders can be written to
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType))
+				{
+					const std::string dropped(static_cast<const char*>(payload->Data));
+					if (const AssetEntry* entry = m_database.Find(dropped); entry && !entry->Id.is_nil())
+					{
+						m_pending    = Action::Move;
+						m_pendingId  = entry->Id;
+						m_pendingArg = folder;
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
 
 			ImGui::Unindent(depth * 12.0f);
 			ImGui::PopID();
@@ -196,15 +212,57 @@ namespace koi::editor
 		ImGui::PushID(entry.VirtualPath.c_str());
 
 		ImGui::TableNextColumn();
+		DrawNameCell(entry);
+
+		ImGui::TableNextColumn();
+		if (type) ImGui::TextDisabled("%.*s", static_cast<int>(type->Name.size()), type->Name.data());
+
+		ImGui::TableNextColumn();
+		const std::string_view label = ToString(state);
+		ImGui::TextColored(StateColor(state), "%.*s", static_cast<int>(label.size()), label.data());
+
+		ImGui::PopID();
+	}
+
+	void AssetsPanel::DrawNameCell(const AssetEntry& entry)
+	{
+		// A row being renamed swaps its label for the edit field, so the list never reflows
+		if (!entry.Id.is_nil() && entry.Id == m_renamingId)
+		{
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			const bool committed = ImGui::InputText("##Rename", &m_renameBuffer,
+				ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
+			if (m_renameFocusPending)
+			{
+				ImGui::SetKeyboardFocusHere(-1);
+				m_renameFocusPending = false;
+			}
+
+			if (committed && !m_renameBuffer.empty())
+			{
+				m_pending    = Action::Rename;
+				m_pendingId  = entry.Id;
+				m_pendingArg = m_renameBuffer;
+				m_renamingId = UUID{};
+			}
+			else if (committed || ImGui::IsItemDeactivated())
+			{
+				m_renamingId = UUID{};  // click-away or Escape leaves the name alone
+			}
+			return;
+		}
+
+		const AssetTypeInfo* type = FindAssetTypeByKind(entry.Kind);
 		const bool selected = (entry.VirtualPath == m_selectedAsset);
+
 		if (ImGui::Selectable(entry.Name.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 			m_selectedAsset = entry.VirtualPath;
 
 		if (type && type->TextEditable && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			m_openScript(entry.VirtualPath);
 
-		// Payload is the virtual path: the receiving side resolves it through the database,
-		// so this keeps working unchanged once references become UUIDs
+		// Payload is the virtual path; the receiving side resolves it back through the database
 		if (ImGui::BeginDragDropSource())
 		{
 			ImGui::SetDragDropPayload(kAssetDragDropType, entry.VirtualPath.c_str(),
@@ -213,24 +271,113 @@ namespace koi::editor
 			ImGui::EndDragDropSource();
 		}
 
-		if (ImGui::BeginPopupContextItem())
+		DrawContextMenu(entry);
+	}
+
+	void AssetsPanel::DrawContextMenu(const AssetEntry& entry)
+	{
+		if (!ImGui::BeginPopupContextItem()) return;
+
+		ImGui::TextDisabled("%s", entry.VirtualPath.c_str());
+		ImGui::Separator();
+
+		// Engine content has no identity and is not the project's to edit
+		const bool editable = !entry.Id.is_nil();
+
+		if (ImGui::MenuItem("Rename", nullptr, false, editable))
 		{
-			ImGui::TextDisabled("%s", entry.VirtualPath.c_str());
-			ImGui::Separator();
-			if (ImGui::MenuItem("Copy Virtual Path")) ImGui::SetClipboardText(entry.VirtualPath.c_str());
-			if (!entry.Id.is_nil() && ImGui::MenuItem("Copy UUID"))
-				ImGui::SetClipboardText(ToString(entry.Id).c_str());
-			ImGui::EndPopup();
+			const std::string_view extension = AssetExtensionOf(entry.Name);
+			m_renamingId         = entry.Id;
+			m_renameBuffer       = entry.Name.substr(0, entry.Name.size() - extension.size());
+			m_renameFocusPending = true;
 		}
 
-		ImGui::TableNextColumn();
-		if (type) ImGui::TextUnformatted(type->Name.data(), type->Name.data() + type->Name.size());
+		// Opening the popup here would nest it under this menu's id; the flag defers that
+		// to window scope, where the modal itself is drawn
+		if (ImGui::MenuItem("Delete", nullptr, false, editable))
+		{
+			m_pendingId      = entry.Id;
+			m_pendingLabel   = entry.Name;
+			m_openDeleteModal = true;
+		}
 
-		ImGui::TableNextColumn();
-		const std::string_view label = ToString(state);
-		ImGui::TextColored(StateColor(state), "%.*s", static_cast<int>(label.size()), label.data());
+		ImGui::Separator();
+		if (ImGui::MenuItem("Copy Virtual Path")) ImGui::SetClipboardText(entry.VirtualPath.c_str());
+		if (ImGui::MenuItem("Copy UUID", nullptr, false, editable))
+			ImGui::SetClipboardText(ToString(entry.Id).c_str());
 
-		ImGui::PopID();
+		ImGui::EndPopup();
+	}
+
+	void AssetsPanel::DrawDeleteModal()
+	{
+		if (std::exchange(m_openDeleteModal, false)) ImGui::OpenPopup("Delete Asset");
+
+		ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f));
+		if (!ImGui::BeginPopupModal("Delete Asset", nullptr, ImGuiWindowFlags_NoResize)) return;
+
+		const std::span<const UUID> referencers = m_database.ReferencersOf(m_pendingId);
+
+		ImGui::TextWrapped("Delete '%s' from disk?", m_pendingLabel.c_str());
+		ImGui::Spacing();
+
+		if (referencers.empty())
+		{
+			ImGui::TextDisabled("Nothing else references it");
+		}
+		else
+		{
+			ImGui::TextColored(StateColor(AssetState::Stale), "Referenced by %zu asset(s):", referencers.size());
+
+			if (ImGui::BeginChild("Referencers", ImVec2(0.0f, 96.0f), ImGuiChildFlags_Borders))
+			{
+				for (const UUID& id : referencers)
+				{
+					const AssetEntry* entry = m_database.Find(id);
+					ImGui::BulletText("%s", entry ? entry->Name.c_str() : ToString(id).c_str());
+					if (entry && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", entry->VirtualPath.c_str());
+				}
+			}
+			ImGui::EndChild();
+
+			ImGui::TextDisabled("The file goes, the entry stays missing - restoring it re-links the uuid");
+		}
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (ImGui::Button(referencers.empty() ? "Delete" : "Delete Anyway", ImVec2(140.0f, 0.0f)))
+		{
+			m_pending      = Action::Delete;
+			m_pendingForce = !referencers.empty();
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120.0f, 0.0f))) ImGui::CloseCurrentPopup();
+
+		ImGui::EndPopup();
+	}
+
+	void AssetsPanel::ApplyPendingAction()
+	{
+		const Action action = std::exchange(m_pending, Action::None);
+		if (action == Action::None) return;
+
+		switch (action)
+		{
+		case Action::Rename: m_database.Rename(m_pendingId, m_pendingArg); break;
+		case Action::Move:   m_database.Move  (m_pendingId, m_pendingArg); break;
+		case Action::Delete: m_database.Delete(m_pendingId, m_pendingForce); break;
+		default: break;
+		}
+
+		// Every path the panel was holding onto may have just changed underneath it
+		m_selectedAsset.clear();
+		m_pendingArg.clear();
+		m_pendingId    = UUID{};
+		m_pendingForce = false;
 	}
 
 	bool AssetsPanel::PassesFilter(const AssetEntry& entry) const

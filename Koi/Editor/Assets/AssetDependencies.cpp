@@ -1,0 +1,131 @@
+#include "Koi/Editor/Assets/AssetDependencies.h"
+#include "Koi/Engine/Logging/Logger.h"
+#include <fastgltf/core.hpp>
+#include <fastgltf/types.hpp>
+#include <toml++/toml.hpp>
+#include <algorithm>
+
+namespace koi::editor
+{
+	namespace
+	{
+		constexpr std::string_view kProjectScheme = "project://";
+
+		static void Add(std::vector<AssetKey>& out, AssetKey key)
+		{
+			if (key.IsValid() && std::ranges::find(out, key) == out.end())
+			{
+				out.push_back(std::move(key));
+			}
+		}
+
+		// project-relative, forward slashes: the form the manifest keys its records by
+		static AssetKey KeyForFile(const fs::path& file, const fs::path& projectSource)
+		{
+			std::error_code ec;
+			const fs::path relative = fs::relative(file.lexically_normal(), projectSource, ec);
+			if (ec || relative.empty() || *relative.begin() == "..")
+			{
+				return {};
+			}
+
+			return AssetKey::FromUri(relative.generic_string());
+		}
+
+		static void ScanTable(const toml::table& table, std::vector<AssetKey>& out);
+
+		static void ScanNode(const toml::node& node, std::vector<AssetKey>& out)
+		{
+			if (const toml::table* table = node.as_table())
+			{
+				ScanTable(*table, out);
+			}
+			else if (const toml::array* array = node.as_array())
+			{
+				for (const toml::node& element : *array)  // Recurse
+				{
+					ScanNode(element, out);
+				}
+			}
+		}
+
+		static void ScanTable(const toml::table& table, std::vector<AssetKey>& out)
+		{
+			// UUID is more authoratative than path (which is for user or hinting)
+			if (const std::optional<std::string> id = table["uuid"].value<std::string>())
+			{
+				Add(out, AssetKey(UUIDFromString(*id)));
+			}
+			else if (const std::optional<std::string> path = table["path"].value<std::string>(); path && path->starts_with(kProjectScheme))
+			{
+				Add(out, AssetKey::FromUri(path->substr(kProjectScheme.size())));
+			}
+
+			for (const auto& [key, value] : table) ScanNode(value, out);
+		}
+
+		static std::vector<AssetKey> ScanScene(const fs::path& diskPath, const fs::path&)
+		{
+			std::vector<AssetKey> deps;
+			try
+			{
+				ScanTable(toml::parse_file(diskPath.string()), deps);
+			}
+			catch (const toml::parse_error& e)
+			{
+				KOI_LOG_WARN("Dependency scan: {} did not parse: {}", diskPath.string(), e.description());
+			}
+			return deps;
+		}
+
+		// Buffers and images that stayed as URIs
+		static std::vector<AssetKey> ScanGltf(const fs::path& diskPath, const fs::path& projectSource)
+		{
+			auto data = fastgltf::GltfDataBuffer::FromPath(diskPath);
+			if (data.error() != fastgltf::Error::None) return {};
+
+			fastgltf::Parser parser;
+			auto loadResult = parser.loadGltf(data.get(), diskPath.parent_path(), fastgltf::Options::None);
+			if (!loadResult)
+			{
+				KOI_LOG_WARN("Dependency scan: {} did not load: {}", diskPath.string(), fastgltf::getErrorMessage(loadResult.error()).data());
+				return {};
+			}
+
+			const fs::path base = diskPath.parent_path();
+			std::vector<AssetKey> deps;
+
+			const auto addUri = [&](const auto& source)
+			{
+				if (!source.uri.isLocalPath()) return;
+				Add(deps, KeyForFile(base / source.uri.fspath(), projectSource));
+			};
+
+			for (const fastgltf::Buffer& buffer : loadResult->buffers)
+			{
+				if (const auto* uri = std::get_if<fastgltf::sources::URI>(&buffer.data))
+					addUri(*uri);
+			}
+
+			for (const fastgltf::Image& image : loadResult->images)
+			{
+				if (const auto* uri = std::get_if<fastgltf::sources::URI>(&image.data))
+					addUri(*uri);
+			}
+
+			return deps;
+		}
+	}
+
+	std::vector<AssetKey> ScanDependencies(AssetKind kind, const fs::path& diskPath, const fs::path& projectSource)
+	{
+		if (diskPath.empty()) return {};
+
+		switch (kind)
+		{
+		case AssetKind::Scene: return ScanScene(diskPath, projectSource);
+		case AssetKind::Mesh:  return ScanGltf (diskPath, projectSource);
+		default:               return {};
+		}
+	}
+}

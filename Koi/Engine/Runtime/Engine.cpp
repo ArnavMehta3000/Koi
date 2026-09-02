@@ -2,6 +2,7 @@
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/Graphics/IRenderPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Memory/MemoryDebug.h"
@@ -87,6 +88,11 @@ namespace koi
 
 		SetPlayState(PlayState::Edit);  // fires HostEndPlay when we exit mid-play
 		host.HostShutdown();
+
+		// Since the host is destroyed before the subsystems (render graph), not resetting the pipeline will cause a crash
+		// Due to the render passes holding flecs queries into the host's world (hence the release)
+		GetSubsystem<Renderer>().SetPipeline(nullptr);
+
 		m_host = nullptr;
 	}
 

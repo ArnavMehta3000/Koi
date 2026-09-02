@@ -1,11 +1,17 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
+#include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
+#include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi
 {
+	// Not a real file: the fallback is generated, and only needs a key nothing else can claim
+	constexpr std::string_view kFallbackTextureUri = "koi://fallback/checker";
+
 	static D3D12_SAMPLER_DESC MakeLinearWrapDesc()
 	{
 		D3D12_SAMPLER_DESC d{};
@@ -87,6 +93,52 @@ namespace koi
 		RegisterPipelines(device, library);
 	}
 
+	void RendererResources::RegisterFallbackAssets(GfxDevice& device)
+	{
+		// This function cannot be called in Init since it requires the AssetRegistry subsystem, which is constructed after the Renderer (and these resources)
+		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
+		AssetRegistry& assets = Engine::Get().GetSubsystem<AssetRegistry>();
+
+		constexpr i32 kSize = 16;
+		constexpr i32 kTile = 4;
+
+		ImageAsset checker
+		{
+			.Name     = "Fallback",
+			.Path     = std::string(kFallbackTextureUri),
+			.Width    = kSize,
+			.Height   = kSize,
+			.Channels = 4,
+		};
+		checker.Pixels.resize(static_cast<size_t>(kSize) * kSize * 4);
+
+		// Fallback textue: Magenta/Black checkerboard texture
+		for (i32 y = 0; y < kSize; ++y)
+		{
+			for (i32 x = 0; x < kSize; ++x)
+			{
+				const bool lit = ((x / kTile) + (y / kTile)) % 2 == 0;
+				koi::byte* px  = checker.Pixels.data() + (static_cast<size_t>(y) * kSize + x) * 4;
+
+				px[0] = lit ? koi::byte(0xFF) : koi::byte(0x14);
+				px[1] = koi::byte(0x00);
+				px[2] = lit ? koi::byte(0xFF) : koi::byte(0x14);
+				px[3] = koi::byte(0xFF);
+			}
+		}
+
+		AssetCache<GPUTexture>& textures = assets.Cache<GPUTexture>();
+		FallbackTexture = textures.AcquireFrom(device, AssetKey::FromUri(std::string(kFallbackTextureUri)), checker);
+		textures.SetFallback(FallbackTexture);
+
+		// Fallback mesh: A unit box
+		AssetCache<GPUMesh>& meshes = assets.Cache<GPUMesh>();
+		FallbackMesh = meshes.Acquire(device, AssetKey::FromUri(ProceduralUriFor<BoxGenerator>()));
+		meshes.SetFallback(FallbackMesh);
+
+		KOI_LOG_DEBUG("Fallback mesh and texture registered");
+	}
+
 	void RendererResources::Shutdown(GfxDevice& device)
 	{
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
@@ -95,6 +147,9 @@ namespace koi
 		device.Destroy(FlatNormalTexture);
 		WhiteTexture          = {};
 		FlatNormalTexture     = {};
+		// The asset caches shut down first and have already released these
+		FallbackMesh          = {};
+		FallbackTexture       = {};
 		TonemapPipeline       = {};
 		MeshOpaquePipeline    = {};
 		MeshWireframePipeline = {};

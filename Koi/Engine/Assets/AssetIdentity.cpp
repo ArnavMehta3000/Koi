@@ -14,34 +14,33 @@ namespace koi
 	void AssetIdentity::Clear()
 	{
 		m_pathById.clear();
-#if KOI_WITH_EDITOR
 		m_idByPath.clear();
-#endif
 	}
 
 	void AssetIdentity::Set(const UUID& id, std::string virtualPath)
 	{
 		if (id.is_nil() || virtualPath.empty()) return;  // engine content carries no identity
 
-#if KOI_WITH_EDITOR
 		m_idByPath.insert_or_assign(virtualPath, id);
-#endif
 		m_pathById.insert_or_assign(id, std::move(virtualPath));
 	}
 
-	std::string_view AssetIdentity::PathFor(const UUID& id) const
+	std::string_view AssetIdentity::PathFor(const AssetKey& key) const
 	{
-		const auto it = m_pathById.find(id);
+		if (key.IsUri()) return key.Uri();
+
+		// Try findng by id
+		const auto it = m_pathById.find(key.Id());
 		return it != m_pathById.end() ? std::string_view(it->second) : std::string_view();
 	}
 
-#if KOI_WITH_EDITOR
-	UUID AssetIdentity::IdFor(std::string_view virtualPath) const
+	AssetKey AssetIdentity::KeyForPath(std::string_view virtualPath) const
 	{
+		if (virtualPath.empty()) return {};
+
 		const auto it = m_idByPath.find(std::string(virtualPath));
-		return it != m_idByPath.end() ? it->second : UUID{};
+		return it != m_idByPath.end() ? AssetKey(it->second) : AssetKey::FromUri(std::string(virtualPath));
 	}
-#endif
 
 	bool AssetIdentity::LoadFromVfs(std::string_view manifestPath)
 	{

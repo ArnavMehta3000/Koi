@@ -37,27 +37,27 @@ namespace koi
 
 	namespace internal
 	{
-		inline constexpr std::array kMeshExt    = { std::string_view(".gltf"), std::string_view(".glb") };
-		inline constexpr std::array kTextureExt = { std::string_view(".png"), std::string_view(".jpg"), std::string_view(".jpeg"), std::string_view(".dds") };
-		inline constexpr std::array kShaderExt  = { std::string_view(".hlsl") };
-		inline constexpr std::array kScriptExt  = { std::string_view(".as") };
-		inline constexpr std::array kSceneExt   = { std::string_view(".toml") };
+		using namespace std::string_view_literals;  // For sv
+
+		inline constexpr std::array kMeshExt    = { ".gltf"sv, ".glb"sv };
+		inline constexpr std::array kTextureExt = { ".png"sv, ".jpg"sv, ".jpeg"sv, ".dds"sv };
+		inline constexpr std::array kShaderExt  = { ".hlsl"sv };
+		inline constexpr std::array kScriptExt  = { ".as"sv };
+		inline constexpr std::array kSceneExt   = { ".scene.toml"sv };
 	}
 
 	inline constexpr std::array kAssetTypes = std::to_array<AssetTypeInfo>(
 	{
-		{ AssetKind::Mesh,    "mesh",    internal::kMeshExt                 },
-		{ AssetKind::Texture, "texture", internal::kTextureExt              },
-		{ AssetKind::Shader,  "shader",  internal::kShaderExt,  true        },
-		{ AssetKind::Script,  "script",  internal::kScriptExt,  true        },
-		{ AssetKind::Scene,   "scene",   internal::kSceneExt,   true        },
+		{ AssetKind::Mesh,    "mesh",    internal::kMeshExt           },
+		{ AssetKind::Texture, "texture", internal::kTextureExt        },
+		{ AssetKind::Shader,  "shader",  internal::kShaderExt,  true  },
+		{ AssetKind::Script,  "script",  internal::kScriptExt,  true  },
+		{ AssetKind::Scene,   "scene",   internal::kSceneExt,   true  },
 	});
 
-	// Null for anything unrecognised - that is what keeps AssetCache.h / MeshAsset.cpp out
-	// of the browser without an allowlist living in the panel
-	[[nodiscard]] const AssetTypeInfo* FindAssetType(std::string_view extension);
+	[[nodiscard]] const AssetTypeInfo* FindAssetTypeForFile(std::string_view fileName);
 	[[nodiscard]] const AssetTypeInfo* FindAssetTypeByName(std::string_view name);
 	[[nodiscard]] const AssetTypeInfo* FindAssetTypeByKind(AssetKind kind);
-
+	[[nodiscard]] std::string_view AssetExtensionOf(std::string_view fileName);
 	[[nodiscard]] std::string_view ToString(AssetState state);
 }

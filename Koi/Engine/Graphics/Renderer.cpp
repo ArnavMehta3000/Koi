@@ -67,6 +67,8 @@ namespace koi
 		m_frameContext->Allocator.Init(*m_device, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer Allocator");
 		m_frameContext->List.Init(*m_device, m_frameContext->Allocator, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer CmdList");
 
+		m_defaultResources.RegisterFallbackAssets(*m_device);
+
 		SetPipeline(CreateRenderPipeline(ctx.RenderPipeline));
 
 		KOI_LOG_DEBUG("Renderer: main render window initialized ({}x{}, vsync {})",

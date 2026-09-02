@@ -1,4 +1,5 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
+#include "Koi/Editor/Assets/AssetDependencies.h"
 #include "Koi/Engine/Assets/AssetIdentity.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
@@ -55,6 +56,8 @@ namespace koi::editor
 		m_folders.clear();
 		m_manifest.clear();
 		m_cache.clear();
+		m_deps.clear();
+		m_referencers.clear();
 		m_manifestDirty = false;
 		m_cacheDirty    = false;
 
@@ -64,8 +67,6 @@ namespace koi::editor
 		ScanRoot(m_engineSource,  "engine",  "Content");
 		ScanRoot(m_projectSource, "project", "Assets");
 
-		// Anything the manifest still knows about that no scan claimed has lost its file.
-		// Kept rather than dropped - the UUID is what a scene may still reference
 		for (const auto& [relative, record] : m_manifest)
 		{
 			if (record.Claimed) continue;
@@ -93,6 +94,8 @@ namespace koi::editor
 		std::ranges::sort(m_folders);
 		m_folders.erase(std::ranges::unique(m_folders).begin(), m_folders.end());
 
+		BuildDependencyIndex();
+
 		if (m_manifestDirty) SaveManifest();
 		if (m_cacheDirty)    SaveCache();
 
@@ -116,7 +119,7 @@ namespace koi::editor
 		{
 			if (!file.is_regular_file()) continue;
 
-			const AssetTypeInfo* type = FindAssetType(file.path().extension().string());
+			const AssetTypeInfo* type = FindAssetTypeForFile(file.path().filename().string());
 			if (!type) continue;  // .h/.cpp/.bin and anything else unregistered
 
 			const std::string relative = fs::relative(file.path(), root, ec).generic_string();
@@ -138,8 +141,7 @@ namespace koi::editor
 		}
 	}
 
-	void AssetDatabase::ReconcileEntry(AssetEntry& entry, const std::string& relative,
-	                                   const AssetTypeInfo& type, const fs::directory_entry& file)
+	void AssetDatabase::ReconcileEntry(AssetEntry& entry, const std::string& relative, const AssetTypeInfo& type, const fs::directory_entry& file)
 	{
 		const CacheRecord* cached = nullptr;
 		if (const auto it = m_cache.find(relative); it != m_cache.end()) cached = &it->second;
@@ -178,7 +180,9 @@ namespace koi::editor
 		std::error_code ec;
 		const u64 size    = file.file_size(ec);
 		const i64 modTime = ModTimeOf(file);
-		if (!cached || cached->Size != size || cached->ModTime != modTime)
+
+		const bool touched = !cached || cached->Size != size || cached->ModTime != modTime;
+		if (touched)
 		{
 			m_cache[relative] = CacheRecord
 			{
@@ -188,6 +192,55 @@ namespace koi::editor
 			};
 			m_cacheDirty = true;
 		}
+
+		// Edges are read back out of the file, so they only need redoing when it changed
+		ManifestRecord& record = m_manifest.at(relative);
+		if (touched || !record.DepsKnown)
+		{
+			std::vector<AssetKey> deps = ScanDependencies(type.Kind, file.path(), m_projectSource);
+			if (!record.DepsKnown || deps != record.Deps)
+			{
+				record.Deps     = std::move(deps);
+				m_manifestDirty = true;
+			}
+			record.DepsKnown = true;
+		}
+	}
+
+	void AssetDatabase::BuildDependencyIndex()
+	{
+		for (const auto& [relative, record] : m_manifest)
+		{
+			if (record.Deps.empty()) continue;
+
+			m_deps.emplace(record.Id, record.Deps);
+
+			for (const AssetKey& dep : record.Deps)
+			{
+				const UUID target = ResolveDependency(dep);
+				if (!target.is_nil() && target != record.Id) m_referencers[target].push_back(record.Id);
+			}
+		}
+	}
+
+	UUID AssetDatabase::ResolveDependency(const AssetKey& key) const
+	{
+		if (!key.IsUri()) return key.Id();
+
+		const auto it = m_manifest.find(std::string(key.Uri()));
+		return it != m_manifest.end() ? it->second.Id : UUID{};
+	}
+
+	std::span<const AssetKey> AssetDatabase::DependenciesOf(const UUID& id) const
+	{
+		const auto it = m_deps.find(id);
+		return it != m_deps.end() ? std::span<const AssetKey>(it->second) : std::span<const AssetKey>();
+	}
+
+	std::span<const UUID> AssetDatabase::ReferencersOf(const UUID& id) const
+	{
+		const auto it = m_referencers.find(id);
+		return it != m_referencers.end() ? std::span<const UUID>(it->second) : std::span<const UUID>();
 	}
 
 	bool AssetDatabase::TryRepairRename(AssetEntry& entry, u64 hash)
@@ -261,6 +314,16 @@ namespace koi::editor
 			};
 			if (const toml::table* settings = (*entry)["settings"].as_table()) record.Settings = *settings;
 
+			if (const toml::array* deps = (*entry)["deps"].as_array())
+			{
+				record.DepsKnown = true;
+				for (const toml::node& dep : *deps)
+				{
+					if (const std::optional<std::string> text = dep.value<std::string>())
+						record.Deps.push_back(AssetKey::Parse(*text));
+				}
+			}
+
 			m_manifest.emplace(relative, std::move(record));
 		}
 
@@ -275,6 +338,17 @@ namespace koi::editor
 			toml::table entry;
 			entry.insert("path", relative);
 			entry.insert("type", record.Type);
+
+			if (record.DepsKnown)
+			{
+				toml::array deps;
+				for (const AssetKey& dep : record.Deps)
+				{
+					deps.push_back(dep.ToString());
+				}
+				entry.insert("deps", std::move(deps));
+			}
+
 			if (!record.Settings.empty()) entry.insert("settings", record.Settings);
 
 			root.insert(ToString(record.Id), std::move(entry));
@@ -385,5 +459,149 @@ namespace koi::editor
 	u32 AssetDatabase::MissingCount() const
 	{
 		return static_cast<u32>(std::ranges::count(m_entries, AssetState::Missing, &AssetEntry::State));
+	}
+
+	std::string AssetDatabase::RelativeToProject(const fs::path& diskPath) const
+	{
+		std::error_code ec;
+		const fs::path relative = fs::relative(diskPath, m_projectSource, ec);
+		return ec ? std::string() : relative.generic_string();
+	}
+
+	bool AssetDatabase::Relocate(const UUID& id, const fs::path& newDiskPath)
+	{
+		const AssetEntry* entry = Find(id);
+		if (!entry || entry->DiskPath.empty())
+		{
+			KOI_LOG_WARN("Cannot relocate {}: no file behind it", ToString(id));
+			return false;
+		}
+
+		if (fs::exists(newDiskPath))
+		{
+			KOI_LOG_ERROR("Cannot relocate to {}: a file is already there", newDiskPath.string());
+			return false;
+		}
+
+		const std::string oldRelative = RelativeToProject(entry->DiskPath);
+		const std::string newRelative = RelativeToProject(newDiskPath);
+		if (oldRelative.empty() || newRelative.empty())
+		{
+			KOI_LOG_ERROR("Cannot relocate {}: outside the project source tree", ToString(id));
+			return false;
+		}
+
+		std::error_code ec;
+		fs::create_directories(newDiskPath.parent_path(), ec);
+		fs::rename(entry->DiskPath, newDiskPath, ec);
+		if (ec)
+		{
+			KOI_LOG_ERROR("Failed to move {} -> {}: {}", oldRelative, newRelative, ec.message());
+			return false;
+		}
+
+		// Carrying both records over is what keeps the uuid attached without a content-hash repair
+		if (const auto it = m_manifest.find(oldRelative); it != m_manifest.end())
+		{
+			ManifestRecord record = std::move(it->second);
+			m_manifest.erase(it);
+			m_manifest.insert_or_assign(newRelative, std::move(record));
+			m_manifestDirty = true;
+		}
+
+		if (const auto it = m_cache.find(oldRelative); it != m_cache.end())
+		{
+			CacheRecord record = it->second;
+			m_cache.erase(it);
+			m_cache.insert_or_assign(newRelative, record);
+			m_cacheDirty = true;
+		}
+
+		KOI_LOG_INFO("Moved asset {} -> {} ({})", oldRelative, newRelative, ToString(id));
+
+		// Refresh re-reads both files, so the edits above have to be on disk before it runs
+		SaveManifest();
+		SaveCache();
+		Refresh();
+		return true;
+	}
+
+	bool AssetDatabase::Rename(const UUID& id, std::string_view newBaseName)
+	{
+		const AssetEntry* entry = Find(id);
+		if (!entry) return false;
+
+		if (newBaseName.empty() || newBaseName.find_first_of("/\\:*?\"<>|") != std::string_view::npos)
+		{
+			KOI_LOG_ERROR("'{}' is not a usable file name", newBaseName);
+			return false;
+		}
+
+		// The extension is what classifies the asset, so a rename never gets to change it
+		const std::string_view extension = AssetExtensionOf(entry->Name);
+		const fs::path newDiskPath = entry->DiskPath.parent_path() / (std::string(newBaseName) + std::string(extension));
+
+		return Relocate(id, newDiskPath);
+	}
+
+	bool AssetDatabase::Move(const UUID& id, std::string_view newFolder)
+	{
+		const AssetEntry* entry = Find(id);
+		if (!entry) return false;
+
+		constexpr std::string_view kProjectScheme = "project://";
+		if (!newFolder.starts_with(kProjectScheme))
+		{
+			KOI_LOG_ERROR("Cannot move an asset into '{}': only project folders can be written to", newFolder);
+			return false;
+		}
+
+		const fs::path newDir = m_projectSource / fs::path(newFolder.substr(kProjectScheme.size()));
+		if (newDir == entry->DiskPath.parent_path()) return false;
+
+		return Relocate(id, newDir / entry->Name);
+	}
+
+	bool AssetDatabase::Delete(const UUID& id, bool force)
+	{
+		const AssetEntry* entry = Find(id);
+		if (!entry) return false;
+
+		const std::span<const UUID> referencers = ReferencersOf(id);
+		if (!referencers.empty() && !force)
+		{
+			KOI_LOG_WARN("Refusing to delete {}: {} asset(s) still reference it", entry->Name, referencers.size());
+			return false;
+		}
+
+		const std::string relative = RelativeToProject(entry->DiskPath);
+
+		std::error_code ec;
+		if (!entry->DiskPath.empty() && !fs::remove(entry->DiskPath, ec))
+		{
+			KOI_LOG_ERROR("Failed to delete {}: {}", entry->DiskPath.string(), ec.message());
+			return false;
+		}
+
+		// Keeping the record for a referenced asset leaves the entry Missing rather than
+		// unknown, so restoring the file re-attaches the same uuid its referencers hold
+		if (!relative.empty() && referencers.empty())
+		{
+			m_manifest.erase(relative);
+			m_manifestDirty = true;
+		}
+
+		if (!relative.empty())
+		{
+			m_cache.erase(relative);
+			m_cacheDirty = true;
+		}
+
+		KOI_LOG_INFO("Deleted asset {} ({}){}", relative, ToString(id), referencers.empty() ? "" : " - still referenced, kept as missing");
+
+		SaveManifest();
+		SaveCache();
+		Refresh();
+		return true;
 	}
 }

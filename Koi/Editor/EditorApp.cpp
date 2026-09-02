@@ -299,8 +299,8 @@ namespace koi::editor
 		// drop to zero and the same files would be re-read from disk a moment later
 		world.GetECS().each<MeshRef>([&](Entity, MeshRef& mesh)
 		{
-			const std::string path(meshes.GetPath(mesh.Handle));
-			if (!path.empty()) m_pinnedAssets.push_back(meshes.Acquire(device, path));
+			const AssetKey key = meshes.GetKey(mesh.Handle);
+			if (key) m_pinnedAssets.push_back(meshes.Acquire(device, key));
 		});
 
 		// Show the game camera by default; the toolbar can still switch back mid-play

@@ -16,7 +16,6 @@ namespace koi::editor
 	};
 
 	// Compiles the shaders the registered pipelines use and copies project content into
-	// the <out>/Engine + <out>/Project layout the runtime VFS resolves against
-	// Returns a one-line status suitable for the menu bar
+	// the <out>/Engine + <out>/Project layout the runtime VFS resolves against. Returns a status
 	std::string Cook(const CookRequest& request, const AssetDatabase* database);
 }

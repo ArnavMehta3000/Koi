@@ -4,7 +4,6 @@
 #include "Koi/Engine/Math/MathSerializer.h"
 #include "Koi/Engine/Runtime/Subsystems.h"  // For TypeList
 #include <expected>
-#include <memory>
 #include <span>
 
 namespace koi
@@ -433,7 +432,7 @@ namespace koi
 	// Resolves a "proc://" URI through the registry. Null on a bad URI, unknown generator, or empty output
 	[[nodiscard]] std::unique_ptr<ModelAsset> LoadProcedural(const std::string& uri);
 
-	// Typed spelling of a spec, for C++ callers: cache.Acquire(device, ProceduralUriFor<BoxGenerator>({ .Size = s }))
+	// Typed spelling of a spec, for C++ callers: cache.Acquire(device, AssetKey::FromUri(ProceduralUriFor<BoxGenerator>({ .Size = s })))
 	// Clamped, so an out-of-range value lands on the same key as the mesh it will actually produce
 	template<MeshGeneratorType G>
 	[[nodiscard]] std::string ProceduralUriFor(typename G::Params params = {})

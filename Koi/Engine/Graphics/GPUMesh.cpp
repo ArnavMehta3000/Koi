@@ -34,16 +34,21 @@ namespace koi
 
 		AssetCache<GPUTexture>& textures = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUTexture>();
 
-		// Decode every standalone image up front, in parallel. stb_image is the bulk of scene load
-		// and it doesn't touch the device, so the GPU-side work below stays single-threaded
-		std::vector<std::string> imagePaths;
-		imagePaths.reserve(model.Images.size());
+		const AssetIdentity& identity = AssetIdentity::Get();
+		std::vector<AssetKey> imageKeys;
+		std::vector<AssetKey> decodeKeys;  // standalone images only; the rest carry their pixels inline
+		imageKeys.reserve(model.Images.size());
+		decodeKeys.reserve(model.Images.size());
+
 		for (const ImageAsset& img : model.Images)
 		{
-			imagePaths.push_back(img.Pixels.empty() ? img.Path : std::string());
+			imageKeys.push_back(identity.KeyForPath(img.Path));
+			decodeKeys.push_back(img.Pixels.empty() ? imageKeys.back() : AssetKey());
 		}
 
-		const std::vector<std::unique_ptr<ImageAsset>> decoded = textures.DecodeParallel(imagePaths);
+		// Decode every standalone image up front, in parallel. stb_image is the bulk of scene load
+		// and it doesn't touch the device, so the GPU-side work below stays single-threaded
+		const std::vector<std::unique_ptr<ImageAsset>> decoded = textures.DecodeParallel(decodeKeys);
 
 		GfxDevice::UploadContext& upload = device.GetUploadContext();
 		upload.Begin();  // outer batch: each texture's own Begin/End nests into this one
@@ -55,9 +60,9 @@ namespace koi
 			// Pixels are carried inline only for images embedded in the glTF. Everything else was
 			// prefetched above; a null slot means resident, duplicated, or failed, and Acquire resolves all three
 			const GPUTextureHandle handle =
-				  !img.Pixels.empty() ? textures.AcquireFrom(device, img.Path, img)
-				: decoded[i]          ? textures.AcquireFrom(device, img.Path, *decoded[i])
-				:                       textures.Acquire(device, img.Path);
+				  !img.Pixels.empty() ? textures.AcquireFrom(device, imageKeys[i], img)
+				: decoded[i]          ? textures.AcquireFrom(device, imageKeys[i], *decoded[i])
+				:                       textures.Acquire(device, imageKeys[i]);
 
 			const GPUTexture* texture = textures.Get(handle);
 			imageSRVs.push_back(texture ? texture->SRVIndex : INVALID_DESCRIPTOR);
