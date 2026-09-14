@@ -40,7 +40,7 @@ namespace koi
 		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept { return m_defaultResources;     }
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
-		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_renderGraph;          }
+		[[nodiscard]] inline PassList&                GetPasses() noexcept                 { return m_passes;               }
 		[[nodiscard]] inline MaterialTable&           GetMaterialTable() noexcept          { return m_materials;            }
 		[[nodiscard]] inline MaterialTemplateLibrary& GetMaterialTemplates() noexcept      { return m_materialTemplates;    }
 		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
@@ -49,7 +49,7 @@ namespace koi
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
 		[[nodiscard]] inline IRenderPipeline* GetPipeline() noexcept { return m_pipeline.get(); }
 
-		void SetPipeline(std::unique_ptr<IRenderPipeline> pipeline);  // Clears the graph and rebuilds it
+		void SetPipeline(std::unique_ptr<IRenderPipeline> pipeline);  // Clears the pass list and rebuilds it
 
 	private:
 		void RegisterMaterialTemplates();
@@ -83,7 +83,7 @@ namespace koi
 		RendererResources                m_defaultResources;
 		MaterialTable                    m_materials;
 		MaterialTemplateLibrary          m_materialTemplates;
-		RenderGraph                      m_renderGraph;
+		PassList                         m_passes;
 		std::unique_ptr<IRenderPipeline> m_pipeline;
 		u32                              m_frameSlot = 0;
 		IRendererOverlay*                m_overlay   = nullptr;

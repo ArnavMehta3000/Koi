@@ -1,6 +1,6 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Core/Config.h"
-#include "Koi/Engine/Graphics/IRenderPipeline.h"
+#include "Koi/Engine/Graphics/DeferredPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
@@ -83,13 +83,12 @@ namespace koi
 	Renderer::~Renderer()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		if (m_device)
 			m_device->WaitForIdle();
 
-		m_pipeline.reset();  // holds raw pointers into the graph
-		m_renderGraph.Clear();
+		m_pipeline.reset();  // holds raw pointers into the pass list
+		m_passes.Clear();
 		m_frameContext.reset();
 		m_renderWindow.reset();
 		m_materials.Shutdown();
@@ -122,7 +121,7 @@ namespace koi
 		m_defaultResources.RegisterFallbackAssets(*m_device);
 		m_materials.Set(MaterialTable::kFallbackSlot, FallbackMaterialRow(m_defaultResources.FallbackTextureSRV));
 
-		SetPipeline(CreateRenderPipeline(ctx.RenderPipeline));
+		SetPipeline(std::make_unique<DeferredPipeline>());
 
 		KOI_LOG_DEBUG("Renderer: main render window initialized ({}x{}, vsync {})", window.GetWidth(), window.GetHeight(), ctx.VSync);
 	}
@@ -138,7 +137,7 @@ namespace koi
 		// Closes off the previous frame's timestamp payload and signals the graphics queue for it
 		m_device->GpuProfilerNewFrame();
 
-		m_renderGraph.ResetAll();
+		m_passes.ResetAll();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_frameSlot);
@@ -155,7 +154,7 @@ namespace koi
 
 		CommandList& cmd = m_frameContext->List;
 
-		m_renderGraph.Execute(cmd);
+		m_passes.Execute(cmd);
 
 		if (m_overlay)
 		{
@@ -182,11 +181,11 @@ namespace koi
 
 		m_device->WaitForIdle();
 		m_pipeline.reset();
-		m_renderGraph.Clear();
+		m_passes.Clear();
 
 		m_pipeline = std::move(pipeline);
 		if (m_pipeline)
-			m_pipeline->Build(*this, m_renderGraph);
+			m_pipeline->Build(*this, m_passes);
 	}
 
 	void Renderer::SetupFrame(const RenderView& view, World& world)

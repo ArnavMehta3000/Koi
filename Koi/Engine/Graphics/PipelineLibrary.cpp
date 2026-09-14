@@ -34,24 +34,6 @@ namespace koi
 		return recipe;
 	}
 
-	PipelineRecipe PipelineRecipe::Forward(std::string name, std::string vs, std::string ps)
-	{
-		return PipelineRecipe
-		{
-			.Name         = std::move(name),
-			.VertexShader = std::move(vs),
-			.PixelShader  = std::move(ps),
-			.Desc         =
-			{
-				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_BACK, .FrontCounterClockwise = true },
-				.DepthStencil        = { .DepthEnable = true, .DepthWrite = true },
-				.RenderTargetFormats = { kHDRFormat },
-				.RenderTargetCount   = 1,
-				.DepthFormat         = kDepthFormat,
-			},
-		};
-	}
-
 	PipelineRecipe PipelineRecipe::FullScreen(std::string name, std::string vs, std::string ps, Format target)
 	{
 		return PipelineRecipe
@@ -94,13 +76,6 @@ namespace koi
 	PipelineRecipe& PipelineRecipe::Cull(D3D12_CULL_MODE mode)
 	{
 		Desc.Rasterizer.CullMode = mode;
-		return *this;
-	}
-
-	PipelineRecipe& PipelineRecipe::Wireframe()
-	{
-		Desc.Rasterizer.FillMode = D3D12_FILL_MODE_WIREFRAME;
-		Desc.Rasterizer.CullMode = D3D12_CULL_MODE_NONE;
 		return *this;
 	}
 

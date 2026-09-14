@@ -17,13 +17,11 @@ namespace koi
 		PipelineDesc Desc;          // shader bytecode and DebugName are filled in at build time
 
 		[[nodiscard]] static PipelineRecipe GBuffer   (std::string name, std::string vs, std::string ps);
-		[[nodiscard]] static PipelineRecipe Forward   (std::string name, std::string vs, std::string ps);
 		[[nodiscard]] static PipelineRecipe FullScreen(std::string name, std::string vs, std::string ps, Format target);
 		[[nodiscard]] static PipelineRecipe DepthOnly (std::string name, std::string vs);
 
 		PipelineRecipe& Named(std::string name);
 		PipelineRecipe& Cull(D3D12_CULL_MODE mode);
-		PipelineRecipe& Wireframe();
 		PipelineRecipe& DepthBias(i32 bias, f32 slopeScaled);
 	};
 

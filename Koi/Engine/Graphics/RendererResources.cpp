@@ -118,8 +118,6 @@ namespace koi
 		FallbackTexture       = {};
 		FallbackTextureSRV    = INVALID_DESCRIPTOR;
 		TonemapPipeline       = {};
-		MeshOpaquePipeline    = {};
-		MeshWireframePipeline = {};
 		GBufferPipeline       = {};
 		LightingPipeline      = {};
 		ShadowPipeline        = {};
@@ -136,17 +134,6 @@ namespace koi
 			"engine://Content/Shaders/TonemapVS",
 			"engine://Content/Shaders/TonemapPS",
 			Format::R8G8B8A8_UNORM));
-
-		// --- Mesh (opaque + wireframe share the same VS/PS) ---
-		const auto meshRecipe = []
-		{
-			return PipelineRecipe::Forward("Mesh.Opaque",
-				"engine://Content/Shaders/MeshVS",
-				"engine://Content/Shaders/MeshPS");
-		};
-
-		MeshOpaquePipeline    = library.Register(device, meshRecipe());
-		MeshWireframePipeline = library.Register(device, meshRecipe().Named("Mesh.Wireframe").Wireframe());
 
 		// The G-buffer pipeline is a material template, registered by the Renderer
 
