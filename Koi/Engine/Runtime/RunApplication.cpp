@@ -53,6 +53,65 @@ namespace koi::internal
 		};
 	}
 
+	// Source-tree mode: --engine-source / --project-source layer on top of the exe-relative fallbacks
+	static void MountSourceTree(const CommandLine& cmd, const fs::path& exeDir)
+	{
+		std::vector<fs::path> engineRoots;
+		if (!cmd.GetEngineSource().empty())
+		{
+			engineRoots.push_back(fs::absolute(cmd.GetEngineSource()));
+		}
+		engineRoots.push_back(exeDir / "Engine");
+
+		std::vector<fs::path> projectRoots;
+		projectRoots.push_back(fs::absolute(cmd.GetProjectSource()));
+		projectRoots.push_back(exeDir);
+
+		auto& vfs = VirtualFileSystem::Get();
+		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoots));
+		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
+
+		KOI_LOG_DEBUG("Source VFS mounts (working dir {}):", exeDir.string());
+		for (const fs::path& p : engineRoots) { KOI_LOG_DEBUG("\tengine  <- {}", p.string()); }
+		for (const fs::path& p : projectRoots) { KOI_LOG_DEBUG("\tproject <- {}", p.string()); }
+	}
+
+	// Cooked mode: content lives next to the exe (or under Cooked/), laid out as <root>/Engine + <root>/Project
+	static void MountCooked(CommandLine& cmd, const fs::path& exeDir)
+	{
+		fs::path contentRoot = exeDir;
+		if (!fs::exists(contentRoot / "Project" / "Project.koi.toml") &&
+		     fs::exists(exeDir / "Cooked" / "Project" / "Project.koi.toml"))
+		{
+			contentRoot = exeDir / "Cooked";
+		}
+
+		if (cmd.GetProjectFile().empty())
+		{
+			const fs::path defaultProject = contentRoot / "Project" / "Project.koi.toml";
+			if (fs::exists(defaultProject))
+			{
+				KOI_LOG_INFO("No --project specified; defaulting to {}", defaultProject.string());
+				cmd.OverrideProjectFile(defaultProject);
+			}
+		}
+
+		const fs::path projectRoot = contentRoot / "Project";
+		const fs::path engineRoot  = contentRoot / "Engine";
+
+		auto& vfs = VirtualFileSystem::Get();
+		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoot));
+		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
+
+		KOI_LOG_DEBUG("Cooked VFS mounts:");
+		KOI_LOG_DEBUG("\tWorking directory : {}", exeDir.string());
+		KOI_LOG_DEBUG("\tProject file      : {}", cmd.GetProjectFile().string());
+		KOI_LOG_DEBUG("\tEngine root       : {}", engineRoot.string());
+		KOI_LOG_DEBUG("\tProject root      : {}", projectRoot.string());
+
+		AssetIdentity::Get().LoadFromVfs("project://AssetRegistry.toml");
+	}
+
 	// Owns the logger for the whole of RunApplication so it outlives the Engine and
 	// stays alive inside the catch handlers during stack unwinding
 	struct LoggerScope
@@ -66,7 +125,6 @@ namespace koi::internal
 		assert(argc > 0 && "argc must be > 0");
 		assert(argv != nullptr && "argv must not be nullptr");
 
-		// Declared before the try so the logger is still alive in the catch handlers
 		LoggerScope logger;
 
 		try
@@ -78,63 +136,16 @@ namespace koi::internal
 				return -1;
 			}
 
-			// Set up the VFS before engine init.
-			//   Editor:  read straight from the source tree. --engine-source /
-			//            --project-source layer on top of the exe-relative fallbacks.
-			//   Runtime: cooked content lives next to the exe (or under Cooked/),
-			//            laid out as <root>/Engine and <root>/Project.
 			{
 				const fs::path exeDir = fs::current_path();
-				auto& vfs = VirtualFileSystem::Get();
-#if KOI_WITH_EDITOR
-				std::vector<fs::path> engineRoots;
-				if (!cmd->GetEngineSource().empty())
-					engineRoots.push_back(fs::absolute(cmd->GetEngineSource()));
-				engineRoots.push_back(exeDir / "Engine");
-
-				std::vector<fs::path> projectRoots;
 				if (!cmd->GetProjectSource().empty())
-					projectRoots.push_back(fs::absolute(cmd->GetProjectSource()));
-				projectRoots.push_back(exeDir);
-
-				vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoots));
-				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
-
-				KOI_LOG_DEBUG("Editor VFS mounts (working dir {}):", exeDir.string());
-				for (const fs::path& p : engineRoots)  KOI_LOG_DEBUG("\tengine  <- {}", p.string());
-				for (const fs::path& p : projectRoots) KOI_LOG_DEBUG("\tproject <- {}", p.string());
-#else
-				fs::path contentRoot = exeDir;
-				if (!fs::exists(contentRoot / "Project" / "Project.koi.toml") &&
-				     fs::exists(exeDir / "Cooked" / "Project" / "Project.koi.toml"))
 				{
-					contentRoot = exeDir / "Cooked";
+					MountSourceTree(*cmd, exeDir);  // With editor (read from disk)
 				}
-
-				if (cmd->GetProjectFile().empty())
+				else
 				{
-					const fs::path defaultProject = contentRoot / "Project" / "Project.koi.toml";
-					if (fs::exists(defaultProject))
-					{
-						KOI_LOG_INFO("No --project specified; defaulting to {}", defaultProject.string());
-						cmd->OverrideProjectFile(defaultProject);
-					}
+					MountCooked(*cmd, exeDir);  // Runtime/Standalone (read cooked)
 				}
-
-				const fs::path projectRoot = contentRoot / "Project";
-				const fs::path engineRoot  = contentRoot / "Engine";
-
-				vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoot));
-				vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
-
-				KOI_LOG_DEBUG("Runtime VFS mounts:");
-				KOI_LOG_DEBUG("\tWorking directory : {}", exeDir.string());
-				KOI_LOG_DEBUG("\tProject file      : {}", cmd->GetProjectFile().string());
-				KOI_LOG_DEBUG("\tEngine root       : {}", engineRoot.string());
-				KOI_LOG_DEBUG("\tProject root      : {}", projectRoot.string());
-
-				AssetIdentity::Get().LoadFromVfs("project://AssetRegistry.toml");
-#endif
 			}
 
 			Engine engine;
