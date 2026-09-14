@@ -152,7 +152,6 @@ namespace koi
 					.FrameConstantsIndex = frameConstantsIndex,
 					.ObjectBufferIndex   = objectBufferIndex,
 					.ObjectIndex         = item.ObjectIndex,
-					.MaterialBufferIndex = INVALID_DESCRIPTOR,
 					.MaterialIndex       = 0,
 					.VertexBufferIndex   = item.Mesh ? item.Mesh->VertexBufferSRV : INVALID_DESCRIPTOR,
 					.SamplerIndex        = INVALID_DESCRIPTOR,

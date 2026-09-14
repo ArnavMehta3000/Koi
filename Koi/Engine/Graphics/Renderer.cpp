@@ -12,6 +12,29 @@
 
 namespace koi
 {
+	namespace
+	{
+		// What a mesh draws with when its material never resolved
+		static GPUMaterialData FallbackMaterialRow(DescriptorIndex albedoSRV)
+		{
+			return GPUMaterialData
+			{
+				.BaseColorFactor        = Vector4::One,
+				.EmissiveFactor         = Vector4::Zero,
+				.MetallicFactor         = 0.0f,
+				.RoughnessFactor        = 1.0f,
+				.NormalScale            = 1.0f,
+				.OcclusionStrength      = 1.0f,
+				.AlphaCutoff            = 0.5f,
+				.BaseColorIndex         = albedoSRV,
+				.MetallicRoughnessIndex = INVALID_DESCRIPTOR,
+				.NormalIndex            = INVALID_DESCRIPTOR,
+				.OcclusionIndex         = INVALID_DESCRIPTOR,
+				.EmissiveIndex          = INVALID_DESCRIPTOR,
+			};
+		}
+	}
+
 	Renderer::Renderer()
 	{
 		ZoneScoped;
@@ -27,7 +50,36 @@ namespace koi
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
 		m_defaultResources.Init(*m_device, m_pipelineLibrary);
+		RegisterMaterialTemplates();
+
 		KOI_LOG_INFO("Renderer initialized");
+	}
+
+	void Renderer::RegisterMaterialTemplates()
+	{
+		using enum MaterialParamType;
+
+		// Offsets into GPUMaterialData, which is what a material row is
+		const MaterialTemplate& standard = m_materialTemplates.Register(*m_device, m_pipelineLibrary,
+			PipelineRecipe::GBuffer("GBuffer",
+				"engine://Content/Shaders/GBufferVS",
+				"engine://Content/Shaders/GBufferPS"),
+			{
+				{ "base_color",         Float4,  offsetof(GPUMaterialData, BaseColorFactor)        },
+				{ "emissive",           Float3,  offsetof(GPUMaterialData, EmissiveFactor)         },
+				{ "metallic",           Float,   offsetof(GPUMaterialData, MetallicFactor)         },
+				{ "roughness",          Float,   offsetof(GPUMaterialData, RoughnessFactor)        },
+				{ "normal_scale",       Float,   offsetof(GPUMaterialData, NormalScale)            },
+				{ "occlusion_strength", Float,   offsetof(GPUMaterialData, OcclusionStrength)      },
+				{ "alpha_cutoff",       Float,   offsetof(GPUMaterialData, AlphaCutoff)            },
+				{ "base_color",         Texture, offsetof(GPUMaterialData, BaseColorIndex)         },
+				{ "metallic_roughness", Texture, offsetof(GPUMaterialData, MetallicRoughnessIndex) },
+				{ "normal",             Texture, offsetof(GPUMaterialData, NormalIndex)            },
+				{ "occlusion",          Texture, offsetof(GPUMaterialData, OcclusionIndex)         },
+				{ "emissive",           Texture, offsetof(GPUMaterialData, EmissiveIndex)          },
+			});
+
+		m_defaultResources.GBufferPipeline = standard.SingleSided;
 	}
 
 	Renderer::~Renderer()
@@ -42,8 +94,9 @@ namespace koi
 		m_renderGraph.Clear();
 		m_frameContext.reset();
 		m_renderWindow.reset();
+		m_materials.Shutdown();
 		m_pipelineLibrary.Shutdown(*m_device);
-		m_defaultResources.Shutdown(*m_device);
+		m_defaultResources.Shutdown();
 		m_device = nullptr;
 
 		KOI_LOG_INFO("Renderer shut down");
@@ -67,12 +120,14 @@ namespace koi
 		m_frameContext->Allocator.Init(*m_device, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer Allocator");
 		m_frameContext->List.Init(*m_device, m_frameContext->Allocator, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer CmdList");
 
+		// This init below cannot be part of the constructor due to subsystem init-order (asset registry is created after renderer)
+		m_materials.Init(*m_device, FallbackMaterialRow(INVALID_DESCRIPTOR));
 		m_defaultResources.RegisterFallbackAssets(*m_device);
+		m_materials.Set(MaterialTable::kFallbackSlot, FallbackMaterialRow(m_defaultResources.FallbackTextureSRV));
 
 		SetPipeline(CreateRenderPipeline(ctx.RenderPipeline));
 
-		KOI_LOG_DEBUG("Renderer: main render window initialized ({}x{}, vsync {})",
-			window.GetWidth(), window.GetHeight(), ctx.VSync);
+		KOI_LOG_DEBUG("Renderer: main render window initialized ({}x{}, vsync {})", window.GetWidth(), window.GetHeight(), ctx.VSync);
 	}
 
 	void Renderer::BeginFrame()

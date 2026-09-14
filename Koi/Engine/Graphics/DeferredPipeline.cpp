@@ -24,6 +24,7 @@ namespace koi
 		{
 			.Device    = &renderer.GetDevice(),
 			.Resources = &renderer.GetDefaultResources(),
+			.Materials = &renderer.GetMaterialTable(),
 		});
 
 		m_lightingPass = &graph.AddPass<LightingPass>(LightingPass::Config

@@ -17,6 +17,8 @@ namespace koi
 		const GPUMesh*     Mesh;
 		const GPUMeshDraw* Draw;
 		u32                ObjectIndex;
+		PipelineHandle     Pipeline; 
+		u32                MaterialSlot; // row in the MaterialTable
 	};
 
 	struct MeshGatherResult

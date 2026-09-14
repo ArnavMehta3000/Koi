@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetCache.h"
+#include "Koi/Engine/Assets/MaterialAsset.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/Assets/TextureAsset.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
@@ -28,5 +29,5 @@ namespace koi
 		std::tuple<AssetCache<Ts>...> m_caches;
 	};
 
-	using AssetRegistry = AssetRegistryFor<GPUMesh, GPUTexture>;
+	using AssetRegistry = AssetRegistryFor<GPUMesh, GPUTexture, Material>;
 }

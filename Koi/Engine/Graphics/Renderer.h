@@ -1,4 +1,6 @@
 #pragma once
+#include "Koi/Engine/Graphics/MaterialTable.h"
+#include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
@@ -38,7 +40,9 @@ namespace koi
 		[[nodiscard]] inline const RendererResources& GetDefaultResources() const noexcept { return m_defaultResources;     }
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
-		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_renderGraph;           }
+		[[nodiscard]] inline RenderGraph&             GetFrameGraph() noexcept             { return m_renderGraph;          }
+		[[nodiscard]] inline MaterialTable&           GetMaterialTable() noexcept          { return m_materials;            }
+		[[nodiscard]] inline MaterialTemplateLibrary& GetMaterialTemplates() noexcept      { return m_materialTemplates;    }
 		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
 		[[nodiscard]] inline const PipelineLibrary&   GetPipelineLibrary() const noexcept  { return m_pipelineLibrary;      }
 
@@ -47,6 +51,10 @@ namespace koi
 
 		void SetPipeline(std::unique_ptr<IRenderPipeline> pipeline);  // Clears the graph and rebuilds it
 
+	private:
+		void RegisterMaterialTemplates();
+
+	public:
 		// Per-frame wiring, driven from the view the app host resolved
 		void SetupFrame(const RenderView& view, World& world);
 
@@ -73,6 +81,8 @@ namespace koi
 		std::unique_ptr<FrameContext>    m_frameContext;
 		PipelineLibrary                  m_pipelineLibrary;
 		RendererResources                m_defaultResources;
+		MaterialTable                    m_materials;
+		MaterialTemplateLibrary          m_materialTemplates;
 		RenderGraph                      m_renderGraph;
 		std::unique_ptr<IRenderPipeline> m_pipeline;
 		u32                              m_frameSlot = 0;

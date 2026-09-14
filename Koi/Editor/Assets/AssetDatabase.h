@@ -42,6 +42,8 @@ namespace koi::editor
 		[[nodiscard]] std::span<const AssetEntry>  All()     const { return m_entries; }
 		[[nodiscard]] std::span<const std::string> Folders() const { return m_folders; }
 
+		// Both spans and pointers here are invalidated by the next Refresh, which rebuilds the
+		// entry list wholesale. Copy what you need out before calling it
 		[[nodiscard]] const AssetEntry* Find(const UUID& id) const;
 		[[nodiscard]] const AssetEntry* Find(std::string_view virtualPath) const;
 
@@ -63,6 +65,7 @@ namespace koi::editor
 			u64 Size     = 0;
 			i64 ModTime  = 0;
 			u64 Hash     = 0;
+			i64 DepsStamp = 0;  // see DependencyStamp: what a mesh sidecar changing looks like
 		};
 
 		// Manifest identity carried across a Refresh, keyed by the path it was last seen at

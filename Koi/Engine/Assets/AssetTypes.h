@@ -13,6 +13,7 @@ namespace koi
 		Shader,
 		Script,
 		Scene,
+		Material,
 	};
 
 	enum class AssetState : u8
@@ -23,6 +24,9 @@ namespace koi
 		Missing,       // has a manifest entry, no file behind it
 		Error,         // load or compile failed; see the log
 	};
+
+	// Slot -> material bindings, written beside a mesh under its own name
+	inline constexpr std::string_view kMeshSidecarExt = ".mesh.toml";
 
 	// ImGui drag-drop payload id for an asset dragged out of the Assets panel
 	inline constexpr const char* kAssetDragDropType = "KOI_ASSET";
@@ -43,16 +47,18 @@ namespace koi
 		inline constexpr std::array kTextureExt = { ".png"sv, ".jpg"sv, ".jpeg"sv, ".dds"sv };
 		inline constexpr std::array kShaderExt  = { ".hlsl"sv };
 		inline constexpr std::array kScriptExt  = { ".as"sv };
-		inline constexpr std::array kSceneExt   = { ".scene.toml"sv };
+		inline constexpr std::array kSceneExt    = { ".scene.toml"sv };
+		inline constexpr std::array kMaterialExt = { ".mat.toml"sv };
 	}
 
 	inline constexpr std::array kAssetTypes = std::to_array<AssetTypeInfo>(
 	{
-		{ AssetKind::Mesh,    "mesh",    internal::kMeshExt           },
-		{ AssetKind::Texture, "texture", internal::kTextureExt        },
-		{ AssetKind::Shader,  "shader",  internal::kShaderExt,  true  },
-		{ AssetKind::Script,  "script",  internal::kScriptExt,  true  },
-		{ AssetKind::Scene,   "scene",   internal::kSceneExt,   true  },
+		{ AssetKind::Mesh,     "mesh",     internal::kMeshExt           },
+		{ AssetKind::Texture,  "texture",  internal::kTextureExt        },
+		{ AssetKind::Shader,   "shader",   internal::kShaderExt,   true },
+		{ AssetKind::Script,   "script",   internal::kScriptExt,   true },
+		{ AssetKind::Scene,    "scene",    internal::kSceneExt,    true },
+		{ AssetKind::Material, "material", internal::kMaterialExt, true },
 	});
 
 	[[nodiscard]] const AssetTypeInfo* FindAssetTypeForFile(std::string_view fileName);

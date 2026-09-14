@@ -310,16 +310,16 @@ namespace koi
 		ZoneScoped;
 		for (fastgltf::Material& gltfMat : Asset->materials)
 		{
-			Material mat;
+			ImportMaterial mat;
 			mat.Name = gltfMat.name;
 			mat.DoubleSided = gltfMat.doubleSided;
 
 			switch (gltfMat.alphaMode)
 			{
 				using enum fastgltf::AlphaMode;
-			case Mask:  mat.Mode = Material::AlphaMode::Mask;  break;
-			case Blend: mat.Mode = Material::AlphaMode::Blend; break;
-			default:    mat.Mode = Material::AlphaMode::Opaque; break;
+			case Mask:  mat.Mode = ImportMaterial::AlphaMode::Mask;  break;
+			case Blend: mat.Mode = ImportMaterial::AlphaMode::Blend; break;
+			default:    mat.Mode = ImportMaterial::AlphaMode::Opaque; break;
 			}
 
 			mat.MaterialConstants.AlphaCutoff = gltfMat.alphaCutoff;

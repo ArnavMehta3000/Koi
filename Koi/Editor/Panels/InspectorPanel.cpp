@@ -1,4 +1,5 @@
 #include "Koi/Editor/Panels/InspectorPanel.h"
+#include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
@@ -23,6 +24,15 @@ namespace koi::editor
 		Entity selected = m_selection->Selected;
 
 		ImGui::Begin("Inspector");
+
+		// A selected asset wins over the entity: it is the more recent click either way
+		if (const AssetEntry* asset = m_database->Find(m_selection->SelectedAsset);
+		    asset && asset->Kind == AssetKind::Material)
+		{
+			m_materials.Draw(*m_database, *asset);
+			ImGui::End();
+			return;
+		}
 
 		if (!selected.is_alive())
 		{

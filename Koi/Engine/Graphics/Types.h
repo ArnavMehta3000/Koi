@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Assets/AssetKey.h"
 #include "Koi/Engine/Core/EnumFlags.h"
 #include "Koi/Engine/Core/Handle.h"
 #include "Koi/Engine/Core/Macros.h"
@@ -134,18 +135,18 @@ namespace koi
 		std::vector<koi::byte> Pixels;
 	};
 
-	struct Material
+	struct ImportMaterial
 	{
 		enum class AlphaMode { Opaque, Mask, Blend };
 		struct Constants
 		{
-			Vector4 BaseColorFactor         = Vector4(1.0f, 1.0f, 1.0, 1.0f);
-			f32          MetallicFactor    = 1.0f;
-			f32          RoughnessFactor   = 1.0f;
-			f32          NormalScale       = 1.0f;
-			f32          OcclusionStrength = 1.0f;
-			Vector3 EmissiveFactor          = Vector3(0.0f, 0.0f, 0.0f);
-			f32          AlphaCutoff       = 0.5f;
+			Vector4 BaseColorFactor   = Vector4(1.0f, 1.0f, 1.0, 1.0f);
+			f32     MetallicFactor    = 1.0f;
+			f32     RoughnessFactor   = 1.0f;
+			f32     NormalScale       = 1.0f;
+			f32     OcclusionStrength = 1.0f;
+			Vector3 EmissiveFactor    = Vector3(0.0f, 0.0f, 0.0f);
+			f32     AlphaCutoff       = 0.5f;
 		};
 
 		std::string Name;
@@ -184,7 +185,8 @@ namespace koi
 	{
 		std::string SourcPath;
 		std::vector<Mesh> Meshes;
-		std::vector<Material> Materials;
+		std::vector<ImportMaterial> Materials;
+		std::vector<AssetKey> MaterialBindings;  // slot -> material asset, from the mesh sidecar
 		std::vector<ImageAsset> Images;
 		BoundingBox Bounds{ {}, {} };
 	};

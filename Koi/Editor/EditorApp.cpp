@@ -69,12 +69,12 @@ namespace koi::editor
 
 		// Register default editor panels
 		m_panels.Emplace<WorldOutlinePanel>(*m_game, m_selection);
-		m_panels.Emplace<InspectorPanel>(m_selection, m_inspectors);
+		m_panels.Emplace<InspectorPanel>(m_selection, m_inspectors, *m_assetDatabase);
 		m_panels.Emplace<RenderTargetsPanel>(renderer);
 		m_panels.Emplace<LogPanel>();
 		m_viewportPanel     = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
 		m_scriptEditorPanel = &m_panels.Emplace<ScriptEditorPanel>([this](const ReloadRequest& r) { ReloadAll(r); });
-		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, [this](std::string_view vfsPath) { OpenScriptEditor(vfsPath); });
+		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection, [this](std::string_view vfsPath) { OpenScriptEditor(vfsPath); });
 	}
 
 	void EditorApp::HostInit()

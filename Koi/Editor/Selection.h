@@ -5,7 +5,8 @@ namespace koi::editor
 {
 	struct Selection
 	{
-		Entity Selected;
+		Entity      Selected;
+		std::string SelectedAsset;  // virtual path, from the Assets panel
 
 		[[nodiscard]] bool IsValid() const { return Selected.is_alive(); }
 		void Clear() { Selected = Entity{}; }

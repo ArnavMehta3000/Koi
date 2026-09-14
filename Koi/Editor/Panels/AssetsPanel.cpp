@@ -1,5 +1,6 @@
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
+#include "Koi/Editor/Assets/AssetImporter.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Scripting/ScriptEngine.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
@@ -76,12 +77,19 @@ namespace koi::editor
 		}
 	}
 
-	AssetsPanel::AssetsPanel(AssetDatabase& database, std::function<void(std::string_view)> openScript)
+	AssetsPanel::AssetsPanel(AssetDatabase& database, Selection& selection, std::function<void(std::string_view)> openScript)
 		: m_database(database)
+		, m_selection(selection)
 		, m_openScript(std::move(openScript))
 	{
 		const std::span<const std::string> folders = m_database.Folders();
 		if (!folders.empty()) m_selectedFolder = folders.front();
+	}
+
+	void AssetsPanel::SelectAsset(std::string virtualPath)
+	{
+		m_selectedAsset          = std::move(virtualPath);
+		m_selection.SelectedAsset = m_selectedAsset;
 	}
 
 	void AssetsPanel::OnDraw()
@@ -200,7 +208,7 @@ namespace koi::editor
 		ImGui::EndTable();
 
 		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
-			m_selectedAsset.clear();
+			SelectAsset({});
 	}
 
 	void AssetsPanel::DrawRow(const AssetEntry& entry)
@@ -257,7 +265,7 @@ namespace koi::editor
 		const bool selected = (entry.VirtualPath == m_selectedAsset);
 
 		if (ImGui::Selectable(entry.Name.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
-			m_selectedAsset = entry.VirtualPath;
+			SelectAsset(entry.VirtualPath);
 
 		if (type && type->TextEditable && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			m_openScript(entry.VirtualPath);
@@ -299,6 +307,12 @@ namespace koi::editor
 			m_pendingId      = entry.Id;
 			m_pendingLabel   = entry.Name;
 			m_openDeleteModal = true;
+		}
+
+		if (entry.Kind == AssetKind::Mesh && ImGui::MenuItem("Import Materials", nullptr, false, editable))
+		{
+			m_pending   = Action::Import;
+			m_pendingId = entry.Id;
 		}
 
 		ImGui::Separator();
@@ -370,6 +384,7 @@ namespace koi::editor
 		case Action::Rename: m_database.Rename(m_pendingId, m_pendingArg); break;
 		case Action::Move:   m_database.Move  (m_pendingId, m_pendingArg); break;
 		case Action::Delete: m_database.Delete(m_pendingId, m_pendingForce); break;
+		case Action::Import: ImportMesh(m_database, m_pendingId); break;
 		default: break;
 		}
 

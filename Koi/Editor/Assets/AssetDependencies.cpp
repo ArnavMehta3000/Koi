@@ -64,7 +64,7 @@ namespace koi::editor
 			for (const auto& [key, value] : table) ScanNode(value, out);
 		}
 
-		static std::vector<AssetKey> ScanScene(const fs::path& diskPath, const fs::path&)
+		static std::vector<AssetKey> ScanToml(const fs::path& diskPath, const fs::path&)
 		{
 			std::vector<AssetKey> deps;
 			try
@@ -115,6 +115,45 @@ namespace koi::editor
 
 			return deps;
 		}
+
+		fs::path SidecarFor(const fs::path& diskPath)
+		{
+			fs::path sidecar = diskPath;
+			sidecar.replace_extension();
+			sidecar += kMeshSidecarExt;
+			return sidecar;
+		}
+
+		static std::vector<AssetKey> ScanMesh(const fs::path& diskPath, const fs::path& projectSource)
+		{
+			std::vector<AssetKey> deps = ScanGltf(diskPath, projectSource);
+
+			const fs::path sidecar = SidecarFor(diskPath);
+			if (!fs::exists(sidecar)) return deps;
+
+			Add(deps, KeyForFile(sidecar, projectSource));
+
+			try
+			{
+				const toml::table root = toml::parse_file(sidecar.string());
+				if (const toml::array* slots = root["slot"].as_array())
+				{
+					for (const toml::node& node : *slots)
+					{
+						if (const std::optional<std::string> key = node.as_table() ? (*node.as_table())["material"].value<std::string>() : std::nullopt)
+						{
+							Add(deps, AssetKey::Parse(*key));
+						}
+					}
+				}
+			}
+			catch (const toml::parse_error& e)
+			{
+				KOI_LOG_WARN("Dependency scan: {} did not parse: {}", sidecar.string(), e.description());
+			}
+
+			return deps;
+		}
 	}
 
 	std::vector<AssetKey> ScanDependencies(AssetKind kind, const fs::path& diskPath, const fs::path& projectSource)
@@ -123,9 +162,19 @@ namespace koi::editor
 
 		switch (kind)
 		{
-		case AssetKind::Scene: return ScanScene(diskPath, projectSource);
-		case AssetKind::Mesh:  return ScanGltf (diskPath, projectSource);
-		default:               return {};
+		case AssetKind::Scene:
+		case AssetKind::Material: return ScanToml(diskPath, projectSource);
+		case AssetKind::Mesh:     return ScanMesh(diskPath, projectSource);
+		default:                  return {};
 		}
+	}
+
+	i64 DependencyStamp(AssetKind kind, const fs::path& diskPath)
+	{
+		if (kind != AssetKind::Mesh || diskPath.empty()) return 0;
+
+		std::error_code ec;
+		const fs::file_time_type time = fs::last_write_time(SidecarFor(diskPath), ec);
+		return ec ? 0 : time.time_since_epoch().count();
 	}
 }

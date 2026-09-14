@@ -116,6 +116,16 @@ namespace koi
 		// Stands in for anything that fails to resolve or load
 		void SetFallback(AssetHandle<T> handle) { m_fallback = handle; }
 
+		// The resident asset under this key, or null
+		[[nodiscard]] T* Find(const AssetKey& key)
+		{
+			const auto it = m_handleByKey.find(key);
+			if (it == m_handleByKey.end()) return nullptr;
+
+			Entry* entry = m_pool.Get(it->second);
+			return entry ? &entry->Resource : nullptr;
+		}
+
 		// Whether anything currently holds this key resident
 		[[nodiscard]] bool IsResident(const AssetKey& key) const { return m_handleByKey.contains(key); }
 

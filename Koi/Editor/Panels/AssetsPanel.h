@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Editor/Selection.h"
 #include "Koi/Engine/Core/UUID.h"
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include <functional>
@@ -14,7 +15,7 @@ namespace koi::editor
 	class AssetsPanel : public IEditorPanel
 	{
 	public:
-		AssetsPanel(AssetDatabase& database, std::function<void(std::string_view)> openScript);
+		AssetsPanel(AssetDatabase& database, Selection& selection, std::function<void(std::string_view)> openScript);
 
 		[[nodiscard]] std::string_view GetName() const override { return "Assets"; }
 		void OnDraw() override;
@@ -29,14 +30,17 @@ namespace koi::editor
 		void DrawDeleteModal();
 		void ApplyPendingAction();  // Called outside the draw loop to prevent span invalidation
 
+		void SelectAsset(std::string virtualPath);
+
 		// Search spans every folder, with no search, only the selected folder is listed
 		[[nodiscard]] bool PassesFilter(const AssetEntry& entry) const;
 
 	private:
-		enum class Action { None, Rename, Move, Delete };
+		enum class Action { None, Rename, Move, Delete, Import };
 
 	private:
 		AssetDatabase&                        m_database;
+		Selection&                            m_selection;
 		std::function<void(std::string_view)> m_openScript;
 
 		std::string m_selectedFolder;

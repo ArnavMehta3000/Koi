@@ -9,4 +9,7 @@ namespace koi::editor
 	namespace fs = std::filesystem;
 
 	[[nodiscard]] std::vector<AssetKey> ScanDependencies(AssetKind kind, const fs::path& diskPath, const fs::path& projectSource);
+
+	// Write time of everything ScanDependencies reads
+	[[nodiscard]] i64 DependencyStamp(AssetKind kind, const fs::path& diskPath);
 }

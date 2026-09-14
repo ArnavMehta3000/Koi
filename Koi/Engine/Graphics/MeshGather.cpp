@@ -4,6 +4,7 @@
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
+#include <algorithm>
 
 namespace koi
 {
@@ -61,8 +62,24 @@ namespace koi
 					});
 				}
 
-				out.Draws.push_back(MeshDrawItem{ .Mesh = mesh, .Draw = &draw, .ObjectIndex = objectIndex });
+				out.Draws.push_back(MeshDrawItem
+				{
+					.Mesh         = mesh,
+					.Draw         = &draw,
+					.ObjectIndex  = objectIndex,
+					.Pipeline     = mesh->SlotPipelines[draw.MaterialSlot],
+					.MaterialSlot = mesh->TableSlots[draw.MaterialSlot],
+				});
 			}
+		});
+
+		// Sort by pipeline first (to set PSO), then mesh (to set IB)
+		std::ranges::sort(out.Draws, [](const MeshDrawItem& a, const MeshDrawItem& b)
+		{
+			if (a.Pipeline.GetId() != b.Pipeline.GetId())
+				return a.Pipeline.GetId() < b.Pipeline.GetId();
+
+			return a.Mesh < b.Mesh;
 		});
 	}
 }

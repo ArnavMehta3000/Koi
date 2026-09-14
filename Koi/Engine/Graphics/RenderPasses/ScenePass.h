@@ -11,6 +11,7 @@ namespace koi
 	class  GfxDevice;
 	struct Camera;
 	struct RendererResources;
+	class  MaterialTable;
 
 	class ScenePass : public RenderPass
 	{
@@ -19,6 +20,7 @@ namespace koi
 		{
 			GfxDevice*                Device    = nullptr;
 			const RendererResources*  Resources = nullptr;
+			MaterialTable*            Materials = nullptr;
 			PipelineHandle            Pipeline;  // Optional override (falls back to Resources->MeshOpaquePipeline)
 		};
 

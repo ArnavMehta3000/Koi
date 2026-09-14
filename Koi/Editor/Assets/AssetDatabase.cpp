@@ -181,21 +181,26 @@ namespace koi::editor
 		const u64 size    = file.file_size(ec);
 		const i64 modTime = ModTimeOf(file);
 
-		const bool touched = !cached || cached->Size != size || cached->ModTime != modTime;
-		if (touched)
+		const i64 depsStamp = DependencyStamp(type.Kind, file.path());
+
+		const bool touched   = !cached || cached->Size != size || cached->ModTime != modTime;
+		const bool depsMoved = !cached || cached->DepsStamp != depsStamp;
+
+		if (touched || depsMoved)
 		{
 			m_cache[relative] = CacheRecord
 			{
-				.Size    = size,
-				.ModTime = modTime,
-				.Hash    = HashFile(file.path(), nullptr),
+				.Size      = size,
+				.ModTime   = modTime,
+				.Hash      = touched ? HashFile(file.path(), nullptr) : cached->Hash,
+				.DepsStamp = depsStamp,
 			};
 			m_cacheDirty = true;
 		}
 
 		// Edges are read back out of the file, so they only need redoing when it changed
 		ManifestRecord& record = m_manifest.at(relative);
-		if (touched || !record.DepsKnown)
+		if (touched || depsMoved || !record.DepsKnown)
 		{
 			std::vector<AssetKey> deps = ScanDependencies(type.Kind, file.path(), m_projectSource);
 			if (!record.DepsKnown || deps != record.Deps)
@@ -414,7 +419,8 @@ namespace koi::editor
 			{
 				.Size    = static_cast<u64>((*entry)["size"].value_or(0ll)),
 				.ModTime = (*entry)["mtime"].value_or(0ll),
-				.Hash    = static_cast<u64>((*entry)["hash"].value_or(0ll)),
+				.Hash      = static_cast<u64>((*entry)["hash"].value_or(0ll)),
+				.DepsStamp = (*entry)["deps_stamp"].value_or(0ll),
 			});
 		}
 	}
@@ -431,6 +437,7 @@ namespace koi::editor
 			entry.insert("size",  static_cast<i64>(record.Size));
 			entry.insert("mtime", record.ModTime);
 			entry.insert("hash",  static_cast<i64>(record.Hash));
+			entry.insert("deps_stamp", record.DepsStamp);
 			root.insert(relative, std::move(entry));
 		}
 

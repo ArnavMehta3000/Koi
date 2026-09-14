@@ -2,6 +2,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Camera.h"
+#include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -115,8 +116,9 @@ namespace koi
 
 		const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 		{
-			.ViewProjection = m_camera->ViewProjection,
-			.CameraPosition = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
+			.ViewProjection      = m_camera->ViewProjection,
+			.CameraPosition      = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
+			.MaterialBufferIndex = m_config.Materials ? m_config.Materials->Upload(frameSlot) : INVALID_DESCRIPTOR,
 		});
 
 		const PipelineHandle pipeline = m_config.Pipeline ? m_config.Pipeline : m_config.Resources->MeshOpaquePipeline;
@@ -138,8 +140,7 @@ namespace koi
 					.FrameConstantsIndex = frameConstantsIndex,
 					.ObjectBufferIndex   = objectBufferIndex,
 					.ObjectIndex         = info.ObjectIndex,
-					.MaterialBufferIndex = mesh.MaterialBufferSRV,
-					.MaterialIndex       = d.MaterialIndex,
+					.MaterialIndex       = mesh.TableSlots[d.MaterialSlot],
 					.VertexBufferIndex   = mesh.VertexBufferSRV,
 					.SamplerIndex        = m_config.Resources->LinearWrapSampler,
 					.VertexOffset        = static_cast<u32>(d.VertexOffset),

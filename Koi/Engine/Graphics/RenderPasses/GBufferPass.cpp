@@ -2,9 +2,11 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Camera.h"
+#include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Diagnostics/ResizeLogging.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
@@ -57,19 +59,29 @@ namespace koi
 
 			const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 			{
-				.ViewProjection = m_camera->ViewProjection,
-				.CameraPosition = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
+				.ViewProjection      = m_camera->ViewProjection,
+				.CameraPosition      = Vector4(m_camera->Position.x, m_camera->Position.y, m_camera->Position.z, 0.0f),
+				.MaterialBufferIndex = m_config.Materials ? m_config.Materials->Upload(frameSlot) : INVALID_DESCRIPTOR,
 			});
 
 			std::array colorRTs{ albedo, normals, material };
 			cmd.SetRenderTarget(colorRTs, depth);
 			cmd.SetViewportAndScissor(m_width, m_height);
-			cmd.SetPipeline(m_config.Resources->GBufferPipeline);
 
-			// Draws arrive grouped by entity, so the index buffer only rebinds on a mesh change
+			// Draws arrive sorted by (pipeline, mesh), so both only rebind when they change.
+			// A draw with no pipeline of its own gets the standard G-buffer one
 			const GPUMesh* boundMesh = nullptr;
+			PipelineHandle boundPipeline;
+
 			for (const MeshDrawItem& item : m_gather.Draws)
 			{
+				const PipelineHandle pipeline = item.Pipeline.IsValid() ? item.Pipeline : m_config.Resources->GBufferPipeline;
+				if (pipeline.GetId() != boundPipeline.GetId())
+				{
+					cmd.SetPipeline(pipeline);
+					boundPipeline = pipeline;
+				}
+
 				if (item.Mesh != boundMesh)
 				{
 					cmd.SetIndexBuffer(item.Mesh->IndexBuffer);
@@ -82,8 +94,7 @@ namespace koi
 					.FrameConstantsIndex = frameConstantsIndex,
 					.ObjectBufferIndex   = objectBufferIndex,
 					.ObjectIndex         = item.ObjectIndex,
-					.MaterialBufferIndex = item.Mesh->MaterialBufferSRV,
-					.MaterialIndex       = d.MaterialIndex,
+					.MaterialIndex       = item.MaterialSlot,
 					.VertexBufferIndex   = item.Mesh->VertexBufferSRV,
 					.SamplerIndex        = m_config.Resources->LinearWrapSampler,
 					.VertexOffset        = static_cast<u32>(d.VertexOffset),
@@ -135,7 +146,7 @@ namespace koi
 	{
 		ZoneScoped;
 		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-		KOI_LOG_DEBUG("GBufferPass: creating render targets at {}x{}", m_width, m_height);
+		KOI_LOG_RESIZE("GBufferPass: creating render targets at {}x{}", m_width, m_height);
 
 		TextureDesc baseTexDesc
 		{
