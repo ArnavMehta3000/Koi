@@ -49,7 +49,6 @@ namespace koi::internal
 				.UseDebugSink    = project["logging"]["debug_sink"].value_or(defaults.UseDebugSink),
 			},
 			.AppName        = project["project"]["name"].value_or("Koi Application"),
-			.RenderPipeline = project["rendering"]["pipeline"].value_or("deferred"),
 			.StartupScene   = project["assets"]["startup_scene"].value_or(""),
 		};
 	}

@@ -2,7 +2,6 @@
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
-#include "Koi/Engine/Graphics/IRenderPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Runtime/AppBase.h"
@@ -12,10 +11,8 @@
 namespace koi
 {
 	Engine::Engine()
-		: m_initSnapshot(GetMemSnapshot())
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 
 		assert(s_instance == nullptr && "Engine already initialized");
 		s_instance = this;
@@ -42,8 +39,6 @@ namespace koi
 		m_window.reset();
 		KOI_LOG_INFO("Engine shut down after {:.4f}s ({} frames)", GetStats().TotalTime, GetStats().FrameCount);
 
-		PrintMemSnapshot(DiffSnapshots(m_initSnapshot, GetMemSnapshot()));
-
 		s_instance = nullptr;
 	}
 
@@ -61,7 +56,6 @@ namespace koi
 		{
 			.MainWindow     = window,
 			.VSync          = mainWndDesc.VSync,
-			.RenderPipeline = desc.RenderPipeline,
 		};
 		m_systems.InitAll(initCtx);
 		KOI_LOG_DEBUG("Engine subsystems initialized");
@@ -71,7 +65,6 @@ namespace koi
 		// Init application
 		m_host = &host;
 		host.HostInit();
-		GetSubsystem<Renderer>().GetFrameGraph().Compile(); // One time validation of the pipeline's pass set, plus anything the game added
 
 		KOI_LOG_INFO("Entering main loop");
 
@@ -85,10 +78,6 @@ namespace koi
 
 		SetPlayState(PlayState::Edit);  // fires HostEndPlay when we exit mid-play
 		host.HostShutdown();
-
-		// Since the host is destroyed before the subsystems (render graph), not resetting the pipeline will cause a crash
-		// Due to the render passes holding flecs queries into the host's world (hence the release)
-		GetSubsystem<Renderer>().SetPipeline(nullptr);
 
 		m_host = nullptr;
 	}

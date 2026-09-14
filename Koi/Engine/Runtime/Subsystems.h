@@ -14,7 +14,6 @@ namespace koi
 	{
 		Window&          MainWindow;
 		bool             VSync = false;
-		std::string_view RenderPipeline;
 	};
 
 	template<typename... Ts>

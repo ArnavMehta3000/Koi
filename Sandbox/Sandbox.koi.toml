@@ -16,8 +16,5 @@ history    = 4096            # records kept for the editor Log panel; 0 disables
 console    = false
 debug_sink = true
 
-[rendering]
-pipeline = "deferred"
-
 [assets]
 startup_scene = "Assets/Scenes/Main.scene.toml"
