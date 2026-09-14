@@ -1,6 +1,8 @@
 #pragma once
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Core/EnumFlags.h"
+#include <optional>
+#include <string_view>
 
 namespace koi
 {
@@ -106,3 +108,28 @@ namespace koi
 	};
 }
 KOI_ENABLE_ENUM_FLAGS(koi::Modifier);
+
+namespace koi
+{
+	// Values match GLFW_GAMEPAD_BUTTON_* / GLFW_GAMEPAD_AXIS_* internally
+	enum class GamepadButton : u8
+	{
+		A, B, X, Y,
+		LeftBumper, RightBumper,
+		Back, Start, Guide,
+		LeftThumb, RightThumb,
+		DPadUp, DPadRight, DPadDown, DPadLeft,
+		Count
+	};
+
+	enum class GamepadAxis : u8
+	{
+		LeftX, LeftY, RightX, RightY,
+		LeftTrigger, RightTrigger,
+		Count
+	};
+
+	[[nodiscard]] std::optional<KeyCode>       ParseKeyCode(std::string_view name);
+	[[nodiscard]] std::optional<GamepadButton> ParseGamepadButton(std::string_view name);
+	[[nodiscard]] std::optional<GamepadAxis>   ParseGamepadAxis(std::string_view name);
+}
