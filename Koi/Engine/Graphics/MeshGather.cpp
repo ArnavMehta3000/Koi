@@ -2,7 +2,6 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
 
 namespace koi
@@ -19,15 +18,7 @@ namespace koi
 		ZoneScoped;
 		out.Clear();
 
-		// Loading a scene swaps the flecs world, which invalidates the cached query
-		if (flecs::world_t* ecsWorld = world.GetECS().c_ptr(); m_queryWorld != ecsWorld)
-		{
-			m_queryWorld = ecsWorld;
-			m_query      = world.GetECS().query<const Transform, const MeshRef>();
-			KOI_LOG_DEBUG("MeshGatherer: rebuilt query for new world");
-		}
-
-		m_query.each([&](const Transform& xform, const MeshRef& meshRef)
+		world.GetECS().each([&](const Transform& xform, const MeshRef& meshRef)
 		{
 			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 			if (!mesh) return;
@@ -35,8 +26,7 @@ namespace koi
 			const Matrix            worldMatrix = xform.ToMatrix();
 			const DirectX::XMMATRIX worldXM     = DirectX::XMLoadFloat4x4(&worldMatrix);
 
-			// The transform is only pushed once a submesh survives, so a fully culled entity
-			// costs nothing in the object buffer
+			// The transform is only pushed once a submesh survives, so a fully culled entity costs nothing in the object buffer
 			u32 objectIndex = ~0u;
 
 			for (const GPUMeshDraw& draw : mesh->DrawItems)

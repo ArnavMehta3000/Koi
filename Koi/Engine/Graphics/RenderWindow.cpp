@@ -2,10 +2,16 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
-#include "Koi/Engine/Diagnostics/ResizeLogging.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include <cassert>
+
+#define KOI_LOG_RESIZE_INFO 0
+#if KOI_LOG_RESIZE_INFO
+	#define KOI_LOG_RESIZE(...) KOI_LOG_DEBUG(__VA_ARGS__)
+#else
+	#define KOI_LOG_RESIZE(...) void(0)
+#endif
 
 namespace koi
 {

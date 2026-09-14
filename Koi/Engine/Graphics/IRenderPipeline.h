@@ -1,10 +1,7 @@
 #pragma once
-#include <memory>
-#include <string_view>
-
 namespace koi
 {
-	class RenderGraph;
+	class PassList;
 	class Renderer;
 	class World;
 	struct RenderView;
@@ -15,10 +12,7 @@ namespace koi
 	public:
 		virtual ~IRenderPipeline() = default;
 
-		virtual void Build(Renderer& renderer, RenderGraph& graph) = 0;  // Pipeline init setup
-		virtual void Setup(const RenderView& view, World& world)   = 0;  // Per-frame setup
+		virtual void Build(Renderer& renderer, PassList& passes) = 0;  // Pipeline init setup
+		virtual void Setup(const RenderView& view, World& world)  = 0;  // Per-frame setup
 	};
-
-	// Named by the project TOML ([rendering] pipeline) | fallback: "deferred"
-	[[nodiscard]] std::unique_ptr<IRenderPipeline> CreateRenderPipeline(std::string_view name);
 }

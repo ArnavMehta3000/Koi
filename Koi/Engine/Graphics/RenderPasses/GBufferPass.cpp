@@ -6,7 +6,6 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Diagnostics/ResizeLogging.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <cassert>
 
@@ -142,7 +141,7 @@ namespace koi
 	void GBufferPass::CreateRenderTargets()
 	{
 		ZoneScoped;
-		KOI_LOG_RESIZE("GBufferPass: creating render targets at {}x{}", m_width, m_height);
+		KOI_LOG_TRACE("GBufferPass: creating render targets at {}x{}", m_width, m_height);
 
 		TextureDesc baseTexDesc
 		{

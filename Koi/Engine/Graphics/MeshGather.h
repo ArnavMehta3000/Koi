@@ -2,7 +2,6 @@
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Math/Transform.h"
-#include <flecs.h>
 #include <vector>
 
 namespace koi
@@ -37,9 +36,5 @@ namespace koi
 	public:
 		// NormalMatrix is only computed when the consumer needs it - a depth-only pass does not
 		void Gather(World& world, const CullVolume& volume, bool needNormalMatrix, MeshGatherResult& out);
-
-	private:
-		flecs::world_t*                              m_queryWorld = nullptr;
-		flecs::query<const Transform, const MeshRef> m_query;
 	};
 }

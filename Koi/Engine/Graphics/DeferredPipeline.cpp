@@ -10,30 +10,30 @@
 
 namespace koi
 {
-	void DeferredPipeline::Build(Renderer& renderer, RenderGraph& graph)
+	void DeferredPipeline::Build(Renderer& renderer, PassList& passes)
 	{
 		ZoneScoped;
 
-		m_shadowPass = &graph.AddPass<ShadowPass>(ShadowPass::Config
+		m_shadowPass = &passes.Add<ShadowPass>(ShadowPass::Config
 		{
 			.Device    = &renderer.GetDevice(),
 			.Resources = &renderer.GetDefaultResources(),
 		});
 
-		m_gbufferPass = &graph.AddPass<GBufferPass>(GBufferPass::Config
+		m_gbufferPass = &passes.Add<GBufferPass>(GBufferPass::Config
 		{
 			.Device    = &renderer.GetDevice(),
 			.Resources = &renderer.GetDefaultResources(),
 			.Materials = &renderer.GetMaterialTable(),
 		});
 
-		m_lightingPass = &graph.AddPass<LightingPass>(LightingPass::Config
+		m_lightingPass = &passes.Add<LightingPass>(LightingPass::Config
 		{
 			.Device    = &renderer.GetDevice(),
 			.Resources = &renderer.GetDefaultResources(),
 		});
 
-		m_tonemapPass = &graph.AddPass<TonemapPass>(TonemapPass::Config
+		m_tonemapPass = &passes.Add<TonemapPass>(TonemapPass::Config
 		{
 			.Device   = &renderer.GetDevice(),
 			.Pipeline = renderer.GetDefaultResources().TonemapPipeline,
@@ -60,15 +60,5 @@ namespace koi
 
 		m_tonemapPass->SetInput(m_lightingPass->GetColorOutput())
 			.SetTarget(target.ResolvedColorBuffer, target.Width, target.Height);
-	}
-
-	std::unique_ptr<IRenderPipeline> CreateRenderPipeline(std::string_view name)
-	{
-		if (!name.empty() && name != "deferred")
-		{
-			KOI_LOG_WARN("Unknown render pipeline '{}', falling back to deferred", name);
-		}
-
-		return std::make_unique<DeferredPipeline>();
 	}
 }

@@ -11,7 +11,7 @@ namespace koi
 	class DeferredPipeline : public IRenderPipeline
 	{
 	public:
-		void Build(Renderer& renderer, RenderGraph& graph) override;
+		void Build(Renderer& renderer, PassList& passes) override;
 		void Setup(const RenderView& view, World& world) override;
 
 	private:

@@ -23,19 +23,19 @@ namespace koi::editor
 	{
 		if (ImGui::Begin("Render Targets"))
 		{
-			RenderGraph& graph = m_renderer->GetFrameGraph();
+			PassList& passes = m_renderer->GetPasses();
 
 			// Culling is invisible when it works, so the counts are the only way to see it
 			if (ImGui::CollapsingHeader("Culling", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				if (const GBufferPass* pass = graph.GetPass<GBufferPass>())
+				if (const GBufferPass* pass = passes.Find<GBufferPass>())
 					ImGui::Text("GBuffer: %u drawn, %u culled", pass->GetDrawCount(), pass->GetCulledCount());
-				if (const ShadowPass* pass = graph.GetPass<ShadowPass>())
+				if (const ShadowPass* pass = passes.Find<ShadowPass>())
 					ImGui::Text("Shadow:  %u drawn, %u culled", pass->GetDrawCount(), pass->GetCulledCount());
 			}
 
 			std::vector<Entry> entries;
-			for (const auto& pass : graph.GetPasses())
+			for (const auto& pass : passes.GetPasses())
 			{
 				for (const RenderPassAttachment& out : pass->GetOutputs())
 				{

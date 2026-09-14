@@ -18,16 +18,15 @@ namespace koi
 		explicit TonemapPass(const Config& config);
 
 		inline std::string_view GetName() const override { return "Tonemap"; }
-		inline std::span<const RenderPassAttachment> GetInputs() const override { return { &m_input, 1 }; }
 		void Reset() override;
 		void Execute(CommandList& cmd) override;
 
-		inline TonemapPass& SetInput(TextureHandle hdrInput) { m_input.Texture = hdrInput; return *this; }
+		inline TonemapPass& SetInput(TextureHandle hdrInput) { m_input = hdrInput; return *this; }
 		TonemapPass& SetTarget(TextureHandle colorTarget, u32 width, u32 height);
 
 	private:
 		Config               m_config;
-		RenderPassAttachment m_input;
+		TextureHandle        m_input;
 		TextureHandle        m_colorTarget;
 		u32                  m_width  = 0;
 		u32                  m_height = 0;
