@@ -4,6 +4,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Scripting/ScriptComponent.h"
 #include <angelscript.h>
 #include <scriptbuilder/scriptbuilder.h>
@@ -109,19 +110,19 @@ class ScriptBehaviour
 
 		bool Input_IsKeyDown(KeyCode key)
 		{
-			InputManager& input = InputManager::Get();
+			InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 			return input.IsGameFocused() && input.IsKeyDown(key);
 		}
 
 		bool Input_IsKeyPressed(KeyCode key)
 		{
-			InputManager& input = InputManager::Get();
+			InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 			return input.IsGameFocused() && input.IsKeyPressed(key);
 		}
 
 		bool Input_IsKeyReleased(KeyCode key)
 		{
-			InputManager& input = InputManager::Get();
+			InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 			return input.IsGameFocused() && input.IsKeyReleased(key);
 		}
 

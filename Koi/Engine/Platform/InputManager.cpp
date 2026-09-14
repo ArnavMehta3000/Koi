@@ -1,5 +1,4 @@
 #include "Koi/Engine/Platform/InputManager.h"
-#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 
@@ -7,10 +6,6 @@
 	#define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
-
-#if KOI_WITH_EDITOR
-	#include <imgui.h>
-#endif
 
 #include <cassert>
 
@@ -37,7 +32,6 @@ namespace koi
 
 	void InputManager::Init(const SubsystemInitContext& ctx)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		Window& window = ctx.MainWindow;
 		GLFWwindow* glfwWnd = window.GetGLFWWindow();
 		assert(glfwWnd && "Window has a null GLFWwindow");
@@ -50,19 +44,19 @@ namespace koi
 
 		::glfwSetKeyCallback(glfwWnd,
 			[](GLFWwindow*, i32 key, i32 /*scancode*/, i32 action, i32 mods) noexcept
-			{ InputManager::Get().OnKey(key, action, mods); });
+			{ s_instance->OnKey(key, action, mods); });
 
 		::glfwSetMouseButtonCallback(glfwWnd,
 			[](GLFWwindow*, i32 btn, i32 action, i32 mods) noexcept
-			{ InputManager::Get().OnMouseButton(btn, action, mods); });
+			{ s_instance->OnMouseButton(btn, action, mods); });
 
 		::glfwSetCursorPosCallback(glfwWnd,
 			[](GLFWwindow*, f64 x, f64 y) noexcept
-			{ InputManager::Get().OnCursorPos(x, y); });
+			{ s_instance->OnCursorPos(x, y); });
 
 		::glfwSetScrollCallback(glfwWnd,
 			[](GLFWwindow*, f64 dx, f64 dy) noexcept
-			{ InputManager::Get().OnScroll(dx, dy); });
+			{ s_instance->OnScroll(dx, dy); });
 
 		KOI_LOG_DEBUG("InputManager initialized");
 	}
@@ -74,33 +68,6 @@ namespace koi
 		m_scrollDelta   = m_scrollAccum;
 		m_scrollAccum   = {};
 		m_mouseDelta    = {};
-	}
-
-	bool InputManager::ImGuiWantsCaptureMouse() const noexcept
-	{
-#if KOI_WITH_EDITOR
-		return ImGui::GetIO().WantCaptureMouse;
-#else
-		return false;
-#endif
-	}
-
-	bool InputManager::ImGuiWantsCaptureKeyboard() const noexcept
-	{
-#if KOI_WITH_EDITOR
-		return ImGui::GetIO().WantCaptureKeyboard;
-#else
-		return false;
-#endif
-	}
-
-	bool InputManager::ImGuiWantsCaptureInput() const noexcept
-	{
-#if KOI_WITH_EDITOR
-		return ImGuiWantsCaptureMouse() || ImGuiWantsCaptureKeyboard();
-#else
-		return false;
-#endif
 	}
 
 	bool InputManager::IsKeyDown(KeyCode key) const noexcept

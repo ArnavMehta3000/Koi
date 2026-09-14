@@ -14,17 +14,10 @@ namespace koi
 		InputManager();
 		~InputManager();
 
-		[[nodiscard]] static InputManager& Get() { return *s_instance; }
-
 		// Called once by Engine after the main window is created.
 		void Init(const SubsystemInitContext& ctx);
 
 		void BeginFrame();
-
-		// Returns true if ImGui wants to capture the input
-		[[nodiscard]] bool ImGuiWantsCaptureMouse() const noexcept;
-		[[nodiscard]] bool ImGuiWantsCaptureKeyboard() const noexcept;
-		[[nodiscard]] bool ImGuiWantsCaptureInput() const noexcept;  // Either mouse or keyboard
 
 		[[nodiscard]] bool IsKeyDown(KeyCode key)     const noexcept;
 		[[nodiscard]] bool IsKeyPressed(KeyCode key)  const noexcept;
