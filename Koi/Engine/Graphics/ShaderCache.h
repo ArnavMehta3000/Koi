@@ -74,6 +74,7 @@ namespace koi
 		ShaderCache() = default;
 
 		[[nodiscard]] bool LoadBytecode(const ShaderKey& key, std::span<const ShaderDefine> defines, Entry& outEntry) const;
+		[[nodiscard]] bool LoadCooked(const ShaderKey& key, Entry& outEntry) const;
 
 		// The first dependency that no longer matches its recorded timestamp, or null if none
 		[[nodiscard]] static const fs::path* FindChangedDependency(const Entry& entry);

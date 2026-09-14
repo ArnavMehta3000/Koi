@@ -1,5 +1,4 @@
 #include "Koi/Engine/Graphics/ShaderCache.h"
-#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Graphics/ShaderCompiler.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -168,15 +167,15 @@ namespace koi
 		entry.Dependencies.push_back(Dependency{ .Path = path, .Stamp = fs::last_write_time(path, ec) });
 	}
 
-#if KOI_WITH_EDITOR
+	// Editor: compile "<path>.hlsl" from the source tree | Runtime: read the cooked "<path>.cso"
+	// Defines only affect the compile path: Cook writes one .cso per source
 	bool ShaderCache::LoadBytecode(const ShaderKey& key, std::span<const ShaderDefine> defines, Entry& outEntry) const
 	{
 		const std::string hlslPath = key.Path + ".hlsl";
 		const auto resolved = VirtualFileSystem::Get().TryResolveToDisk(hlslPath);
 		if (!resolved || !fs::exists(*resolved))
 		{
-			KOI_LOG_ERROR("ShaderCache: source '{}' not found on disk", hlslPath);
-			return false;
+			return LoadCooked(key, outEntry);
 		}
 
 		// DxcDefine only holds pointers, so the wide strings have to outlive the compile call
@@ -216,17 +215,15 @@ namespace koi
 
 		return true;
 	}
-#else
-	// Defines are part of the key but can't change the result here: Cook writes one .cso
-	// per source. Permutations need cook-side variants before they mean anything at runtime.
-	// Dependencies are left empty - nothing recompiles at runtime, so nothing goes stale
-	bool ShaderCache::LoadBytecode(const ShaderKey& key, std::span<const ShaderDefine>, Entry& outEntry) const
+
+	// Dependencies are left empty - nothing recompiles from a .cso, so nothing goes stale
+	bool ShaderCache::LoadCooked(const ShaderKey& key, Entry& outEntry) const
 	{
 		const std::string csoPath = key.Path + ".cso";
 		auto data = VirtualFileSystem::Get().Read(csoPath);
 		if (!data)
 		{
-			KOI_LOG_ERROR("ShaderCache: failed to read '{}'", csoPath);
+			KOI_LOG_ERROR("ShaderCache: neither '{}.hlsl' nor '{}.cso' could be loaded", key.Path, key.Path);
 			return false;
 		}
 
@@ -234,5 +231,4 @@ namespace koi
 		outEntry.Bytecode = std::move(*data);
 		return true;
 	}
-#endif
 }
