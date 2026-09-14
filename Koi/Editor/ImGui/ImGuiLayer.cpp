@@ -6,7 +6,6 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
@@ -62,16 +61,14 @@ namespace koi::editor
 
 	void ImGuiLayer::Init(Window& window)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		GfxDevice& device = Engine::Get().GetSubsystem<Renderer>().GetDevice();
 
 		IMGUI_CHECKVERSION();
 
-		// Route ImGui allocations through operator new so they're tracked by MemoryTracker
+		// Route ImGui allocations through operator new so Tracy sees them in profile builds
 		ImGui::SetAllocatorFunctions(
 			[](size_t size, void*) -> void*
 			{
-				KOI_MEM_TAG_SCOPE(MemTag::Editor);
 				return ::operator new(size);
 			},
 			[](void* ptr, void*) { ::operator delete(ptr); });
@@ -117,7 +114,6 @@ namespace koi::editor
 
 	void ImGuiLayer::Shutdown()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (!m_initialized) return;
 
 		Engine::Get().GetSubsystem<Renderer>().GetDevice().WaitForIdle();
@@ -140,8 +136,6 @@ namespace koi::editor
 
 	void ImGuiLayer::EndFrame(CommandList& cmd)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
 		{
 			ZoneScopedN("ImGui Render");
 			ImGui::Render();

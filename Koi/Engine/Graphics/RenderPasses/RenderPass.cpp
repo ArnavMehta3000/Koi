@@ -2,14 +2,12 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <unordered_set>
 
 namespace koi
 {
 	void RenderGraph::Compile()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		KOI_LOG_DEBUG("RenderGraph: compiling {} pass(es)", m_passes.size());
 
 		// Check connectivity using names of attachments

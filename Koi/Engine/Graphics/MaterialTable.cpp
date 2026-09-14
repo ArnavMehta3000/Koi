@@ -1,14 +1,11 @@
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 
 namespace koi
 {
 	void MaterialTable::Init(GfxDevice& device, const GPUMaterialData& fallback)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
 		m_buffer.Init(device, BufferUsage::Storage, 16, "Material Table");
 
 		const u32 slot = Allocate(fallback);

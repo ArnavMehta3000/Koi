@@ -5,7 +5,6 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 
 namespace koi
@@ -14,7 +13,6 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		assert(config.Device && "ShadowPass requires a valid GfxDevice");
 
 		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "Shadow FrameConstants");
@@ -106,7 +104,6 @@ namespace koi
 	void ShadowPass::Execute(CommandList& cmd)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		const TextureHandle shadowMap = m_output.Texture;
 		if (!m_hasShadow || !shadowMap || !m_world || !m_config.Resources) return;
 

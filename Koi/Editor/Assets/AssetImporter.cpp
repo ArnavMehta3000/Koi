@@ -3,7 +3,6 @@
 #include "Koi/Editor/Assets/MaterialFile.h"
 #include "Koi/Engine/Graphics/MeshLoader.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <toml++/toml.hpp>
 #include <fstream>
 #include <unordered_set>
@@ -112,8 +111,6 @@ namespace koi::editor
 
 	bool ImportMesh(AssetDatabase& database, const UUID& meshId)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
 		const AssetEntry* mesh = database.Find(meshId);
 		if (!mesh || mesh->Kind != AssetKind::Mesh)
 		{

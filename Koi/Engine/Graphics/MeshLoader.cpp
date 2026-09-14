@@ -2,7 +2,6 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
 #include <fastgltf/types.hpp>
@@ -47,7 +46,6 @@ namespace koi
 
 	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& modelPath)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		ZoneScoped;
 
 		fs::path path;

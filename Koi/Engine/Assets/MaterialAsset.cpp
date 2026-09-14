@@ -3,7 +3,6 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <toml++/toml.hpp>
 
@@ -92,8 +91,6 @@ namespace koi
 
 	std::unique_ptr<MaterialSource> AssetTraits<Material>::Load(const std::string& vfsPath)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-
 		const fs::path diskPath = VirtualFileSystem::Get().TryResolveToDisk(vfsPath).value_or(fs::path(vfsPath));
 
 		toml::table root;
@@ -135,8 +132,6 @@ namespace koi
 
 	Material AssetTraits<Material>::Upload(GfxDevice& device, const MaterialSource& source)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-
 		Material material;
 		material.Name        = source.Name;
 		material.Constants   = source.Constants;
@@ -174,7 +169,6 @@ namespace koi
 
 	void AssetTraits<Material>::Destroy(GfxDevice& device, Material& resource)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		resource.Release(device);
 	}
 }

@@ -2,7 +2,6 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <imgui.h>
 #include <cctype>
 
@@ -20,7 +19,6 @@ namespace koi::editor
 
 	void InspectorPanel::OnDraw()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		Entity selected = m_selection->Selected;
 
 		ImGui::Begin("Inspector");

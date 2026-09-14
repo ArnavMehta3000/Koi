@@ -2,7 +2,6 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 
 namespace koi
@@ -114,8 +113,6 @@ namespace koi
 
 	PipelineHandle PipelineLibrary::Register(GfxDevice& device, PipelineRecipe recipe)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
 		Entry& entry = m_entries.emplace_back(Entry{ .Recipe = std::move(recipe) });
 		if (!Build(device, entry))
 		{
@@ -127,8 +124,6 @@ namespace koi
 
 	u32 PipelineLibrary::RebuildAll(GfxDevice& device)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
 		u32 rebuilt = 0;
 		for (Entry& entry : m_entries)
 		{
@@ -148,8 +143,6 @@ namespace koi
 
 	u32 PipelineLibrary::RebuildUsing(GfxDevice& device, std::span<const std::string> shaderPaths)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
 		auto uses = [shaderPaths](const std::string& path)
 		{
 			return !path.empty() && std::ranges::find(shaderPaths, path) != shaderPaths.end();
@@ -195,8 +188,6 @@ namespace koi
 
 	void PipelineLibrary::Shutdown(GfxDevice& device)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
 		for (Entry& entry : m_entries)
 		{
 			device.Destroy(entry.Handle);

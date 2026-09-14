@@ -2,7 +2,6 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <algorithm>
 #include <fstream>
@@ -137,7 +136,6 @@ namespace koi
 	ComPtr<IDxcBlob> ShaderCompiler::CompileFromFile(const fs::path& filePath, const Args& args, std::vector<fs::path>* outIncludes)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		KOI_LOG_DEBUG("Compiling shader: {}", filePath.string());
 
 		assert(args.Type != ShaderType::Unknown && "Unknown shader type");
@@ -289,7 +287,6 @@ namespace koi
 	ShaderCompiler::ShaderCompiler()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
 		// Ensure the map size is correct.
 		assert(s_shaderProfile.size() == (size_t)ShaderType::MAX_COUNT);

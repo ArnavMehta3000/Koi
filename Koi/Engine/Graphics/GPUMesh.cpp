@@ -4,7 +4,6 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <cassert>
 
@@ -13,7 +12,6 @@ namespace koi
 	GPUMesh GPUMesh::Upload(GfxDevice& device, const ModelAsset& model)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
 		GPUMesh mesh;
 		mesh.Bounds = model.Bounds;
@@ -206,7 +204,6 @@ namespace koi
 	void GPUMesh::BindMaterials(GfxDevice& device, const ModelAsset& model)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
 		// A mesh with no sidecar still has to draw, so the glTF's own materials stand in
 		if (model.MaterialBindings.empty()) BindFromModel (device, model);
@@ -222,8 +219,6 @@ namespace koi
 
 	void GPUMesh::Release(GfxDevice& device)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-
 		device.Destroy(VertexBuffer);
 		device.Destroy(IndexBuffer);
 

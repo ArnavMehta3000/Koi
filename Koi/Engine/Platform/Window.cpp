@@ -2,7 +2,6 @@
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/Win32.h"
 
 #ifndef GLFW_INCLUDE_NONE
@@ -45,7 +44,6 @@ namespace koi
 		, m_title(desc.Title)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (s_windowCount == 0)
 		{
 			::glfwSetErrorCallback([](int code, const char* desc)
@@ -99,7 +97,6 @@ namespace koi
 
 	Window& Window::operator=(Window&& other) noexcept
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (this != &other)
 		{
 			Destroy();
@@ -136,7 +133,6 @@ namespace koi
 	void Window::SetMode(WindowMode newMode)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 
 		if (newMode == m_mode)
 			return;
@@ -202,7 +198,6 @@ namespace koi
 	void Window::SetTitle(std::string_view title)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		m_title.assign(title);
 		if (m_window)
 			::glfwSetWindowTitle(m_window, m_title.c_str());
@@ -268,7 +263,6 @@ namespace koi
 	void Window::Create(const WindowDesc& desc)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		::glfwWindowHint(GLFW_RESIZABLE, desc.Resizable ? GLFW_TRUE : GLFW_FALSE);
 
@@ -358,7 +352,6 @@ namespace koi
 	void Window::Destroy()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Platform);
 		if (m_window)
 		{
 			::glfwDestroyWindow(m_window);

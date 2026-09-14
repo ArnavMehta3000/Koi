@@ -1,6 +1,5 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Logging/LogHistory.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/Win32.h"
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/msvc_sink.h>
@@ -83,8 +82,6 @@ namespace koi
 
 	void Logger::Configure(const LoggerConfig& cfg)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Logging);
-
 		// %s is the source basename, %# the line - both come from the source_loc we pass
 		constexpr auto pattern = "[%Y-%m-%d %H:%M:%S.%e] [%s:%#] [%^%l%$] %v";
 
@@ -142,7 +139,6 @@ namespace koi
 	{
 		if (!s_logger) return;
 
-		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 
 		Flush();
 		s_logger = nullptr;
@@ -163,8 +159,6 @@ namespace koi
 
 	u16 Logger::InternCategory(std::string_view path)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Logging);
-
 		CategoryTable& table = Categories();
 		std::string key(path);
 

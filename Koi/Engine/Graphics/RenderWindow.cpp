@@ -4,7 +4,6 @@
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Diagnostics/ResizeLogging.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/Window.h"
 #include <cassert>
 
@@ -27,7 +26,6 @@ namespace koi
 		, m_format(SWAPCHAIN_FORMAT)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		assert(m_hwnd && "Window has no native HWND");
 		CreateSwapChain();
@@ -38,7 +36,6 @@ namespace koi
 	RenderWindow::~RenderWindow()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		if (!m_device) return;   // moved-from
 
@@ -66,7 +63,6 @@ namespace koi
 		, m_tearingAllowed(other.m_tearingAllowed)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		other.m_device = nullptr;
 		other.m_window = nullptr;
@@ -79,7 +75,6 @@ namespace koi
 	RenderWindow& RenderWindow::operator=(RenderWindow&& other) noexcept
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		if (this != &other)
 		{
@@ -141,7 +136,6 @@ namespace koi
 	void RenderWindow::Resize(u32 width, u32 height)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		if (width == 0 || height == 0) return;
 		if (width == m_width && height == m_height) return;
@@ -172,7 +166,6 @@ namespace koi
 	void RenderWindow::Present()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		const u32 syncInterval = m_vsync ? 1 : 0;
 		const u32 flags        = (!m_vsync && m_tearingAllowed) ? DXGI_PRESENT_ALLOW_TEARING : 0;
@@ -201,7 +194,6 @@ namespace koi
 	void RenderWindow::CreateSwapChain()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		DXGI_SWAP_CHAIN_DESC1 desc
 		{
@@ -239,7 +231,6 @@ namespace koi
 	void RenderWindow::AcquireBackBuffers()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		TextureDesc desc
 		{
@@ -282,7 +273,6 @@ namespace koi
 	void RenderWindow::ReleaseBackBuffers()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		for (u32 i = 0; i < BACK_BUFFER_COUNT; ++i)
 		{
@@ -313,7 +303,6 @@ namespace koi
 	void RenderWindow::CreateHDRBuffer()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		m_hdrColorBuffer = m_device->CreateTexture(TextureDesc
 		{
@@ -330,7 +319,6 @@ namespace koi
 	void RenderWindow::ReleaseHDRBuffer()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		if (m_hdrColorBuffer)
 		{
@@ -342,7 +330,6 @@ namespace koi
 	void RenderWindow::WaitForCurrentBackBuffer()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		const u64 value = m_frameFenceValues[m_currentBackBuffer];
 		if (value == 0)

@@ -1,14 +1,11 @@
 #include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 
 namespace koi
 {
 	const MaterialTemplate& MaterialTemplateLibrary::Register(GfxDevice& device, PipelineLibrary& library, const PipelineRecipe& recipe, std::vector<MaterialParam> parameters)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
 		PipelineRecipe doubleSided = recipe;
 		doubleSided.Named(recipe.Name + ".DoubleSided").Cull(D3D12_CULL_MODE_NONE);
 

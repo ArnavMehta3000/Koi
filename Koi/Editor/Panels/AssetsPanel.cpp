@@ -3,7 +3,6 @@
 #include "Koi/Editor/Assets/AssetImporter.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Scripting/ScriptEngine.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -94,8 +93,6 @@ namespace koi::editor
 
 	void AssetsPanel::OnDraw()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
 		if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_MenuBar))
 		{
 			DrawToolbar();

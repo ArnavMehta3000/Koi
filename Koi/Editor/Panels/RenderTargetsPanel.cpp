@@ -4,7 +4,6 @@
 #include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <imgui.h>
 #include <format>
 #include <vector>
@@ -22,7 +21,6 @@ namespace koi::editor
 
 	void RenderTargetsPanel::OnDraw()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (ImGui::Begin("Render Targets"))
 		{
 			RenderGraph& graph = m_renderer->GetFrameGraph();

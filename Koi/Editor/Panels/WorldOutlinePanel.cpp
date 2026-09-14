@@ -1,5 +1,4 @@
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -13,7 +12,6 @@ namespace koi::editor
 
 	void WorldOutlinePanel::OnDraw()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		ECS& ecs = m_game->GetWorld().GetECS();
 
 		// Make modifications at end of draw

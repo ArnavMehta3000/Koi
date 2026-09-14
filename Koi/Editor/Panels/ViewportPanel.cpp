@@ -8,7 +8,6 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Diagnostics/ResizeLogging.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <imgui.h>
@@ -43,7 +42,6 @@ namespace koi::editor
 	void ViewportPanel::EnsureSize(u32 width, u32 height)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (width == 0 || height == 0)
 		{
 			m_valid = false;
@@ -142,7 +140,6 @@ namespace koi::editor
 
 	void ViewportPanel::OnDraw()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		if (ImGui::Begin("Viewport"))
 		{

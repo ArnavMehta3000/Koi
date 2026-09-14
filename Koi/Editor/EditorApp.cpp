@@ -16,7 +16,6 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
@@ -30,8 +29,6 @@ namespace koi::editor
 		: m_game(std::move(game))
 		, m_config(std::move(config))
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
 		KOI_LOG_DEBUG("Initializing Editor");
 		KOI_LOG_DEBUG("\tEngine source path: {}" , m_config.EngineSource.string());
 		KOI_LOG_DEBUG("\tProject source path: {}", m_config.ProjectSource.string());
@@ -79,8 +76,6 @@ namespace koi::editor
 
 	void EditorApp::HostInit()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
 		Setup();
 		m_game->HostInit();
 		m_imgui.Init(Engine::Get().GetWindow());
@@ -123,7 +118,6 @@ namespace koi::editor
 
 	void EditorApp::HostShutdown()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		m_game->HostShutdown();
 		m_imgui.Shutdown();
 		KOI_LOG_INFO("Editor shut down");
@@ -173,7 +167,6 @@ namespace koi::editor
 	void EditorApp::OnOverlayRender(CommandList& cmd)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		m_imgui.BeginFrame();
 
@@ -204,7 +197,6 @@ namespace koi::editor
 
 	void EditorApp::DrawMenuBar()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		if (!ImGui::BeginMainMenuBar()) return;
 
 		if (ImGui::BeginMenu("File"))
@@ -256,7 +248,6 @@ namespace koi::editor
 	void EditorApp::SaveScene()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		const std::string& scenePath = m_game->GetDesc().StartupScene;
 		if (scenePath.empty())
@@ -286,7 +277,6 @@ namespace koi::editor
 	void EditorApp::Play()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		World& world                = m_game->GetWorld();
 		GfxDevice& device           = Engine::Get().GetSubsystem<Renderer>().GetDevice();
@@ -327,7 +317,6 @@ namespace koi::editor
 	void EditorApp::Stop()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 
 		Engine& engine = Engine::Get();
 		if (engine.GetPlayState() == PlayState::Edit) return;

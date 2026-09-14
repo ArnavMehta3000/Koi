@@ -1,7 +1,6 @@
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/Window.h"
 
 #ifndef GLFW_INCLUDE_NONE
@@ -19,7 +18,6 @@ namespace koi
 {
 	InputManager::InputManager()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		assert(s_instance == nullptr && "InputManager already exists");
 		s_instance = this;
 	}
@@ -71,7 +69,6 @@ namespace koi
 
 	void InputManager::BeginFrame()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Input);
 		m_keyDownPrev   = m_keyDown;
 		m_mouseDownPrev = m_mouseDown;
 		m_scrollDelta   = m_scrollAccum;

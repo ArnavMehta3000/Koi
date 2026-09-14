@@ -5,7 +5,6 @@
 #include "Koi/Engine/Graphics/IRenderPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Interop/AppHost.h"
-#include "Koi/Engine/Memory/MemoryDebug.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <angelscript.h>
 #include <cassert>
@@ -33,7 +32,6 @@ namespace koi
 	Engine::~Engine()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 
 		// Runs here, not at the end of RunApp: the host outlives RunApp and releases GPU
 		// resources in its own destructor, so the device has to still be alive for it
@@ -51,7 +49,6 @@ namespace koi
 
 	void Engine::RunApp(IAppHost& host)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		const AppCreateDesc& desc = host.GetDesc();
 		const WindowDesc& mainWndDesc = desc.WindowDesc;
 
@@ -137,8 +134,6 @@ namespace koi
 	void Engine::Tick(IAppHost& host)
 	{
 		ZoneScoped;
-		// Fallback attribution for tick work: game code pushes its own tag on top
-		KOI_MEM_TAG_SCOPE(MemTag::Engine);
 		m_timer.Tick([&host](f32 dt) { host.HostTick(dt); });
 		host.HostRender();
 	}

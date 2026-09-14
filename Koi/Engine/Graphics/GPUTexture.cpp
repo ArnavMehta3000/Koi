@@ -2,7 +2,6 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 
 namespace koi
@@ -10,7 +9,6 @@ namespace koi
 	GPUTexture GPUTexture::Upload(GfxDevice& device, const ImageAsset& image)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
 		assert(image.Width > 0 && image.Height > 0 && !image.Pixels.empty() && "GPUTexture::Upload: empty image");
 
@@ -40,8 +38,6 @@ namespace koi
 
 	void GPUTexture::Release(GfxDevice& device)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-
 		if (Handle) device.Destroy(Handle);
 
 		Handle   = TextureHandle();

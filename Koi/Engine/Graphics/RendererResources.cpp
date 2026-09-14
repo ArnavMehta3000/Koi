@@ -4,7 +4,6 @@
 #include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi
@@ -53,8 +52,6 @@ namespace koi
 
 	void RendererResources::Init(GfxDevice& device, PipelineLibrary& library)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
-
 		LinearWrapSampler  = device.CreateSampler(MakeLinearWrapDesc());
 		LinearClampSampler = device.CreateSampler(MakeLinearClampDesc());
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
@@ -67,7 +64,6 @@ namespace koi
 	void RendererResources::RegisterFallbackAssets(GfxDevice& device)
 	{
 		// This function cannot be called in Init since it requires the AssetRegistry subsystem, which is constructed after the Renderer (and these resources)
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		AssetRegistry& assets = Engine::Get().GetSubsystem<AssetRegistry>();
 
 		constexpr i32 kSize = 16;
@@ -116,7 +112,6 @@ namespace koi
 
 	void RendererResources::Shutdown()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		// Pipelines belong to the PipelineLibrary, which destroys them itself
 		// The asset caches shut down first and have already released these
 		FallbackMesh          = {};
@@ -133,7 +128,6 @@ namespace koi
 
 	void RendererResources::RegisterPipelines(GfxDevice& device, PipelineLibrary& library)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		KOI_LOG_DEBUG("Registering default pipelines");
 
 		// --- Tonemap ---

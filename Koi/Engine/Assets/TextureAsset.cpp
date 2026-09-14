@@ -2,7 +2,6 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "stb_image.h"
 
 namespace koi
@@ -10,7 +9,6 @@ namespace koi
 	std::unique_ptr<ImageAsset> AssetTraits<GPUTexture>::Load(const std::string& vfsPath)
 	{
 		KOI_ZONE_UNMUTED;  // Texture decode can arrive here from a parallel-for loop
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 
 		if (vfsPath.contains('#'))
 		{

@@ -1,5 +1,4 @@
 #include "Koi/Engine/Logging/LogHistory.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 
 namespace koi
@@ -12,7 +11,6 @@ namespace koi
 
 	void LogHistory::Resize(u32 capacity)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		std::lock_guard lock(m_mutex);
 
 		m_slots.clear();
@@ -35,7 +33,6 @@ namespace koi
 
 	void LogHistory::Push(LogLevel level, u16 category, u32 line, f64 time, std::string_view message)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		std::lock_guard lock(m_mutex);
 
 		if (m_slots.empty())
@@ -53,7 +50,6 @@ namespace koi
 
 	u64 LogHistory::ReadFrom(u64 from, std::vector<LogRecord>& out) const
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Logging);
 		std::lock_guard lock(m_mutex);
 
 		if (m_slots.empty()) 

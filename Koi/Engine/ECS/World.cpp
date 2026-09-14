@@ -3,7 +3,6 @@
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <fstream>
 
@@ -12,7 +11,6 @@ namespace koi
 	World::World()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		// Add root entity, disabled by default. Every other entity is parented to this
 		m_root = m_ecs.entity("WorldRoot");
@@ -37,7 +35,6 @@ namespace koi
 	std::optional<World> World::Load(const fs::path& path)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		const std::string virtualPath = "project://" + path.generic_string();
 		KOI_LOG_DEBUG("Loading scene '{}'", virtualPath);
@@ -71,7 +68,6 @@ namespace koi
 	bool World::LoadFromTable(const toml::table& scene)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		const toml::array* entities = scene["entity"].as_array();
 		if (!entities)
@@ -164,7 +160,6 @@ namespace koi
 	bool World::Save(const fs::path& path)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		const std::string virtualPath = "project://" + path.generic_string();
 
@@ -193,7 +188,6 @@ namespace koi
 	toml::table World::SaveToTable()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		// Build the document in the same shape LoadFromTable reads
 		toml::table root;
@@ -230,7 +224,6 @@ namespace koi
 	void World::Clear()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 
 		// Destructing an entity fires the component hooks, which is what releases its assets
 
@@ -257,7 +250,6 @@ namespace koi
 	void World::Update(f32 dt)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 		// NOTE: Might refactor the entire world update system
 		if (!Engine::Get().IsPlaying()) return;
 

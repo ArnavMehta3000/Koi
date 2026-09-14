@@ -2,7 +2,6 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 
 namespace koi
@@ -18,7 +17,6 @@ namespace koi
 	void CommandQueue::Submit(std::span<CommandList* const> lists)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 		assert(m_queue);
 		if (lists.empty()) return;
 

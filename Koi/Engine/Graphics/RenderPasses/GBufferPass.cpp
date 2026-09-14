@@ -8,7 +8,6 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Diagnostics/ResizeLogging.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 
 namespace koi
@@ -17,7 +16,6 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		assert(config.Device && "GBufferPass requires a valid GfxDevice");
 
 		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "GBuffer FrameConstants");
@@ -35,7 +33,6 @@ namespace koi
 	void GBufferPass::Execute(CommandList& cmd)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		const TextureHandle albedo   = m_outputs[size_t(Outputs::Albedo)].Texture;
 		const TextureHandle normals  = m_outputs[size_t(Outputs::Normals)].Texture;
 		const TextureHandle material = m_outputs[size_t(Outputs::Material)].Texture;
@@ -145,7 +142,6 @@ namespace koi
 	void GBufferPass::CreateRenderTargets()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		KOI_LOG_RESIZE("GBufferPass: creating render targets at {}x{}", m_width, m_height);
 
 		TextureDesc baseTexDesc

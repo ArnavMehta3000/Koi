@@ -3,7 +3,6 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 
 namespace koi
@@ -18,7 +17,6 @@ namespace koi
 	void MeshGatherer::Gather(World& world, const CullVolume& volume, bool needNormalMatrix, MeshGatherResult& out)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		out.Clear();
 
 		// Loading a scene swaps the flecs world, which invalidates the cached query

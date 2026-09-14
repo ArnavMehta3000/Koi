@@ -2,7 +2,6 @@
 #include "Koi/Engine/Core/Patterns/Match.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 #include <cstring>
 
@@ -11,7 +10,6 @@ namespace koi
 	void GfxDevice::UploadContext::Init(GfxDevice* device)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(device && "UploadContext::Init requires a valid GfxDevice");
 		m_device = device;
@@ -45,7 +43,6 @@ namespace koi
 	void GfxDevice::UploadContext::Shutdown()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_recordDepth == 0 && "UploadContext::Shutdown called while a Begin/End block is still open");
 
@@ -85,7 +82,6 @@ namespace koi
 	void GfxDevice::UploadContext::Begin()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_device && "UploadContext::Begin called before Init");
 
@@ -121,7 +117,6 @@ namespace koi
 	void GfxDevice::UploadContext::End()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_recordDepth > 0 && "UploadContext::End called without a matching Begin()");
 
@@ -174,7 +169,6 @@ namespace koi
 	void GfxDevice::UploadContext::FlushQueued(dx12::CommandQueue* graphicsQueue)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::RHI);
 
 		assert(m_device           && "UploadContext::FlushQueued called before Init");
 		assert(m_recordDepth == 0 && "FlushQueued called while a synchronous Begin/End block is open");

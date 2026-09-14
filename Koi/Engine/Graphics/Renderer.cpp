@@ -6,7 +6,6 @@
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/Window.h"
 #include <cassert>
 
@@ -38,7 +37,6 @@ namespace koi
 	Renderer::Renderer()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		m_device = std::make_unique<GfxDevice>(GfxDevice::Desc
 		{
@@ -105,7 +103,6 @@ namespace koi
 	void Renderer::Init(const SubsystemInitContext& ctx)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		Window& window = ctx.MainWindow;
 		m_renderWindow.emplace(*m_device, window, ctx.VSync);
@@ -133,7 +130,6 @@ namespace koi
 	void Renderer::BeginFrame()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_renderWindow || !m_frameContext) return;
 
 		// Before anything records against the back buffers this frame
@@ -155,7 +151,6 @@ namespace koi
 	void Renderer::EndFrame()
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_renderWindow || !m_frameContext) return;
 
 		CommandList& cmd = m_frameContext->List;
@@ -184,7 +179,6 @@ namespace koi
 	void Renderer::SetPipeline(std::unique_ptr<IRenderPipeline> pipeline)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 
 		m_device->WaitForIdle();
 		m_pipeline.reset();

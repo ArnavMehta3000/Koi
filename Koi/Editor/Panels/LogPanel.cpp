@@ -1,6 +1,5 @@
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <algorithm>
 #include <cstdio>
 
@@ -59,8 +58,6 @@ namespace koi::editor
 
 	void LogPanel::OnDraw()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
 		if (ImGui::Begin("Log"))
 		{
 			Pull();

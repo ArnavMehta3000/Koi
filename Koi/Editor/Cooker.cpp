@@ -6,7 +6,6 @@
 #include "Koi/Engine/Graphics/ShaderCompiler.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <system_error>
 #include <unordered_set>
@@ -169,7 +168,6 @@ namespace koi::editor
 
 	std::string Cook(const CookRequest& request, const AssetDatabase* database)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
 		const fs::path outRoot = request.OutputRoot;
 
 		KOI_LOG_INFO("Cook: output = {}", outRoot.string());

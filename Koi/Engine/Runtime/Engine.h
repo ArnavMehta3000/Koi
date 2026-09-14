@@ -2,7 +2,6 @@
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
@@ -75,7 +74,6 @@ namespace koi
 		// Declaration order is init order | shutdown runs in reverse
 		using Subsystems = SubsystemSet<InputManager, Renderer, AssetRegistry, ScriptEngine>;
 
-		MemTagSnapshotArray   m_initSnapshot{};
 		std::optional<Window> m_window;
 		Subsystems            m_systems;
 

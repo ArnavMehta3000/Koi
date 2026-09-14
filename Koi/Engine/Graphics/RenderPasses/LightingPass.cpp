@@ -6,7 +6,6 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <cassert>
 
 namespace koi
@@ -113,7 +112,6 @@ namespace koi
 	void LightingPass::Execute(CommandList& cmd)
 	{
 		ZoneScoped;
-		KOI_MEM_TAG_SCOPE(MemTag::Renderer);
 		if (!m_world) return;
 
 		GfxDevice& device = *m_config.Device;

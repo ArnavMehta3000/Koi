@@ -5,7 +5,6 @@
 #include "Koi/Engine/Graphics/Procedural/ProceduralMeshSpec.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include <toml++/toml.hpp>
 
 namespace koi
@@ -55,8 +54,6 @@ namespace koi
 
 	std::unique_ptr<ModelAsset> AssetTraits<GPUMesh>::Load(const std::string& vfsPath)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-
 		// Generated on demand, so there is no file to resolve and nothing for the cooker to copy
 		if (vfsPath.starts_with(kProceduralScheme))
 			return LoadProcedural(vfsPath);
@@ -72,8 +69,6 @@ namespace koi
 
 	GPUMesh AssetTraits<GPUMesh>::Upload(GfxDevice& device, const ModelAsset& source)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
-
 		GPUMesh mesh = GPUMesh::Upload(device, source);
 		mesh.BindMaterials(device, source);
 		return mesh;
@@ -81,7 +76,6 @@ namespace koi
 
 	void AssetTraits<GPUMesh>::Destroy(GfxDevice& device, GPUMesh& resource)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Assets);
 		resource.Release(device);
 	}
 }

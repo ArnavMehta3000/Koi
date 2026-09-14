@@ -9,7 +9,6 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/TransformSerializer.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Scripting/ScriptComponent.h"
 #include <algorithm>
@@ -143,7 +142,6 @@ namespace koi
 
 	void ComponentRegistry::Register(std::unique_ptr<IComponentType> type)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 		if (!type) return;
 
 		if (Find(type->Key()))
@@ -170,7 +168,6 @@ namespace koi
 
 	void RegisterEngineComponents()
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::ECS);
 		ComponentRegistry& registry = ComponentRegistry::Get();
 
 		registry.Register<ComponentType<Transform>>("transform", 0, true);

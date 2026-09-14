@@ -3,7 +3,6 @@
 #include "Koi/Editor/Assets/MaterialFile.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Memory/MemoryTracker.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 
@@ -43,8 +42,6 @@ namespace koi::editor
 
 	void MaterialInspector::Draw(AssetDatabase& database, const AssetEntry& entry)
 	{
-		KOI_MEM_TAG_SCOPE(MemTag::Editor);
-
 		if (entry.Id != m_loaded) Load(entry);
 
 		ImGui::TextDisabled("%s", entry.VirtualPath.c_str());
