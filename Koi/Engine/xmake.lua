@@ -13,7 +13,6 @@ target("Koi.Engine")
 		"stb",
 		"tracy-profiler",
 		"glfw",
-		"stduuid",
 		"fastgltf",
 		"tracy",
 		"Flecs",

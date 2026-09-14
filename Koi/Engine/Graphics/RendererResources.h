@@ -13,7 +13,9 @@ namespace koi
 		// Asset cache fallback resources
 		MeshHandle       FallbackMesh{};
 		GPUTextureHandle FallbackTexture{};
-		DescriptorIndex  FallbackTextureSRV = INVALID_DESCRIPTOR;  // the albedo an unbound material row samples
+		DescriptorIndex  FallbackTextureSRV = INVALID_DESCRIPTOR;  // magenta checker: what a missing material draws with
+		GPUTextureHandle WhiteTexture{};
+		DescriptorIndex  WhiteTextureSRV    = INVALID_DESCRIPTOR;  // what a material samples for an unbound texture slot
 
 		// Default samplers (indices into the bindless sampler heap)
 		DescriptorIndex LinearWrapSampler  = INVALID_DESCRIPTOR;

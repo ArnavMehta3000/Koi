@@ -42,7 +42,7 @@ namespace koi::editor
 
 	void MaterialInspector::Draw(AssetDatabase& database, const AssetEntry& entry)
 	{
-		if (entry.Id != m_loaded) Load(entry);
+		if (entry.VirtualPath != m_loaded) Load(entry);
 
 		ImGui::TextDisabled("%s", entry.VirtualPath.c_str());
 		ImGui::Separator();
@@ -94,8 +94,8 @@ namespace koi::editor
 
 		AssetKey& key = m_source.Textures[slot];
 
-		const AssetEntry* bound = key.IsValid() && !key.IsUri() ? database.Find(key.Id()) : nullptr;
-		const std::string label = bound ? bound->Name : (key.IsValid() ? key.ToString() : std::string("(none)"));
+		const AssetEntry* bound = key.IsValid() ? database.Find(key.Path()) : nullptr;
+		const std::string label = bound ? bound->Name : (key.IsValid() ? key.Path() : std::string("(none)"));
 
 		ImGui::PushID(static_cast<int>(slot));
 		ImGui::Button(label.c_str(), ImVec2(-70.0f, 0.0f));
@@ -128,7 +128,7 @@ namespace koi::editor
 
 	void MaterialInspector::Load(const AssetEntry& entry)
 	{
-		m_loaded = entry.Id;
+		m_loaded = entry.VirtualPath;
 		m_dirty  = false;
 
 		if (const std::unique_ptr<MaterialSource> source = AssetTraits<Material>::Load(entry.VirtualPath))

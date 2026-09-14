@@ -68,7 +68,7 @@ namespace koi
 			.NormalScale            = Constants.NormalScale,
 			.OcclusionStrength      = Constants.OcclusionStrength,
 			.AlphaCutoff            = Constants.AlphaCutoff,
-			.BaseColorIndex         = albedoSRV != INVALID_DESCRIPTOR ? albedoSRV : renderer.GetDefaultResources().FallbackTextureSRV,
+			.BaseColorIndex         = albedoSRV != INVALID_DESCRIPTOR ? albedoSRV : renderer.GetDefaultResources().WhiteTextureSRV,
 			.MetallicRoughnessIndex = SRVFor(MaterialTextureSlot::MetallicRoughness),
 			.NormalIndex            = SRVFor(MaterialTextureSlot::Normal),
 			.OcclusionIndex         = SRVFor(MaterialTextureSlot::Occlusion),
@@ -124,7 +124,7 @@ namespace koi
 		for (size_t i = 0; i < kMaterialTextureCount; ++i)
 		{
 			if (const std::optional<std::string> key = textures[kSlotKeys[i]].value<std::string>())
-				source->Textures[i] = AssetKey::Parse(*key);
+				source->Textures[i] = AssetKey(*key);
 		}
 
 		return source;

@@ -263,10 +263,11 @@ namespace koi::editor
 	{
 		m_lastCookStatus = editor::Cook(CookRequest
 		{
+			.EngineSource  = m_config.EngineSource,
 			.ProjectSource = m_config.ProjectSource,
 			.ProjectFile   = m_config.ProjectFile,
 			.OutputRoot    = m_config.CookedOutput,
-		}, m_assetDatabase.get());
+		});
 	}
 
 	void EditorApp::Play()

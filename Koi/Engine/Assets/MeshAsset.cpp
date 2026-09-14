@@ -1,8 +1,6 @@
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Graphics/MeshLoader.h"
-#include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
-#include "Koi/Engine/Graphics/Procedural/ProceduralMeshSpec.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <toml++/toml.hpp>
@@ -45,7 +43,7 @@ namespace koi
 				if (!index || !key) continue;
 
 				if (*index >= model.MaterialBindings.size()) model.MaterialBindings.resize(*index + 1);
-				model.MaterialBindings[*index] = AssetKey::Parse(*key);
+				model.MaterialBindings[*index] = AssetKey(*key);
 			}
 
 			KOI_LOG_DEBUG("Mesh sidecar '{}': {} slot(s)", sidecarPath, model.MaterialBindings.size());
@@ -54,10 +52,6 @@ namespace koi
 
 	std::unique_ptr<ModelAsset> AssetTraits<GPUMesh>::Load(const std::string& vfsPath)
 	{
-		// Generated on demand, so there is no file to resolve and nothing for the cooker to copy
-		if (vfsPath.starts_with(kProceduralScheme))
-			return LoadProcedural(vfsPath);
-
 		std::unique_ptr<ModelAsset> model = MeshLoader::Load(vfsPath);
 		if (model && model->Meshes.empty())
 			return nullptr;

@@ -10,6 +10,7 @@ namespace koi
 	class MeshLoader
 	{
 	public:
-		static std::unique_ptr<ModelAsset> Load(const fs::path& modelPath);
+		// Embedded images are only decoded for import; the runtime loads the extracted files by path
+		static std::unique_ptr<ModelAsset> Load(const fs::path& modelPath, bool decodeEmbeddedImages = false);
 	};
 }

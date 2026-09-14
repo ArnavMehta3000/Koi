@@ -32,6 +32,7 @@ namespace koi
 			fs::path SourcePath;      // the glTF itself; used to key images embedded inside it
 			std::string VirtualPath;  // the glTF's VFS path
 			std::string VirtualBase;  // ...and its parent, for keying sibling image files
+			bool DecodeEmbeddedImages = false;  // import only: the runtime reads extracted files instead
 
 			// glTF image index -> index into ModelAsset::Images
 			std::unordered_map<u32, u32> LoadedImages;
@@ -44,7 +45,7 @@ namespace koi
 		};
 	}
 
-	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& modelPath)
+	std::unique_ptr<ModelAsset> MeshLoader::Load(const fs::path& modelPath, bool decodeEmbeddedImages)
 	{
 		ZoneScoped;
 
@@ -81,6 +82,7 @@ namespace koi
 			.SourcePath  = path,
 			.VirtualPath = virtualPath,
 			.VirtualBase = lastSlash == std::string::npos ? virtualPath : virtualPath.substr(0, lastSlash),
+			.DecodeEmbeddedImages = decodeEmbeddedImages,
 		};
 
 		// Deliberately no LoadExternalImages: it would pull URI-referenced images into memory as
@@ -99,7 +101,7 @@ namespace koi
 		loader.Asset = &loadResult.get();
 		std::unique_ptr<ModelAsset> model = loader.BuildModelAsset();
 
-		model->SourcPath = path.string();
+		model->SourcePath = path.string();
 
 		KOI_LOG_DEBUG("Loaded mesh '{}': {} mesh(es), {} material(s), {} image(s)",
 			path.filename().string(), model->Meshes.size(), model->Materials.size(), model->Images.size());
@@ -380,6 +382,12 @@ namespace koi
 		fastgltf::Image& gltfImage = Asset->images[imageIndex];
 
 		ImageAsset img{};
+
+		if (!DecodeEmbeddedImages && !std::holds_alternative<fastgltf::sources::URI>(gltfImage.data))
+		{
+			// Import extracts these to files; until then the material stays untextured
+			return u32(-1);
+		}
 
 		if (std::holds_alternative<fastgltf::sources::URI>(gltfImage.data))
 		{

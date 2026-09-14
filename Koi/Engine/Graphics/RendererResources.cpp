@@ -1,15 +1,16 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
-#include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi
 {
-	// Not a real file: the fallback is generated, and only needs a key nothing else can claim
+	// Not real files: generated textures, keyed so nothing on disk can collide with them
 	constexpr std::string_view kFallbackTextureUri = "koi://fallback/checker";
+	constexpr std::string_view kWhiteTextureUri    = "koi://fallback/white";
+	constexpr std::string_view kFallbackMeshPath   = "engine://Content/Meshes/Box.gltf";
 
 	static D3D12_SAMPLER_DESC MakeLinearWrapDesc()
 	{
@@ -95,16 +96,24 @@ namespace koi
 		}
 
 		AssetCache<GPUTexture>& textures = assets.Cache<GPUTexture>();
-		FallbackTexture = textures.AcquireFrom(device, AssetKey::FromUri(std::string(kFallbackTextureUri)), checker);
+		FallbackTexture = textures.AcquireFrom(device, AssetKey(std::string(kFallbackTextureUri)), checker);
 		textures.SetFallback(FallbackTexture);
 
 		// Every material row that binds no albedo samples this, so the shader never reads a null index
 		const GPUTexture* checkerTexture = textures.Get(FallbackTexture);
 		FallbackTextureSRV = checkerTexture ? checkerTexture->SRVIndex : INVALID_DESCRIPTOR;
 
-		// Fallback mesh: A unit box
+		// White 1x1: what a material samples for a slot it leaves unbound
+		ImageAsset white{ .Name = "White", .Path = std::string(kWhiteTextureUri), .Width = 1, .Height = 1, .Channels = 4 };
+		white.Pixels.assign(4, koi::byte(0xFF));
+		WhiteTexture = textures.AcquireFrom(device, AssetKey(std::string(kWhiteTextureUri)), white);
+
+		const GPUTexture* whiteTexture = textures.Get(WhiteTexture);
+		WhiteTextureSRV = whiteTexture ? whiteTexture->SRVIndex : INVALID_DESCRIPTOR;
+
+		// Fallback mesh: the engine's unit box
 		AssetCache<GPUMesh>& meshes = assets.Cache<GPUMesh>();
-		FallbackMesh = meshes.Acquire(device, AssetKey::FromUri(ProceduralUriFor<BoxGenerator>()));
+		FallbackMesh = meshes.Acquire(device, AssetKey(std::string(kFallbackMeshPath)));
 		meshes.SetFallback(FallbackMesh);
 
 		KOI_LOG_DEBUG("Fallback mesh and texture registered");
@@ -116,6 +125,8 @@ namespace koi
 		// The asset caches shut down first and have already released these
 		FallbackMesh          = {};
 		FallbackTexture       = {};
+		WhiteTexture          = {};
+		WhiteTextureSRV       = INVALID_DESCRIPTOR;
 		FallbackTextureSRV    = INVALID_DESCRIPTOR;
 		TonemapPipeline       = {};
 		GBufferPipeline       = {};

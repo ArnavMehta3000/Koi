@@ -2,7 +2,6 @@
 #include "Koi/Engine/Assets/MaterialAsset.h"
 #include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
-#include "Koi/Engine/Graphics/GPUTexture.h"
 #include <vector>
 
 namespace koi
@@ -36,23 +35,15 @@ namespace koi
 		std::vector<u32>              TableSlots;  // GPUMeshDraw::MaterialSlot -> row in the MaterialTable
 		std::vector<PipelineHandle>   SlotPipelines;  // parallel to TableSlots; invalid = the pass decides
 		std::vector<MaterialHandle>   Materials;   // slot -> material asset, empty when the mesh has no sidecar
-		std::vector<u32>              OwnedSlots;  // rows this mesh allocated itself, from a sidecar-less glTF
-		std::vector<GPUTextureHandle> Textures;    // referenced, not owned: the texture AssetCache owns them
 		std::vector<GPUMeshDraw> DrawItems;
 		BoundingBox Bounds{ {}, {} };          // model-space, carried over from the source ModelAsset
 
 		// Geometry only: buffers, draw items and bounds. Loading a mesh touches no texture
 		[[nodiscard]] static GPUMesh Upload(GfxDevice& device, const ModelAsset& model);
 
-		// Acquires the textures the model names and fills the material buffer its slots index
+		// Resolves the sidecar's material assets into table rows, one per material slot
 		void BindMaterials(GfxDevice& device, const ModelAsset& model);
 
 		void Release(GfxDevice& device);
-
-	private:
-		// One table slot per material slot, from the sidecar's material assets or, for a mesh
-		// that was never imported, rows this mesh allocates and owns itself
-		void BindFromAssets(GfxDevice& device, const ModelAsset& model);
-		void BindFromModel (GfxDevice& device, const ModelAsset& model);
 	};
 }

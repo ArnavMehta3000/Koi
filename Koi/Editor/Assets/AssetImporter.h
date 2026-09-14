@@ -1,10 +1,10 @@
 #pragma once
-#include "Koi/Engine/Core/UUID.h"
+#include <string_view>
 
 namespace koi::editor
 {
 	class AssetDatabase;
 
 	// Expands GLTF file embedded data into raw png + material TOML files
-	bool ImportMesh(AssetDatabase& database, const UUID& meshId);
+	bool ImportMesh(AssetDatabase& database, std::string_view meshPath);
 }

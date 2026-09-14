@@ -58,9 +58,6 @@ namespace koi
 		{
 		case AssetState::Unloaded: return "Unloaded";
 		case AssetState::Loaded:   return "Loaded";
-		case AssetState::Stale:    return "Stale";
-		case AssetState::Missing:  return "Missing";
-		case AssetState::Error:    return "Error";
 		}
 		return "Unknown";
 	}

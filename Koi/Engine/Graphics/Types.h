@@ -183,7 +183,7 @@ namespace koi
 
 	struct ModelAsset
 	{
-		std::string SourcPath;
+		std::string SourcePath;
 		std::vector<Mesh> Meshes;
 		std::vector<ImportMaterial> Materials;
 		std::vector<AssetKey> MaterialBindings;  // slot -> material asset, from the mesh sidecar

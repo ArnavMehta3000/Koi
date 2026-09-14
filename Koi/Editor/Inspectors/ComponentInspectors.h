@@ -1,7 +1,6 @@
 #pragma once
 #include "Koi/Engine/Interop/ComponentInspector.h"
 #include "Koi/Engine/Math/Math.h"
-#include <toml++/toml.hpp>
 #include <string>
 
 namespace koi::editor
@@ -26,17 +25,6 @@ namespace koi::editor
 	public:
 		[[nodiscard]] std::string_view Key() const override { return "mesh"; }
 		void Draw(Entity e) override;
-
-	private:
-		void DrawProcedural(Entity e, std::string_view source);
-
-	private:
-		// A drag only commits on release
-		EntityID    m_owner = 0;
-		std::string m_committed;
-		std::string m_generator;
-		toml::table m_params;
-		bool        m_liveUpdate = false;
 	};
 
 	class CameraInspector final : public IComponentInspector

@@ -1,5 +1,4 @@
 #include "Koi/Editor/Cooker.h"
-#include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
@@ -8,7 +7,6 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <system_error>
-#include <unordered_set>
 #include <vector>
 
 namespace koi::editor
@@ -95,78 +93,9 @@ namespace koi::editor
 				KOI_LOG_DEBUG("Cook: copied {} -> {}", src.string(), dst.string());
 			}
 		}
-
-		static bool CopyRelative(const fs::path& projectSource, const fs::path& projRoot, const std::string& relative)
-		{
-			const fs::path src = projectSource / relative;
-			if (!fs::exists(src)) return false;
-
-			const fs::path dst = projRoot / relative;
-
-			std::error_code ec;
-			fs::create_directories(dst.parent_path(), ec);
-			fs::copy_file(src, dst, fs::copy_options::overwrite_existing, ec);
-
-			if (ec)
-			{
-				KOI_LOG_WARN("Cook: copy {} failed: {}", relative, ec.message());
-				return false;
-			}
-			return true;
-		}
-
-		static u32 CopyReachableAssets(const AssetDatabase& database, const fs::path& projectSource, const fs::path& projRoot)
-		{
-			std::vector<UUID> pending;
-			std::unordered_set<UUID> visited;
-
-			for (const AssetEntry& entry : database.All())
-			{
-				if (entry.Kind == AssetKind::Scene && !entry.Id.is_nil() && visited.insert(entry.Id).second)
-					pending.push_back(entry.Id);
-			}
-
-			u32 copied = 0;
-			while (!pending.empty())
-			{
-				const UUID id = pending.back();
-				pending.pop_back();
-
-				const AssetEntry* entry = database.Find(id);
-				if (!entry) continue;
-
-				if (entry->State == AssetState::Missing)
-				{
-					KOI_LOG_WARN("Cook: {} is referenced but missing on disk", entry->VirtualPath);
-					continue;
-				}
-
-				constexpr std::string_view kProjectScheme = "project://";
-				if (!entry->VirtualPath.starts_with(kProjectScheme)) continue;
-
-				if (CopyRelative(projectSource, projRoot, entry->VirtualPath.substr(kProjectScheme.size())))
-					++copied;
-
-				for (const AssetKey& dep : database.DependenciesOf(id))
-				{
-					const UUID target = database.ResolveDependency(dep);
-					if (target.is_nil())
-					{
-						if (dep.IsUri() && CopyRelative(projectSource, projRoot, std::string(dep.Uri())))
-							++copied;
-					}
-					else if (visited.insert(target).second)
-					{
-						pending.push_back(target);
-					}
-				}
-			}
-
-			return copied;
-		}
 	}
 
-	std::string Cook(const CookRequest& request, const AssetDatabase* database)
+	std::string Cook(const CookRequest& request)
 	{
 		const fs::path outRoot = request.OutputRoot;
 
@@ -180,20 +109,9 @@ namespace koi::editor
 
 		const ShaderTally shaders = CookShaders(outRoot);
 
-		u32 assets = 0;
-		if (database)
-		{
-			assets = CopyReachableAssets(*database, request.ProjectSource, projRoot);
-
-			// Identity manifest: what lets a cooked build resolve the uuids a scene references
-			fs::create_directories(projRoot, ec);
-			database->SaveIdentityManifest(projRoot / "AssetRegistry.toml");
-		}
-		else
-		{
-			// No database means no edges to walk, so fall back to shipping the content wholesale
-			CopyDir(request.ProjectSource / "Assets", projRoot / "Assets");
-		}
+		// Content is shipped wholesale; a scene references its assets by the same relative paths
+		CopyDir(request.EngineSource / "Content" / "Meshes", outRoot / "Engine" / "Content" / "Meshes");
+		CopyDir(request.ProjectSource / "Assets", projRoot / "Assets");
 
 		// Copy the project TOML as <out>/Project/Project.koi.toml
 		if (fs::exists(request.ProjectFile))
@@ -205,7 +123,7 @@ namespace koi::editor
 				KOI_LOG_WARN("Cook: copy project TOML failed: {}", cec.message());
 		}
 
-		std::string status = "Cook: " + std::to_string(shaders.Ok) + "/" + std::to_string(shaders.Total) + " shaders ok, " + std::to_string(assets) + " files";
+		std::string status = "Cook: " + std::to_string(shaders.Ok) + "/" + std::to_string(shaders.Total) + " shaders ok";
 		KOI_LOG_INFO("{}", status);
 		return status;
 	}

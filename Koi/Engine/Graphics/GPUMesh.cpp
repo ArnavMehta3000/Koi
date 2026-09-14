@@ -85,136 +85,35 @@ namespace koi
 		return mesh;
 	}
 
-	namespace
-	{
-		DescriptorIndex FallbackAlbedoSRV()
-		{
-			const DescriptorIndex srv = Engine::Get().GetSubsystem<Renderer>().GetDefaultResources().FallbackTextureSRV;
-			assert(srv != INVALID_DESCRIPTOR && "Fallback texture is missing");
-			return srv;
-		}
-
-	}
-
 	// Every slot the sidecar bound resolves to a material asset, which owns its own table row and
-	// its own texture references. Nothing here decodes an image: residency is the material's job
-	void GPUMesh::BindFromAssets(GfxDevice& device, const ModelAsset& model)
+	// its own texture references. A mesh that was never imported draws every slot with the fallback
+	void GPUMesh::BindMaterials(GfxDevice& device, const ModelAsset& model)
 	{
+		ZoneScoped;
 		AssetCache<Material>& cache = Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>();
 
-		for (const AssetKey& key : model.MaterialBindings)
+		for (size_t i = 0; i < model.Materials.size(); ++i)
 		{
-			const MaterialHandle handle = key.IsValid() ? cache.Acquire(device, key) : MaterialHandle{};
+			const AssetKey* key = i < model.MaterialBindings.size() ? &model.MaterialBindings[i] : nullptr;
+
+			const MaterialHandle handle = key && key->IsValid() ? cache.Acquire(device, *key) : MaterialHandle{};
 			const Material* material = cache.Get(handle);
 
 			Materials.push_back(handle);
 			TableSlots.push_back(material ? material->TableSlot : MaterialTable::kFallbackSlot);
 			SlotPipelines.push_back(material ? material->Pipeline : PipelineHandle());
 		}
-	}
-
-	void GPUMesh::BindFromModel(GfxDevice& device, const ModelAsset& model)
-	{
-		const DescriptorIndex fallbackAlbedoSRV = FallbackAlbedoSRV();
-
-		// Resolve every image this model references to a shared texture asset and collect their
-		// SRV indices. Images that came from a standalone file are keyed by that file's path, so a
-		// texture used by two different models is uploaded once
-		std::vector<DescriptorIndex> imageSRVs;
-		imageSRVs.reserve(model.Images.size());
-
-		AssetCache<GPUTexture>& textures = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUTexture>();
-
-		const AssetIdentity& identity = AssetIdentity::Get();
-		std::vector<AssetKey> imageKeys;
-		std::vector<AssetKey> decodeKeys;  // standalone images only; the rest carry their pixels inline
-		imageKeys.reserve(model.Images.size());
-		decodeKeys.reserve(model.Images.size());
-
-		for (const ImageAsset& img : model.Images)
-		{
-			imageKeys.push_back(identity.KeyForPath(img.Path));
-			decodeKeys.push_back(img.Pixels.empty() ? imageKeys.back() : AssetKey());
-		}
-
-		// Decode every standalone image up front, in parallel. stb_image is the bulk of scene load
-		// and it doesn't touch the device, so the GPU-side work below stays single-threaded
-		const std::vector<std::unique_ptr<ImageAsset>> decoded = textures.DecodeParallel(decodeKeys);
-
-		GfxDevice::UploadContext& upload = device.GetUploadContext();
-		upload.Begin();  // outer batch: each texture's own Begin/End nests into this one
-
-		for (size_t i = 0; i < model.Images.size(); ++i)
-		{
-			const ImageAsset& img = model.Images[i];
-
-			// Pixels are carried inline only for images embedded in the glTF. Everything else was
-			// prefetched above; a null slot means resident, duplicated, or failed, and Acquire resolves all three
-			const GPUTextureHandle handle =
-				  !img.Pixels.empty() ? textures.AcquireFrom(device, imageKeys[i], img)
-				: decoded[i]          ? textures.AcquireFrom(device, imageKeys[i], *decoded[i])
-				:                       textures.Acquire(device, imageKeys[i]);
-
-			const GPUTexture* texture = textures.Get(handle);
-			imageSRVs.push_back(texture ? texture->SRVIndex : INVALID_DESCRIPTOR);
-
-			if (texture)
-				Textures.push_back(handle);
-		}
-
-		upload.End();
-
-		// --- Build one GPUMaterialData per model material (shared across however many submeshes use it) ---
-		auto lookupSRV = [&](const ImportMaterial& mat, DescriptorIndex ImportMaterial::* textureIdxMember) -> DescriptorIndex
-		{
-			// .* dereferences pointer to member, giving the value of the member for this material
-			const u32 imgIdx = mat.*textureIdxMember;
-			return imgIdx < imageSRVs.size() ? imageSRVs[imgIdx] : INVALID_DESCRIPTOR;
-		};
-
-		// No sidecar means no material asset owns these rows, so the mesh takes them itself
-		MaterialTable& table = Engine::Get().GetSubsystem<Renderer>().GetMaterialTable();
-
-		for (const ImportMaterial& mat : model.Materials)
-		{
-			const DescriptorIndex albedoSRV = lookupSRV(mat, &ImportMaterial::BaseColorTextureIdx);
-			const u32 slot = table.Allocate(GPUMaterialData
-			{
-				.BaseColorFactor        = mat.MaterialConstants.BaseColorFactor,
-				.EmissiveFactor         = Vector4(mat.MaterialConstants.EmissiveFactor.x, mat.MaterialConstants.EmissiveFactor.y, mat.MaterialConstants.EmissiveFactor.z, 0.0f),
-				.MetallicFactor         = mat.MaterialConstants.MetallicFactor,
-				.RoughnessFactor        = mat.MaterialConstants.RoughnessFactor,
-				.NormalScale            = mat.MaterialConstants.NormalScale,
-				.OcclusionStrength      = mat.MaterialConstants.OcclusionStrength,
-				.AlphaCutoff            = mat.MaterialConstants.AlphaCutoff,
-				.BaseColorIndex         = albedoSRV != INVALID_DESCRIPTOR ? albedoSRV : fallbackAlbedoSRV,
-				.MetallicRoughnessIndex = lookupSRV(mat, &ImportMaterial::MetallicRoughnessTextureIdx),
-				.NormalIndex            = lookupSRV(mat, &ImportMaterial::NormalTextureIdx),
-				.OcclusionIndex         = lookupSRV(mat, &ImportMaterial::OcclusionTextureIdx),
-				.EmissiveIndex          = lookupSRV(mat, &ImportMaterial::EmissiveTextureIdx),
-			});
-
-			// No material asset means no template, so the pass picks the pipeline
-			OwnedSlots.push_back(slot);
-			TableSlots.push_back(slot);
-			SlotPipelines.push_back(PipelineHandle());
-		}
-	}
-
-	void GPUMesh::BindMaterials(GfxDevice& device, const ModelAsset& model)
-	{
-		ZoneScoped;
-
-		// A mesh with no sidecar still has to draw, so the glTF's own materials stand in
-		if (model.MaterialBindings.empty()) BindFromModel (device, model);
-		else                                BindFromAssets(device, model);
 
 		// The slot Upload gave every submesh whose material index was missing or out of range
 		TableSlots.push_back(MaterialTable::kFallbackSlot);
 		SlotPipelines.push_back(PipelineHandle());
 
-		KOI_LOG_DEBUG("GPUMesh materials bound: {} slot(s), {} material asset(s), {} texture(s)",
-		              TableSlots.size(), Materials.size(), Textures.size());
+		if (model.MaterialBindings.empty() && !model.Materials.empty())
+		{
+			KOI_LOG_WARN("Mesh '{}' has no .mesh.toml sidecar; import it to bind materials", model.SourcePath);
+		}
+
+		KOI_LOG_DEBUG("GPUMesh materials bound: {} slot(s), {} material asset(s)", TableSlots.size(), Materials.size());
 	}
 
 	void GPUMesh::Release(GfxDevice& device)
@@ -222,23 +121,7 @@ namespace koi
 		device.Destroy(VertexBuffer);
 		device.Destroy(IndexBuffer);
 
-		// Only rows this mesh allocated for itself; a material asset frees its own
-		MaterialTable& table = Engine::Get().GetSubsystem<Renderer>().GetMaterialTable();
-		for (const u32 slot : OwnedSlots)
-		{
-			table.Free(slot);
-		}
-
-		AssetRegistry& assets = Engine::Get().GetSubsystem<AssetRegistry>();
-
-		// Each texture is destroyed only once every mesh using it has released it
-		AssetCache<GPUTexture>& textures = assets.Cache<GPUTexture>();
-		for (GPUTextureHandle handle : Textures)
-		{
-			textures.Release(device, handle);
-		}
-
-		AssetCache<Material>& materials = assets.Cache<Material>();
+		AssetCache<Material>& materials = Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>();
 		for (MaterialHandle handle : Materials)
 		{
 			materials.Release(device, handle);
@@ -246,9 +129,7 @@ namespace koi
 
 		TableSlots.clear();
 		SlotPipelines.clear();
-		OwnedSlots.clear();
 		Materials.clear();
-		Textures.clear();
 		DrawItems.clear();
 		VertexBufferSRV = INVALID_DESCRIPTOR;
 	}

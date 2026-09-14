@@ -33,8 +33,6 @@ namespace koi::editor
 		// shaders in ShaderCache. Scenes have no owner yet
 		AssetState ResolveState(const AssetEntry& entry)
 		{
-			if (entry.State == AssetState::Missing) return AssetState::Missing;
-
 			const auto resident = [](bool yes) -> AssetState { return yes ? AssetState::Loaded : AssetState::Unloaded; };
 
 			Engine& engine = Engine::Get();
@@ -64,9 +62,6 @@ namespace koi::editor
 			switch (state)
 			{
 			case AssetState::Loaded:  return ImVec4(0.55f, 0.85f, 0.55f, 1.0f);
-			case AssetState::Stale:   return ImVec4(0.95f, 0.80f, 0.40f, 1.0f);
-			case AssetState::Missing:
-			case AssetState::Error:   return ImVec4(0.95f, 0.45f, 0.45f, 1.0f);
 			default:                  return ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
 			}
 		}
@@ -131,12 +126,6 @@ namespace koi::editor
 
 		ImGui::InputTextWithHint("##Search", "Search all folders...", &m_search);
 
-		if (const u32 missing = m_database.MissingCount(); missing > 0)
-		{
-			ImGui::SameLine();
-			ImGui::TextColored(StateColor(AssetState::Missing), "%u missing", missing);
-		}
-
 		ImGui::EndMenuBar();
 	}
 
@@ -162,10 +151,10 @@ namespace koi::editor
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType))
 				{
 					const std::string dropped(static_cast<const char*>(payload->Data));
-					if (const AssetEntry* entry = m_database.Find(dropped); entry && !entry->Id.is_nil())
+					if (const AssetEntry* entry = m_database.Find(dropped); entry && entry->Writable)
 					{
-						m_pending    = Action::Move;
-						m_pendingId  = entry->Id;
+						m_pending     = Action::Move;
+						m_pendingPath = entry->VirtualPath;
 						m_pendingArg = folder;
 					}
 				}
@@ -227,7 +216,7 @@ namespace koi::editor
 	void AssetsPanel::DrawNameCell(const AssetEntry& entry)
 	{
 		// A row being renamed swaps its label for the edit field, so the list never reflows
-		if (!entry.Id.is_nil() && entry.Id == m_renamingId)
+		if (entry.VirtualPath == m_renamingPath)
 		{
 			ImGui::SetNextItemWidth(-FLT_MIN);
 			const bool committed = ImGui::InputText("##Rename", &m_renameBuffer,
@@ -241,14 +230,14 @@ namespace koi::editor
 
 			if (committed && !m_renameBuffer.empty())
 			{
-				m_pending    = Action::Rename;
-				m_pendingId  = entry.Id;
-				m_pendingArg = m_renameBuffer;
-				m_renamingId = UUID{};
+				m_pending      = Action::Rename;
+				m_pendingPath  = entry.VirtualPath;
+				m_pendingArg   = m_renameBuffer;
+				m_renamingPath.clear();
 			}
 			else if (committed || ImGui::IsItemDeactivated())
 			{
-				m_renamingId = UUID{};  // click-away or Escape leaves the name alone
+				m_renamingPath.clear();  // click-away or Escape leaves the name alone
 			}
 			return;
 		}
@@ -277,13 +266,13 @@ namespace koi::editor
 		ImGui::TextDisabled("%s", entry.VirtualPath.c_str());
 		ImGui::Separator();
 
-		// Engine content has no identity and is not the project's to edit
-		const bool editable = !entry.Id.is_nil();
+		// Engine content is not the project's to edit
+		const bool editable = entry.Writable;
 
 		if (ImGui::MenuItem("Rename", nullptr, false, editable))
 		{
 			const std::string_view extension = AssetExtensionOf(entry.Name);
-			m_renamingId         = entry.Id;
+			m_renamingPath       = entry.VirtualPath;
 			m_renameBuffer       = entry.Name.substr(0, entry.Name.size() - extension.size());
 			m_renameFocusPending = true;
 		}
@@ -292,21 +281,19 @@ namespace koi::editor
 		// to window scope, where the modal itself is drawn
 		if (ImGui::MenuItem("Delete", nullptr, false, editable))
 		{
-			m_pendingId      = entry.Id;
-			m_pendingLabel   = entry.Name;
+			m_pendingPath     = entry.VirtualPath;
+			m_pendingLabel    = entry.Name;
 			m_openDeleteModal = true;
 		}
 
 		if (entry.Kind == AssetKind::Mesh && ImGui::MenuItem("Import Materials", nullptr, false, editable))
 		{
-			m_pending   = Action::Import;
-			m_pendingId = entry.Id;
+			m_pending     = Action::Import;
+			m_pendingPath = entry.VirtualPath;
 		}
 
 		ImGui::Separator();
 		if (ImGui::MenuItem("Copy Virtual Path")) ImGui::SetClipboardText(entry.VirtualPath.c_str());
-		if (ImGui::MenuItem("Copy UUID", nullptr, false, editable))
-			ImGui::SetClipboardText(ToString(entry.Id).c_str());
 
 		ImGui::EndPopup();
 	}
@@ -318,7 +305,7 @@ namespace koi::editor
 		ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f));
 		if (!ImGui::BeginPopupModal("Delete Asset", nullptr, ImGuiWindowFlags_NoResize)) return;
 
-		const std::span<const UUID> referencers = m_database.ReferencersOf(m_pendingId);
+		const std::vector<std::string> referencers = m_database.ReferencersOf(m_pendingPath);
 
 		ImGui::TextWrapped("Delete '%s' from disk?", m_pendingLabel.c_str());
 		ImGui::Spacing();
@@ -329,20 +316,18 @@ namespace koi::editor
 		}
 		else
 		{
-			ImGui::TextColored(StateColor(AssetState::Stale), "Referenced by %zu asset(s):", referencers.size());
+			ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.40f, 1.0f), "Referenced by %zu file(s):", referencers.size());
 
 			if (ImGui::BeginChild("Referencers", ImVec2(0.0f, 96.0f), ImGuiChildFlags_Borders))
 			{
-				for (const UUID& id : referencers)
+				for (const std::string& path : referencers)
 				{
-					const AssetEntry* entry = m_database.Find(id);
-					ImGui::BulletText("%s", entry ? entry->Name.c_str() : ToString(id).c_str());
-					if (entry && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", entry->VirtualPath.c_str());
+					ImGui::BulletText("%s", path.c_str());
 				}
 			}
 			ImGui::EndChild();
 
-			ImGui::TextDisabled("The file goes, the entry stays missing - restoring it re-links the uuid");
+			ImGui::TextDisabled("Those references will dangle until they are edited");
 		}
 
 		ImGui::Spacing();
@@ -351,8 +336,7 @@ namespace koi::editor
 
 		if (ImGui::Button(referencers.empty() ? "Delete" : "Delete Anyway", ImVec2(140.0f, 0.0f)))
 		{
-			m_pending      = Action::Delete;
-			m_pendingForce = !referencers.empty();
+			m_pending = Action::Delete;
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -369,18 +353,17 @@ namespace koi::editor
 
 		switch (action)
 		{
-		case Action::Rename: m_database.Rename(m_pendingId, m_pendingArg); break;
-		case Action::Move:   m_database.Move  (m_pendingId, m_pendingArg); break;
-		case Action::Delete: m_database.Delete(m_pendingId, m_pendingForce); break;
-		case Action::Import: ImportMesh(m_database, m_pendingId); break;
+		case Action::Rename: m_database.Rename(m_pendingPath, m_pendingArg); break;
+		case Action::Move:   m_database.Move  (m_pendingPath, m_pendingArg); break;
+		case Action::Delete: m_database.Delete(m_pendingPath);              break;
+		case Action::Import: ImportMesh(m_database, m_pendingPath);         break;
 		default: break;
 		}
 
 		// Every path the panel was holding onto may have just changed underneath it
 		m_selectedAsset.clear();
 		m_pendingArg.clear();
-		m_pendingId    = UUID{};
-		m_pendingForce = false;
+		m_pendingPath.clear();
 	}
 
 	bool AssetsPanel::PassesFilter(const AssetEntry& entry) const

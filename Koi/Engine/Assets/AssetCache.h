@@ -1,12 +1,11 @@
 #pragma once
 #include "Koi/Engine/Core/Handle.h"
-#include "Koi/Engine/Assets/AssetIdentity.h"
+#include "Koi/Engine/Assets/AssetKey.h"
 #include "Koi/Engine/Assets/AssetTraits.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include <algorithm>
+#include <unordered_map>
 #include <cassert>
-#include <execution>
 
 namespace koi
 {
@@ -32,80 +31,36 @@ namespace koi
 
 			using Traits = AssetTraits<T>;
 
-			const std::string vfsPath(AssetIdentity::Get().PathFor(key));
-			if (vfsPath.empty())
+			if (!key.IsValid())
 			{
-				KOI_LOG_ERROR("Unresolved {} asset key: {}", Traits::Name, key.ToString());
+				KOI_LOG_ERROR("Empty {} asset key", Traits::Name);
 				return AcquireFallback();
 			}
 
-			const std::unique_ptr<Traits::Source> source = Traits::Load(vfsPath);
+			const std::unique_ptr<Traits::Source> source = Traits::Load(key.Path());
 			if (!source)
 			{
-				KOI_LOG_ERROR("Failed to load {} asset: {}", Traits::Name, vfsPath);
+				KOI_LOG_ERROR("Failed to load {} asset: {}", Traits::Name, key.Path());
 				return AcquireFallback();
 			}
 
-			KOI_LOG_DEBUG("Loaded {} asset: {}", Traits::Name, vfsPath);
+			KOI_LOG_DEBUG("Loaded {} asset: {}", Traits::Name, key.Path());
 			return Insert(device, key, *source);
 		}
 
-		// Takes a reference on an asset supplied as an already-decoded source
+		// Takes a reference on an asset that has no file, supplied as an already-built source
 		[[nodiscard]] AssetHandle<T> AcquireFrom(GfxDevice& device, const AssetKey& key, const typename AssetTraits<T>::Source& source)
 		{
 			if (const AssetHandle<T> existing = AddRef(key))
 			{
-				KOI_LOG_TRACE("Reusing embedded {} asset: {}", AssetTraits<T>::Name, key.ToString());
+				KOI_LOG_TRACE("Reusing generated {} asset: {}", AssetTraits<T>::Name, key.ToString());
 				return existing;
 			}
 
-			KOI_LOG_DEBUG("Loaded embedded {} asset: {}", AssetTraits<T>::Name, key.ToString());
+			KOI_LOG_DEBUG("Registered generated {} asset: {}", AssetTraits<T>::Name, key.ToString());
 			return Insert(device, key, source);
 		}
 
-		// Decodes a batch of keys concurrently, ahead of the Acquire loop that consumes them.
-		// Results line up index-for-index with `keys`; an entry is null when the key is invalid
-		// (caller opted out), already resident, a duplicate of an earlier one, or failed to decode.
-		[[nodiscard]] std::vector<std::unique_ptr<typename AssetTraits<T>::Source>>
-		DecodeParallel(std::span<const AssetKey> keys) const
-		{
-			ZoneScoped;
-			using Source = typename AssetTraits<T>::Source;
-
-			std::vector<std::unique_ptr<Source>> decoded(keys.size());
-
-			std::vector<u32> work;
-			work.reserve(keys.size());
-			for (u32 i = 0; i < keys.size(); ++i)
-			{
-				if (!keys[i].IsValid() || m_handleByKey.contains(keys[i])) continue;
-
-				const bool duplicate = std::ranges::any_of(work, [&](u32 j) { return keys[j] == keys[i]; });
-
-				if (!duplicate) work.push_back(i);
-			}
-
-			// A couple of decodes isn't worth the dispatch, the Acquire loop handles it inline
-			if (work.size() < 2) return decoded;
-
-			ZoneValue(work.size());
-
-			// AssetIdentity is read-only here
-			std::vector<std::string> paths(keys.size());
-			for (const u32 i : work)
-			{
-				paths[i] = std::string(AssetIdentity::Get().PathFor(keys[i]));
-			}
-
-			std::for_each(std::execution::par, work.begin(), work.end(), [&](u32 i)
-			{
-				// par runs on system thread-pool threads
-				const MuteZonesScope quiet;  // Mute tracy's thread-pool dump
-				if (!paths[i].empty()) decoded[i] = AssetTraits<T>::Load(paths[i]);
-			});
-
-			return decoded;
-		}
 
 		[[nodiscard]] const T* Get(AssetHandle<T> handle) const
 		{
@@ -139,7 +94,7 @@ namespace koi
 		[[nodiscard]] std::string_view GetPath(AssetHandle<T> handle) const
 		{
 			const Entry* entry = m_pool.Get(handle);
-			return entry ? AssetIdentity::Get().PathFor(entry->Key) : std::string_view();
+			return entry ? std::string_view(entry->Key.Path()) : std::string_view();
 		}
 
 		// Drops one reference, destroys the resource once the last one is gone

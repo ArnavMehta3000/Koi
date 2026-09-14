@@ -1,6 +1,5 @@
 #pragma once
 #include "Koi/Editor/Selection.h"
-#include "Koi/Engine/Core/UUID.h"
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include <string>
 #include <string_view>
@@ -45,15 +44,14 @@ namespace koi::editor
 		std::string m_selectedAsset;   // virtual path; empty when nothing is selected
 		std::string m_search;
 
-		UUID        m_renamingId{};
+		std::string m_renamingPath;
 		std::string m_renameBuffer;
 		bool        m_renameFocusPending = false;
 
 		bool        m_openDeleteModal = false;
 		Action      m_pending         = Action::None;
-		UUID        m_pendingId{};
+		std::string m_pendingPath;
 		std::string m_pendingArg;            // new base name for Rename, target folder for Move
 		std::string m_pendingLabel;          // what the delete modal names
-		bool        m_pendingForce = false;  // delete past the referencer check
 	};
 }

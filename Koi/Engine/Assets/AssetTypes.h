@@ -17,11 +17,8 @@ namespace koi
 
 	enum class AssetState : u8
 	{
-		Unloaded = 0,  // known to the database, not resident
+		Unloaded = 0,  // on disk, not resident
 		Loaded,        // resident in an AssetCache
-		Stale,         // resident, but the source changed on disk since it was loaded
-		Missing,       // has a manifest entry, no file behind it
-		Error,         // load or compile failed; see the log
 	};
 
 	// Slot -> material bindings, written beside a mesh under its own name

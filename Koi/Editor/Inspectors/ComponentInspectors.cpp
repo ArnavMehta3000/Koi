@@ -1,19 +1,14 @@
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
-#include "Koi/Engine/Assets/AssetIdentity.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
-#include "Koi/Engine/Graphics/Procedural/ProceduralMeshSpec.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
-#include <array>
 #include <numbers>
-#include <type_traits>
 
 namespace koi::editor
 {
@@ -34,57 +29,6 @@ namespace koi::editor
 
 			e.remove<MeshRef>();  // World's on_remove hook releases whatever was there
 			e.set<MeshRef>({ handle });
-		}
-
-		// One widget per params entry, dispatched on the node type
-		static bool DrawParam(const toml::key& key, toml::node& node, bool liveEdit)
-		{
-			const std::string label(key.str());
-
-			if (toml::value<bool>* asBool = node.as_boolean())
-				return ImGui::Checkbox(label.c_str(), &asBool->get());
-
-			bool edited = false;
-
-			if (toml::value<i64>* asInt = node.as_integer())
-			{
-				i32 value = static_cast<i32>(asInt->get());
-				edited = ImGui::DragInt(label.c_str(), &value, 0.25f);
-				if (edited) asInt->get() = value;
-			}
-			else if (toml::value<f64>* asFloat = node.as_floating_point())
-			{
-				f32 value = static_cast<f32>(asFloat->get());
-				edited = ImGui::DragFloat(label.c_str(), &value, 0.01f);
-				if (edited) asFloat->get() = ToTomlFloat(value);
-			}
-			else
-			{
-				// Vector2/3/4 arrive as arrays of floats
-				toml::array* arr = node.as_array();
-				if (!arr || arr->empty() || arr->size() > 4) return false;
-
-				std::array<f32, 4> values{};
-				for (size_t i = 0; i < arr->size(); ++i)
-				{
-					values[i] = static_cast<f32>((*arr)[i].value_or(0.0));
-				}
-
-				edited = ImGui::DragScalarN(label.c_str(), ImGuiDataType_Float, values.data(), static_cast<int>(arr->size()), 0.05f);
-
-				if (edited)
-				{
-					toml::array replacement;
-					for (size_t i = 0; i < arr->size(); ++i)
-					{
-						replacement.push_back(ToTomlFloat(values[i]));
-					}
-
-					*arr = std::move(replacement);
-				}
-			}
-
-			return liveEdit ? edited : ImGui::IsItemDeactivatedAfterEdit();
 		}
 	}
 
@@ -133,7 +77,7 @@ namespace koi::editor
 
 				if (const AssetTypeInfo* type = FindAssetTypeForFile(dropped); type->Kind == AssetKind::Mesh)
 				{
-					ReacquireMesh(e, AssetIdentity::Get().KeyForPath(dropped));
+					ReacquireMesh(e, AssetKey(dropped));
 					replaced = true;
 				}
 				else
@@ -150,63 +94,9 @@ namespace koi::editor
 		if (const GPUMesh* mesh = Meshes().Get(meshRef->Handle))
 		{
 			ImGui::Text("Draw calls  %d", static_cast<i32>(mesh->DrawItems.size()));
-			ImGui::Text("Textures    %d", static_cast<i32>(mesh->Textures.size()));
+			ImGui::Text("Materials   %d", static_cast<i32>(mesh->Materials.size()));
 		}
 
-		if (source.starts_with(kProceduralScheme))
-			DrawProcedural(e, source);
-	}
-
-	void MeshInspector::DrawProcedural(Entity e, std::string_view source)
-	{
-		if (m_owner != e.id() || m_committed != source)
-		{
-			std::optional parsed = ParseProceduralUri(source);
-			if (!parsed) return;
-
-			m_generator = std::move(parsed->first);
-			m_params    = std::move(parsed->second);
-			m_owner     = e.id();
-			m_committed = source;
-		}
-
-		bool changed = false;
-
-		if (ImGui::BeginCombo("Generator", m_generator.c_str()))
-		{
-			for (const MeshGeneratorInfo& info : MeshGeneratorRegistry::Get().All())
-			{
-				if (!ImGui::Selectable(info.Name.c_str(), info.Name == m_generator)) continue;
-
-				// A different generator takes a different params set, so start from its defaults
-				m_generator = info.Name;
-				m_params    = info.Defaults();
-				changed     = true;
-			}
-
-			ImGui::EndCombo();
-		}
-
-		// Off by default because every committed edit regenerates the mesh and re-uploads it
-		ImGui::Checkbox("Live update", &m_liveUpdate);
-		ImGui::SetItemTooltip("Rebuild and re-upload the mesh on every frame of a drag, "
-		                      "instead of once when the drag ends");
-
-		for (auto&& [key, node] : m_params)
-		{
-			changed |= DrawParam(key, node, m_liveUpdate);
-		}
-
-		// Clamp the params to the generator's range, so the widget cannot be dragged out of bounds
-		if (const MeshGeneratorInfo* info = MeshGeneratorRegistry::Get().Find(m_generator))
-		{
-			if (info->Clamp) info->Clamp(m_params);
-		}
-
-		if (!changed) return;
-
-		m_committed = ToProceduralUri(m_generator, m_params);
-		ReacquireMesh(e, AssetKey::FromUri(m_committed));
 	}
 
 	void CameraInspector::Draw(Entity e)

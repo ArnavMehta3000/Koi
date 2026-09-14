@@ -67,17 +67,7 @@ namespace koi::editor
 			return virtualDir + "/" + name;
 		}
 
-		// The uuid the database gave a path, or the path itself when it tracks no such asset
-		static std::string KeyTextFor(const AssetDatabase& database, const std::string& virtualPath)
-		{
-			if (virtualPath.empty()) return {};
-
-			const AssetEntry* entry = database.Find(virtualPath);
-			return entry && !entry->Id.is_nil() ? ToString(entry->Id) : virtualPath;
-		}
-
-		MaterialSource SourceFor(const ImportMaterial& material, const AssetDatabase& database,
-		                         const std::vector<std::string>& imagePaths)
+		MaterialSource SourceFor(const ImportMaterial& material, const std::vector<std::string>& imagePaths)
 		{
 			MaterialSource source
 			{
@@ -101,36 +91,34 @@ namespace koi::editor
 			{
 				if (indices[i] >= imagePaths.size()) continue;
 
-				const std::string key = KeyTextFor(database, imagePaths[indices[i]]);
-				if (!key.empty()) source.Textures[i] = AssetKey::Parse(key);
+				if (!imagePaths[indices[i]].empty()) source.Textures[i] = AssetKey(imagePaths[indices[i]]);
 			}
 
 			return source;
 		}
 	}
 
-	bool ImportMesh(AssetDatabase& database, const UUID& meshId)
+	bool ImportMesh(AssetDatabase& database, std::string_view meshPath)
 	{
-		const AssetEntry* mesh = database.Find(meshId);
-		if (!mesh || mesh->Kind != AssetKind::Mesh)
+		const AssetEntry* mesh = database.Find(meshPath);
+		if (!mesh || mesh->Kind != AssetKind::Mesh || !mesh->Writable)
 		{
-			KOI_LOG_ERROR("Import: {} is not a mesh asset", ToString(meshId));
+			KOI_LOG_ERROR("Import: {} is not a project mesh asset", meshPath);
 			return false;
 		}
 
-		const std::unique_ptr<ModelAsset> model = MeshLoader::Load(mesh->DiskPath);
+		const std::unique_ptr<ModelAsset> model = MeshLoader::Load(mesh->DiskPath, true);
 		if (!model)
 		{
 			KOI_LOG_ERROR("Import: {} did not load", mesh->VirtualPath);
 			return false;
 		}
 
-		// Everything the entry carries is copied out here: each Refresh below rebuilds the
-		// database's entry list, which leaves any AssetEntry pointer dangling
+		// Copied out: Refresh at the end rebuilds the entry list
 		const fs::path    meshDir     = mesh->DiskPath.parent_path();
 		const std::string stem        = mesh->DiskPath.stem().string();
 		const std::string virtualDir  = mesh->Folder;
-		const std::string meshPath    = mesh->VirtualPath;
+		const std::string sourcePath  = mesh->VirtualPath;
 		const std::string meshName    = mesh->Name;
 		mesh = nullptr;
 
@@ -140,9 +128,6 @@ namespace koi::editor
 		{
 			imagePaths.push_back(ExtractImage(model->Images[i], i, meshDir, stem, virtualDir));
 		}
-
-		// Extracted textures need uuids before a material can reference them by one
-		database.Refresh();
 
 		std::vector<std::string> materialPaths;
 		materialPaths.reserve(model->Materials.size());
@@ -161,29 +146,22 @@ namespace koi::editor
 			}
 
 			const std::string file = name + std::string(internal::kMaterialExt[0]);
-			if (!WriteMaterial(meshDir / file, SourceFor(material, database, imagePaths))) return false;
+			if (!WriteMaterial(meshDir / file, SourceFor(material, imagePaths))) return false;
 
 			materialPaths.push_back(virtualDir + "/" + file);
 		}
 
-		// And the materials need theirs before the sidecar can bind them to slots
-		database.Refresh();
-
 		toml::array slots;
 		for (size_t i = 0; i < materialPaths.size(); ++i)
 		{
-			const std::string key = KeyTextFor(database, materialPaths[i]);
-			if (key.empty())
-				continue;
-
 			toml::table slot;
 			slot.insert("index",    static_cast<i64>(i));
-			slot.insert("material", key);
+			slot.insert("material", materialPaths[i]);
 			slots.push_back(std::move(slot));
 		}
 
 		toml::table sidecar;
-		sidecar.insert("source", meshPath);
+		sidecar.insert("source", sourcePath);
 		sidecar.insert("slot",   std::move(slots));
 
 		if (!WriteToml(meshDir / (stem + std::string(kMeshSidecarExt)), sidecar)) return false;

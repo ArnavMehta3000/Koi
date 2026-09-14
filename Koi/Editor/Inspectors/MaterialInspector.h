@@ -21,7 +21,7 @@ namespace koi::editor
 		// Pushes the edit into the live material's table row, so the viewport shows it
 		void ApplyToResident(const AssetEntry& entry) const;
 
-		UUID           m_loaded{};
+		std::string    m_loaded;  // virtual path
 		MaterialSource m_source;
 		bool           m_dirty = false;
 	};
