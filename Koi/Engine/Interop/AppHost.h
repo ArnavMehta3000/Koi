@@ -14,6 +14,8 @@ namespace koi
 		[[nodiscard]] virtual const AppCreateDesc& GetDesc() const = 0;
 		virtual void SetWindow(Window& window) = 0;
 
+		[[nodiscard]] virtual bool StartsInPlayMode() const = 0;
+
 		virtual void HostInit() = 0;
 		virtual void HostTick(f32 dt) = 0;
 		virtual void HostRender() = 0;

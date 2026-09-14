@@ -47,6 +47,7 @@ namespace koi::editor
 
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override;
 		void SetWindow(Window& window) override;
+		[[nodiscard]] bool StartsInPlayMode() const override { return false; }
 		void HostInit() override;
 		void HostTick(f32 dt) override;
 		void HostRender() override;

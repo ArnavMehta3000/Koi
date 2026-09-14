@@ -38,6 +38,7 @@ namespace koi
 		inline void SetDesc(AppCreateDesc desc) { m_desc = std::move(desc); }
 
 		void SetWindow(Window& window) override { m_window = &window; }
+		[[nodiscard]] bool StartsInPlayMode() const override { return true; }
 
 		void HostInit() override;
 		void HostTick(f32 dt) override;
