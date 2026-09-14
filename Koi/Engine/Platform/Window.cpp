@@ -1,5 +1,4 @@
 #include "Koi/Engine/Platform/Window.h"
-#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Win32.h"
@@ -47,14 +46,11 @@ namespace koi
 		if (s_windowCount == 0)
 		{
 			::glfwSetErrorCallback([](int code, const char* desc)
-				{
-#if KOI_WITH_EDITOR
-					// Ignore 'Library not initialized error: 65537' when with editor
-					// This error is fired with editor when ImGui is shutting down
-					if (code == 65537) return;
-#endif
-					KOI_LOG_ERROR("GLFW Error {}: {}", code, desc);
-				});
+			{
+				// 65537 (not initialized) fires from the ImGui GLFW backend during shutdown and is harmless
+				if (code == 65537) { KOI_LOG_TRACE("GLFW Error {}: {}", code, desc); return; }
+				KOI_LOG_ERROR("GLFW Error {}: {}", code, desc);
+			});
 
 			::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 

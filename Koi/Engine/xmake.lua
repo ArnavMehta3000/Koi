@@ -3,10 +3,7 @@ target("Koi.Engine")
 
 	add_options("LogLevel", "WithEditor")
 
-	add_deps(
-		"ImGui",
-		"ImGuizmo",
-		"SimpleMath", { public = true })
+	add_deps("SimpleMath", { public = true })
 
 	add_packages(
 		"cli11",

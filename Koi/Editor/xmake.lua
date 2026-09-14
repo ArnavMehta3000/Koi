@@ -3,7 +3,7 @@ if _we == 1 or _we == "1" or _we == true then
 
 target("Koi.Editor")
 	set_kind("static")
-	add_deps("Koi.Engine", { public = true })
+	add_deps("Koi.Engine", "ImGui", "ImGuizmo", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_headerfiles("**.h", { public = true })

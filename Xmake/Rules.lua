@@ -10,7 +10,7 @@ rule("KoiGame")
 			target:set("kind", "static")
 		end
 
-		target:add("deps", "Koi.Engine")
+		target:add("deps", "Koi.Engine", "ImGui")
 	end)
 
 	on_config(function(target)

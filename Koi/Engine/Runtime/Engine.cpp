@@ -1,5 +1,4 @@
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -66,10 +65,10 @@ namespace koi
 
 		KOI_LOG_INFO("Entering main loop");
 
-#if !KOI_WITH_EDITOR
-		// Nothing to press Play with, so a standalone build simulates from the start
-		SetPlayState(PlayState::Playing);
-#endif
+		if (host.StartsInPlayMode())
+		{
+			SetPlayState(PlayState::Playing);
+		}
 
 		MainLoop(host);
 		KOI_LOG_INFO("Exited main loop");
