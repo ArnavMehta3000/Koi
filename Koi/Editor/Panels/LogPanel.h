@@ -29,7 +29,7 @@ namespace koi::editor
 
 		ImGuiTextFilter m_textFilter;
 		u64             m_cursor      = 0;
-		LogLevel        m_minLevel    = LogLevel::Trace;
+		LogLevel        m_minLevel    = LogLevel::Info;
 		bool            m_filterDirty = true;
 		bool            m_autoScroll  = true;
 		bool            m_wrap        = false;  // wrapping costs the clipper, rows stop being uniform height

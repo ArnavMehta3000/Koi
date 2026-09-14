@@ -47,11 +47,15 @@ namespace koi::editor
 			return;
 
 		for (LogRecord& record : m_scratch)
+		{
 			m_records.push_back(std::move(record));
+		}
 
 		const size_t capacity = LogHistory::Get().Capacity();
 		while (capacity > 0 && m_records.size() > capacity)
+		{
 			m_records.pop_front();
+		}
 
 		m_filterDirty = true;
 	}
@@ -85,7 +89,9 @@ namespace koi::editor
 		ImGui::SameLine();
 		ImGui::Checkbox("Wrap", &m_wrap);
 		if (ImGui::IsItemHovered())
+		{
 			ImGui::SetTooltip("Wraps long messages. Rows stop being uniform height, so the\nlist clipper is disabled and every filtered row is laid out.");
+		}
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(110.0f);
@@ -113,7 +119,9 @@ namespace koi::editor
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(-1.0f);
 		if (m_textFilter.Draw("##search"))
+		{
 			m_filterDirty = true;
+		}
 	}
 
 	// Built from the intern table, not from the records, so a category doesn't
@@ -162,8 +170,7 @@ namespace koi::editor
 				m_categoryMask[i] = enabled;
 				m_filterDirty     = true;
 			}
-			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("%s", Logger::GetCategory(i).Path.data());
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", Logger::GetCategory(i).Path.data());
 			ImGui::PopID();
 		}
 
