@@ -1,8 +1,7 @@
 #pragma once
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include <CLI/CLI.hpp>
 #include <filesystem>
-#include <format>
 #include <functional>
 #include <memory>
 
@@ -31,7 +30,7 @@ namespace koi
 			}
 			catch (const std::exception& e)
 			{
-				OutputDebugStringA(std::format("CLI Parse Error: {}\n", e.what()).c_str());
+				KOI_LOG_ERROR("Command line: {}", e.what());
 				return 1;
 			}
 			return 0;
