@@ -1,0 +1,19 @@
+alpha_mode = 'opaque'
+double_sided = false
+name = 'Material_MR'
+
+[constants]
+alpha_cutoff = 0.5
+base_color = [ 1.0, 1.0, 1.0, 1.0 ]
+emissive = [ 1.0, 1.0, 1.0 ]
+metallic = 1.0
+normal_scale = 1.0
+occlusion_strength = 1.0
+roughness = 1.0
+
+[textures]
+base_color = 'project://Assets/Models/DamagedHelmet_0.png'
+emissive = 'project://Assets/Models/DamagedHelmet_4.png'
+metallic_roughness = 'project://Assets/Models/DamagedHelmet_1.png'
+normal = 'project://Assets/Models/DamagedHelmet_2.png'
+occlusion = 'project://Assets/Models/DamagedHelmet_3.png'

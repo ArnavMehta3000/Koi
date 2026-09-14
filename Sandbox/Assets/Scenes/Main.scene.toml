@@ -3,7 +3,6 @@ name = 'Sponza'
 
     [entity.mesh]
     path = 'project://Assets/Models/Sponza/Sponza.gltf'
-    uuid = 'c8e3a869-c9c8-495f-887d-675b7b4a12b6'
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
@@ -15,7 +14,6 @@ name = 'Sponza 2'
 
     [entity.mesh]
     path = 'project://Assets/Models/Sponza/Sponza.gltf'
-    uuid = 'c8e3a869-c9c8-495f-887d-675b7b4a12b6'
 
     [entity.transform]
     position = [ -5.45, 0.0, 18.65 ]
@@ -27,10 +25,6 @@ name = 'Damaged Helmet'
 
     [entity.mesh]
     path = 'project://Assets/Models/DamagedHelmet.gltf'
-    uuid = '2c1a8483-177c-494f-96dd-1a66b346ad7b'
-
-    [entity.script]
-    path = 'project://Assets/Scripts/MoveWithArrows.as'
 
     [entity.transform]
     position = [ 1.1074185, 2.35, 0.0 ]
@@ -102,18 +96,14 @@ name = 'Child Light'
 [[entity]]
 name = 'Torus'
 
-    [entity.mesh.procedural]
-    generator = 'torus'
-    radius = 2.55
-    segments = 32
-    sides = 16
-    tube_radius = 0.061
+    [entity.mesh]
+    path = 'engine://Content/Meshes/Torus.gltf'
 
     [entity.spin]
     axis = [ 1.0, 0.0, 1.0 ]
     speed = 90.0
 
     [entity.transform]
-    position = [ 3.790697, 12.711526, -10.753848 ]
+    position = [ 3.790697, 12.711526, -2.130382 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
-    scale = [ 5.0, 5.0, 5.0 ]
+    scale = [ 15.0, 5.0, 15.0 ]

@@ -1,0 +1,17 @@
+alpha_mode = 'opaque'
+double_sided = false
+name = ''
+
+[constants]
+alpha_cutoff = 0.5
+base_color = [ 0.5879999995231628, 0.5879999995231628, 0.5879999995231628, 1.0 ]
+emissive = [ 0.0, 0.0, 0.0 ]
+metallic = 1.0
+normal_scale = 1.0
+occlusion_strength = 1.0
+roughness = 1.0
+
+[textures]
+base_color = 'C:/Dev/Koi/Sandbox/Assets/Models/Sponza/11490520546946913238.jpg'
+metallic_roughness = 'C:/Dev/Koi/Sandbox/Assets/Models/Sponza/3455394979645218238.jpg'
+normal = 'C:/Dev/Koi/Sandbox/Assets/Models/Sponza/3628158980083700836.jpg'
