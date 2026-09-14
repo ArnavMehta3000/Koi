@@ -1,8 +1,10 @@
 .xmake
 .cache
+.vs
 build
 compile_commands.json
 CMakeLists.txt
 vsxmake*
 CLAUDE.md
 .koi
+Koi.sln

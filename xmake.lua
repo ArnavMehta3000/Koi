@@ -1,4 +1,4 @@
-set_xmakever("3.0.8")
+set_xmakever("3.1.1")
 add_rules("mode.debug", "mode.release", "mode.releasedbg", "mode.profile")
 add_rules("plugin.compile_commands.autoupdate")
 
@@ -10,8 +10,14 @@ add_plugindirs("./Plugins")
 set_languages("c17", "cxx23")
 set_defaultmode("debug")
 set_warnings("all", "extra")
+
 set_policy("build.warning", true)
 set_policy("run.autobuild", true)
+set_policy("generator.vsxmake.root_sln", true)
+set_policy("package.msbuild.multi_tool_task", true)
+set_policy("platform.longpaths", true)
+-- set_policy("build.c++.dynamic_debugging", true)  -- Linking fails with this on :(
+-- set_policy("build.optimization.lto", true)  -- Dynamic Debugging is incompatible with LTO
 
 includes("Xmake/Packages.lua")
 includes("Xmake/Options.lua")
