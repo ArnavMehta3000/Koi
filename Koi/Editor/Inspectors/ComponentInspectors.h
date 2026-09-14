@@ -53,12 +53,5 @@ namespace koi::editor
 		void Draw(Entity e) override;
 	};
 
-	class ScriptInspector final : public IComponentInspector
-	{
-	public:
-		[[nodiscard]] std::string_view Key() const override { return "script"; }
-		void Draw(Entity e) override;
-	};
-
 	void RegisterBuiltinInspectors(InspectorRegistry& registry);
 }

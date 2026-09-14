@@ -11,7 +11,6 @@ namespace koi
 		Mesh,
 		Texture,
 		Shader,
-		Script,
 		Scene,
 		Material,
 	};
@@ -36,7 +35,6 @@ namespace koi
 		AssetKind                         Kind;
 		std::string_view                  Name;        // display + manifest "type" field
 		std::span<const std::string_view> Extensions;  // lowercase, leading dot
-		bool                              TextEditable = false;  // opens in the Text Editor panel
 	};
 
 	namespace internal
@@ -46,19 +44,17 @@ namespace koi
 		inline constexpr std::array kMeshExt    = { ".gltf"sv, ".glb"sv };
 		inline constexpr std::array kTextureExt = { ".png"sv, ".jpg"sv, ".jpeg"sv, ".dds"sv };
 		inline constexpr std::array kShaderExt  = { ".hlsl"sv };
-		inline constexpr std::array kScriptExt  = { ".as"sv };
 		inline constexpr std::array kSceneExt    = { ".scene.toml"sv };
 		inline constexpr std::array kMaterialExt = { ".mat.toml"sv };
 	}
 
 	inline constexpr std::array kAssetTypes = std::to_array<AssetTypeInfo>(
 	{
-		{ AssetKind::Mesh,     "mesh",     internal::kMeshExt           },
-		{ AssetKind::Texture,  "texture",  internal::kTextureExt        },
-		{ AssetKind::Shader,   "shader",   internal::kShaderExt,   true },
-		{ AssetKind::Script,   "script",   internal::kScriptExt,   true },
-		{ AssetKind::Scene,    "scene",    internal::kSceneExt,    true },
-		{ AssetKind::Material, "material", internal::kMaterialExt, true },
+		{ AssetKind::Mesh,     "mesh",     internal::kMeshExt     },
+		{ AssetKind::Texture,  "texture",  internal::kTextureExt  },
+		{ AssetKind::Shader,   "shader",   internal::kShaderExt   },
+		{ AssetKind::Scene,    "scene",    internal::kSceneExt    },
+		{ AssetKind::Material, "material", internal::kMaterialExt },
 	});
 
 	[[nodiscard]] const AssetTypeInfo* FindAssetTypeForFile(std::string_view fileName);

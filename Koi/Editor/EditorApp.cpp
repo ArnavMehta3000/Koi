@@ -6,7 +6,6 @@
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
-#include "Koi/Editor/Panels/ScriptEditorPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
@@ -52,7 +51,6 @@ namespace koi::editor
 
 		// Register the renderer as reloadable so that it can recompile shaders and rebuild pipelines
 		RegisterReloadable(&renderer);
-		RegisterReloadable(&Engine::Get().GetSubsystem<ScriptEngine>());  // Similarly to above
 
 		// Register the editor context with the game so that it can register panels and reloadables
 		m_game->SetEditorContext(this);
@@ -70,8 +68,7 @@ namespace koi::editor
 		m_panels.Emplace<RenderTargetsPanel>(renderer);
 		m_panels.Emplace<LogPanel>();
 		m_viewportPanel     = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
-		m_scriptEditorPanel = &m_panels.Emplace<ScriptEditorPanel>([this](const ReloadRequest& r) { ReloadAll(r); });
-		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection, [this](std::string_view vfsPath) { OpenScriptEditor(vfsPath); });
+		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection);
 	}
 
 	void EditorApp::HostInit()
@@ -152,8 +149,6 @@ namespace koi::editor
 
 		return RenderView{ .Camera = camera, .Target = *target };
 	}
-
-	void EditorApp::OpenScriptEditor(std::string_view vfsPath) { m_scriptEditorPanel->Open(vfsPath); }
 
 	void EditorApp::ReloadAll(const ReloadRequest& request)
 	{

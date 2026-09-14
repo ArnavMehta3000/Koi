@@ -37,9 +37,6 @@ namespace koi
 	{
 		m_world->Update(dt);
 
-		if (m_engine->IsPlaying())
-			m_engine->GetSubsystem<ScriptEngine>().Update(*m_world, dt);
-
 		OnTick(dt);
 	}
 
@@ -62,14 +59,12 @@ namespace koi
 
 	void AppBase::HostBeginPlay()
 	{
-		m_engine->GetSubsystem<ScriptEngine>().BeginPlay(*m_world);
 		OnBeginPlay();
 	}
 
 	void AppBase::HostEndPlay()
 	{
 		OnEndPlay();
-		m_engine->GetSubsystem<ScriptEngine>().EndPlay(*m_world);
 	}
 
 	void AppBase::LoadStartupScene()

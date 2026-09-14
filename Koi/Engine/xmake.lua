@@ -5,9 +5,7 @@ target("Koi.Engine")
 
 	add_deps(
 		"ImGui",
-		"ImGuiColorTextEdit",
 		"ImGuizmo",
-		"AngelScript",
 		"SimpleMath", { public = true })
 
 	add_packages(

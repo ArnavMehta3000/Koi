@@ -2,7 +2,6 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/AssetImporter.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
-#include "Koi/Engine/Scripting/ScriptEngine.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -31,7 +30,7 @@ namespace koi::editor
 		}
 
 		// Residency has a different owner per kind: meshes and textures live in AssetCache,
-		// shaders in ShaderCache, scripts in ScriptEngine. Scenes have no owner yet
+		// shaders in ShaderCache. Scenes have no owner yet
 		AssetState ResolveState(const AssetEntry& entry)
 		{
 			if (entry.State == AssetState::Missing) return AssetState::Missing;
@@ -55,9 +54,6 @@ namespace koi::editor
 				return resident(ShaderCache::Get().IsCompiled(path));
 			}
 
-			case AssetKind::Script:
-				return resident(engine.GetSubsystem<ScriptEngine>().IsModuleLoaded(entry.VirtualPath));
-
 			default:
 				return AssetState::Unloaded;
 			}
@@ -76,10 +72,9 @@ namespace koi::editor
 		}
 	}
 
-	AssetsPanel::AssetsPanel(AssetDatabase& database, Selection& selection, std::function<void(std::string_view)> openScript)
+	AssetsPanel::AssetsPanel(AssetDatabase& database, Selection& selection)
 		: m_database(database)
 		, m_selection(selection)
-		, m_openScript(std::move(openScript))
 	{
 		const std::span<const std::string> folders = m_database.Folders();
 		if (!folders.empty()) m_selectedFolder = folders.front();
@@ -258,14 +253,10 @@ namespace koi::editor
 			return;
 		}
 
-		const AssetTypeInfo* type = FindAssetTypeByKind(entry.Kind);
 		const bool selected = (entry.VirtualPath == m_selectedAsset);
 
 		if (ImGui::Selectable(entry.Name.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 			SelectAsset(entry.VirtualPath);
-
-		if (type && type->TextEditable && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-			m_openScript(entry.VirtualPath);
 
 		// Payload is the virtual path; the receiving side resolves it back through the database
 		if (ImGui::BeginDragDropSource())

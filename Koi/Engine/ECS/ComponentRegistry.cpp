@@ -10,7 +10,6 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/TransformSerializer.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Scripting/ScriptComponent.h"
 #include <algorithm>
 
 namespace koi
@@ -118,20 +117,6 @@ namespace koi
 				entityTable.insert(Key(), std::move(meshTable));
 			}
 		};
-
-		class ScriptComponentType final : public IComponentType
-		{
-		public:
-			[[nodiscard]] std::string_view Key() const override { return "script"; }
-			[[nodiscard]] i32 DrawOrder() const override { return 40; }
-
-			[[nodiscard]] bool Has(Entity e) const override { return e.has<ScriptComponent>(); }
-			void Add(Entity e) const override    { e.set<ScriptComponent>({}); }
-			void Remove(Entity e) const override { e.remove<ScriptComponent>(); }
-
-			void Load(Entity e, const toml::table& entityTable) const override { LoadScript(e, entityTable, Key()); }
-			void Save(Entity e, toml::table& entityTable) const override       { SaveScript(e, entityTable, Key()); }
-		};
 	}
 
 	ComponentRegistry& ComponentRegistry::Get()
@@ -174,6 +159,5 @@ namespace koi
 		registry.Register<MeshComponentType>();
 		registry.Register<ComponentType<CameraComponent>>("camera", 20);
 		registry.Register<ComponentType<Light>>("light", 30);
-		registry.Register<ScriptComponentType>();
 	}
 }

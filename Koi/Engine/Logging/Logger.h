@@ -17,7 +17,7 @@ namespace koi
 
 	struct LogCategoryInfo
 	{
-		std::string_view Path;  // as interned: __FILE__, or a AngelScript section name
+		std::string_view Path;  // as interned: __FILE__, or a runtime-registered name
 		std::string_view Name;  // basename, for display
 	};
 
@@ -40,7 +40,7 @@ namespace koi
 		[[nodiscard]] static LogCategoryInfo GetCategory(u16 id);
 		[[nodiscard]] static u16 CategoryCount();
 
-		// Runtime: AngelScript sections, plugins, anything without __FILE__
+		// Runtime: anything without __FILE__
 		static void Log(LogLevel level, std::string_view category, u32 line, std::string_view message);
 		static void Log(LogLevel level, u16 category, u32 line, std::string_view message);
 

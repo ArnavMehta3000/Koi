@@ -1,6 +1,5 @@
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
-#include "Koi/Engine/Core/Patterns/Match.h"
 #include "Koi/Engine/Assets/AssetIdentity.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
@@ -8,14 +7,10 @@
 #include "Koi/Engine/Graphics/Procedural/MeshGenerators.h"
 #include "Koi/Engine/Graphics/Procedural/ProceduralMeshSpec.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"
-#include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Scripting/ScriptComponent.h"
 #include <imgui.h>
-#include <imgui_stdlib.h>
 #include <array>
 #include <numbers>
 #include <type_traits>
@@ -259,43 +254,11 @@ namespace koi::editor
 		}
 	}
 
-	void ScriptInspector::Draw(Entity e)
-	{
-		ScriptComponent* sc = e.try_get_mut<ScriptComponent>();
-		if (!sc) return;
-
-		ImGui::InputText("Path", &sc->ScriptPath);
-
-		ImGui::BeginDisabled(sc->ScriptPath.empty());
-		if (ImGui::SmallButton("Edit"))
-		{
-			if (IEditorContext* editor = AppBase::Get().GetEditorContext())
-			{
-				editor->OpenScriptEditor(sc->ScriptPath);
-			}
-		}
-		ImGui::EndDisabled();
-
-		// Stored and editable, but not yet pushed into the live script instance's fields -
-		// that needs a metadata contract for which fields are script-exposed (a later milestone)
-		for (ScriptProperty& prop : sc->Properties)
-		{
-			std::visit(Match
-				{
-					[&](bool& value)        { ImGui::Checkbox(prop.Name.c_str(), &value);         },
-					[&](i32& value)         { ImGui::DragInt(prop.Name.c_str(), &value);          },
-					[&](f32& value)         { ImGui::DragFloat(prop.Name.c_str(), &value, 0.01f); },
-					[&](std::string& value) { ImGui::InputText(prop.Name.c_str(), &value);        },
-				}, prop.Value);
-		}
-	}
-
 	void RegisterBuiltinInspectors(InspectorRegistry& registry)
 	{
 		registry.Emplace<TransformInspector>();
 		registry.Emplace<MeshInspector>();
 		registry.Emplace<CameraInspector>();
 		registry.Emplace<LightInspector>();
-		registry.Emplace<ScriptInspector>();
 	}
 }

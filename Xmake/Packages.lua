@@ -3,7 +3,6 @@ includes("Packages/SimpleMath.lua")
 includes("Packages/Tracy.lua")
 includes("Packages/dxc.lua")
 includes("Packages/ImGui.lua")
-includes("Packages/AngelScript.lua")
 includes("Packages/Flecs.lua")
 
 add_requires(

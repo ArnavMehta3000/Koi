@@ -15,15 +15,6 @@ target("ImGui")  -- Custom ImGui package
 	remove_files("$(projectdir)/External/ImGui/misc/fonts/binary_to_compressed_c.cpp")
 target_end()
 
-target("ImGuiColorTextEdit")
-	set_kind("object")
-	set_group("External")
-	add_deps("ImGui", { public = true })
-	add_includedirs("$(projectdir)/External/ImGuiColorTextEdit", { public = true })
-	add_files("$(projectdir)/External/ImGuiColorTextEdit/**.cpp", { public = true })
-	add_headerfiles("$(projectdir)/External/ImGuiColorTextEdit/**.h", { public = true })
-target_end()
-
 target("ImGuizmo")
 	set_kind("object")
 	set_group("External")

@@ -24,7 +24,6 @@ namespace koi::editor
 	namespace fs = std::filesystem;
 
 	class AssetDatabase;
-	class ScriptEditorPanel;
 	class ViewportPanel;
 	enum class ViewportCamera : u8;
 
@@ -64,7 +63,6 @@ namespace koi::editor
 		using IEditorContext::RegisterInspector;
 
 		[[nodiscard]] std::optional<RenderView> GetEditorRenderView() const override;
-		void OpenScriptEditor(std::string_view vfsPath) override;
 
 	private:
 		void Setup();
@@ -86,7 +84,6 @@ namespace koi::editor
 		InspectorRegistry               m_inspectors;
 		std::vector<IReloadable*>       m_reloadables;
 		ViewportPanel*                  m_viewportPanel     = nullptr;
-		ScriptEditorPanel*              m_scriptEditorPanel = nullptr;
 		Selection                       m_selection{};
 		std::string                     m_lastCookStatus;  // shown in menubar after Cook click
 

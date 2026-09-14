@@ -5,7 +5,6 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Runtime/AppBase.h"
-#include <angelscript.h>
 #include <cassert>
 
 namespace koi
@@ -18,7 +17,6 @@ namespace koi
 		s_instance = this;
 
 		KOI_LOG_INFO("Engine initializing");
-		KOI_LOG_DEBUG("Angelscript version: {} - {}", ::asGetLibraryVersion(), asGetLibraryOptions());
 
 		m_systems.ConstructAll();
 		KOI_LOG_DEBUG("Engine subsystems constructed");

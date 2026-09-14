@@ -6,7 +6,6 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
 #include "Koi/Engine/Runtime/Timer.h"
-#include "Koi/Engine/Scripting/ScriptEngine.h"
 #include <optional>
 
 namespace koi
@@ -72,7 +71,7 @@ namespace koi
 		static inline Engine* s_instance = nullptr;
 
 		// Declaration order is init order | shutdown runs in reverse
-		using Subsystems = SubsystemSet<InputManager, Renderer, AssetRegistry, ScriptEngine>;
+		using Subsystems = SubsystemSet<InputManager, Renderer, AssetRegistry>;
 
 		std::optional<Window> m_window;
 		Subsystems            m_systems;
