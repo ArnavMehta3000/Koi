@@ -97,7 +97,7 @@ struct ImGui_ImplDX12_Data
 {
     ImGui_ImplDX12_InitInfo     InitInfo;
     ImGui_ImplDX12_RenderState* RenderState;
-        
+
     IDXGIFactory5*              pdxgiFactory;
     ID3D12Device*               pd3dDevice;
     ID3D12RootSignature*        pRootSignatureLinear;
@@ -1218,7 +1218,7 @@ static ImGui_ImplDX12_FrameContext* ImGui_WaitForNextFrameContext(ImGui_ImplDX12
     ImGui_ImplDX12_FrameContext* frame_context = &vd->FrameCtx[vd->FrameIndex % vd->NumFramesInFlight];
     if (bd->Fence->GetCompletedValue() < frame_context->FenceValue)
     {
-        HRESULT hr = bd->Fence->SetEventOnCompletion(frame_context->FenceValue, bd->FenceEvent);
+        [[maybe_unused]] HRESULT hr = bd->Fence->SetEventOnCompletion(frame_context->FenceValue, bd->FenceEvent);
         IM_ASSERT(hr == S_OK);
         HANDLE waitableObjects[] = { vd->SwapChainWaitableObject, bd->FenceEvent };
         ::WaitForMultipleObjects(2, waitableObjects, TRUE, INFINITE);
@@ -1318,7 +1318,7 @@ static void ImGui_ImplDX12_RenderWindow(ImGuiViewport* viewport, void*)
 
     vd->CommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&cmd_list);
 
-    HRESULT hr = vd->CommandQueue->Signal(bd->Fence, ++bd->FenceLastSignaledValue);
+    [[maybe_unused]] HRESULT hr = vd->CommandQueue->Signal(bd->Fence, ++bd->FenceLastSignaledValue);
     IM_ASSERT(hr == S_OK);
     frame_context->FenceValue = bd->FenceLastSignaledValue;
 }

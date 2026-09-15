@@ -8,7 +8,7 @@ namespace koi
 	{
 		m_buffer.Init(device, BufferUsage::Storage, 16, "Material Table");
 
-		const u32 slot = Allocate(fallback);
+		[[maybe_unused]] const u32 slot = Allocate(fallback);
 		assert(slot == kFallbackSlot && "The fallback has to be the first row allocated");
 	}
 
