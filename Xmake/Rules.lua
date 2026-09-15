@@ -8,6 +8,7 @@ rule("KoiGame")
 		local launcher    = path.join(os.projectdir(), "Launcher")
 
 		target:set("kind", "binary")
+		target:set("installdir", path.join(root, "Packaged"))
 		target:add("deps", "Koi.Engine", "ImGui")
 		target:add("includedirs", path.join(root, "Source"))
 		target:add("extrafiles",
@@ -30,6 +31,39 @@ rule("KoiGame")
 				target:add("rules", "win.sdk.application")
 			end
 		end
+	end)
+
+	-- `xmake install <Game>` assembles a self-contained folder: exe + cooked Engine/ + Project/
+	on_install(function(target)
+		local _we = get_config("WithEditor")
+		if _we == 1 or _we == "1" or _we == true then
+			cprint("${yellow}%s: Ensure assets are cooked with editor, then configure with --WithEditor=0 to package the game. Failed to install (bad config: --WithEditor=1)", target:name())
+			return
+		end
+
+		local cooked = path.join(target:scriptdir(), ".koi", "Cooked")
+		assert(os.isfile(path.join(cooked, "Project", "Project.koi.toml")),
+			"%s: no cooked content at %s (Cook from the editor first)", target:name(), cooked)
+
+		local dst = target:installdir()
+		os.tryrm(path.join(dst, "Engine"))
+		os.tryrm(path.join(dst, "Project"))
+		os.mkdir(dst)
+		os.cp(target:targetfile(), dst)
+		if os.isfile(target:symbolfile()) then
+			os.cp(target:symbolfile(), dst)
+		end
+		os.cp(path.join(cooked, "**"), dst, { rootdir = cooked })
+		cprint("${green}%s: packaged to %s", target:name(), dst)
+	end)
+
+	on_uninstall(function(target)
+		local dst = target:installdir()
+		os.tryrm(dst)  -- Remove the entire install directory
+		--os.tryrm(path.join(dst, "Engine"))
+		--os.tryrm(path.join(dst, "Project"))
+		--os.tryrm(path.join(dst, path.filename(target:targetfile())))
+		--os.tryrm(path.join(dst, path.filename(target:symbolfile())))
 	end)
 rule_end()
 
