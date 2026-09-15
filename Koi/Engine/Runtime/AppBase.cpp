@@ -72,14 +72,29 @@ namespace koi
 		ZoneScoped;
 		if (m_desc.StartupScene.empty())
 		{
-			KOI_LOG_WARN("No startup_scene set in the project TOML");
+			KOI_LOG_WARN("No [scenes] startup set in the project TOML");
 			return;
 		}
 
-		if (std::optional<World> loaded = World::Load(m_desc.StartupScene))
+		LoadScene(m_desc.StartupScene);
+	}
+
+	bool AppBase::LoadScene(std::string_view name)
+	{
+		ZoneScoped;
+
+		const auto it = m_desc.Scenes.find(std::string(name));
+		if (it == m_desc.Scenes.end())
 		{
-			*m_world = std::move(*loaded);
+			KOI_LOG_ERROR("Scene '{}' is not listed in [scenes.list]", name);
+			return false;
 		}
+
+		std::optional<World> loaded = World::Load(it->second);
+		if (!loaded) return false;
+
+		*m_world = std::move(*loaded);
+		return true;
 	}
 
 	std::optional<RenderView> AppBase::GetRenderView() const

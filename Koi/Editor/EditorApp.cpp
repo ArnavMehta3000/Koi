@@ -347,19 +347,15 @@ namespace koi::editor
 	{
 		ZoneScoped;
 
-		const std::string& scenePath = m_game->GetDesc().StartupScene;
-		if (scenePath.empty())
+		World& world = m_game->GetWorld();
+		if (world.GetSourcePath().empty())
 		{
-			m_lastCookStatus = "Save: no startup_scene set";
+			m_lastCookStatus = "Save: world was not loaded from a scene";
 			return;
 		}
 
-		const bool saved = m_game->GetWorld().Save(scenePath);
+		const bool saved = world.Save();
 		m_lastCookStatus = saved ? "Scene saved" : "Scene save FAILED";
-		if (!saved)
-		{
-			KOI_LOG_ERROR("Failed to save scene '{}'", scenePath);
-		}
 	}
 
 	void EditorApp::Cook()
@@ -370,6 +366,7 @@ namespace koi::editor
 			.ProjectSource = m_config.ProjectSource,
 			.ProjectFile   = m_config.ProjectFile,
 			.OutputRoot    = m_config.CookedOutput,
+			.Scenes        = m_game->GetDesc().Scenes,
 		});
 	}
 

@@ -32,11 +32,9 @@ namespace koi
 		});
 	}
 
-	std::optional<World> World::Load(const fs::path& path)
+	std::optional<World> World::Load(std::string_view virtualPath)
 	{
 		ZoneScoped;
-
-		const std::string virtualPath = "project://" + path.generic_string();
 		KOI_LOG_DEBUG("Loading scene '{}'", virtualPath);
 
 		const std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
@@ -53,6 +51,7 @@ namespace koi
 			const toml::table scene = toml::parse(text);
 
 			World world;
+			world.m_sourcePath = virtualPath;
 			world.LoadFromTable(scene);
 
 			KOI_LOG_INFO("Loaded scene '{}'", virtualPath);
@@ -157,19 +156,22 @@ namespace koi
 		return true;
 	}
 
-	bool World::Save(const fs::path& path)
+	bool World::Save()
 	{
 		ZoneScoped;
 
-		const std::string virtualPath = "project://" + path.generic_string();
+		if (m_sourcePath.empty())
+		{
+			KOI_LOG_ERROR("World was not loaded from a scene; nothing to save to");
+			return false;
+		}
 
 		const toml::table root = SaveToTable();
 
-		// project:// must resolve to a real file (editor source tree) to write back
-		const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(virtualPath);
+		const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(m_sourcePath);
 		if (!diskPath)
 		{
-			KOI_LOG_ERROR("Cannot resolve scene path to disk for saving: {}", virtualPath);
+			KOI_LOG_ERROR("Cannot resolve scene path to disk for saving: {}", m_sourcePath);
 			return false;
 		}
 

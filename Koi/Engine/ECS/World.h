@@ -24,29 +24,26 @@ namespace koi
 		World(World&&) noexcept = default;
 		World& operator=(World&&) noexcept = default;
 
-		[[nodiscard]] static std::optional<World> Load(const fs::path& path);
+		[[nodiscard]] static std::optional<World> Load(std::string_view virtualPath);
 
-		bool Save(const fs::path& path);
+		[[nodiscard]] inline const std::string& GetSourcePath() const { return m_sourcePath; }
+		[[nodiscard]] inline const BoundingBox& GetBounds()     const { return m_bounds;     }
+		[[nodiscard]] inline ECS&               GetECS()              { return m_ecs;        }
+		[[nodiscard]] inline const ECS&         GetECS()        const { return m_ecs;        }
 
+		// Writes back to the scene file this world was loaded from
+		bool Save();
 		bool LoadFromTable(const toml::table& scene);
 		[[nodiscard]] toml::table SaveToTable();
-
-		// Destroys every entity. The assets they referenced are released by component hooks
-		void Clear();
+		void Clear(); // Destroys every entity. The assets they referenced are released by component hooks
 
 		void Update(f32 dt);
 
-		[[nodiscard]] const BoundingBox& GetBounds() const { return m_bounds; }
-
-		// Projects the primary camera entity for a surface of the given aspect and returns
-		// it. Null if the world has no primary camera. Aspect is a property of the render
-		// target, so this is called by whoever resolved that target, once per frame
+		// Projects the primary camera entity for a surface of the given aspect and returns it
+		// Null if the world has no primary camera
 		[[nodiscard]] const Camera* ResolveCamera(f32 aspect);
-
 		[[nodiscard]] const GPUMesh* GetMesh(MeshHandle handle) const;
 
-		[[nodiscard]] ECS&       GetECS()       { return m_ecs; }
-		[[nodiscard]] const ECS& GetECS() const { return m_ecs; }
 
 	private:
 		void ConfigureComponentHooks();
@@ -54,6 +51,7 @@ namespace koi
 	private:
 		ECS    m_ecs;
 		Entity m_root;
+		std::string m_sourcePath;  // virtual path this world was loaded from, empty if none
 		BoundingBox m_bounds{ {}, {} };  // zero extents until meshes resolve
 		Camera m_camera;  // derived from the primary camera entity by ResolveCamera
 	};

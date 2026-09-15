@@ -10,6 +10,7 @@
 #include <toml++/toml.hpp>
 #include <cassert>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -31,6 +32,15 @@ namespace koi::internal
 		const LoggerConfig defaults{};
 		const toml::table* input = project["input"].as_table();
 
+		std::map<std::string, std::string> scenes;
+		if (const toml::table* list = project["scenes"]["list"].as_table())
+		{
+			for (const auto& [name, node] : *list)
+			{
+				scenes.emplace(std::string(name.str()), node.value_or(""));
+			}
+		}
+
 		// Engine-defined data only
 		return AppCreateDesc
 		{
@@ -51,7 +61,8 @@ namespace koi::internal
 			},
 			.Input          = input ? LoadInputConfig(*input) : InputConfig{},
 			.AppName        = project["project"]["name"].value_or("Koi Application"),
-			.StartupScene   = project["assets"]["startup_scene"].value_or(""),
+			.Scenes         = std::move(scenes),
+			.StartupScene   = project["scenes"]["startup"].value_or(""),
 		};
 	}
 

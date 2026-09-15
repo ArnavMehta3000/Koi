@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <map>
 #include <string>
 
 namespace koi::editor
@@ -12,6 +13,7 @@ namespace koi::editor
 		fs::path ProjectSource;  // game source root (contains the .toml)
 		fs::path ProjectFile;    // project TOML in use
 		fs::path OutputRoot;     // where the cooked layout is written
+		std::map<std::string, std::string> Scenes;  // [scenes.list], checked so a typo fails at cook time
 	};
 
 	// Compiles the shaders the registered pipelines use and copies content into the

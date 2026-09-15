@@ -5,6 +5,7 @@
 #include "Koi/Engine/Platform/InputActions.h"
 #include "Koi/Engine/Platform/Window.h"
 #include <cassert>
+#include <map>
 #include <memory>
 #include <optional>
 
@@ -21,7 +22,8 @@ namespace koi
 		LoggerConfig LogConfig{};
 		InputConfig  Input{};
 		std::string  AppName        = "Koi Application";
-		std::string  StartupScene;  // path relative to executable, empty = none
+		std::map<std::string, std::string> Scenes;  // name -> virtual path, from [scenes.list]
+		std::string  StartupScene;                  // name in Scenes, empty = none
 	};
 
 	class AppBase : public NonCopyable, public IAppHost
@@ -65,6 +67,9 @@ namespace koi
 		// The target's aspect is only known here, so the world's camera is projected
 		// against it rather than against the window
 		[[nodiscard]] std::optional<RenderView> GetRenderView() const;
+
+		// Replaces the world with a scene named in [scenes.list]
+		bool LoadScene(std::string_view name);
 
 	private:
 		void LoadStartupScene();

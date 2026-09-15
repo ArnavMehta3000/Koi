@@ -109,6 +109,14 @@ namespace koi::editor
 
 		const ShaderTally shaders = CookShaders(outRoot);
 
+		for (const auto& [name, virtualPath] : request.Scenes)
+		{
+			if (!VirtualFileSystem::Get().TryResolveToDisk(virtualPath))
+			{
+				KOI_LOG_WARN("Cook: scene '{}' -> '{}' does not exist", name, virtualPath);
+			}
+		}
+
 		// Content is shipped wholesale; a scene references its assets by the same relative paths
 		CopyDir(request.EngineSource / "Content" / "Meshes", outRoot / "Engine" / "Content" / "Meshes");
 		CopyDir(request.ProjectSource / "Content", projRoot / "Content");
