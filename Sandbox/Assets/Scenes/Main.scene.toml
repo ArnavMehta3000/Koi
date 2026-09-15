@@ -31,7 +31,7 @@ name = 'Damaged Helmet'
     turn_speed = 90.0
 
     [entity.transform]
-    position = [ 1.1074185, 2.35, 0.0 ]
+    position = [ -5.893, 2.1, 0.0 ]
     rotation = [ 0.0, 0.40673667, 0.0, 0.9135454 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
@@ -47,38 +47,6 @@ name = 'Camera'
     [entity.transform]
     position = [ 6.6, 1.35, -0.3 ]
     rotation = [ 0.0, 0.70710677, 0.0, 0.7071067 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'Sun'
-
-    [entity.light]
-    casts_shadows = true
-    color = [ 1.0, 0.92791235, 0.877451 ]
-    intensity = 2.8
-    range = 0.0
-    shadow_bias = 0.0015
-    type = 'directional'
-
-    [entity.transform]
-    position = [ 0.0, 0.0, 0.0 ]
-    rotation = [ 0.49426502, 0.46951166, 0.62159055, -0.38585755 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'Point Light'
-
-    [entity.light]
-    casts_shadows = false
-    color = [ 0.6, 0.47058824, 1.0 ]
-    intensity = 2.6
-    range = 10.3
-    shadow_bias = 0.0015
-    type = 'point'
-
-    [entity.transform]
-    position = [ -4.289, 3.9588375, -0.17466015 ]
-    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -98,6 +66,22 @@ name = 'Child Light'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+name = 'Point Light'
+
+    [entity.light]
+    casts_shadows = false
+    color = [ 0.6, 0.47058824, 1.0 ]
+    intensity = 2.6
+    range = 10.3
+    shadow_bias = 0.0015
+    type = 'point'
+
+    [entity.transform]
+    position = [ -4.289, 3.9588375, -0.17466015 ]
+    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
 name = 'Torus'
 
     [entity.mesh]
@@ -111,3 +95,23 @@ name = 'Torus'
     position = [ 3.790697, 12.711526, -2.130382 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 15.0, 5.0, 15.0 ]
+
+[[entity]]
+name = 'Sun'
+
+    [entity.light]
+    casts_shadows = true
+    color = [ 1.0, 0.92791235, 0.877451 ]
+    intensity = 2.8
+    range = 0.0
+    shadow_bias = 0.0015
+    type = 'directional'
+
+    [entity.spin]
+    axis = [ 0.2, 0.2, 0.2 ]
+    speed = 45.0
+
+    [entity.transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ -0.7040147, 0.0, 0.0, 0.7101854 ]
+    scale = [ 1.0, 1.0, 1.0 ]
