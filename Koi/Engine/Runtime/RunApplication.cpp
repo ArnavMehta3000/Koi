@@ -2,6 +2,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
+#include "Koi/Engine/Platform/Paths.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/CommandLine.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -54,62 +55,48 @@ namespace koi::internal
 		};
 	}
 
-	// Source-tree mode: --engine-source / --project-source layer on top of the exe-relative fallbacks
-	static void MountSourceTree(const CommandLine& cmd, const fs::path& exeDir)
+	// Editor: source trees are baked into the launcher
+	static void MountSourceTree(const LaunchDesc& desc)
 	{
-		std::vector<fs::path> engineRoots;
-		if (!cmd.GetEngineSource().empty())
-		{
-			engineRoots.push_back(fs::absolute(cmd.GetEngineSource()));
-		}
-		engineRoots.push_back(exeDir / "Engine");
-
-		std::vector<fs::path> projectRoots;
-		projectRoots.push_back(fs::absolute(cmd.GetProjectSource()));
-		projectRoots.push_back(exeDir);
-
 		auto& vfs = VirtualFileSystem::Get();
-		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoots));
-		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
+		vfs.Mount("engine",  std::make_unique<FilesystemMount>(desc.EngineDir));
+		vfs.Mount("project", std::make_unique<FilesystemMount>(desc.ProjectDir));
 
-		KOI_LOG_DEBUG("Source VFS mounts (working dir {}):", exeDir.string());
-		for (const fs::path& p : engineRoots) { KOI_LOG_DEBUG("\tengine  <- {}", p.string()); }
-		for (const fs::path& p : projectRoots) { KOI_LOG_DEBUG("\tproject <- {}", p.string()); }
+		KOI_LOG_DEBUG("Source VFS mounts:");
+		KOI_LOG_DEBUG("\tengine  <- {}", desc.EngineDir.string());
+		KOI_LOG_DEBUG("\tproject <- {}", desc.ProjectDir.string());
 	}
 
-	// Cooked mode: content lives next to the exe (or under Cooked/), laid out as <root>/Engine + <root>/Project
+	// Runtime: cooked content is laid out as <root>/Engine + <root>/Project, where root is
+	// the exe dir or, when launched from the build tree, the CWD
+	static fs::path FindCookedRoot(const fs::path& exeDir)
+	{
+		const fs::path cwd = fs::current_path();
+		for (const fs::path& root : { exeDir, exeDir / "Cooked", cwd, cwd / "Cooked" })
+		{
+			if (fs::exists(root / "Project" / "Project.koi.toml"))
+				return root;
+		}
+		return exeDir;
+	}
+
 	static void MountCooked(CommandLine& cmd, const fs::path& exeDir)
 	{
-		fs::path contentRoot = exeDir;
-		if (!fs::exists(contentRoot / "Project" / "Project.koi.toml") &&
-		     fs::exists(exeDir / "Cooked" / "Project" / "Project.koi.toml"))
-		{
-			contentRoot = exeDir / "Cooked";
-		}
-
-		if (cmd.GetProjectFile().empty())
-		{
-			const fs::path defaultProject = contentRoot / "Project" / "Project.koi.toml";
-			if (fs::exists(defaultProject))
-			{
-				KOI_LOG_INFO("No --project specified; defaulting to {}", defaultProject.string());
-				cmd.OverrideProjectFile(defaultProject);
-			}
-		}
-
+		const fs::path contentRoot = FindCookedRoot(exeDir);
 		const fs::path projectRoot = contentRoot / "Project";
 		const fs::path engineRoot  = contentRoot / "Engine";
+
+		if (cmd.GetProjectFile().empty())
+			cmd.OverrideProjectFile(projectRoot / "Project.koi.toml");
 
 		auto& vfs = VirtualFileSystem::Get();
 		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoot));
 		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
 
 		KOI_LOG_DEBUG("Cooked VFS mounts:");
-		KOI_LOG_DEBUG("\tWorking directory : {}", exeDir.string());
-		KOI_LOG_DEBUG("\tProject file      : {}", cmd.GetProjectFile().string());
-		KOI_LOG_DEBUG("\tEngine root       : {}", engineRoot.string());
-		KOI_LOG_DEBUG("\tProject root      : {}", projectRoot.string());
-
+		KOI_LOG_DEBUG("\tProject file : {}", cmd.GetProjectFile().string());
+		KOI_LOG_DEBUG("\tengine  <- {}", engineRoot.string());
+		KOI_LOG_DEBUG("\tproject <- {}", projectRoot.string());
 	}
 
 	// Owns the logger for the whole of RunApplication so it outlives the Engine and
@@ -120,7 +107,14 @@ namespace koi::internal
 		~LoggerScope() { Logger::Shutdown(); }
 	};
 
-	int RunApplication(int argc, char* argv[], HostAdapter adapter)
+	// Relative log paths land in the project's .koi/ (editor) or beside the exe (runtime)
+	static void ResolveLogPath(LoggerConfig& log, const fs::path& savedDir)
+	{
+		if (log.FilePath.empty() || fs::path(log.FilePath).is_absolute()) return;
+		log.FilePath = (savedDir / log.FilePath).string();
+	}
+
+	int RunApplication(int argc, char* argv[], const LaunchDesc& desc)
 	{
 		assert(argc > 0 && "argc must be > 0");
 		assert(argv != nullptr && "argv must not be nullptr");
@@ -136,16 +130,22 @@ namespace koi::internal
 				return -1;
 			}
 
+			const fs::path exeDir   = Paths::ExecutableDir();
+			const bool     isEditor = !desc.ProjectDir.empty();
+			const fs::path savedDir = (isEditor ? desc.ProjectDir : exeDir) / ".koi";
+
+			if (isEditor)
 			{
-				const fs::path exeDir = fs::current_path();
-				if (!cmd->GetProjectSource().empty())
+				if (cmd->GetProjectFile().empty())
 				{
-					MountSourceTree(*cmd, exeDir);  // With editor (read from disk)
+					cmd->OverrideProjectFile(desc.ProjectFile);
 				}
-				else
-				{
-					MountCooked(*cmd, exeDir);  // Runtime/Standalone (read cooked)
-				}
+
+				MountSourceTree(desc);
+			}
+			else
+			{
+				MountCooked(*cmd, exeDir);
 			}
 
 			Engine engine;
@@ -158,16 +158,21 @@ namespace koi::internal
 				return -1;
 			}
 
-			app->SetDesc(LoadProjectDesc(cmd->GetProjectFile()));
+			AppCreateDesc appDesc = LoadProjectDesc(cmd->GetProjectFile());
+			ResolveLogPath(appDesc.LogConfig, savedDir);
+			app->SetDesc(std::move(appDesc));
 
 			// Only now is the project's [logging] table known; still single-threaded here
 			Logger::Configure(app->GetDesc().LogConfig);
 
-			if (adapter)
+			if (desc.Adapter)
 			{
 				// Editor build: wrap the game in an EditorApp supplied by the launcher
 				KOI_LOG_DEBUG("Host adapter present; wrapping application for the editor");
-				std::unique_ptr<IAppHost> host = adapter(std::move(app), *cmd);
+				LaunchDesc resolved = desc;
+				resolved.ProjectFile = cmd->GetProjectFile();
+
+				std::unique_ptr<IAppHost> host = desc.Adapter(std::move(app), resolved);
 				if (!host)
 				{
 					KOI_LOG_CRITICAL("Host adapter returned null");
@@ -194,12 +199,7 @@ namespace koi::internal
 		}
 	}
 
-	int RunApplication(int argc, char* argv[])
-	{
-		return RunApplication(argc, argv, nullptr);
-	}
-
-	int RunApplication(int argc, wchar_t* wargv[], HostAdapter adapter)
+	int RunApplication(int argc, wchar_t* wargv[], const LaunchDesc& desc)
 	{
 		std::vector<std::string> args(argc);
 		std::vector<char*> argv(argc);
@@ -208,11 +208,6 @@ namespace koi::internal
 			args[i] = StringUtils::FromWide(wargv[i]);
 			argv[i] = args[i].data();
 		}
-		return RunApplication(argc, argv.data(), adapter);
-	}
-
-	int RunApplication(int argc, wchar_t* wargv[])
-	{
-		return RunApplication(argc, wargv, nullptr);
+		return RunApplication(argc, argv.data(), desc);
 	}
 }

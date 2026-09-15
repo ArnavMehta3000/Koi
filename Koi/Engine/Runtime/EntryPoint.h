@@ -3,13 +3,13 @@
 #pragma once
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Platform/Win32.h"
+#include <filesystem>
 #include <memory>
 
 namespace koi
 {
 	class AppBase;
 	class IAppHost;
-	class CommandLine;
 }
 
 
@@ -34,40 +34,36 @@ int WINAPI wWinMain(                                   \
 
 namespace koi::internal
 {
-	// Pointer to wrap host (editor will wrap user AppBase)
-	using HostAdapter = std::unique_ptr<IAppHost>(*)(std::unique_ptr<AppBase>, CommandLine&);
+	struct LaunchDesc;
 
-	int RunApplication(int argc, char* argv[]);
-	int RunApplication(int argc, wchar_t* wargv[]);
-	int RunApplication(int argc, char* argv[], HostAdapter adapter);
-	int RunApplication(int argc, wchar_t* wargv[], HostAdapter adapter);
+	// Pointer to wrap host
+	using HostAdapter = std::unique_ptr<IAppHost>(*)(std::unique_ptr<AppBase>, const LaunchDesc&);
+
+	// Editor defines them and runtime leave them empty to find cooked content in the sam dir
+	struct LaunchDesc
+	{
+		std::filesystem::path EngineDir;    // <repo>/Koi/Engine (editor only)
+		std::filesystem::path ProjectDir;   // game source root (editor only)
+		std::filesystem::path ProjectFile;  // default project TOML; -p overrides
+		HostAdapter Adapter = nullptr;
+	};
+
+	int RunApplication(int argc, char* argv[], const LaunchDesc& desc);
+	int RunApplication(int argc, wchar_t* wargv[], const LaunchDesc& desc);
 }
 
 #if KOI_DEBUG
-	#define KOI_IMPLEMENT_MAIN()                                \
-		KOI_MAIN()                                              \
-		{                                                       \
-			return ::koi::internal::RunApplication(argc, argv); \
+	#define KOI_IMPLEMENT_MAIN_WITH(launch)                                 \
+		KOI_MAIN()                                                          \
+		{                                                                   \
+			return ::koi::internal::RunApplication(argc, argv, (launch)()); \
 		}
 #else
-	#define KOI_IMPLEMENT_MAIN()                                     \
-		KOI_MAIN()                                                   \
-		{                                                            \
-			return ::koi::internal::RunApplication(__argc, __wargv); \
+	#define KOI_IMPLEMENT_MAIN_WITH(launch)                                      \
+		KOI_MAIN()                                                               \
+		{                                                                        \
+			return ::koi::internal::RunApplication(__argc, __wargv, (launch)()); \
 		}
 #endif
 
-// For editor use
-#if KOI_DEBUG
-	#define KOI_IMPLEMENT_MAIN_WITH_HOST(adapter)                        \
-		KOI_MAIN()                                                       \
-		{                                                                \
-			return ::koi::internal::RunApplication(argc, argv, adapter); \
-		}
-#else
-	#define KOI_IMPLEMENT_MAIN_WITH_HOST(adapter)                             \
-		KOI_MAIN()                                                            \
-		{                                                                     \
-			return ::koi::internal::RunApplication(__argc, __wargv, adapter); \
-		}
-#endif
+#define KOI_IMPLEMENT_MAIN() KOI_IMPLEMENT_MAIN_WITH([] { return ::koi::internal::LaunchDesc{}; })
