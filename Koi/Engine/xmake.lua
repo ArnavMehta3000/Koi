@@ -28,6 +28,7 @@ target("Koi.Engine")
 	set_configdir(config_dir)
 	add_includedirs(base_config_dir, { public = true })
 	add_headerfiles(base_config_dir, { public = true })
+	set_configvar("ENGINE_DIR", path.unix(path.join(os.projectdir(), "Koi", "Engine")))
 	add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in")
 
 	if is_plat("windows") then
