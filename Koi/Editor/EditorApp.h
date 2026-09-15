@@ -36,6 +36,15 @@ namespace koi::editor
 		fs::path CookedOutput;   // where Cook writes (defaults to <exe>/Cooked)
 	};
 
+	// For debug lines
+	struct GizmoOptions
+	{
+		bool SelectionBounds = true;
+		bool Lights          = true;
+		bool CameraFrustum   = false;
+		bool ShadowVolume    = false;
+	};
+
 	class EditorApp
 		: public NonCopyable
 		, public IAppHost
@@ -69,10 +78,17 @@ namespace koi::editor
 	private:
 		void Setup();
 		void DrawMenuBar();
+		void DrawGizmoMenu();
 		void PollShortcuts();
 		void ReloadAll(const ReloadRequest& request);
 		void SaveScene();
 		void Cook();
+
+		void QueueGizmos();
+		void DrawSelectionBounds();
+		void DrawLightGizmos();
+		void DrawCameraFrustum();
+		void DrawShadowVolume();
 
 		void Play();
 		void TogglePause();
@@ -88,6 +104,7 @@ namespace koi::editor
 		std::vector<IReloadable*>       m_reloadables;
 		ViewportPanel*                  m_viewportPanel     = nullptr;
 		Selection                       m_selection{};
+		GizmoOptions                    m_gizmos{};
 		std::string                     m_lastCookStatus;  // shown in menubar after Cook click
 		std::optional<ReloadRequest>    m_pendingReload;
 

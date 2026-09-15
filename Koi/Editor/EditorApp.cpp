@@ -10,7 +10,10 @@
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/DebugDraw.h"
+#include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -106,6 +109,80 @@ namespace koi::editor
 			m_viewportPanel->PrepareFrame(*cmd);
 
 		m_game->HostRender();
+
+		QueueGizmos();
+	}
+
+	void EditorApp::QueueGizmos()
+	{
+		ZoneScoped;
+		if (m_gizmos.SelectionBounds) DrawSelectionBounds();
+		if (m_gizmos.Lights)          DrawLightGizmos();
+		if (m_gizmos.CameraFrustum)   DrawCameraFrustum();
+		if (m_gizmos.ShadowVolume)    DrawShadowVolume();
+	}
+
+	void EditorApp::DrawSelectionBounds()
+	{
+		if (!m_selection.IsValid()) return;
+
+		const Transform* xform   = m_selection.Selected.try_get<Transform>();
+		const MeshRef*   meshRef = m_selection.Selected.try_get<MeshRef>();
+		if (!xform || !meshRef) return;
+
+		const GPUMesh* mesh = m_game->GetWorld().GetMesh(meshRef->Handle);
+		if (!mesh) return;
+
+		BoundingOrientedBox box;
+		BoundingOrientedBox::CreateFromBoundingBox(box, mesh->Bounds);
+		box.Transform(box, xform->ToMatrix());
+
+		DebugDraw::Box(box, Color(1.0f, 0.6f, 0.1f, 1.0f));
+	}
+
+	void EditorApp::DrawLightGizmos()
+	{
+		m_game->GetWorld().GetECS().each([](const Transform& xform, const Light& light)
+		{
+			const Color color(light.Color.x, light.Color.y, light.Color.z, 1.0f);
+
+			if (light.Type == LightType::Point)
+			{
+				DebugDraw::Sphere(xform.Position, light.Range, color);
+				return;
+			}
+
+			// Directional: a short shaft along the entity's forward says which way it points
+			Vector3 forward = Matrix::CreateFromQuaternion(xform.Rotation).Forward();
+			forward.Normalize();
+
+			DebugDraw::Sphere(xform.Position, 0.25f, color);
+			DebugDraw::Line(xform.Position, xform.Position + forward * 2.0f, color);
+		});
+	}
+
+	void EditorApp::DrawCameraFrustum()
+	{
+		// Pointless while the viewport is already looking through it
+		if (m_viewportPanel->IsGameCamera()) return;
+
+		const ViewportTarget* target = m_viewportPanel->GetTarget();
+		if (!target || target->Height == 0) return;
+
+		const f32 aspect = static_cast<f32>(target->Width) / static_cast<f32>(target->Height);
+		if (const Camera* camera = m_game->GetWorld().ResolveCamera(aspect))
+			DebugDraw::Frustum(camera->ViewProjection, Color(0.2f, 0.8f, 1.0f, 1.0f));
+	}
+
+	void EditorApp::DrawShadowVolume()
+	{
+		PassList& passes = Engine::Get().GetSubsystem<Renderer>().GetPasses();
+
+		const ShadowPass* shadow = passes.Find<ShadowPass>();
+		if (!shadow || !shadow->GetShadowMap()) return;
+
+		// The ortho volume the caster was fitted to, as the box its matrix maps to clip space
+		DebugDraw::Frustum(shadow->GetLightViewProjection(), Color(1.0f, 0.9f, 0.2f, 1.0f));
 	}
 
 	void EditorApp::HostShutdown()
@@ -221,6 +298,8 @@ namespace koi::editor
 		{
 			m_panels.DrawMenuItems();
 			ImGui::Separator();
+			DrawGizmoMenu();
+			ImGui::Separator();
 			m_imgui.DrawThemeMenu();
 			ImGui::EndMenu();
 		}
@@ -250,6 +329,18 @@ namespace koi::editor
 		}
 
 		ImGui::EndMainMenuBar();
+	}
+
+	void EditorApp::DrawGizmoMenu()
+	{
+		if (!ImGui::BeginMenu("Gizmos")) return;
+
+		ImGui::MenuItem("Selection Bounds", nullptr, &m_gizmos.SelectionBounds);
+		ImGui::MenuItem("Lights",           nullptr, &m_gizmos.Lights);
+		ImGui::MenuItem("Camera Frustum",   nullptr, &m_gizmos.CameraFrustum);
+		ImGui::MenuItem("Shadow Volume",    nullptr, &m_gizmos.ShadowVolume);
+
+		ImGui::EndMenu();
 	}
 
 	void EditorApp::SaveScene()
