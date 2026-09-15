@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Graphics/DebugDraw.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
 #include "Koi/Engine/Graphics/PipelineLibrary.h"
@@ -45,6 +46,8 @@ namespace koi
 		[[nodiscard]] inline MaterialTemplateLibrary& GetMaterialTemplates() noexcept      { return m_materialTemplates;    }
 		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
 		[[nodiscard]] inline const PipelineLibrary&   GetPipelineLibrary() const noexcept  { return m_pipelineLibrary;      }
+		[[nodiscard]] inline DebugDrawQueue&          GetDebugDraw() noexcept              { return m_debugDraw;            }
+		[[nodiscard]] inline const DebugDrawQueue&    GetDebugDraw() const noexcept        { return m_debugDraw;            }
 
 		[[nodiscard]] CommandList* GetCommandList() noexcept;
 		[[nodiscard]] inline IRenderPipeline* GetPipeline() noexcept { return m_pipeline.get(); }
@@ -87,5 +90,6 @@ namespace koi
 		std::unique_ptr<IRenderPipeline> m_pipeline;
 		u32                              m_frameSlot = 0;
 		IRendererOverlay*                m_overlay   = nullptr;
+		DebugDrawQueue                   m_debugDraw;
 	};
 }
