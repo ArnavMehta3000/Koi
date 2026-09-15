@@ -1,16 +1,6 @@
--- Need to 'cook assets' in editor before being able to run in standalone mode
--- Doing this so that there is no need to precompile shaders, copy assets, etc.
-
 target("Sandbox")
 	add_rules("KoiGame")
-
-	add_includedirs("Scripts")
-	add_files("Scripts/**.cpp")
-	add_headerfiles("Scripts/**.h")
-
-	-- Use project:// to refer to these assets
-	add_extrafiles("Assets/Shaders/**.hlsl")
-	add_extrafiles("Assets/Models/**.gltf")
-	add_extrafiles("Assets/Scenes/**.scene.toml")
-	add_extrafiles("Sandbox.koi.toml")
+	set_default(false)  -- samples build on request: `xmake build Sandbox`, `xmake run Sandbox`
+	add_files("Source/**.cpp")
+	add_headerfiles("Source/**.h")
 target_end()
