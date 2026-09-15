@@ -1,37 +1,34 @@
--- Switches the game between object/static kind for editor/runtime and wires it into the launcher
+-- A Koi game is always its own executable. With the editor it links Koi.Editor and bakes in
+-- its source dirs. Standalone it runs from cooked content beside the exe (or the rundir)
 rule("KoiGame")
 	on_load(function(target)
-		local _we = get_config("WithEditor")
+		local _we         = get_config("WithEditor")
 		local with_editor = (_we == 1 or _we == "1" or _we == true)
+		local root        = target:scriptdir()
+		local launcher    = path.join(os.projectdir(), "Launcher")
 
-		if with_editor then
-			target:set("kind", "object")
-		else
-			target:set("kind", "static")
-		end
-
+		target:set("kind", "binary")
 		target:add("deps", "Koi.Engine", "ImGui")
-	end)
+		target:add("includedirs", path.join(root, "Source"))
+		target:add("extrafiles",
+			path.join(root, target:name() .. ".koi.toml"),
+			path.join(root, "Content/**.toml"),
+			path.join(root, "Content/**.hlsl"),
+			path.join(root, "Content/**.gltf"))
 
-	on_config(function(target)
-		import("core.project.project")
-
-		local _we           = get_config("WithEditor")
-		local with_editor   = (_we == 1 or _we == "1" or _we == true)
-		local launcher_name = with_editor and "koi-editor" or "koi-runtime"  -- Toggle between editor or runtime project
-		local launcher      = project.target(launcher_name)
-
-		if not launcher then return end
-
-		launcher:add("deps", target:name())
-
-		-- The editor bakes the project location in so the exe runs without arguments
 		if with_editor then
-			local project_dir  = path.unix(target:scriptdir())
-			local project_file = path.unix(path.join(target:scriptdir(), target:name() .. ".koi.toml"))
-			launcher:add("defines",
-				'KOI_PROJECT_DIR="'  .. project_dir  .. '"',
-				'KOI_PROJECT_FILE="' .. project_file .. '"')
+			target:set("basename", target:name() .. "-Editor")
+			target:add("deps", "Koi.Editor")
+			target:add("files", path.join(launcher, "EditorMain.cpp"))
+			target:add("defines",
+				'KOI_PROJECT_DIR="'  .. path.unix(root) .. '"',
+				'KOI_PROJECT_FILE="' .. path.unix(path.join(root, target:name() .. ".koi.toml")) .. '"')
+		else
+			target:add("files", path.join(launcher, "RuntimeMain.cpp"))
+			target:set("rundir", path.join(root, ".koi", "Cooked"))
+			if not is_mode("debug", "releasedbg") then
+				target:add("rules", "win.sdk.application")
+			end
 		end
 	end)
 rule_end()
