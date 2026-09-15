@@ -1,4 +1,4 @@
--- User rule to switch between static/object build kind for runtime/editor modes + sets up runargs
+-- Switches the game between object/static kind for editor/runtime and wires it into the launcher
 rule("KoiGame")
 	on_load(function(target)
 		local _we = get_config("WithEditor")
@@ -23,22 +23,15 @@ rule("KoiGame")
 
 		if not launcher then return end
 
-		-- Add self as dependency + get project TOML filepath
 		launcher:add("deps", target:name())
-		local project_file = path.join(target:scriptdir(), target:name() .. ".koi.toml")
 
+		-- The editor bakes the project location in so the exe runs without arguments
 		if with_editor then
-			-- Source-tree roots let the editor read .hlsl / .gltf / scene
-			-- TOMLs directly from disk without any copy step.
-			local engine_target = project.target("Koi.Engine")
-			local engine_src    = engine_target and engine_target:scriptdir() or ""
-
-			launcher:set("runargs",
-				"-p", project_file,
-				"--engine-source",  engine_src,
-				"--project-source", target:scriptdir())
-		else
-			launcher:set("runargs", "-p", project_file)
+			local project_dir  = path.unix(target:scriptdir())
+			local project_file = path.unix(path.join(target:scriptdir(), target:name() .. ".koi.toml"))
+			launcher:add("defines",
+				'KOI_PROJECT_DIR="'  .. project_dir  .. '"',
+				'KOI_PROJECT_FILE="' .. project_file .. '"')
 		end
 	end)
 rule_end()
