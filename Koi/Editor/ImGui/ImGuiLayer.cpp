@@ -125,9 +125,22 @@ namespace koi::editor
 		KOI_LOG_DEBUG("ImGui shut down");
 	}
 
-	void ImGuiLayer::BeginFrame()
+	void ImGuiLayer::BeginFrame(bool gameOwnsKeyboard)
 	{
 		ZoneScopedN("ImGui NewFrame");
+
+		ImGuiIO& io = ImGui::GetIO();
+		if (gameOwnsKeyboard)
+		{
+			io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
+			io.ClearInputKeys();
+			ImGui::SetNextFrameWantCaptureKeyboard(false);
+		}
+		else
+		{
+			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+		}
+
 		{ ZoneScopedN("Backend DX12"); ImGui_ImplDX12_NewFrame(); }
 		{ ZoneScopedN("Backend GLFW"); ImGui_ImplGlfw_NewFrame(); }
 		{ ZoneScopedN("Core");         ImGui::NewFrame();         }

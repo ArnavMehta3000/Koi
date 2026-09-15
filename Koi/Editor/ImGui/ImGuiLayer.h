@@ -19,7 +19,7 @@ namespace koi::editor
 		void Init(Window& window);
 		void Shutdown();
 
-		void BeginFrame();
+		void BeginFrame(bool gameOwnsKeyboard);
 		void EndFrame(CommandList& cmd);
 
 		// Contributed to whichever menu the editor puts it in

@@ -162,8 +162,10 @@ namespace koi::editor
 	void EditorApp::OnOverlayRender(CommandList& cmd)
 	{
 		ZoneScoped;
+		Engine& engine = Engine::Get();
 
-		m_imgui.BeginFrame();
+		const bool gameOwnsKeyboard = engine.IsPlaying() && engine.GetSubsystem<InputManager>().IsGameFocused();
+		m_imgui.BeginFrame(gameOwnsKeyboard);
 
 		{
 			ZoneScopedN("Panels");
@@ -178,7 +180,7 @@ namespace koi::editor
 		if (const ViewportTarget* vp = m_viewportPanel->GetTarget())
 			cmd.TransitionBarrier(vp->ResolvedColorBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
-		if (RenderWindow* rw = Engine::Get().GetSubsystem<Renderer>().GetMainRenderWindow())
+		if (RenderWindow* rw = engine.GetSubsystem<Renderer>().GetMainRenderWindow())
 		{
 			static constexpr std::array kClearColor = { 0.05f, 0.05f, 0.05f, 1.0f };
 			cmd.TransitionBarrier(rw->CurrentBackBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
