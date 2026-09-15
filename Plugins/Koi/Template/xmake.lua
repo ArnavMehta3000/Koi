@@ -1,0 +1,5 @@
+target("{{Name}}")
+	add_rules("KoiGame")
+	add_files("Source/**.cpp")
+	add_headerfiles("Source/**.h")
+target_end()

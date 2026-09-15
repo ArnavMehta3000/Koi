@@ -1,0 +1,26 @@
+[project]
+name    = "{{Name}}"
+version = "0.1.0"
+
+[window]
+title  = "{{Name}}"
+width  = 1280
+height = 720
+vsync  = true
+
+[logging]
+file       = "Logs/{{Name}}.log"  # relative to <project>/.koi (editor) or the exe (runtime); empty disables
+level      = "Info"
+history    = 4096
+console    = false
+debug_sink = true
+
+[assets]
+startup_scene = "Content/Scenes/Main.scene.toml"
+
+[input]
+stick_deadzone   = 0.2
+trigger_deadzone = 0.05
+
+[input.actions.Quit]
+buttons = [ "Escape", "Gamepad.Start" ]
