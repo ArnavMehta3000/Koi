@@ -33,5 +33,11 @@ add_rules("GenerateRDI", "Natvis")
 
 includes("Koi/Engine")
 includes("Koi/Editor")
-includes("Launcher")
-includes("Sandbox")
+
+-- A game project is any folder under Samples/ or Projects/ carrying <Name>/<Name>.koi.toml
+for _, marker in ipairs(table.join(os.files("Samples/*/*.koi.toml"), os.files("Projects/*/*.koi.toml"))) do
+	local dir = path.directory(marker)
+	if path.basename(marker):gsub("%.koi$", "") == path.filename(dir) then
+		includes(path.join(dir, "xmake.lua"))
+	end
+end
