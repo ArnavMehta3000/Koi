@@ -2,6 +2,7 @@
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Interop/ViewportTarget.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Platform/InputActions.h"
 #include "Koi/Engine/Platform/Window.h"
 #include <cassert>
 #include <memory>
@@ -18,6 +19,7 @@ namespace koi
 	{
 		WindowDesc   WindowDesc{};
 		LoggerConfig LogConfig{};
+		InputConfig  Input{};
 		std::string  AppName        = "Koi Application";
 		std::string  StartupScene;  // path relative to executable, empty = none
 	};

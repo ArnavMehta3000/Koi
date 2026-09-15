@@ -53,6 +53,7 @@ namespace koi
 		{
 			.MainWindow     = window,
 			.VSync          = mainWndDesc.VSync,
+			.Input          = desc.Input,
 		};
 		m_systems.InitAll(initCtx);
 		KOI_LOG_DEBUG("Engine subsystems initialized");

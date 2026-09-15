@@ -28,6 +28,7 @@ namespace koi::internal
 		const toml::table project = toml::parse_file(projectFile.string());
 
 		const LoggerConfig defaults{};
+		const toml::table* input = project["input"].as_table();
 
 		// Engine-defined data only
 		return AppCreateDesc
@@ -47,6 +48,7 @@ namespace koi::internal
 				.SpawnConsole    = project["logging"]["console"].value_or(defaults.SpawnConsole),
 				.UseDebugSink    = project["logging"]["debug_sink"].value_or(defaults.UseDebugSink),
 			},
+			.Input          = input ? LoadInputConfig(*input) : InputConfig{},
 			.AppName        = project["project"]["name"].value_or("Koi Application"),
 			.StartupScene   = project["assets"]["startup_scene"].value_or(""),
 		};

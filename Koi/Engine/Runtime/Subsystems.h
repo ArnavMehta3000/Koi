@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Core/Types.h"
+#include "Koi/Engine/Platform/InputActions.h"
 #include <optional>
 #include <tuple>
 #include <type_traits>
@@ -12,8 +13,9 @@ namespace koi
 	// Handed to every subsystem's Init, once the main window exists
 	struct SubsystemInitContext
 	{
-		Window&          MainWindow;
-		bool             VSync = false;
+		Window&            MainWindow;
+		bool               VSync = false;
+		const InputConfig& Input;
 	};
 
 	template<typename... Ts>

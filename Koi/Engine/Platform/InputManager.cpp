@@ -1,13 +1,16 @@
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 
 #ifndef GLFW_INCLUDE_NONE
 	#define GLFW_INCLUDE_NONE
 #endif
 #include <GLFW/glfw3.h>
 
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 
 namespace koi
 {
@@ -32,10 +35,15 @@ namespace koi
 
 	void InputManager::Init(const SubsystemInitContext& ctx)
 	{
+		ZoneScoped;
+
 		Window& window = ctx.MainWindow;
 		GLFWwindow* glfwWnd = window.GetGLFWWindow();
 		assert(glfwWnd && "Window has a null GLFWwindow");
 		m_glfwWindow = glfwWnd;
+
+		m_config = ctx.Input;
+		m_actions.assign(m_config.Actions.size(), ActionState{});
 
 		// Seed cursor position so the first frame's delta is zero.
 		f64 x, y;
@@ -63,11 +71,161 @@ namespace koi
 
 	void InputManager::BeginFrame()
 	{
+		ZoneScoped;
+
 		m_keyDownPrev   = m_keyDown;
 		m_mouseDownPrev = m_mouseDown;
 		m_scrollDelta   = m_scrollAccum;
 		m_scrollAccum   = {};
 		m_mouseDelta    = {};
+
+		PollGamepad();
+		EvaluateActions();
+	}
+
+	void InputManager::PollGamepad()
+	{
+		ZoneScoped;
+
+		m_padDownPrev = m_padDown;
+
+		GLFWgamepadstate state{};
+		m_gamepadConnected = ::glfwJoystickIsGamepad(GLFW_JOYSTICK_1) && ::glfwGetGamepadState(GLFW_JOYSTICK_1, &state);
+		if (!m_gamepadConnected)
+		{
+			m_padDown.fill(false);
+			m_padAxes.fill(0.0f);
+			return;
+		}
+
+		for (u32 i = 0; i < kMaxGamepadButton; ++i)
+		{
+			m_padDown[i] = state.buttons[i] == GLFW_PRESS;
+		}
+
+		// Sticks: radial deadzone, rescaled so the edge of the zone reads as zero
+		const auto stick = [&](GamepadAxis x, GamepadAxis y)
+		{
+			Vector2 v(state.axes[static_cast<u32>(x)], state.axes[static_cast<u32>(y)]);
+			const f32 length   = v.Length();
+			const f32 deadzone = m_config.Gamepad.StickDeadzone;
+
+			if (length <= deadzone) v = Vector2::Zero;
+			else v = v * ((length - deadzone) / ((1.0f - deadzone) * length));
+
+			m_padAxes[static_cast<u32>(x)] = std::clamp(v.x, -1.0f, 1.0f);
+			m_padAxes[static_cast<u32>(y)] = std::clamp(v.y, -1.0f, 1.0f);
+		};
+		stick(GamepadAxis::LeftX,  GamepadAxis::LeftY);
+		stick(GamepadAxis::RightX, GamepadAxis::RightY);
+
+		// Triggers: GLFW reports [-1, 1] with -1 released; map to [0, 1] past the deadzone
+		const auto trigger = [&](GamepadAxis axis)
+		{
+			const f32 raw      = (state.axes[static_cast<u32>(axis)] + 1.0f) * 0.5f;
+			const f32 deadzone = m_config.Gamepad.TriggerDeadzone;
+			m_padAxes[static_cast<u32>(axis)] = raw <= deadzone ? 0.0f : (raw - deadzone) / (1.0f - deadzone);
+		};
+		trigger(GamepadAxis::LeftTrigger);
+		trigger(GamepadAxis::RightTrigger);
+	}
+
+	f32 InputManager::Evaluate(const InputBinding& binding) const noexcept
+	{
+		return std::visit([&](auto source) -> f32
+		{
+			using T = std::decay_t<decltype(source)>;
+			if constexpr (std::is_same_v<T, KeyCode>)       return IsKeyDown(source)           ? binding.Scale : 0.0f;
+			if constexpr (std::is_same_v<T, GamepadButton>) return IsGamepadButtonDown(source) ? binding.Scale : 0.0f;
+			if constexpr (std::is_same_v<T, GamepadAxis>)   return GetGamepadAxis(source) * binding.Scale;
+		}, binding.Source);
+	}
+
+	void InputManager::EvaluateActions()
+	{
+		ZoneScoped;
+
+		for (size_t i = 0; i < m_config.Actions.size(); ++i)
+		{
+			ActionState& state = m_actions[i];
+			state.DownPrev = state.Down;
+			state.Value    = 0.0f;
+
+			if (!m_gameFocused)
+			{
+				state.Down = false;
+				continue;
+			}
+
+			// The strongest source wins_
+			for (const InputBinding& binding : m_config.Actions[i].Bindings)
+			{
+				const f32 value = Evaluate(binding);
+				if (std::abs(value) > std::abs(state.Value)) state.Value = value;
+			}
+
+			state.Down = std::abs(state.Value) >= kActionThreshold;
+		}
+	}
+
+	f32 InputManager::GetAction(std::string_view name) const noexcept
+	{
+		for (size_t i = 0; i < m_config.Actions.size(); ++i)
+		{
+			if (m_config.Actions[i].Name == name) return m_actions[i].Value;
+		}
+		return 0.0f;
+	}
+
+	bool InputManager::IsActionDown(std::string_view name) const noexcept
+	{
+		for (size_t i = 0; i < m_config.Actions.size(); ++i)
+		{
+			if (m_config.Actions[i].Name == name) return m_actions[i].Down;
+		}
+		return false;
+	}
+
+	bool InputManager::IsActionPressed(std::string_view name) const noexcept
+	{
+		for (size_t i = 0; i < m_config.Actions.size(); ++i)
+		{
+			if (m_config.Actions[i].Name == name) return m_actions[i].Down && !m_actions[i].DownPrev;
+		}
+		return false;
+	}
+
+	bool InputManager::IsActionReleased(std::string_view name) const noexcept
+	{
+		for (size_t i = 0; i < m_config.Actions.size(); ++i)
+		{
+			if (m_config.Actions[i].Name == name) return !m_actions[i].Down && m_actions[i].DownPrev;
+		}
+		return false;
+	}
+
+	bool InputManager::IsGamepadButtonDown(GamepadButton btn) const noexcept
+	{
+		const u32 i = static_cast<u32>(btn);
+		return i < kMaxGamepadButton && m_padDown[i];
+	}
+
+	bool InputManager::IsGamepadButtonPressed(GamepadButton btn) const noexcept
+	{
+		const u32 i = static_cast<u32>(btn);
+		return i < kMaxGamepadButton && m_padDown[i] && !m_padDownPrev[i];
+	}
+
+	bool InputManager::IsGamepadButtonReleased(GamepadButton btn) const noexcept
+	{
+		const u32 i = static_cast<u32>(btn);
+		return i < kMaxGamepadButton && !m_padDown[i] && m_padDownPrev[i];
+	}
+
+	f32 InputManager::GetGamepadAxis(GamepadAxis axis) const noexcept
+	{
+		const u32 i = static_cast<u32>(axis);
+		return i < kMaxGamepadAxis ? m_padAxes[i] : 0.0f;
 	}
 
 	bool InputManager::IsKeyDown(KeyCode key) const noexcept
