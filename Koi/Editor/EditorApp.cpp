@@ -21,6 +21,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 
 #include <imgui.h>
+#include <utility>
 
 namespace koi::editor
 {
@@ -87,15 +88,9 @@ namespace koi::editor
 		ZoneScoped;
 		InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 
-		// Hot-reload runs before frame so that commandlist invalidation doesn't happen
-		if (input.IsKeyPressed(KeyCode::F5))
-		{
-			// Shift forces everything; plain F5 leaves each target to reload what changed
-			ReloadAll(ReloadRequest
-			{
-				.Scope = input.IsModifierDown(Modifier::Shift) ? ReloadScope::All : ReloadScope::Changed
-			});
-		}
+		// Requested during the ImGui frame; runs here, before any command list is recording
+		if (m_pendingReload)
+			ReloadAll(*std::exchange(m_pendingReload, std::nullopt));
 
 		m_viewportPanel->Update(dt, input);
 
@@ -172,6 +167,7 @@ namespace koi::editor
 			ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 			DrawMenuBar();
 			m_panels.DrawAll();
+			PollShortcuts();
 		}
 
 		// ScenePass/TonemapPass render into the Viewport panel's offscreen target rather than
@@ -192,13 +188,27 @@ namespace koi::editor
 		m_imgui.EndFrame(cmd);
 	}
 
+	// Global shortcuts go through ImGui's routing
+	void EditorApp::PollShortcuts()
+	{
+		if (ImGui::Shortcut(ImGuiMod_Shift | ImGuiKey_F5, ImGuiInputFlags_RouteGlobal))  // Shift+F5: reload everything
+			m_pendingReload = ReloadRequest{ .Scope = ReloadScope::All };
+		else if (ImGui::Shortcut(ImGuiKey_F5, ImGuiInputFlags_RouteGlobal))  //F5: Reload what is changed
+			m_pendingReload = ReloadRequest{ .Scope = ReloadScope::Changed };
+
+		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal))  // Saving
+		{
+			SaveScene();
+		}
+	}
+
 	void EditorApp::DrawMenuBar()
 	{
 		if (!ImGui::BeginMainMenuBar()) return;
 
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Save Scene"))
+			if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
 				SaveScene();
 			if (ImGui::MenuItem("Cook"))
 				Cook();

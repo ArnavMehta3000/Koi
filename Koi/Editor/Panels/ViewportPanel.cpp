@@ -225,11 +225,11 @@ namespace koi::editor
 		if (!xform) return;
 
 		// Right-mouse is the camera - leave the shortcuts alone while it is held
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) && ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
 		{
-			if (ImGui::IsKeyPressed(ImGuiKey_W)) m_gizmoOp = GizmoOp::Translate;
-			if (ImGui::IsKeyPressed(ImGuiKey_E)) m_gizmoOp = GizmoOp::Rotate;
-			if (ImGui::IsKeyPressed(ImGuiKey_R)) m_gizmoOp = GizmoOp::Scale;
+			if (ImGui::Shortcut(ImGuiKey_W)) m_gizmoOp = GizmoOp::Translate;
+			if (ImGui::Shortcut(ImGuiKey_E)) m_gizmoOp = GizmoOp::Rotate;
+			if (ImGui::Shortcut(ImGuiKey_R)) m_gizmoOp = GizmoOp::Scale;
 		}
 
 		static constexpr ImGuizmo::OPERATION kOps[] =

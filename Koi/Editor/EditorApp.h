@@ -11,6 +11,7 @@
 #include "Koi/Editor/Selection.h"
 #include <toml++/toml.hpp>
 #include <filesystem>
+#include <optional>
 
 namespace koi
 {
@@ -68,6 +69,7 @@ namespace koi::editor
 	private:
 		void Setup();
 		void DrawMenuBar();
+		void PollShortcuts();
 		void ReloadAll(const ReloadRequest& request);
 		void SaveScene();
 		void Cook();
@@ -87,6 +89,7 @@ namespace koi::editor
 		ViewportPanel*                  m_viewportPanel     = nullptr;
 		Selection                       m_selection{};
 		std::string                     m_lastCookStatus;  // shown in menubar after Cook click
+		std::optional<ReloadRequest>    m_pendingReload;
 
 		toml::table                     m_snapshot;            // the world as it was when Play was pressed
 		std::vector<MeshHandle>         m_pinnedAssets;        // keeps the snapshot's assets resident across Stop
