@@ -30,10 +30,10 @@ namespace koi::editor
 
 	struct EditorConfig
 	{
-		fs::path EngineSource;   // <engine>/Assets
+		fs::path EngineSource;   // <repo>/Koi/Engine
 		fs::path ProjectSource;  // game source root (contains the .toml)
-		fs::path ProjectFile;    // explicit --project file
-		fs::path CookedOutput;   // where Cook writes (defaults to <exe>/Cooked)
+		fs::path ProjectFile;    // project TOML in use
+		fs::path CookedOutput;   // <project>/.koi/Cooked
 	};
 
 	// For debug lines

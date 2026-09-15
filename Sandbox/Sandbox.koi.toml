@@ -10,7 +10,7 @@ height = 720
 vsync  = false
 
 [logging]
-file       = "Logs/Koi.log"  # empty disables the file sink
+file       = "Logs/Koi.log"  # relative to <project>/.koi (editor) or the exe (runtime); empty disables
 level      = "Trace"         # runtime floor; the compile-time --LogLevel still wins
 history    = 4096            # records kept for the editor Log panel; 0 disables
 console    = false

@@ -10,7 +10,7 @@ namespace koi::editor
 	{
 		fs::path EngineSource;   // engine root (contains Content/)
 		fs::path ProjectSource;  // game source root (contains the .toml)
-		fs::path ProjectFile;    // explicit --project file
+		fs::path ProjectFile;    // project TOML in use
 		fs::path OutputRoot;     // where the cooked layout is written
 	};
 
