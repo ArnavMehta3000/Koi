@@ -18,3 +18,25 @@ debug_sink = true
 
 [assets]
 startup_scene = "Assets/Scenes/Main.scene.toml"
+
+[input]
+stick_deadzone = 0.2
+trigger_deadzone = 0.05
+
+[input.actions.MoveX]
+negative = [ "A", "Left" ]
+positive = [ "D", "Right" ]
+axes = [ "Gamepad.LeftX" ]
+
+[input.actions.MoveZ]
+negative = [ "S", "Down" ]
+positive = [ "W", "Up" ]
+axes = [ "-Gamepad.LeftY" ]
+
+[input.actions.Turn]
+negative = [ "Q" ]
+positive = [ "R" ]
+axes = [ "Gamepad.RightX" ]
+
+[input.actions.Quit]
+buttons = [ "Escape", "Gamepad.Start" ]
