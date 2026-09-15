@@ -67,6 +67,26 @@ namespace koi
 		};
 	}
 
+	PipelineRecipe PipelineRecipe::Lines(std::string name, std::string vs, std::string ps, Format target)
+	{
+		return PipelineRecipe
+		{
+			.Name         = std::move(name),
+			.VertexShader = std::move(vs),
+			.PixelShader  = std::move(ps),
+			.Desc         =
+			{
+				.Rasterizer          = { .CullMode = D3D12_CULL_MODE_NONE },
+				.DepthStencil        = { .DepthEnable = true, .DepthWrite = false, .DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL },
+				.RenderTargetFormats = { target },
+				.RenderTargetCount   = 1,
+				.DepthFormat         = kDepthFormat,
+				.TopologyType        = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE,
+				.Topology            = D3D_PRIMITIVE_TOPOLOGY_LINELIST,
+			},
+		};
+	}
+
 	PipelineRecipe& PipelineRecipe::Named(std::string name)
 	{
 		Name = std::move(name);

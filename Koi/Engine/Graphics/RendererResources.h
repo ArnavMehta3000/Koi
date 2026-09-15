@@ -28,6 +28,7 @@ namespace koi
 		PipelineHandle GBufferPipeline{};           // deferred geometry: 3 MRT (albedo/normals/material) + depth
 		PipelineHandle LightingPipeline{};          // full-screen deferred lighting: samples G-buffer -> HDR
 		PipelineHandle ShadowPipeline{};            // depth-only shadow map: no pixel shader, no render targets
+		PipelineHandle DebugLinePipeline{};         // LINELIST overlay
 
 		void Init(GfxDevice& device, PipelineLibrary& library);
 		void Shutdown();

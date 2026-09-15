@@ -19,6 +19,7 @@ namespace koi
 		[[nodiscard]] static PipelineRecipe GBuffer   (std::string name, std::string vs, std::string ps);
 		[[nodiscard]] static PipelineRecipe FullScreen(std::string name, std::string vs, std::string ps, Format target);
 		[[nodiscard]] static PipelineRecipe DepthOnly (std::string name, std::string vs);
+		[[nodiscard]] static PipelineRecipe Lines     (std::string name, std::string vs, std::string ps, Format target);
 
 		PipelineRecipe& Named(std::string name);
 		PipelineRecipe& Cull(D3D12_CULL_MODE mode);

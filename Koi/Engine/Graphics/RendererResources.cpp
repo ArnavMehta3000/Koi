@@ -132,6 +132,7 @@ namespace koi
 		GBufferPipeline       = {};
 		LightingPipeline      = {};
 		ShadowPipeline        = {};
+		DebugLinePipeline     = {};
 		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
 	}
 
@@ -161,5 +162,12 @@ namespace koi
 			"engine://Content/Shaders/LightingVS",
 			"engine://Content/Shaders/LightingPS",
 			Format::R16G16B16A16_FLOAT));
+
+		// --- Debug lines (last pass, over the tonemapped image) ---
+		DebugLinePipeline = library.Register(device, PipelineRecipe::Lines(
+			"DebugLine",
+			"engine://Content/Shaders/DebugLineVS",
+			"engine://Content/Shaders/DebugLinePS",
+			Format::R8G8B8A8_UNORM));
 	}
 }
