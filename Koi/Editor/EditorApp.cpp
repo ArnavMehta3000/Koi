@@ -1,6 +1,6 @@
-#include "Koi/Editor/EditorApp.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Cooker.h"
+#include "Koi/Editor/EditorApp.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
