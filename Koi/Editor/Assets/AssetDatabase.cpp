@@ -33,7 +33,7 @@ namespace koi::editor
 		{
 			std::vector<fs::path> files;
 			std::error_code ec;
-			for (const fs::directory_entry& file : fs::recursive_directory_iterator(projectSource / "Assets", ec))
+			for (const fs::directory_entry& file : fs::recursive_directory_iterator(projectSource / "Content", ec))
 			{
 				if (file.is_regular_file() && file.path().extension() == ".toml")
 					files.push_back(file.path());
@@ -54,7 +54,7 @@ namespace koi::editor
 		m_folders.clear();
 
 		ScanRoot(m_engineSource,  "engine",  "Content");
-		ScanRoot(m_projectSource, "project", "Assets");
+		ScanRoot(m_projectSource, "project", "Content");
 
 		std::ranges::sort(m_entries, {}, &AssetEntry::VirtualPath);
 
