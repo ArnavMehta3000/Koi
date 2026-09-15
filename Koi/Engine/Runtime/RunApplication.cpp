@@ -103,7 +103,7 @@ namespace koi::internal
 	// stays alive inside the catch handlers during stack unwinding
 	struct LoggerScope
 	{
-		LoggerScope()  { Logger::Init(); }
+		LoggerScope()  { Logger::Init({ .FilePath = "" }); }  // no file until .koi/ is known
 		~LoggerScope() { Logger::Shutdown(); }
 	};
 
