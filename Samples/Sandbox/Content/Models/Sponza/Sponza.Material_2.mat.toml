@@ -12,4 +12,4 @@ occlusion_strength = 1.0
 roughness = 1.0
 
 [textures]
-base_color = 'C:/Dev/Koi/Sandbox/Assets/Models/Sponza/white.png'
+base_color = 'project://Content/Models/Sponza/white.png'

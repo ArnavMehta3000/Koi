@@ -17,7 +17,7 @@ console    = false
 debug_sink = true
 
 [assets]
-startup_scene = "Assets/Scenes/Main.scene.toml"
+startup_scene = "Content/Scenes/Main.scene.toml"
 
 [input]
 stick_deadzone = 0.2

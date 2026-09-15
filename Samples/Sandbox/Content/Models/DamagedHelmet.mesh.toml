@@ -1,5 +1,5 @@
-source = 'project://Assets/Models/DamagedHelmet.gltf'
+source = 'project://Content/Models/DamagedHelmet.gltf'
 
 [[slot]]
 index = 0
-material = 'project://Assets/Models/DamagedHelmet.Material_MR.mat.toml'
+material = 'project://Content/Models/DamagedHelmet.Material_MR.mat.toml'

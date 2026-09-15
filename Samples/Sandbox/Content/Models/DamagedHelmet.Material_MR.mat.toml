@@ -12,8 +12,8 @@ occlusion_strength = 1.0
 roughness = 1.0
 
 [textures]
-base_color = 'project://Assets/Models/DamagedHelmet_0.png'
-emissive = 'project://Assets/Models/DamagedHelmet_4.png'
-metallic_roughness = 'project://Assets/Models/DamagedHelmet_1.png'
-normal = 'project://Assets/Models/DamagedHelmet_2.png'
-occlusion = 'project://Assets/Models/DamagedHelmet_3.png'
+base_color = 'project://Content/Models/DamagedHelmet_0.png'
+emissive = 'project://Content/Models/DamagedHelmet_4.png'
+metallic_roughness = 'project://Content/Models/DamagedHelmet_1.png'
+normal = 'project://Content/Models/DamagedHelmet_2.png'
+occlusion = 'project://Content/Models/DamagedHelmet_3.png'

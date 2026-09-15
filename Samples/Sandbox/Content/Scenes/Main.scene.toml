@@ -2,7 +2,7 @@
 name = 'Sponza'
 
     [entity.mesh]
-    path = 'project://Assets/Models/Sponza/Sponza.gltf'
+    path = 'project://Content/Models/Sponza/Sponza.gltf'
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
@@ -13,7 +13,7 @@ name = 'Sponza'
 name = 'Sponza 2'
 
     [entity.mesh]
-    path = 'project://Assets/Models/Sponza/Sponza.gltf'
+    path = 'project://Content/Models/Sponza/Sponza.gltf'
 
     [entity.transform]
     position = [ -5.45, 0.0, 18.65 ]
@@ -24,7 +24,7 @@ name = 'Sponza 2'
 name = 'Damaged Helmet'
 
     [entity.mesh]
-    path = 'project://Assets/Models/DamagedHelmet.gltf'
+    path = 'project://Content/Models/DamagedHelmet.gltf'
 
     [entity.player_controller]
     move_speed = 5.0

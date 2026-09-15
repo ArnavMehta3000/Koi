@@ -12,6 +12,6 @@ occlusion_strength = 1.0
 roughness = 1.0
 
 [textures]
-base_color = 'C:/Dev/Koi/Sandbox/Assets/Models/Sponza/755318871556304029.jpg'
-metallic_roughness = 'C:/Dev/Koi/Sandbox/Assets/Models/Sponza/2411100444841994089.jpg'
-normal = 'C:/Dev/Koi/Sandbox/Assets/Models/Sponza/3827035219084910048.jpg'
+base_color = 'project://Content/Models/Sponza/755318871556304029.jpg'
+metallic_roughness = 'project://Content/Models/Sponza/2411100444841994089.jpg'
+normal = 'project://Content/Models/Sponza/3827035219084910048.jpg'
