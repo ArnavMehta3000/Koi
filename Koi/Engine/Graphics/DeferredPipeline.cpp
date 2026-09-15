@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/DeferredPipeline.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Graphics/RenderPasses/DebugDrawPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
@@ -38,6 +39,13 @@ namespace koi
 			.Device   = &renderer.GetDevice(),
 			.Pipeline = renderer.GetDefaultResources().TonemapPipeline,
 		});
+
+		m_debugDrawPass = &passes.Add<DebugDrawPass>(DebugDrawPass::Config
+		{
+			.Device    = &renderer.GetDevice(),
+			.Resources = &renderer.GetDefaultResources(),
+			.Queue     = &renderer.GetDebugDraw(),
+		});
 	}
 
 	void DeferredPipeline::Setup(const RenderView& view, World& world)
@@ -60,5 +68,8 @@ namespace koi
 
 		m_tonemapPass->SetInput(m_lightingPass->GetColorOutput())
 			.SetTarget(target.ResolvedColorBuffer, target.Width, target.Height);
+
+		m_debugDrawPass->SetCamera(view.Camera)
+			.SetTarget(target.ResolvedColorBuffer, m_gbufferPass->GetDepth(), target.Width, target.Height);
 	}
 }

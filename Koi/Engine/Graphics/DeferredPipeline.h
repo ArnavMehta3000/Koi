@@ -3,6 +3,7 @@
 
 namespace koi
 {
+	class DebugDrawPass;
 	class GBufferPass;
 	class LightingPass;
 	class ShadowPass;
@@ -15,9 +16,10 @@ namespace koi
 		void Setup(const RenderView& view, World& world) override;
 
 	private:
-		ShadowPass*   m_shadowPass   = nullptr;
-		GBufferPass*  m_gbufferPass  = nullptr;
-		LightingPass* m_lightingPass = nullptr;
-		TonemapPass*  m_tonemapPass  = nullptr;
+		ShadowPass*    m_shadowPass    = nullptr;
+		GBufferPass*   m_gbufferPass   = nullptr;
+		LightingPass*  m_lightingPass  = nullptr;
+		DebugDrawPass* m_debugDrawPass = nullptr;
+		TonemapPass*   m_tonemapPass   = nullptr;
 	};
 }

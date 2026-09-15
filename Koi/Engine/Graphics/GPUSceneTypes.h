@@ -71,6 +71,14 @@ namespace koi
 		u32     _Pad;
 	};
 
+	// Root constants for the debug line pass. Must match the b0 cbuffer in DebugLineVS.hlsl
+	struct DebugDrawRootConstants
+	{
+		Matrix ViewProjection;
+		u32    VertexBufferIndex;  // StructuredBuffer<DebugVertex>
+		u32    _Pad[3];
+	};
+
 #pragma warning(disable : 4324) // structure was padded due to alignment specifier
 	struct alignas(16) DrawRootConstants
 	{
