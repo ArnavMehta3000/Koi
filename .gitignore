@@ -11,3 +11,6 @@ Koi.sln
 
 # User game projects live here
 Projects/
+
+# xmake install output
+Packaged/
