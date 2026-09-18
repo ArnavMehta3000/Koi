@@ -31,17 +31,9 @@ struct GPULight
 };
 
 // 1 = fully lit, 0 = fully shadowed
-float SampleShadow(GPULight light, float3 worldPos)
+float SampleShadow(GPULight light, float3 worldPos, float3 N, float ndotl)
 {
 	if (light.ShadowMapIndex == INVALID_DESCRIPTOR) return 1.0;
-
-	float4 lightClip = mul(float4(worldPos, 1.0), light.ShadowMatrix);
-	float3 ndc       = lightClip.xyz / lightClip.w;
-	if (any(abs(ndc.xy) > 1.0) || ndc.z > 1.0) return 1.0;  // outside the map
-
-	// Clip space -> UV: y flips because NDC is bottom-up and texture space is top-down
-	float2 uv        = float2(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5);
-	float  reference = ndc.z - light.ShadowBias;
 
 	Texture2D<float>       shadowMap  = ResourceDescriptorHeap[light.ShadowMapIndex];
 	SamplerComparisonState shadowSamp = SamplerDescriptorHeap[ShadowSamplerIndex];
@@ -49,6 +41,19 @@ float SampleShadow(GPULight light, float3 worldPos)
 	float2 texelSize;
 	shadowMap.GetDimensions(texelSize.x, texelSize.y);
 	texelSize = 1.0 / texelSize;
+
+	// Normal offset: push the lookup off the surface by about one shadow texel in world units
+	float  worldPerTexel = 2.0 / max(length(light.ShadowMatrix._11_21_31), 1e-6) * texelSize.x;
+	float  slope         = sqrt(saturate(1.0 - ndotl * ndotl));
+	float3 samplePos     = worldPos + N * worldPerTexel * (1.0 + 2.0 * slope);
+
+	float4 lightClip = mul(float4(samplePos, 1.0), light.ShadowMatrix);
+	float3 ndc       = lightClip.xyz / lightClip.w;
+	if (any(abs(ndc.xy) > 1.0) || ndc.z > 1.0) return 1.0;  // outside the map
+
+	// Clip space -> UV: y flips because NDC is bottom-up and texture space is top-down
+	float2 uv        = float2(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5);
+	float  reference = ndc.z - light.ShadowBias;
 
 	// 3x3 PCF. Each tap is already bilinear-filtered across 4 texels by the comparison
 	// sampler, so this is a 4x4-ish kernel for 9 taps
@@ -129,7 +134,7 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 		float spec      = pow(ndoth, shininess) * (1.0 - roughness);
 
 		float3 radiance = light.Color * light.Intensity * atten;
-		color += (albedo * ndotl + spec) * radiance * SampleShadow(light, worldPos);
+		color += (albedo * ndotl + spec) * radiance * SampleShadow(light, worldPos, N, ndotl);
 	}
 
 	return float4(color, 1.0);
