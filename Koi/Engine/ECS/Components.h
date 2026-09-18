@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Math/Math.h"
+#include "Koi/Engine/Assets/MaterialAsset.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 
 namespace koi
@@ -7,6 +8,12 @@ namespace koi
 	struct MeshRef
 	{
 		MeshHandle Handle;  // the source path lives in the mesh AssetCache, not per entity
+	};
+
+	// Overrides every material slot of the entity's mesh with one material asset
+	struct MaterialRef
+	{
+		MaterialHandle Handle;
 	};
 
 	struct CameraComponent

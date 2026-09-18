@@ -118,7 +118,8 @@ namespace koi::editor
 		}
 
 		// Content is shipped wholesale; a scene references its assets by the same relative paths
-		CopyDir(request.EngineSource / "Content" / "Meshes", outRoot / "Engine" / "Content" / "Meshes");
+		CopyDir(request.EngineSource / "Content" / "Meshes",    outRoot / "Engine" / "Content" / "Meshes");
+		CopyDir(request.EngineSource / "Content" / "Materials", outRoot / "Engine" / "Content" / "Materials");
 		CopyDir(request.ProjectSource / "Content", projRoot / "Content");
 
 		// Copy the project TOML as <out>/Project/Project.koi.toml

@@ -1,0 +1,6 @@
+name = "Player"
+
+[constants]
+base_color = [ 0.95, 0.55, 0.15, 1.0 ]
+metallic = 0.0
+roughness = 0.7

@@ -30,6 +30,15 @@ namespace koi
 			engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>()
 				.Release(engine.GetSubsystem<Renderer>().GetDevice(), mesh.Handle);
 		});
+
+		m_ecs.component<MaterialRef>().on_remove([](Entity, MaterialRef& material)
+		{
+			if (!material.Handle) return;
+
+			Engine& engine = Engine::Get();
+			engine.GetSubsystem<AssetRegistry>().Cache<Material>()
+				.Release(engine.GetSubsystem<Renderer>().GetDevice(), material.Handle);
+		});
 	}
 
 	std::optional<World> World::Load(std::string_view virtualPath)

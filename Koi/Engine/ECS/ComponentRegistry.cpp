@@ -12,10 +12,12 @@ namespace koi
 {
 	namespace
 	{
-		AssetCache<GPUMesh>& Meshes() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
-		GfxDevice&           Device() { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
+		AssetCache<GPUMesh>&  Meshes()    { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
+		AssetCache<Material>& Materials() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>(); }
+		GfxDevice&            Device()    { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
 
-		constexpr std::string_view kDefaultMesh = "engine://Content/Meshes/Box.gltf";
+		constexpr std::string_view kDefaultMesh     = "engine://Content/Meshes/Box.gltf";
+		constexpr std::string_view kDefaultMaterial = "engine://Content/Materials/Default.mat.toml";
 
 		// MeshRef is a cache handle rather than plain data, so it cannot depend on Serializer<T>
 		class MeshComponentType final : public IComponentType
@@ -58,6 +60,46 @@ namespace koi
 				entityTable.insert(Key(), std::move(meshTable));
 			}
 		};
+
+		// Same shape as MeshComponentType: a cache handle, keyed by path in the scene file
+		class MaterialComponentType final : public IComponentType
+		{
+		public:
+			[[nodiscard]] std::string_view Key() const override { return "material"; }
+			[[nodiscard]] i32 DrawOrder() const override { return 11; }
+
+			[[nodiscard]] bool Has(Entity e) const override { return e.has<MaterialRef>(); }
+
+			void Add(Entity e) const override
+			{
+				const MaterialHandle handle = Materials().Acquire(Device(), AssetKey(std::string(kDefaultMaterial)));
+				if (handle) e.set<MaterialRef>({ handle });
+			}
+
+			void Remove(Entity e) const override { e.remove<MaterialRef>(); }
+
+			void Load(Entity e, const toml::table& entityTable) const override
+			{
+				const toml::table* table = entityTable[Key()].as_table();
+				if (!table) return;
+
+				const AssetKey key((*table)["path"].value_or(std::string()));
+				if (!key) return;
+
+				const MaterialHandle handle = Materials().Acquire(Device(), key);
+				if (handle) e.set<MaterialRef>({ handle });
+			}
+
+			void Save(Entity e, toml::table& entityTable) const override
+			{
+				const MaterialRef* ref = e.try_get<MaterialRef>();
+				if (!ref) return;
+
+				toml::table table;
+				table.insert("path", Materials().GetKey(ref->Handle).Path());
+				entityTable.insert(Key(), std::move(table));
+			}
+		};
 	}
 
 	ComponentRegistry& ComponentRegistry::Get()
@@ -98,6 +140,7 @@ namespace koi
 
 		registry.Register<ComponentType<Transform>>("transform", 0, true);
 		registry.Register<MeshComponentType>();
+		registry.Register<MaterialComponentType>();
 		registry.Register<ComponentType<CameraComponent>>("camera", 20);
 		registry.Register<ComponentType<Light>>("light", 30);
 	}

@@ -27,6 +27,13 @@ namespace koi::editor
 		void Draw(Entity e) override;
 	};
 
+	class MaterialRefInspector final : public IComponentInspector
+	{
+	public:
+		[[nodiscard]] std::string_view Key() const override { return "material"; }
+		void Draw(Entity e) override;
+	};
+
 	class CameraInspector final : public IComponentInspector
 	{
 	public:

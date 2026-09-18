@@ -9,6 +9,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <numbers>
+#include <optional>
 
 namespace koi::editor
 {
@@ -17,18 +18,48 @@ namespace koi::editor
 		constexpr f32 kRadToDeg = 180.0f / static_cast<f32>(std::numbers::pi);
 		constexpr f32 kDegToRad = static_cast<f32>(std::numbers::pi) / 180.0f;
 
-		AssetCache<GPUMesh>& Meshes() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
-		GfxDevice&           Device() { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
+		AssetCache<GPUMesh>&  Meshes()    { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
+		AssetCache<Material>& Materials() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>(); }
+		GfxDevice&            Device()    { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
 
 		// Acquire before remove: if the new key is the one already held, the extra reference
-		// keeps the mesh resident across the removal that releases the old handle
-		static void ReacquireMesh(Entity e, const AssetKey& key)
+		// keeps the asset resident across the removal that releases the old handle
+		template<typename Ref, typename T>
+		static void Reacquire(Entity e, AssetCache<T>& cache, const AssetKey& key)
 		{
-			const MeshHandle handle = Meshes().Acquire(Device(), key);
+			const AssetHandle<T> handle = cache.Acquire(Device(), key);
 			if (!handle) return;
 
-			e.remove<MeshRef>();  // World's on_remove hook releases whatever was there
-			e.set<MeshRef>({ handle });
+			e.remove<Ref>();  // World's on_remove hook releases whatever was there
+			e.set<Ref>({ handle });
+		}
+
+		// A button showing the asset's path that accepts a drag from the Assets panel. Returns the dropped path
+		static std::optional<std::string> AssetDropButton(std::string_view current, AssetKind kind)
+		{
+			const std::string label = current.empty() ? std::string("(none)") : std::string(current);
+			ImGui::Button(label.c_str(), ImVec2(-FLT_MIN, 0.0f));
+			ImGui::SetItemTooltip("Drag an asset here from the Assets panel");
+
+			std::optional<std::string> dropped;
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType))
+				{
+					std::string path(static_cast<const char*>(payload->Data));
+
+					if (const AssetTypeInfo* type = FindAssetTypeForFile(path); type && type->Kind == kind)
+					{
+						dropped = std::move(path);
+					}
+					else
+					{
+						KOI_LOG_WARN("Dropped asset is not a {}: {}", FindAssetTypeByKind(kind)->Name, path);
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+			return dropped;
 		}
 	}
 
@@ -61,42 +92,32 @@ namespace koi::editor
 		const MeshRef* meshRef = e.try_get<MeshRef>();
 		if (!meshRef) return;
 
-		const std::string_view source = Meshes().GetPath(meshRef->Handle);
-
-		// Doubles as the drop zone for a mesh dragged out of the Assets panel
-		const std::string label = source.empty() ? std::string("(none)") : std::string(source);
-		ImGui::Button(label.c_str(), ImVec2(-FLT_MIN, 0.0f));
-		ImGui::SetItemTooltip("Drag a mesh here from the Assets panel");
-
-		bool replaced = false;
-		if (ImGui::BeginDragDropTarget())
+		// The old handle was just released, so meshRef is stale - resume next frame
+		if (const auto dropped = AssetDropButton(Meshes().GetPath(meshRef->Handle), AssetKind::Mesh))
 		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType))
-			{
-				const std::string dropped(static_cast<const char*>(payload->Data));
-
-				if (const AssetTypeInfo* type = FindAssetTypeForFile(dropped); type->Kind == AssetKind::Mesh)
-				{
-					ReacquireMesh(e, AssetKey(dropped));
-					replaced = true;
-				}
-				else
-				{
-					KOI_LOG_WARN("Dropped asset is not a mesh: {}", dropped);
-				}
-			}
-			ImGui::EndDragDropTarget();
+			Reacquire<MeshRef>(e, Meshes(), AssetKey(*dropped));
+			return;
 		}
-
-		// The old handle was just released, so meshRef and source are stale - resume next frame
-		if (replaced) return;
 
 		if (const GPUMesh* mesh = Meshes().Get(meshRef->Handle))
 		{
 			ImGui::Text("Draw calls  %d", static_cast<i32>(mesh->DrawItems.size()));
 			ImGui::Text("Materials   %d", static_cast<i32>(mesh->Materials.size()));
 		}
+	}
 
+	void MaterialRefInspector::Draw(Entity e)
+	{
+		const MaterialRef* ref = e.try_get<MaterialRef>();
+		if (!ref) return;
+
+		if (const auto dropped = AssetDropButton(Materials().GetPath(ref->Handle), AssetKind::Material))
+		{
+			Reacquire<MaterialRef>(e, Materials(), AssetKey(*dropped));
+			return;
+		}
+
+		ImGui::TextDisabled("Select the .mat.toml in the Assets panel to edit it");
 	}
 
 	void CameraInspector::Draw(Entity e)
@@ -148,6 +169,7 @@ namespace koi::editor
 	{
 		registry.Emplace<TransformInspector>();
 		registry.Emplace<MeshInspector>();
+		registry.Emplace<MaterialRefInspector>();
 		registry.Emplace<CameraInspector>();
 		registry.Emplace<LightInspector>();
 	}

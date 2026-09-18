@@ -109,7 +109,8 @@ namespace koi::editor
 		std::optional<ReloadRequest>    m_pendingReload;
 
 		toml::table                     m_snapshot;            // the world as it was when Play was pressed
-		std::vector<MeshHandle>         m_pinnedAssets;        // keeps the snapshot's assets resident across Stop
+		std::vector<MeshHandle>         m_pinnedMeshes;        // keep the snapshot's assets resident across Stop
+		std::vector<MaterialHandle>     m_pinnedMaterials;
 		ViewportCamera                  m_cameraBeforePlay{};  // restored on Stop
 	};
 }

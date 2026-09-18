@@ -1,0 +1,6 @@
+name = "Obstacle"
+
+[constants]
+base_color = [ 0.75, 0.12, 0.12, 1.0 ]
+metallic = 0.0
+roughness = 0.7

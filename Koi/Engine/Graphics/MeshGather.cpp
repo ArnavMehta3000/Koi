@@ -2,6 +2,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
 
 namespace koi
@@ -18,10 +19,16 @@ namespace koi
 		ZoneScoped;
 		out.Clear();
 
-		world.GetECS().each([&](const Transform& xform, const MeshRef& meshRef)
+		const AssetCache<Material>& materials = Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>();
+
+		world.GetECS().each([&](Entity e, const Transform& xform, const MeshRef& meshRef)
 		{
 			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 			if (!mesh) return;
+
+			// A MaterialRef on the entity wins over whatever the mesh's sidecar bound
+			const MaterialRef* materialRef = e.try_get<MaterialRef>();
+			const Material*    override    = materialRef ? materials.Get(materialRef->Handle) : nullptr;
 
 			const Matrix            worldMatrix = xform.ToMatrix();
 			const DirectX::XMMATRIX worldXM     = DirectX::XMLoadFloat4x4(&worldMatrix);
@@ -55,8 +62,8 @@ namespace koi
 					.Mesh         = mesh,
 					.Draw         = &draw,
 					.ObjectIndex  = objectIndex,
-					.Pipeline     = mesh->SlotPipelines[draw.MaterialSlot],
-					.MaterialSlot = mesh->TableSlots[draw.MaterialSlot],
+					.Pipeline     = override ? override->Pipeline  : mesh->SlotPipelines[draw.MaterialSlot],
+					.MaterialSlot = override ? override->TableSlot : mesh->TableSlots[draw.MaterialSlot],
 				});
 			}
 		});

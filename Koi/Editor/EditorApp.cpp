@@ -374,19 +374,28 @@ namespace koi::editor
 	{
 		ZoneScoped;
 
-		World& world                = m_game->GetWorld();
-		GfxDevice& device           = Engine::Get().GetSubsystem<Renderer>().GetDevice();
-		AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
+		World& world                    = m_game->GetWorld();
+		Engine& engine                  = Engine::Get();
+		GfxDevice& device               = engine.GetSubsystem<Renderer>().GetDevice();
+		AssetRegistry& assets           = engine.GetSubsystem<AssetRegistry>();
+		AssetCache<GPUMesh>& meshes     = assets.Cache<GPUMesh>();
+		AssetCache<Material>& materials = assets.Cache<Material>();
 
 		m_snapshot = world.SaveToTable();
 
 		// Hold a reference to everything the snapshot names. Stop tears the world down
-		// before rebuilding it, and without this the last reference to each mesh would
+		// before rebuilding it, and without this the last reference to each asset would
 		// drop to zero and the same files would be re-read from disk a moment later
 		world.GetECS().each<MeshRef>([&](Entity, MeshRef& mesh)
 		{
 			const AssetKey key = meshes.GetKey(mesh.Handle);
-			if (key) m_pinnedAssets.push_back(meshes.Acquire(device, key));
+			if (key) m_pinnedMeshes.push_back(meshes.Acquire(device, key));
+		});
+
+		world.GetECS().each<MaterialRef>([&](Entity, MaterialRef& material)
+		{
+			const AssetKey key = materials.GetKey(material.Handle);
+			if (key) m_pinnedMaterials.push_back(materials.Acquire(device, key));
 		});
 
 		// Show the game camera by default; the toolbar can still switch back mid-play
@@ -428,16 +437,15 @@ namespace koi::editor
 		world.LoadFromTable(m_snapshot);
 
 		// The rebuilt world took its own references, so the play-time pins can go
-		GfxDevice& device           = engine.GetSubsystem<Renderer>().GetDevice();
-		AssetCache<GPUMesh>& meshes = engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
-		for (const MeshHandle handle : m_pinnedAssets)
-		{
-			meshes.Release(device, handle);
-		}
+		GfxDevice& device     = engine.GetSubsystem<Renderer>().GetDevice();
+		AssetRegistry& assets = engine.GetSubsystem<AssetRegistry>();
+		for (const MeshHandle handle : m_pinnedMeshes)         assets.Cache<GPUMesh>().Release(device, handle);
+		for (const MaterialHandle handle : m_pinnedMaterials)  assets.Cache<Material>().Release(device, handle);
 
 		m_viewportPanel->SetCameraMode(m_cameraBeforePlay);
 
-		m_pinnedAssets.clear();
+		m_pinnedMeshes.clear();
+		m_pinnedMaterials.clear();
 		m_snapshot = toml::table{};
 		KOI_LOG_DEBUG("Stop: world restored from snapshot, pinned assets released");
 	}
