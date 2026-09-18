@@ -3,6 +3,7 @@
 #include "Koi/Engine/Interop/ViewportTarget.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Editor/EditorCameraController.h"
+#include <toml++/toml.hpp>
 
 namespace koi
 {
@@ -61,6 +62,10 @@ namespace koi::editor
 
 		const ViewportTarget* PrepareFrame(CommandList& cmd);
 		void FrameBounds(const BoundingBox& bounds);
+
+		// Orbit camera state, persisted per project across editor sessions
+		[[nodiscard]] toml::table SaveCameraState() const;
+		bool LoadCameraState(const toml::table& table);
 		void Update(f32 dt, InputManager& input);
 
 	private:

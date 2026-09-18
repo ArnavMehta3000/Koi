@@ -5,6 +5,7 @@
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
+#include "Koi/Engine/Math/MathSerializer.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Platform/InputManager.h"
@@ -219,9 +220,10 @@ namespace koi::editor
 		m_gizmoActive = false;
 
 		// No gizmo in game view or when no entity is selected
-		if (m_cameraMode != ViewportCamera::Scene || !m_selection->IsValid()) return;
+		if (m_cameraMode != ViewportCamera::Scene || !m_selection->HasEntity()) return;
 
-		Transform* xform = m_selection->Selected.try_get_mut<Transform>();
+		const Entity selected = m_selection->GetEntity();
+		Transform* xform = selected.try_get_mut<Transform>();
 		if (!xform) return;
 
 		// Right-mouse is the camera - leave the shortcuts alone while it is held
@@ -239,6 +241,7 @@ namespace koi::editor
 
 		ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 		ImGuizmo::SetRect(x, y, width, height);
+		ImGuizmo::AllowAxisFlip(false);  // keep handles fixed to world axes instead of flipping toward the camera
 
 		Matrix matrix = xform->ToMatrix();
 		if (ImGuizmo::Manipulate(&m_camera.View._11,
@@ -254,7 +257,7 @@ namespace koi::editor
 				xform->Position = position;
 				xform->Rotation = rotation;
 				xform->Scale    = scale;
-				m_selection->Selected.modified<Transform>();
+				selected.modified<Transform>();
 			}
 		}
 
@@ -324,7 +327,7 @@ namespace koi::editor
 			}
 		});
 
-		m_selection->Selected = hit;
+		m_selection->Select(hit);  // an invalid hit clears the selection: clicking empty space deselects
 	}
 
 	void ViewportPanel::FrameBounds(const BoundingBox& bounds)
@@ -333,7 +336,31 @@ namespace koi::editor
 		const f32 radius = BoundsRadius(bounds);
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
-		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, 0.3f);
+		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, -0.5f);
+	}
+
+	toml::table ViewportPanel::SaveCameraState() const
+	{
+		toml::table camera;
+		SerializeInto(camera, "target", m_controller.GetOrbitTarget());
+		camera.insert("radius", ToTomlFloat(m_controller.GetOrbitRadius()));
+		camera.insert("yaw",    ToTomlFloat(m_controller.GetYaw()));
+		camera.insert("pitch",  ToTomlFloat(m_controller.GetPitch()));
+		return camera;
+	}
+
+	bool ViewportPanel::LoadCameraState(const toml::table& table)
+	{
+		const toml::table* camera = table["camera"].as_table();
+		if (!camera) return false;
+
+		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
+		m_controller.SetOrbitTarget(
+			DeserializeOr(*camera, "target", Vector3::Zero),
+			(*camera)["radius"].value_or(10.0f),
+			(*camera)["yaw"].value_or(0.0f),
+			(*camera)["pitch"].value_or(-0.5f));
+		return true;
 	}
 
 	void ViewportPanel::Update(f32 dt, InputManager& input)

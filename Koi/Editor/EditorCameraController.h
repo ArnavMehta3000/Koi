@@ -29,6 +29,8 @@ namespace koi::editor
 		[[nodiscard]] CameraMode GetMode()        const noexcept { return m_mode; }
 		[[nodiscard]] Vector3    GetOrbitTarget() const noexcept { return m_orbitTarget; }
 		[[nodiscard]] f32        GetOrbitRadius() const noexcept { return m_orbitRadius; }
+		[[nodiscard]] f32        GetYaw()         const noexcept { return m_yaw; }
+		[[nodiscard]] f32        GetPitch()       const noexcept { return m_pitch; }
 
 		// Returns true when the controller wants the cursor to be locked (FP mode + RMB)
 		[[nodiscard]] bool WantsCursorLock() const noexcept { return m_wantsCursorLock; }

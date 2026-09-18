@@ -90,6 +90,11 @@ namespace koi::editor
 		void DrawCameraFrustum();
 		void DrawShadowVolume();
 
+		// Per-project editor state (camera) in <project>/.koi/Editor.toml
+		[[nodiscard]] fs::path EditorStatePath() const;
+		bool LoadEditorState();
+		void SaveEditorState() const;
+
 		void Play();
 		void TogglePause();
 		void Stop();

@@ -24,6 +24,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 
 #include <imgui.h>
+#include <fstream>
 #include <utility>
 
 namespace koi::editor
@@ -81,9 +82,55 @@ namespace koi::editor
 		m_game->HostInit();
 		m_imgui.Init(Engine::Get().GetWindow());
 
-		m_viewportPanel->FrameBounds(m_game->GetWorld().GetBounds());
+		if (!LoadEditorState())
+		{
+			// Failed to load editor state (camera), set editor camera to cover scene bounds
+			m_viewportPanel->FrameBounds(m_game->GetWorld().GetBounds());
+		}
 
 		KOI_LOG_INFO("Editor initialized");
+	}
+
+	fs::path EditorApp::EditorStatePath() const
+	{
+		return m_config.CookedOutput.parent_path() / "Editor.toml";  // <project>/.koi/Editor.toml
+	}
+
+	bool EditorApp::LoadEditorState()
+	{
+		const fs::path path = EditorStatePath();
+		if (!fs::exists(path)) return false;
+
+		try
+		{
+			return m_viewportPanel->LoadCameraState(toml::parse_file(path.string()));
+		}
+		catch (const toml::parse_error& e)
+		{
+			KOI_LOG_WARN("Editor state '{}' did not parse: {}", path.string(), e.description());
+			return false;
+		}
+	}
+
+	void EditorApp::SaveEditorState() const
+	{
+		const fs::path path = EditorStatePath();
+
+		toml::table root;
+		root.insert("camera", m_viewportPanel->SaveCameraState());
+
+		std::error_code ec;
+		fs::create_directories(path.parent_path(), ec);
+
+		std::ofstream out(path, std::ios::trunc);
+		if (out)
+		{
+			out << root;
+		}
+		else
+		{
+			KOI_LOG_WARN("Could not write editor state to '{}'", path.string());
+		}
 	}
 
 	void EditorApp::HostTick(f32 dt)
@@ -124,20 +171,20 @@ namespace koi::editor
 
 	void EditorApp::DrawSelectionBounds()
 	{
-		if (!m_selection.IsValid()) return;
+		World& world = m_game->GetWorld();
+		// A tag has no storage, so it filters the query rather than appearing as an argument
+		world.GetECS().query_builder<const Transform, const MeshRef>().with<Selected>().build()
+			.each([&](const Transform& xform, const MeshRef& meshRef)
+		{
+			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
+			if (!mesh) return;
 
-		const Transform* xform   = m_selection.Selected.try_get<Transform>();
-		const MeshRef*   meshRef = m_selection.Selected.try_get<MeshRef>();
-		if (!xform || !meshRef) return;
+			BoundingOrientedBox box;
+			BoundingOrientedBox::CreateFromBoundingBox(box, mesh->Bounds);
+			box.Transform(box, xform.ToMatrix());
 
-		const GPUMesh* mesh = m_game->GetWorld().GetMesh(meshRef->Handle);
-		if (!mesh) return;
-
-		BoundingOrientedBox box;
-		BoundingOrientedBox::CreateFromBoundingBox(box, mesh->Bounds);
-		box.Transform(box, xform->ToMatrix());
-
-		DebugDraw::Box(box, Color(1.0f, 0.6f, 0.1f, 1.0f));
+			DebugDraw::Box(box, Color(1.0f, 0.6f, 0.1f, 1.0f));
+		});
 	}
 
 	void EditorApp::DrawLightGizmos()
@@ -187,6 +234,7 @@ namespace koi::editor
 
 	void EditorApp::HostShutdown()
 	{
+		SaveEditorState();
 		m_game->HostShutdown();
 		m_imgui.Shutdown();
 		KOI_LOG_INFO("Editor shut down");
