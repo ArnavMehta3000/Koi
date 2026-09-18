@@ -2,21 +2,57 @@
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <algorithm>
+#include <optional>
+#include <vector>
 
 namespace koi::editor
 {
 	namespace
 	{
 		constexpr const char* kDragDropPayloadType = "KOI_SCENE_ENTITY";
+
+		// Children of `parent` (roots when invalid) in outliner order
+		std::vector<Entity> SortedChildren(ECS& ecs, Entity parent)
+		{
+			std::vector<Entity> out;
+			if (parent.is_alive())
+			{
+				parent.children([&](Entity e) { out.push_back(e); });
+			}
+			else
+			{
+				ecs.each<Transform>([&](Entity e, Transform&) { if (!e.parent()) out.push_back(e); });
+			}
+
+			std::ranges::sort(out, {}, [](Entity e) { return OrderKey(e); });
+			return out;
+		}
+
+		// Depth-first renumber after any structural edit
+		void Renumber(ECS& ecs)
+		{
+			u32 next = 0;
+			auto visit = [&](this auto&& self, Entity parent) -> void
+			{
+				for (Entity e : SortedChildren(ecs, parent))
+				{
+					e.set<SceneOrder>({ next++ });
+					self(e);
+				}
+			};
+			visit(Entity{});
+		}
 	}
 
 	void WorldOutlinePanel::OnDraw()
 	{
 		ECS& ecs = m_game->GetWorld().GetECS();
 
-		// Make modifications at end of draw
-		Entity pendingChild;
-		Entity pendingParent;
+		// Structural edits are collected and applied after the draw
+		struct PendingDrop { Entity Dragged; Entity Target; enum { Before, Into, After } Where; };
+		std::optional<PendingDrop> pendingDrop;
+		bool renumber = false;
 
 		const Entity selected = m_selection->GetEntity();
 
@@ -95,15 +131,23 @@ namespace koi::editor
 
 				if (ImGui::BeginDragDropTarget())
 				{
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kDragDropPayloadType))
+					// Top / bottom quarter of the row inserts as a sibling; the middle reparents
+					const ImVec2 min = ImGui::GetItemRectMin();
+					const ImVec2 max = ImGui::GetItemRectMax();
+					const f32    t   = (ImGui::GetMousePos().y - min.y) / std::max(max.y - min.y, 1.0f);
+					const auto   where = t < 0.25f ? PendingDrop::Before : t > 0.75f ? PendingDrop::After : PendingDrop::Into;
+
+					if (where != PendingDrop::Into)
 					{
-						EntityID draggedId = *static_cast<EntityID*>(payload->Data);
-						Entity dragged = ecs.entity(draggedId);
-						if (dragged.is_alive() && draggedId != entity.id())
-						{
-							pendingChild  = dragged;
-							pendingParent = entity;
-						}
+						const f32 y = where == PendingDrop::Before ? min.y : max.y;
+						ImGui::GetWindowDrawList()->AddLine(ImVec2(min.x, y), ImVec2(max.x, y), ImGui::GetColorU32(ImGuiCol_DragDropTarget), 2.0f);
+					}
+
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kDragDropPayloadType, where != PendingDrop::Into ? ImGuiDragDropFlags_AcceptNoDrawDefaultRect : 0))
+					{
+						Entity dragged = ecs.entity(*static_cast<EntityID*>(payload->Data));
+						if (dragged.is_alive() && dragged != entity)
+							pendingDrop = PendingDrop{ dragged, entity, where };
 					}
 					ImGui::EndDragDropTarget();
 				}
@@ -111,8 +155,7 @@ namespace koi::editor
 
 			if (open)
 			{
-				// Recurse
-				entity.children(self);
+				for (Entity child : SortedChildren(ecs, entity)) self(child);
 				ImGui::TreePop();
 			}
 		};
@@ -135,9 +178,12 @@ namespace koi::editor
 			if (selected.is_alive())
 				e.child_of(selected);
 			m_selection->Select(e);
+			renumber = true;
 		}
+
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!selected.is_alive());
+
 		if (ImGui::Button("Remove"))
 		{
 			m_selection->Clear();
@@ -147,14 +193,33 @@ namespace koi::editor
 
 		ImGui::Separator();
 
-		ecs.each<Transform>([&](Entity e, Transform&)
-		{
-			if (!e.parent())
-				DrawNode(e);
-		});
+		for (Entity root : SortedChildren(ecs, Entity{})) DrawNode(root);
 
-		if (pendingChild.is_alive())
-			pendingChild.child_of(pendingParent);
+		if (pendingDrop)
+		{
+			auto& [dragged, target, where] = *pendingDrop;
+			if (where == PendingDrop::Into)
+			{
+				dragged.child_of(target);
+				dragged.set<SceneOrder>({ ~0u });  // last among its new siblings until renumbered
+			}
+			else
+			{
+				// Same parent as the target, then slot in just before/after it. Fractional slots
+				// aren't possible on u32, so shift the target and everything past it by one first
+				if (const Entity parent = target.parent())
+					dragged.child_of(parent);
+				else
+					dragged.remove(flecs::ChildOf, flecs::Wildcard);
+
+				const u32 slot = target.try_get<SceneOrder>() ? target.get<SceneOrder>().Index + (where == PendingDrop::After ? 1 : 0) : 0;
+				ecs.each<SceneOrder>([&](Entity e, SceneOrder& order) { if (e != dragged && order.Index >= slot) ++order.Index; });
+				dragged.set<SceneOrder>({ slot });
+			}
+			renumber = true;
+		}
+
+		if (renumber) Renumber(ecs);
 
 		ImGui::End();
 	}

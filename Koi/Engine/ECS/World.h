@@ -6,13 +6,17 @@
 
 namespace koi
 {
-	namespace fs = std::filesystem;
-
 	using ECS      = flecs::world;
 	using Entity   = flecs::entity;
 	using EntityID = flecs::entity_t;
 
 	class ISystem;
+
+	[[nodiscard]] inline std::pair<u64, u64> OrderKey(Entity e)
+	{
+		const SceneOrder* order = e.try_get<SceneOrder>();
+		return { order ? order->Index : ~0ull, e.id() };
+	}
 
 	class World
 	{

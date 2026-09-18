@@ -15,7 +15,7 @@ namespace koi
 
 namespace koi::editor
 {
-	struct Selection;
+	class Selection;
 
 	enum class GizmoOp : u8
 	{

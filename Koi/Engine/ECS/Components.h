@@ -10,6 +10,12 @@ namespace koi
 		MeshHandle Handle;  // the source path lives in the mesh AssetCache, not per entity
 	};
 
+	// Position in the scene file, which is also the outliner order
+	struct SceneOrder
+	{
+		u32 Index = 0;
+	};
+
 	// Overrides every material slot of the entity's mesh with one material asset
 	struct MaterialRef
 	{

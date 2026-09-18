@@ -5,6 +5,7 @@
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 
@@ -156,6 +157,7 @@ namespace koi
 			// Create entity
 			const std::string name = (*entityTable)["name"].value_or<std::string>("Entity_" + std::to_string(i));
 			Entity e = m_ecs.entity(name.c_str());
+			e.set<SceneOrder>({ i });
 			KOI_LOG_TRACE("Scene entity [{}] '{}'", i, name);
 
 			// Load components (use registry for this)
@@ -259,11 +261,17 @@ namespace koi
 		toml::table root;
 		toml::array entities;
 
-		const auto components = ComponentRegistry::Get().All();
+		// File order follows SceneOrder
+		std::vector<Entity> ordered;
 		m_ecs.query<const Transform>().each([&](Entity e, const Transform&)
 		{
-			if (e == m_root) return;  // skip the internal WorldRoot
+			if (e != m_root) ordered.push_back(e);
+		});
+		std::ranges::stable_sort(ordered, {}, [](Entity e) { return OrderKey(e); });
 
+		const auto components = ComponentRegistry::Get().All();
+		for (const Entity e : ordered)
+		{
 			toml::table entity;
 
 			// Save name
@@ -280,7 +288,7 @@ namespace koi
 			}
 
 			entities.push_back(std::move(entity));
-		});
+		}
 
 		root.insert("entity", std::move(entities));
 		KOI_LOG_TRACE("Serialized world to scene table ({} entities)", root["entity"].as_array()->size());
