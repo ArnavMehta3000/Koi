@@ -25,5 +25,8 @@ Main = "project://Content/Scenes/Main.scene.toml"
 stick_deadzone   = 0.2
 trigger_deadzone = 0.05
 
-[input.actions.Quit]
-buttons = [ "Escape", "Gamepad.Start" ]
+[input.actions.MoveLeft]
+buttons = [ "Left", "A" ]
+
+[input.actions.MoveRight]
+positive = [ "Right", "D" ]
