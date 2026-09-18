@@ -40,5 +40,6 @@ namespace koi
 		// Directional only. The first caster in query order is the one ShadowPass renders
 		bool      CastsShadows = false;
 		f32       ShadowBias   = 0.0015f;  // constant offset in light-space depth
+		f32       ShadowExtent = 0.0f;     // half-size of the ortho box, centered on the entity; 0 fits the scene bounds instead
 	};
 }

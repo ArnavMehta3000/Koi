@@ -37,6 +37,7 @@ namespace koi
 			out.insert("range", ToTomlFloat(l.Range));
 			out.insert("casts_shadows", l.CastsShadows);
 			out.insert("shadow_bias", ToTomlFloat(l.ShadowBias));
+			out.insert("shadow_extent", ToTomlFloat(l.ShadowExtent));
 			return out;
 		}
 
@@ -54,6 +55,7 @@ namespace koi
 
 				.CastsShadows = (*tbl)["casts_shadows"].value_or(false),
 				.ShadowBias   = (*tbl)["shadow_bias"].value_or(0.0015f),
+				.ShadowExtent = (*tbl)["shadow_extent"].value_or(0.0f),
 			};
 		}
 	};

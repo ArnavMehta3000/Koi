@@ -161,6 +161,8 @@ namespace koi::editor
 			if (light->CastsShadows)
 			{
 				ImGui::DragFloat("Shadow Bias", &light->ShadowBias, 0.0001f, 0.0f, 0.05f, "%.4f");
+				ImGui::DragFloat("Shadow Extent", &light->ShadowExtent, 0.5f, 0.0f, 10000.0f, "%.1f");
+				ImGui::SetItemTooltip("Half-size of the shadow box around this entity. 0 fits the whole scene");
 			}
 		}
 	}

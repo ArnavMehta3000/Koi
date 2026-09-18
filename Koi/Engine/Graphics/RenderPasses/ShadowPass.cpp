@@ -52,11 +52,10 @@ namespace koi
 		ZoneScoped;
 		if (!m_world) return false;
 
-		const BoundingBox& bounds = m_world->GetBounds();
-		if (IsEmpty(bounds)) return false;  // nothing loaded yet
-
 		Vector3 lightDir;
-		bool found = false;
+		Vector3 center;
+		f32     radius = 0.0f;
+		bool    found  = false;
 		m_world->GetECS()
 			.query<const Transform, const Light>()
 			.each([&](const Transform& xform, const Light& light)
@@ -65,17 +64,25 @@ namespace koi
 
 				lightDir = Matrix::CreateFromQuaternion(xform.Rotation).Forward();
 				lightDir.Normalize();
-				found = true;
+				center = xform.Position;
+				radius = light.ShadowExtent;
+				found  = true;
 			});
 
 		if (!found) return false;
 
-		// Fit the ortho box to the scene's bounding sphere rather than the camera frustum:
-		// the map stays stable as the camera moves, at the cost of texel density
-		// [NOTE]: Maybe I can move the ortho box around the camera once the world gets bigger
-		const Vector3 center(bounds.Center);
-		const f32     radius = BoundsRadius(bounds);
-		const Vector3 eye    = center - lightDir * (radius * 2.0f);
+		// No extent on the light: fit the box to the scene's bounding sphere
+		// Texel density falls off as the scene grows
+		if (radius <= 0.0f)
+		{
+			const BoundingBox& bounds = m_world->GetBounds();
+			if (IsEmpty(bounds)) return false;  // nothing loaded yet
+
+			center = Vector3(bounds.Center);
+			radius = BoundsRadius(bounds);
+		}
+
+		const Vector3 eye = center - lightDir * (radius * 2.0f);
 
 		// Any up vector works except one parallel to the light
 		const Vector3 up = (lightDir.y > 0.99f || lightDir.y < -0.99f) ? Vector3::Right : Vector3::Up;
