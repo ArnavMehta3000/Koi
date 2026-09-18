@@ -1,0 +1,51 @@
+[[entity]]
+name = 'Floor'
+
+	[entity.mesh]
+	path = 'engine://Content/Meshes/Plane.gltf'
+
+	[entity.transform]
+	position = [ 0.0, 0.0, 0.0 ]
+	rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+	scale = [ 10.0, 1.0, 10.0 ]
+
+[[entity]]
+name = 'Box'
+
+	[entity.mesh]
+	path = 'engine://Content/Meshes/Box.gltf'
+
+	[entity.transform]
+	position = [ 0.0, 0.5, 0.0 ]
+	rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+	scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Camera'
+
+	[entity.camera]
+	far = 1000.0
+	fov = 0.826169
+	near = 0.05
+	primary = true
+
+	[entity.transform]
+	position = [ 0.0, 2.0, -6.0 ]
+	rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+	scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Sun'
+
+	[entity.light]
+	casts_shadows = true
+	color = [ 1.0, 0.95, 0.9 ]
+	intensity = 3.0
+	range = 0.0
+	shadow_bias = 0.0015
+	type = 'directional'
+
+	[entity.transform]
+	position = [ 0.0, 5.0, 0.0 ]
+	rotation = [ -0.7040147, 0.0, 0.0, 0.7101854 ]
+	scale = [ 1.0, 1.0, 1.0 ]

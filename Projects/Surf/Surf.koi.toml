@@ -1,0 +1,29 @@
+[project]
+name    = "Surf"
+version = "0.1.0"
+
+[window]
+title  = "Koi Surfing Game"
+width  = 1280
+height = 720
+vsync  = true
+
+[logging]
+file       = "Logs/Surf.log"  # relative to <project>/.koi (editor) or the exe (runtime); empty disables
+level      = "Info"
+history    = 4096
+console    = false
+debug_sink = true
+
+[scenes]
+startup = "Main"
+
+[scenes.list]
+Main = "project://Content/Scenes/Main.scene.toml"
+
+[input]
+stick_deadzone   = 0.2
+trigger_deadzone = 0.05
+
+[input.actions.Quit]
+buttons = [ "Escape", "Gamepad.Start" ]
