@@ -173,18 +173,21 @@ namespace koi::editor
 	{
 		World& world = m_game->GetWorld();
 		// A tag has no storage, so it filters the query rather than appearing as an argument
-		world.GetECS().query_builder<const Transform, const MeshRef>().with<Selected>().build()
+		world.GetECS()
+			.query_builder<const Transform, const MeshRef>()
+			.with<Selected>()
+			.build()
 			.each([&](const Transform& xform, const MeshRef& meshRef)
-		{
-			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
-			if (!mesh) return;
+			{
+				const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
+				if (!mesh) return;
 
-			BoundingOrientedBox box;
-			BoundingOrientedBox::CreateFromBoundingBox(box, mesh->Bounds);
-			box.Transform(box, xform.ToMatrix());
+				BoundingOrientedBox box;
+				BoundingOrientedBox::CreateFromBoundingBox(box, mesh->Bounds);
+				box.Transform(box, xform.ToMatrix());
 
-			DebugDraw::Box(box, Color(1.0f, 0.6f, 0.1f, 1.0f));
-		});
+				DebugDraw::Box(box, Color(1.0f, 0.6f, 0.1f, 1.0f));
+			});
 	}
 
 	void EditorApp::DrawLightGizmos()
