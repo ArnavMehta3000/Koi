@@ -1,51 +1,97 @@
 [[entity]]
+name = 'Camera'
+
+    [entity.camera]
+    far = 500.0
+    fov = 0.6981317
+    near = 0.05
+    primary = true
+
+    [entity.transform]
+    position = [ 0.0, 6.4, 10.05 ]
+    rotation = [ -0.25881904, 0.0, 0.0, 0.9659258 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'SpawnPos 0'
+
+    [entity.mesh]
+    path = 'engine://Content/Meshes/Sphere.gltf'
+
+    [entity.transform]
+    position = [ -4.0, 0.0, -30.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'SpawnPos 2'
+
+    [entity.mesh]
+    path = 'engine://Content/Meshes/Sphere.gltf'
+
+    [entity.transform]
+    position = [ 4.0, 0.0, -30.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'SpawnPos 1'
+
+    [entity.mesh]
+    path = 'engine://Content/Meshes/Sphere.gltf'
+
+    [entity.transform]
+    position = [ 0.0, 0.0, -30.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
 name = 'Floor'
+
+    [entity.material]
+    path = 'project://Content/Materials/Ground.mat.toml'
 
     [entity.mesh]
     path = 'engine://Content/Meshes/Plane.gltf'
 
     [entity.transform]
-    position = [ 0.0, 0.0, 0.0 ]
+    position = [ 0.0, 0.0, -13.8 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 10.0, 1.0, 10.0 ]
+    scale = [ 40.0, 1.0, 40.0 ]
 
 [[entity]]
-name = 'Box'
+name = 'Player'
+
+    [entity.'game:player_mover']
+    Pos0 = [ -4.0, 0.5, 3.0 ]
+    Pos1 = [ 0.0, 0.5, 3.0 ]
+    Pos2 = [ 4.0, 0.5, 3.0 ]
+    speed = 50.0
+
+    [entity.material]
+    path = 'project://Content/Materials/Player.mat.toml'
 
     [entity.mesh]
-    path = 'engine://Content/Meshes/Box.gltf'
+    path = 'engine://Content/Meshes/Cone.gltf'
 
     [entity.transform]
-    position = [ 0.0, 0.5, -0.20547992 ]
-    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'Camera'
-
-    [entity.camera]
-    far = 1000.0
-    fov = 0.826169
-    near = 0.05
-    primary = true
-
-    [entity.transform]
-    position = [ 0.0, 2.0, -6.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
+    position = [ 0.0, 0.5, 3.0 ]
+    rotation = [ -0.70710677, 0.0, 0.0, 0.7071067 ]
+    scale = [ 0.5, 1.0, 0.5 ]
 
 [[entity]]
 name = 'Sun'
 
     [entity.light]
     casts_shadows = true
-    color = [ 1.0, 0.95, 0.9 ]
+    color = [ 1.0, 1.0, 1.0 ]
     intensity = 2.0
     range = 9.7
-    shadow_bias = 1e-04
+    shadow_bias = 0.0015
+    shadow_extent = 7.5
     type = 'directional'
 
     [entity.transform]
-    position = [ 0.0, 5.4532256, 0.0 ]
-    rotation = [ 0.71518445, 0.36560363, -0.23150055, -0.548865 ]
-    scale = [ 0.9999991, 0.9999955, 0.99999607 ]
+    position = [ 1.2687773, 5.4532256, 0.49008536 ]
+    rotation = [ 0.7099462, -0.1504326, -0.2001098, -0.6582572 ]
+    scale = [ 0.99998665, 0.9999832, 0.9999859 ]
