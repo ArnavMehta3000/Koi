@@ -10,7 +10,6 @@
 namespace koi
 {
 	AppBase::AppBase()
-		: m_world(std::make_unique<World>())
 	{
 		assert(s_instance == nullptr && "Application already exists!");
 		s_instance = this;
@@ -27,7 +26,10 @@ namespace koi
 	{
 		KOI_LOG_INFO("Initializing application: {}", m_desc.AppName);
 
+		m_world = std::make_unique<World>();
+
 		OnRegisterComponents();
+		OnRegisterSystems();
 
 		LoadStartupScene();
 		OnInit();

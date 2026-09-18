@@ -3,8 +3,6 @@
 #include "Koi/Engine/Graphics/Camera.h"
 #include <flecs.h>
 #include <toml++/toml.hpp>
-#include <filesystem>
-#include <optional>
 
 namespace koi
 {
@@ -14,17 +12,22 @@ namespace koi
 	using Entity   = flecs::entity;
 	using EntityID = flecs::entity_t;
 
+	class ISystem;
 
 	class World
 	{
 	public:
+		static constexpr f32 kFixedStep = 1.0f / 60.0f;
+
 		World();
+		~World();
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;
-		World(World&&) noexcept = default;
-		World& operator=(World&&) noexcept = default;
+		World(World&&) noexcept;
+		World& operator=(World&&) noexcept;
 
 		[[nodiscard]] static std::optional<World> Load(std::string_view virtualPath);
+		[[nodiscard]] static World& From(const flecs::world& ecs);
 
 		[[nodiscard]] inline const std::string& GetSourcePath() const { return m_sourcePath; }
 		[[nodiscard]] inline const BoundingBox& GetBounds()     const { return m_bounds;     }
@@ -37,6 +40,7 @@ namespace koi
 		[[nodiscard]] toml::table SaveToTable();
 		void Clear(); // Destroys every entity. The assets they referenced are released by component hooks
 
+		// Steps FixedUpdate systems as many times as dt covers, then runs the frame pipeline once
 		void Update(f32 dt);
 
 		// Projects the primary camera entity for a surface of the given aspect and returns it
@@ -47,12 +51,16 @@ namespace koi
 
 	private:
 		void ConfigureComponentHooks();
+		void BuildSystems();
 
 	private:
 		ECS    m_ecs;
 		Entity m_root;
-		std::string m_sourcePath;  // virtual path this world was loaded from, empty if none
+		Entity m_fixedPipeline;          // runs only FixedUpdate systems; the default pipeline skips them
+		f32    m_fixedAccumulator = 0.0f;
+		std::vector<std::unique_ptr<ISystem>> m_systems;
+		std::string m_sourcePath;        // virtual path this world was loaded from, empty if none
 		BoundingBox m_bounds{ {}, {} };  // zero extents until meshes resolve
-		Camera m_camera;  // derived from the primary camera entity by ResolveCamera
+		Camera m_camera;                 // derived from the primary camera entity by ResolveCamera
 	};
 }

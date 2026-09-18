@@ -1,9 +1,11 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/ECS/SystemRegistry.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <cassert>
 #include <fstream>
 
 namespace koi
@@ -12,10 +14,63 @@ namespace koi
 	{
 		ZoneScoped;
 
-		// Add root entity, disabled by default. Every other entity is parented to this
 		m_root = m_ecs.entity("WorldRoot");
 
+		m_ecs.set_ctx(this);
+		m_fixedPipeline = m_ecs.pipeline().with(flecs::System).with<internal::FixedUpdateTag>().build();
+
 		ConfigureComponentHooks();
+		BuildSystems();
+	}
+
+	World::~World() = default;
+
+	World::World(World&& other) noexcept
+		: m_ecs(std::move(other.m_ecs))
+		, m_root(other.m_root)
+		, m_fixedPipeline(other.m_fixedPipeline)
+		, m_fixedAccumulator(other.m_fixedAccumulator)
+		, m_systems(std::move(other.m_systems))
+		, m_sourcePath(std::move(other.m_sourcePath))
+		, m_bounds(other.m_bounds)
+		, m_camera(other.m_camera)
+	{
+		// System callbacks find their World through the flecs context, so it must follow the move
+		if (m_ecs.c_ptr()) m_ecs.set_ctx(this);
+	}
+
+	World& World::operator=(World&& other) noexcept
+	{
+		if (this == &other) return *this;
+
+		m_ecs              = std::move(other.m_ecs);
+		m_root             = other.m_root;
+		m_fixedPipeline    = other.m_fixedPipeline;
+		m_fixedAccumulator = other.m_fixedAccumulator;
+		m_systems          = std::move(other.m_systems);
+		m_sourcePath       = std::move(other.m_sourcePath);
+		m_bounds           = other.m_bounds;
+		m_camera           = other.m_camera;
+
+		if (m_ecs.c_ptr()) m_ecs.set_ctx(this);
+		return *this;
+	}
+
+	World& World::From(const flecs::world& ecs)
+	{
+		World* world = static_cast<World*>(ecs.get_ctx());
+		assert(world && "flecs world is not owned by a koi::World");
+		return *world;
+	}
+
+	void World::BuildSystems()
+	{
+		m_systems = SystemRegistry::Get().Instantiate();
+		for (const std::unique_ptr<ISystem>& system : m_systems)
+		{
+			system->Build(*this);
+			KOI_LOG_TRACE("Built system '{}'", system->Name());
+		}
 	}
 
 	void World::ConfigureComponentHooks()
@@ -261,8 +316,15 @@ namespace koi
 	void World::Update(f32 dt)
 	{
 		ZoneScoped;
-		// NOTE: Might refactor the entire world update system
 		if (!Engine::Get().IsPlaying()) return;
+
+		// Timer already clamps dt, which bounds how many fixed steps one frame can owe
+		m_fixedAccumulator += dt;
+		while (m_fixedAccumulator >= kFixedStep)
+		{
+			m_ecs.run_pipeline(m_fixedPipeline, kFixedStep);
+			m_fixedAccumulator -= kFixedStep;
+		}
 
 		m_ecs.progress(dt);
 	}

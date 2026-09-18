@@ -1,6 +1,8 @@
 #pragma once
+#include "Koi/Engine/ECS/System.h"
 #include "Koi/Engine/Interop/ComponentInspector.h"
 #include "Koi/Engine/Math/MathSerializer.h"
+#include "Koi/Engine/Math/Transform.h"
 
 struct PlayerController
 {
@@ -44,5 +46,12 @@ public:
 	void Draw(koi::Entity e) override;
 };
 
+class PlayerControllerSystem final : public koi::System<koi::Transform, const PlayerController>
+{
+public:
+	[[nodiscard]] std::string_view Name() const override { return "PlayerController"; }
+	void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& xform, const PlayerController& controller) override;
+};
+
 void RegisterPlayerControllerComponent();
-void RegisterPlayerControllerSystem(koi::ECS& ecs);
+void RegisterPlayerControllerSystem();

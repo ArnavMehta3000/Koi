@@ -51,7 +51,9 @@ namespace koi
 		void HostBeginPlay() override;
 		void HostEndPlay() override;
 
-		virtual void OnRegisterComponents() {}  // Runs before the startup scene loads
+		// Both run before the startup scene loads; register with ComponentRegistry / SystemRegistry
+		virtual void OnRegisterComponents() {}
+		virtual void OnRegisterSystems() {}
 
 		virtual void OnInit() {}
 		virtual void OnShutdown() {}

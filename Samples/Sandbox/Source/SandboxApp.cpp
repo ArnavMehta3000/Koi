@@ -21,11 +21,14 @@ void SandboxApp::OnRegisterComponents()
 	RegisterPlayerControllerComponent();
 }
 
+void SandboxApp::OnRegisterSystems()
+{
+	RegisterSpinSystem();
+	RegisterPlayerControllerSystem();
+}
+
 void SandboxApp::OnInit()
 {
-	RegisterSpinSystem(GetWorld().GetECS());
-	RegisterPlayerControllerSystem(GetWorld().GetECS());
-
 	if (koi::IEditorContext* editor = GetEditorContext())
 	{
 		editor->RegisterInspector<SpinInspector>();

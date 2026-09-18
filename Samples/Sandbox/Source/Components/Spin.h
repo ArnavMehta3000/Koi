@@ -1,6 +1,8 @@
 #pragma once
+#include "Koi/Engine/ECS/System.h"
 #include "Koi/Engine/Interop/ComponentInspector.h"
 #include "Koi/Engine/Math/MathSerializer.h"
+#include "Koi/Engine/Math/Transform.h"
 
 // A component the engine has never heard of: defined, serialized, inspected and
 // simulated entirely from game code
@@ -46,5 +48,12 @@ public:
 	void Draw(koi::Entity e) override;
 };
 
+class SpinSystem final : public koi::System<koi::Transform, const Spin>
+{
+public:
+	[[nodiscard]] std::string_view Name() const override { return "Spin"; }
+	void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& xform, const Spin& spin) override;
+};
+
 void RegisterSpinComponent();
-void RegisterSpinSystem(koi::ECS& ecs);
+void RegisterSpinSystem();

@@ -1,6 +1,6 @@
 #include "Components/Spin.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
-#include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/ECS/SystemRegistry.h"
 #include <imgui.h>
 #include <numbers>
 
@@ -18,24 +18,23 @@ void SpinInspector::Draw(koi::Entity e)
 	ImGui::DragFloat("Speed", &spin->Speed, 1.0f, -1440.0f, 1440.0f, "%.1f deg/s");
 }
 
+void SpinSystem::Each(const koi::SystemContext& ctx, koi::Entity, koi::Transform& xform, const Spin& spin)
+{
+	if (spin.Axis.LengthSquared() < 1e-8f) return;
+
+	koi::Vector3 axis = spin.Axis;
+	axis.Normalize();
+
+	const koi::Quaternion delta = koi::Quaternion::CreateFromAxisAngle(axis, spin.Speed * kDegToRad * ctx.DeltaTime);
+	xform.Rotation = koi::Quaternion::Concatenate(xform.Rotation, delta);
+}
+
 void RegisterSpinComponent()
 {
 	koi::ComponentRegistry::Get().Register<koi::ComponentType<Spin>>("spin", 50);
 }
 
-void RegisterSpinSystem(koi::ECS& ecs)
+void RegisterSpinSystem()
 {
-	ecs.system<koi::Transform, const Spin>("SpinSystem")
-		.each([](flecs::iter& it, size_t, koi::Transform& xform, const Spin& spin)
-		{
-			if (spin.Axis.LengthSquared() < 1e-8f) return;
-
-			koi::Vector3 axis = spin.Axis;
-			axis.Normalize();
-
-			const koi::Quaternion delta = koi::Quaternion::CreateFromAxisAngle(
-				axis, spin.Speed * kDegToRad * it.delta_time());
-
-			xform.Rotation = koi::Quaternion::Concatenate(xform.Rotation, delta);
-		});
+	koi::SystemRegistry::Get().Register<SpinSystem>();
 }
