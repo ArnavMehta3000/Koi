@@ -13,39 +13,6 @@ name = 'Camera'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-name = 'SpawnPos 0'
-
-    [entity.mesh]
-    path = 'engine://Content/Meshes/Sphere.gltf'
-
-    [entity.transform]
-    position = [ -4.0, 0.0, -30.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'SpawnPos 2'
-
-    [entity.mesh]
-    path = 'engine://Content/Meshes/Sphere.gltf'
-
-    [entity.transform]
-    position = [ 4.0, 0.0, -30.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'SpawnPos 1'
-
-    [entity.mesh]
-    path = 'engine://Content/Meshes/Sphere.gltf'
-
-    [entity.transform]
-    position = [ 0.0, 0.0, -30.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
 name = 'Floor'
 
     [entity.material]
@@ -58,6 +25,34 @@ name = 'Floor'
     position = [ 0.0, 0.0, -13.8 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 40.0, 1.0, 40.0 ]
+
+[[entity]]
+name = 'SpawnPos 1'
+
+    [entity.material]
+    path = 'project://Content/Materials/Obstacle.mat.toml'
+
+    [entity.mesh]
+    path = 'engine://Content/Meshes/Sphere.gltf'
+
+    [entity.transform]
+    position = [ 0.0, 0.0, -30.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'SpawnPos 0'
+
+    [entity.material]
+    path = 'project://Content/Materials/Obstacle.mat.toml'
+
+    [entity.mesh]
+    path = 'engine://Content/Meshes/Sphere.gltf'
+
+    [entity.transform]
+    position = [ -4.0, 0.0, -30.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
 name = 'Player'
@@ -95,3 +90,17 @@ name = 'Sun'
     position = [ 1.2687773, 5.4532256, 0.49008536 ]
     rotation = [ 0.7099462, -0.1504326, -0.2001098, -0.6582572 ]
     scale = [ 0.99998665, 0.9999832, 0.9999859 ]
+
+[[entity]]
+name = 'SpawnPos 2'
+
+    [entity.material]
+    path = 'project://Content/Materials/Obstacle.mat.toml'
+
+    [entity.mesh]
+    path = 'engine://Content/Meshes/Sphere.gltf'
+
+    [entity.transform]
+    position = [ 4.0, 0.0, -30.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
