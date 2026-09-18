@@ -138,7 +138,6 @@ namespace koi
 		m_device->GpuProfilerNewFrame();
 
 		m_passes.ResetAll();
-		m_debugDraw.Clear();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_frameSlot);
@@ -156,6 +155,7 @@ namespace koi
 		CommandList& cmd = m_frameContext->List;
 
 		m_passes.Execute(cmd);
+		m_debugDraw.Clear();  // after the pass consumed it, so ImGui-time pushes (inspectors) survive into the next frame
 
 		if (m_overlay)
 		{
