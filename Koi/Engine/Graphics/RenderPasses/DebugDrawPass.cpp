@@ -73,5 +73,9 @@ namespace koi
 
 		m_lineCount = static_cast<u32>(vertices.size()) / 2;
 		cmd.Draw(static_cast<u32>(vertices.size()));
+
+		// Hand the depth back in the state the rest of the frame (Render Targets panel) expects it in
+		if (m_depth)
+			cmd.TransitionBarrier(m_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 }
