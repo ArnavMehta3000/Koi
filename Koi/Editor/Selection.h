@@ -1,14 +1,56 @@
 #pragma once
 #include "Koi/Engine/ECS/World.h"
+#include <string>
 
 namespace koi::editor
 {
-	struct Selection
-	{
-		Entity      Selected;
-		std::string SelectedAsset;  // virtual path, from the Assets panel
+	// Tag on the selected entity, so queries can filter on it. Never serialized
+	struct Selected {};
 
-		[[nodiscard]] bool IsValid() const { return Selected.is_alive(); }
-		void Clear() { Selected = Entity{}; }
+	class Selection
+	{
+	public:
+		inline void Select(Entity entity)
+		{
+			ClearEntity();
+			m_asset.clear();
+			if (entity.is_alive())
+			{
+				entity.add<Selected>();
+				m_entity = entity;
+			}
+		}
+
+		inline void SelectAsset(std::string virtualPath)
+		{
+			ClearEntity();
+			m_asset = std::move(virtualPath);
+		}
+
+		inline void Clear()
+		{
+			ClearEntity();
+			m_asset.clear();
+		}
+
+		[[nodiscard]] inline Entity GetEntity() const
+		{
+			return m_entity.is_alive() && m_entity.has<Selected>() ? m_entity : Entity{};
+		}
+
+		[[nodiscard]] inline const std::string& GetAsset() const { return m_asset; }
+		[[nodiscard]] inline bool HasEntity() const { return GetEntity().is_alive(); }
+		[[nodiscard]] inline bool HasAsset()  const { return !m_asset.empty(); }
+
+	private:
+		inline void ClearEntity()
+		{
+			if (m_entity.is_alive()) m_entity.remove<Selected>();
+			m_entity = Entity{};
+		}
+
+	private:
+		Entity      m_entity;  // cached (may mismatch with tag, which is origin)
+		std::string m_asset;   // virtual path
 	};
 }

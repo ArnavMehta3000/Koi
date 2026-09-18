@@ -18,7 +18,7 @@ namespace koi::editor
 		Entity pendingChild;
 		Entity pendingParent;
 
-		Entity& selected = m_selection->Selected;
+		const Entity selected = m_selection->GetEntity();
 
 		auto DrawNode = [&](this auto&& self, Entity entity) -> void
 		{
@@ -76,7 +76,7 @@ namespace koi::editor
 				open = ImGui::TreeNodeEx(nodeId, flags, "%s", label);
 
 				if (ImGui::IsItemClicked())
-					selected = entity;
+					m_selection->Select(entity);
 
 				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
 				{
@@ -134,14 +134,14 @@ namespace koi::editor
 			e.set<Transform>({});
 			if (selected.is_alive())
 				e.child_of(selected);
-			selected = e;
+			m_selection->Select(e);
 		}
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!selected.is_alive());
 		if (ImGui::Button("Remove"))
 		{
+			m_selection->Clear();
 			selected.destruct();
-			selected = Entity{};
 		}
 		ImGui::EndDisabled();
 

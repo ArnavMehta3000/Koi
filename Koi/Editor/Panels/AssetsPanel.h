@@ -41,7 +41,6 @@ namespace koi::editor
 		Selection&                            m_selection;
 
 		std::string m_selectedFolder;
-		std::string m_selectedAsset;   // virtual path; empty when nothing is selected
 		std::string m_search;
 
 		std::string m_renamingPath;

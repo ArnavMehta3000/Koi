@@ -77,8 +77,7 @@ namespace koi::editor
 
 	void AssetsPanel::SelectAsset(std::string virtualPath)
 	{
-		m_selectedAsset          = std::move(virtualPath);
-		m_selection.SelectedAsset = m_selectedAsset;
+		m_selection.SelectAsset(std::move(virtualPath));
 	}
 
 	void AssetsPanel::OnDraw()
@@ -189,7 +188,7 @@ namespace koi::editor
 		ImGui::EndTable();
 
 		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
-			SelectAsset({});
+			if (m_selection.HasAsset()) m_selection.Clear();
 	}
 
 	void AssetsPanel::DrawRow(const AssetEntry& entry)
@@ -242,7 +241,7 @@ namespace koi::editor
 			return;
 		}
 
-		const bool selected = (entry.VirtualPath == m_selectedAsset);
+		const bool selected = (entry.VirtualPath == m_selection.GetAsset());
 
 		if (ImGui::Selectable(entry.Name.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 			SelectAsset(entry.VirtualPath);
@@ -361,7 +360,7 @@ namespace koi::editor
 		}
 
 		// Every path the panel was holding onto may have just changed underneath it
-		m_selectedAsset.clear();
+		if (m_selection.HasAsset()) m_selection.Clear();
 		m_pendingArg.clear();
 		m_pendingPath.clear();
 	}

@@ -19,12 +19,12 @@ namespace koi::editor
 
 	void InspectorPanel::OnDraw()
 	{
-		Entity selected = m_selection->Selected;
+		const Entity selected = m_selection->GetEntity();
 
 		ImGui::Begin("Inspector");
 
-		// A selected asset wins over the entity: it is the more recent click either way
-		if (const AssetEntry* asset = m_database->Find(m_selection->SelectedAsset);
+		// Selection is exclusive, so an asset here means no entity is selected
+		if (const AssetEntry* asset = m_database->Find(m_selection->GetAsset());
 		    asset && asset->Kind == AssetKind::Material)
 		{
 			m_materials.Draw(*m_database, *asset);
