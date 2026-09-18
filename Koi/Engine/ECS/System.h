@@ -1,7 +1,5 @@
 #pragma once
 #include "Koi/Engine/ECS/World.h"
-#include <flecs.h>
-#include <string_view>
 
 namespace koi
 {
