@@ -34,10 +34,10 @@ namespace koi
 		// Handle from packed ID
 		static constexpr Handle FromID(IndexType id) noexcept { return Handle(id & INDEX_MASK, (id >> IndexBits) & GENERATION_MASK); }
 
-		[[nodiscard]] constexpr inline IndexType GetIndex()      const noexcept { return m_id & INDEX_MASK; }
-		[[nodiscard]] constexpr inline IndexType GetGeneration() const noexcept { return (m_id >> IndexBits) & GENERATION_MASK; }
-		[[nodiscard]] constexpr IndexType        GetId()         const noexcept { return m_id; }  // Raw packed ID
-		[[nodiscard]] constexpr bool             IsValid()       const noexcept { return  GetIndex() != INDEX_MASK; }
+		[[nodiscard]] constexpr IndexType GetIndex()      const noexcept { return m_id & INDEX_MASK; }
+		[[nodiscard]] constexpr IndexType GetGeneration() const noexcept { return (m_id >> IndexBits) & GENERATION_MASK; }
+		[[nodiscard]] constexpr IndexType GetId()         const noexcept { return m_id; }  // Raw packed ID
+		[[nodiscard]] constexpr bool      IsValid()       const noexcept { return  GetIndex() != INDEX_MASK; }
 
 		constexpr explicit operator bool() const noexcept { return IsValid(); }
 
