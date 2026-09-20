@@ -9,40 +9,40 @@ namespace koi
 	inline constexpr f32 kTwoPi  = 2.0f * kPi;
 	inline constexpr f32 kHalfPi = 0.5f * kPi;
 
-	[[nodiscard]] inline constexpr f32 DegToRad(f32 degrees) { return degrees * (kPi / 180.0f); }
-	[[nodiscard]] inline constexpr f32 RadToDeg(f32 radians) { return radians * (180.0f / kPi); }
+	[[nodiscard]] constexpr f32 DegToRad(f32 degrees) { return degrees * (kPi / 180.0f); }
+	[[nodiscard]] constexpr f32 RadToDeg(f32 radians) { return radians * (180.0f / kPi); }
 
-	[[nodiscard]] inline constexpr f32 Square(f32 v) { return v * v; }
-	[[nodiscard]] inline constexpr f32 Sign(f32 v)   { return v < 0.0f ? -1.0f : 1.0f; }
+	[[nodiscard]] constexpr f32 Square(f32 v) { return v * v; }
+	[[nodiscard]] constexpr f32 Sign(f32 v)   { return v < 0.0f ? -1.0f : 1.0f; }
 
-	[[nodiscard]] inline constexpr f32 Saturate(f32 v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); }
-	[[nodiscard]] inline constexpr f32 Clamp01(f32 v)  { return Saturate(v); }
+	[[nodiscard]] constexpr f32 Saturate(f32 v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); }
+	[[nodiscard]] constexpr f32 Clamp01(f32 v)  { return Saturate(v); }
 
-	[[nodiscard]] inline constexpr bool Approximately(f32 a, f32 b, f32 epsilon = 1e-5f)
+	[[nodiscard]] constexpr bool Approximately(f32 a, f32 b, f32 epsilon = 1e-5f)
 	{
 		const f32 d = a - b;
 		return (d < 0.0f ? -d : d) <= epsilon;
 	}
 
-	[[nodiscard]] inline constexpr f32 Lerp(f32 a, f32 b, f32 t) { return a + (b - a) * t; }
+	[[nodiscard]] constexpr f32 Lerp(f32 a, f32 b, f32 t) { return a + (b - a) * t; }
 
 	// t such that Lerp(a, b, t) == v; unclamped
-	[[nodiscard]] inline constexpr f32 InverseLerp(f32 a, f32 b, f32 v)
+	[[nodiscard]] constexpr f32 InverseLerp(f32 a, f32 b, f32 v)
 	{
 		return Approximately(a, b) ? 0.0f : (v - a) / (b - a);
 	}
 
-	[[nodiscard]] inline constexpr f32 Remap(f32 v, f32 inMin, f32 inMax, f32 outMin, f32 outMax)
+	[[nodiscard]] constexpr f32 Remap(f32 v, f32 inMin, f32 inMax, f32 outMin, f32 outMax)
 	{
 		return Lerp(outMin, outMax, InverseLerp(inMin, inMax, v));
 	}
 
-	[[nodiscard]] inline constexpr f32 RemapClamped(f32 v, f32 inMin, f32 inMax, f32 outMin, f32 outMax)
+	[[nodiscard]] constexpr f32 RemapClamped(f32 v, f32 inMin, f32 inMax, f32 outMin, f32 outMax)
 	{
 		return Lerp(outMin, outMax, Saturate(InverseLerp(inMin, inMax, v)));
 	}
 
-	[[nodiscard]] inline constexpr f32 MoveTowards(f32 current, f32 target, f32 maxDelta)
+	[[nodiscard]] constexpr f32 MoveTowards(f32 current, f32 target, f32 maxDelta)
 	{
 		const f32 delta = target - current;
 		if (delta <= maxDelta && delta >= -maxDelta) return target;
