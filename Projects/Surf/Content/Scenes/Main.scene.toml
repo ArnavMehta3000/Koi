@@ -21,13 +21,13 @@ name = 'Sun'
     intensity = 2.0
     range = 9.7
     shadow_bias = 0.0015
-    shadow_extent = 7.5
+    shadow_extent = 17.5
     type = 'directional'
 
     [entity.transform]
-    position = [ 1.2687773, 5.4532256, 0.49008536 ]
-    rotation = [ 0.7099462, -0.1504326, -0.2001098, -0.6582572 ]
-    scale = [ 0.99998665, 0.9999832, 0.9999859 ]
+    position = [ 0.0, -14.629201, -10.002021 ]
+    rotation = [ 0.7099462, -0.15043256, -0.20010978, -0.6582572 ]
+    scale = [ 0.9999867, 0.9999847, 0.99998647 ]
 
 [[entity]]
 name = 'Floor'
@@ -50,7 +50,8 @@ name = 'Player'
     Pos0 = [ -4.0, 0.5, 3.0 ]
     Pos1 = [ 0.0, 0.5, 3.0 ]
     Pos2 = [ 4.0, 0.5, 3.0 ]
-    speed = 50.0
+    duration = 0.15
+    ease = 'OutBack'
 
     [entity.material]
     path = 'project://Content/Materials/Player.mat.toml'
@@ -64,54 +65,25 @@ name = 'Player'
     scale = [ 0.5, 1.0, 0.5 ]
 
 [[entity]]
-name = 'Spawn Points'
+name = 'Spawner'
+
+    [entity.'game:obstacle_spawner']
+    Pos0 = [ -4.0, 0.5, -15.0 ]
+    Pos1 = [ 0.0, 0.5, -15.0 ]
+    Pos2 = [ 4.0, 0.5, -15.0 ]
+    despawn_z = 10.0
+    interval = 2.0
+    material = 'project://Content/Materials/Obstacle.mat.toml'
+    max_speed = 50.0
+    mesh = 'engine://Content/Meshes/Box.gltf'
+    min_interval = 0.35
+    pop_duration = 0.25
+    ramp_duration = 60.0
+    ramp_ease = 'OutQuad'
+    seed = 0
+    speed = 10.0
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'SpawnPos 0'
-parent = 'Spawn Points'
-
-    [entity.material]
-    path = 'project://Content/Materials/Obstacle.mat.toml'
-
-    [entity.mesh]
-    path = 'engine://Content/Meshes/Sphere.gltf'
-
-    [entity.transform]
-    position = [ -4.0, 0.0, -30.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'SpawnPos 1'
-parent = 'Spawn Points'
-
-    [entity.material]
-    path = 'project://Content/Materials/Obstacle.mat.toml'
-
-    [entity.mesh]
-    path = 'engine://Content/Meshes/Sphere.gltf'
-
-    [entity.transform]
-    position = [ 0.0, 0.0, -30.0 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-name = 'SpawnPos 2'
-parent = 'Spawn Points'
-
-    [entity.material]
-    path = 'project://Content/Materials/Obstacle.mat.toml'
-
-    [entity.mesh]
-    path = 'engine://Content/Meshes/Sphere.gltf'
-
-    [entity.transform]
-    position = [ 4.0, 0.0, -30.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
