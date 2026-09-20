@@ -34,11 +34,8 @@ namespace game
 			editor->RegisterInspector<PlayerMoverInspector>();
 	}
 
-	void SurfApp::OnTick(koi::f32 /*dt*/)
+	void SurfApp::OnTick([[maybe_unused]] koi::f32 dt)
 	{
-		// koi::Engine& engine = *GetEngine();
-		// if (engine.GetSubsystem<koi::InputManager>().IsActionPressed("Quit"))
-		// 	engine.RequestExit();
 	}
 
 	void PlayerMoverInspector::Draw(koi::Entity e)
@@ -54,11 +51,13 @@ namespace game
 		ImGui::DragFloat("Speed", &mover->Speed, 0.1f, 0.1f, 100.0f, "%.1f u/s");
 		ImGui::Text("Lane %d", mover->Lane);
 
-		// Inspectors only draw for the selected entity, which makes this the "gizmos when selected" hook
+		static const koi::Color activeCol(1.0f, 0.8f, 0.2f, 1.0f);
+		static const koi::Color inactiveCol(0.3f, 0.9f, 1.0f, 1.0f);
+
 		for (size_t i = 0; i < mover->Positions.size(); ++i)
 		{
 			const bool active = static_cast<koi::i32>(i) == mover->Lane;
-			koi::DebugDraw::Sphere(mover->Positions[i], 0.25f, active ? koi::Color(1.0f, 0.8f, 0.2f, 1.0f) : koi::Color(0.3f, 0.9f, 1.0f, 1.0f));
+			koi::DebugDraw::Sphere(mover->Positions[i], 0.25f, active ? activeCol : inactiveCol);
 		}
 	}
 
