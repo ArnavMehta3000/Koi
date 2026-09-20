@@ -38,7 +38,7 @@ namespace game
 
 		const koi::i32 lane = spawner.Rng.Range(0, static_cast<koi::i32>(spawner.Positions.size()) - 1);
 
-		koi::Spawn(ctx.World, "Obstacle")
+		koi::Spawn(ctx.World)
 			.At(spawner.Positions[static_cast<size_t>(lane)])
 			.Scaled(0.0f)
 			.WithMesh(spawner.Mesh)
