@@ -1,5 +1,5 @@
 #pragma once
-#include "InspectorUI.h"
+#include "Components/Lanes.h"
 #include "Koi/Engine/ECS/System.h"
 #include "Koi/Engine/Interop/ComponentInspector.h"
 #include "Koi/Engine/Math/MathSerializer.h"

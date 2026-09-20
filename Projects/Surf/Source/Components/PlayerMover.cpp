@@ -1,4 +1,5 @@
 #include "Components/PlayerMover.h"
+#include "Koi/Engine/Interop/InspectorWidgets.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
@@ -13,7 +14,7 @@ namespace game
 
 		DrawLanes(mover->Positions, mover->Lane);
 		ImGui::DragFloat("Duration", &mover->Duration, 0.01f, 0.01f, 2.0f, "%.2f s");
-		DrawEaseCombo("Ease", mover->Ease);
+		koi::DrawEnumCombo("Ease", mover->Ease, koi::kEaseTypeNames);
 		ImGui::Text("Lane %d", mover->Lane);
 	}
 
