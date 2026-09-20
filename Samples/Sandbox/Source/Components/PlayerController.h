@@ -6,6 +6,8 @@
 
 struct PlayerController
 {
+	static constexpr std::string_view kKey = "player_controller";
+
 	koi::f32 MoveSpeed = 5.0f;   // units per second
 	koi::f32 TurnSpeed = 90.0f;  // degrees per second, about the world Y axis
 };
@@ -42,7 +44,7 @@ namespace koi
 class PlayerControllerInspector final : public koi::IComponentInspector
 {
 public:
-	[[nodiscard]] std::string_view Key() const override { return "player_controller"; }
+	[[nodiscard]] std::string_view Key() const override { return PlayerController::kKey; }
 	void Draw(koi::Entity e) override;
 };
 

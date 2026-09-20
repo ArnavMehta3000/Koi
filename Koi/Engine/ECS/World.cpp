@@ -156,6 +156,11 @@ namespace koi
 
 			// Create entity
 			const std::string name = (*entityTable)["name"].value_or<std::string>("Entity_" + std::to_string(i));
+			if (m_ecs.lookup(name.c_str()))
+			{
+				KOI_LOG_WARN("Scene entity [{}] '{}' duplicates an earlier name. Flecs will merge them into one entity", i, name);
+			}
+
 			Entity e = m_ecs.entity(name.c_str());
 			e.set<SceneOrder>({ i });
 			KOI_LOG_TRACE("Scene entity [{}] '{}'", i, name);
@@ -164,6 +169,13 @@ namespace koi
 			for (const std::unique_ptr<IComponentType>& component : components)
 			{
 				component->Load(e, *entityTable);
+			}
+
+			// A sub-table no component claims is usually a renamed key
+			for (const auto& [key, value] : *entityTable)
+			{
+				if (!value.is_table() || ComponentRegistry::Get().Find(key.str())) continue;
+				KOI_LOG_WARN("Scene entity '{}' has unknown component table '{}'; it will not be loaded or saved", name, key.str());
 			}
 
 			// Configure parents if they exist

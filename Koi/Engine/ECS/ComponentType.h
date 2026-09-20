@@ -22,19 +22,22 @@ namespace koi
 		virtual void Save(Entity e, toml::table& entityTable) const      = 0;
 	};
 
-	template <Serializable T>
+	// Ensure components have a `kKey` static member for use in scene tables and inspector
+	template <typename T>
+	concept KeyedComponent = requires { { T::kKey } -> std::convertible_to<std::string_view>; };
+
+	template <typename T> requires Serializable<T> && KeyedComponent<T>
 	class ComponentType : public IComponentType
 	{
 	public:
 		// A required component cannot be removed, and defaults itself when the scene omits it
-		ComponentType(std::string_view key, i32 drawOrder = 0, bool required = false)
-			: m_key(key)
-			, m_drawOrder(drawOrder)
+		explicit ComponentType(i32 drawOrder = 0, bool required = false)
+			: m_drawOrder(drawOrder)
 			, m_required(required)
 		{
 		}
 
-		[[nodiscard]] std::string_view Key() const override { return m_key; }
+		[[nodiscard]] std::string_view Key() const override { return T::kKey; }
 		[[nodiscard]] i32  DrawOrder() const override { return m_drawOrder; }
 		[[nodiscard]] bool Removable() const override { return !m_required; }
 
@@ -44,7 +47,7 @@ namespace koi
 
 		void Load(Entity e, const toml::table& entityTable) const override
 		{
-			if (std::optional<T> value = DeserializeFrom<T>(entityTable, m_key))
+			if (std::optional<T> value = DeserializeFrom<T>(entityTable, T::kKey))
 			{
 				e.set<T>(*value);
 			}
@@ -58,12 +61,11 @@ namespace koi
 		{
 			if (const T* value = e.try_get<T>())
 			{
-				entityTable.insert(m_key, Serializer<T>::Serialize(*value));
+				entityTable.insert(T::kKey, Serializer<T>::Serialize(*value));
 			}
 		}
 
 	private:
-		std::string_view m_key;
 		i32              m_drawOrder;
 		bool             m_required;
 	};

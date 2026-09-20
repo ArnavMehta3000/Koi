@@ -8,6 +8,8 @@
 // simulated entirely from game code
 struct Spin
 {
+	static constexpr std::string_view kKey = "spin";
+
 	koi::Vector3 Axis  = koi::Vector3(0.0f, 1.0f, 0.0f);
 	koi::f32     Speed = 90.0f;  // degrees per second, about Axis in world space
 };
@@ -44,7 +46,7 @@ namespace koi
 class SpinInspector final : public koi::IComponentInspector
 {
 public:
-	[[nodiscard]] std::string_view Key() const override { return "spin"; }
+	[[nodiscard]] std::string_view Key() const override { return Spin::kKey; }
 	void Draw(koi::Entity e) override;
 };
 

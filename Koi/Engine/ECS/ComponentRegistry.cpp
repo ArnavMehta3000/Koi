@@ -23,7 +23,7 @@ namespace koi
 		class MeshComponentType final : public IComponentType
 		{
 		public:
-			[[nodiscard]] std::string_view Key() const override { return "mesh"; }
+			[[nodiscard]] std::string_view Key() const override { return MeshRef::kKey; }
 			[[nodiscard]] i32 DrawOrder() const override { return 10; }
 
 			[[nodiscard]] bool Has(Entity e) const override { return e.has<MeshRef>(); }
@@ -65,7 +65,7 @@ namespace koi
 		class MaterialComponentType final : public IComponentType
 		{
 		public:
-			[[nodiscard]] std::string_view Key() const override { return "material"; }
+			[[nodiscard]] std::string_view Key() const override { return MaterialRef::kKey; }
 			[[nodiscard]] i32 DrawOrder() const override { return 11; }
 
 			[[nodiscard]] bool Has(Entity e) const override { return e.has<MaterialRef>(); }
@@ -138,10 +138,10 @@ namespace koi
 	{
 		ComponentRegistry& registry = ComponentRegistry::Get();
 
-		registry.Register<ComponentType<Transform>>("transform", 0, true);
+		registry.Register<ComponentType<Transform>>(0, true);
 		registry.Register<MeshComponentType>();
 		registry.Register<MaterialComponentType>();
-		registry.Register<ComponentType<CameraComponent>>("camera", 20);
-		registry.Register<ComponentType<Light>>("light", 30);
+		registry.Register<ComponentType<CameraComponent>>(20);
+		registry.Register<ComponentType<Light>>(30);
 	}
 }

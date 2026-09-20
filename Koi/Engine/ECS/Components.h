@@ -7,6 +7,8 @@ namespace koi
 {
 	struct MeshRef
 	{
+		static constexpr std::string_view kKey = "mesh";
+
 		MeshHandle Handle;  // the source path lives in the mesh AssetCache, not per entity
 	};
 
@@ -19,11 +21,15 @@ namespace koi
 	// Overrides every material slot of the entity's mesh with one material asset
 	struct MaterialRef
 	{
+		static constexpr std::string_view kKey = "material";
+
 		MaterialHandle Handle;
 	};
 
 	struct CameraComponent
 	{
+		static constexpr std::string_view kKey = "camera";
+
 		f32  FovY    = 0.8f;     // vertical field of view, radians
 		f32  Near    = 0.05f;
 		f32  Far     = 1000.0f;
@@ -38,6 +44,8 @@ namespace koi
 
 	struct Light
 	{
+		static constexpr std::string_view kKey = "light";
+
 		LightType Type      = LightType::Point;
 		Vector3   Color     = Vector3(1.0f, 1.0f, 1.0f);
 		f32       Intensity = 1.0f;

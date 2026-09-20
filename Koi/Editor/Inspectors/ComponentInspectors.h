@@ -10,7 +10,7 @@ namespace koi::editor
 	class TransformInspector final : public IComponentInspector
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return "transform"; }
+		[[nodiscard]] std::string_view Key() const override { return Transform::kKey; }
 		void Draw(Entity e) override;
 
 	private:
@@ -23,28 +23,28 @@ namespace koi::editor
 	class MeshInspector final : public IComponentInspector
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return "mesh"; }
+		[[nodiscard]] std::string_view Key() const override { return MeshRef::kKey; }
 		void Draw(Entity e) override;
 	};
 
 	class MaterialRefInspector final : public IComponentInspector
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return "material"; }
+		[[nodiscard]] std::string_view Key() const override { return MaterialRef::kKey; }
 		void Draw(Entity e) override;
 	};
 
 	class CameraInspector final : public IComponentInspector
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return "camera"; }
+		[[nodiscard]] std::string_view Key() const override { return CameraComponent::kKey; }
 		void Draw(Entity e) override;
 	};
 
 	class LightInspector final : public IComponentInspector
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return "light"; }
+		[[nodiscard]] std::string_view Key() const override { return Light::kKey; }
 		void Draw(Entity e) override;
 	};
 

@@ -40,7 +40,7 @@ void PlayerControllerSystem::Each(const koi::SystemContext& ctx, koi::Entity, ko
 
 void RegisterPlayerControllerComponent()
 {
-	koi::ComponentRegistry::Get().Register<koi::ComponentType<PlayerController>>("player_controller", 51);
+	koi::ComponentRegistry::Get().Register<koi::ComponentType<PlayerController>>(51);
 }
 
 void RegisterPlayerControllerSystem()

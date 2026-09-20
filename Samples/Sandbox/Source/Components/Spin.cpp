@@ -31,7 +31,7 @@ void SpinSystem::Each(const koi::SystemContext& ctx, koi::Entity, koi::Transform
 
 void RegisterSpinComponent()
 {
-	koi::ComponentRegistry::Get().Register<koi::ComponentType<Spin>>("spin", 50);
+	koi::ComponentRegistry::Get().Register<koi::ComponentType<Spin>>(50);
 }
 
 void RegisterSpinSystem()
