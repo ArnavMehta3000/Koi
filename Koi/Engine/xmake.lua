@@ -16,6 +16,7 @@ target("Koi.Engine")
 		"fastgltf",
 		"tracy",
 		"Flecs",
+		"reflect-cpp",
 		"directx-headers", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
