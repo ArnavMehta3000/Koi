@@ -9,6 +9,8 @@ namespace game
 {
 	struct PlayerMover
 	{
+		static constexpr std::string_view kKey = "game:player_mover";
+
 		Lanes         Positions;
 		koi::f32      Duration = 0.15f;  // seconds per lane switch
 		koi::EaseType Ease     = koi::EaseType::OutBack;
@@ -22,7 +24,7 @@ namespace game
 	class PlayerMoverInspector final : public koi::IComponentInspector
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return "game:player_mover"; }
+		[[nodiscard]] std::string_view Key() const override { return PlayerMover::kKey; }
 		void Draw(koi::Entity e) override;
 	};
 
