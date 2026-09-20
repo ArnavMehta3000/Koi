@@ -1,9 +1,17 @@
 #pragma once
+#include "Koi/Engine/Math/Ease.h"
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 
 namespace koi
 {
+	template<>
+	struct EnumNames<EaseType>
+	{
+		static std::string_view ToString(EaseType value)                 { return koi::ToString(value); }
+		static std::optional<EaseType> FromString(std::string_view name) { return EaseTypeFromString(name); }
+	};
+
 	template<>
 	struct Serializer<Vector2>
 	{
@@ -97,4 +105,5 @@ namespace koi
 	static_assert(Serializable<Vector3>);
 	static_assert(Serializable<Vector4>);
 	static_assert(Serializable<Quaternion>);
+	static_assert(Serializable<EaseType>);
 }
