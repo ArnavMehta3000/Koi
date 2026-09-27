@@ -78,8 +78,10 @@ namespace ImGuiUtils
     {
       ImDrawList* drawList = ImGui::GetWindowDrawList();
       const ImVec2 widgetPos = ImGui::GetCursorScreenPos();
+      drawList->PushClipRect(widgetPos, widgetPos + ImVec2(float(graphWidth + legendWidth), float(height)), true);
       RenderGraph(drawList, widgetPos, ImVec2(float(graphWidth), float(height)), size_t(frameIndexOffset), maxFrameTime);
       RenderLegend(drawList, widgetPos + ImVec2(float(graphWidth), 0.0f), ImVec2(float(legendWidth), float(height)), size_t(frameIndexOffset), maxFrameTime);
+      drawList->PopClipRect();
       ImGui::Dummy(ImVec2(float(graphWidth + legendWidth), float(height)));
     }
 
