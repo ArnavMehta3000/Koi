@@ -18,6 +18,8 @@ namespace ImGuiUtils
     int frameWidth;
     int frameSpacing;
     bool useColoredLegendText;
+    float budgetTime = 0.0f; // seconds, 0 hides the budget line
+    uint32_t budgetColor = 0xB0FFFFFF;
 
     ProfilerGraph(size_t framesCount)
     {
@@ -143,6 +145,13 @@ namespace ImGuiUtils
           if (std::abs(taskEndHeight - taskStartHeight) > heightThreshold)
             Rect(drawList, taskPos + ImVec2(0.0f, -taskStartHeight), taskPos + ImVec2(float(frameWidth), -taskEndHeight), task.color, true);
         }
+      }
+
+      if (budgetTime > 0.0f)
+      {
+        float budgetY = graphPos.y + graphSize.y - 1.0f - (budgetTime / maxFrameTime) * graphSize.y;
+        if (budgetY > graphPos.y)
+          drawList->AddLine(ImVec2(graphPos.x + 1.0f, budgetY), ImVec2(graphPos.x + graphSize.x - 1.0f, budgetY), budgetColor);
       }
     }
     void RenderLegend(ImDrawList *drawList, ImVec2 legendPos, ImVec2 legendSize, size_t frameIndexOffset, float maxFrameTime)
