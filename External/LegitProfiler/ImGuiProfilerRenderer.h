@@ -152,7 +152,7 @@ namespace ImGuiUtils
       float markerRigthRectMargin = 3.0f;
       float markerRightRectHeight = 10.0f;
       float markerRightRectSpacing = 4.0f;
-      float nameOffset = 30.0f;
+      float nameOffset = ImGui::CalcTextSize("[00.00").x;
       ImVec2 textMargin = ImVec2(5.0f, -3.0f);
 
       auto &currFrame = frames[GetCurrFrameIndex(frameIndexOffset)];
@@ -199,7 +199,7 @@ namespace ImGuiUtils
         char nameText[128];
         std::snprintf(nameText, sizeof(nameText), "ms] %s", task.name.c_str());
 
-        Text(drawList, markerRightRectMax + textMargin, textColor, timeText);
+        Text(drawList, markerRightRectMax + textMargin + ImVec2(nameOffset - ImGui::CalcTextSize(timeText).x, 0.0f), textColor, timeText);
         Text(drawList, markerRightRectMax + textMargin + ImVec2(nameOffset, 0.0f), textColor, nameText);
       }
     }
