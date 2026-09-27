@@ -128,7 +128,7 @@ namespace koi
 
 	void Renderer::BeginFrame()
 	{
-		ZoneScoped;
+		KOI_SCOPE("Renderer Begin");
 		if (!m_renderWindow || !m_frameContext) return;
 
 		// Before anything records against the back buffers this frame
@@ -164,10 +164,13 @@ namespace koi
 			m_overlay->OnOverlayRender(cmd);
 		}
 
-		cmd.TransitionBarrier(m_renderWindow->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);
-		cmd.End();
-
-		m_graphicsQueue.Submit(cmd);
+		{
+			KOI_SCOPE("Submit");
+			m_device->GetGpuTimers().Resolve(cmd.GetNative());
+			cmd.TransitionBarrier(m_renderWindow->CurrentBackBuffer(), D3D12_RESOURCE_STATE_PRESENT);
+			cmd.End();
+			m_graphicsQueue.Submit(cmd);
+		}
 		m_renderWindow->Present();
 
 		// After Present, since that waits on the back buffer fence and the payload is ready by then
@@ -191,7 +194,7 @@ namespace koi
 
 	void Renderer::SetupFrame(const RenderView& view, World& world)
 	{
-		ZoneScoped;
+		KOI_SCOPE("Render Setup");
 		if (m_pipeline)
 			m_pipeline->Setup(view, world);
 	}

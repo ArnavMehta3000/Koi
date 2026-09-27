@@ -39,6 +39,7 @@ namespace koi
 	{
 		m_world->Update(dt);
 
+		KOI_SCOPE("Game Tick");
 		OnTick(dt);
 	}
 

@@ -35,6 +35,11 @@ namespace koi
 		return m_device ? m_device->GetProfilerCtx() : nullptr;
 	}
 
+	GpuTimers& CommandList::GetGpuTimers() const noexcept
+	{
+		return m_device->GetGpuTimers();
+	}
+
 	void CommandList::Begin(u32 frameSlot)
 	{
 		ZoneScoped;

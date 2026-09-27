@@ -6,7 +6,7 @@ namespace koi
 {
 	void PassList::Execute(CommandList& cmd)
 	{
-		ZoneScoped;
+		KOI_SCOPE("Record Passes");
 		for (auto& pass : m_passes)
 		{
 			KOI_GPU_ZONE_TRANSIENT(cmd, passZone, pass->GetName().data());

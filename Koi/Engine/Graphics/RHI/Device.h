@@ -80,6 +80,7 @@ namespace koi
 		[[nodiscard]] inline DescriptorHeap&      SamplerHeap()          noexcept       { return m_samplerHeap;         }
 		[[nodiscard]] inline UploadContext&       GetUploadContext()      noexcept      { return m_uploadContext;       }
 		[[nodiscard]] inline TracyD3D12Ctx        GetProfilerCtx()       const noexcept { return m_gpuProfilerCtx;     }
+		[[nodiscard]] inline GpuTimers&           GetGpuTimers()         noexcept       { return m_gpuTimers;          }
 
 		[[nodiscard]] u64 GetCompletedFenceValue () const noexcept;
 
@@ -167,6 +168,7 @@ namespace koi
 		UploadContext               m_uploadContext;
 
 		TracyD3D12Ctx               m_gpuProfilerCtx  = nullptr;
+		GpuTimers                   m_gpuTimers;
 
 		u64                         m_nextFenceValue  = 1;
 		u64                         m_frameIndex      = 0;

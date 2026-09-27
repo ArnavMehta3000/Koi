@@ -4,6 +4,7 @@
 #endif
 
 #include <Tracy/tracy/Tracy.hpp>
+#include "Koi/Engine/Diagnostics/FrameStats.h"
 
 namespace koi
 {
@@ -29,3 +30,7 @@ namespace koi
 
 // Like ZoneScoped, but silent on threads that opted out
 #define KOI_ZONE_UNMUTED ZoneNamed(___tracy_scoped_zone, !::koi::t_zonesMuted)
+
+#define KOI_SCOPE(name) ZoneScopedN(name); ::koi::FrameStatScope ___koi_frame_stat{ name }
+
+#define KOI_SCOPE_TRANSIENT(name) ZoneTransientN(___tracy_scoped_zone, (name).data(), true); ::koi::FrameStatScope ___koi_frame_stat{ name }

@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 
 namespace koi
@@ -61,7 +62,16 @@ namespace koi
 			auto builder = world.GetECS().system<Components...>(std::string(Name()).c_str());
 			internal::ApplyPhase(builder, Phase());
 
-			builder.each([this](flecs::iter& it, size_t index, Components&... components)
+			// run() wraps every matched table, so the profiler sees one entry per system, not per entity
+			builder.run([this](flecs::iter& it)
+			{
+				KOI_SCOPE_TRANSIENT(Name());
+				while (it.next())
+				{
+					it.each();
+				}
+			},
+			[this](flecs::iter& it, size_t index, Components&... components)
 			{
 				Each(SystemContext{ World::From(it.world()), it.delta_time() }, it.entity(index), components...);
 			});
@@ -81,6 +91,7 @@ namespace koi
 
 			builder.run([this](flecs::iter& it)
 			{
+				KOI_SCOPE_TRANSIENT(Name());
 				Run(SystemContext{ World::From(it.world()), it.delta_time() });
 			});
 		}

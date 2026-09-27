@@ -113,8 +113,11 @@ namespace koi
 	void Engine::BeginFrame()
 	{
 		ZoneScoped;
-		GetSubsystem<InputManager>().BeginFrame();
-		Window::PollEvents();
+		{
+			KOI_SCOPE("Input");
+			GetSubsystem<InputManager>().BeginFrame();
+			Window::PollEvents();
+		}
 		GetSubsystem<Renderer>().BeginFrame();
 	}
 
@@ -137,6 +140,7 @@ namespace koi
 
 		while (m_isRunning)
 		{
+			FrameStats::NewFrame();
 			BeginFrame();
 			Tick(host);
 			EndFrame();

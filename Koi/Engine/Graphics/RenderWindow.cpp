@@ -171,7 +171,7 @@ namespace koi
 
 	void RenderWindow::Present()
 	{
-		ZoneScoped;
+		KOI_SCOPE("Present");
 
 		const u32 syncInterval = m_vsync ? 1 : 0;
 		const u32 flags        = (!m_vsync && m_tearingAllowed) ? DXGI_PRESENT_ALLOW_TEARING : 0;

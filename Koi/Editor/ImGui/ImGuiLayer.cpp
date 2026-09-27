@@ -127,7 +127,7 @@ namespace koi::editor
 
 	void ImGuiLayer::BeginFrame(bool gameOwnsKeyboard)
 	{
-		ZoneScopedN("ImGui NewFrame");
+		KOI_SCOPE("ImGui NewFrame");
 
 		ImGuiIO& io = ImGui::GetIO();
 		if (gameOwnsKeyboard)
@@ -150,14 +150,14 @@ namespace koi::editor
 	void ImGuiLayer::EndFrame(CommandList& cmd)
 	{
 		{
-			ZoneScopedN("ImGui Render");
+			KOI_SCOPE("ImGui Render");
 			ImGui::Render();
 
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 		}
 
-		ZoneScopedN("ImGui RecordDrawData");
+		KOI_SCOPE("ImGui Record");
 		dx12::GraphicsCommandList* native = cmd.GetNative();
 		ID3D12DescriptorHeap* heaps[] = { Engine::Get().GetSubsystem<Renderer>().GetDevice().ResourceHeap().GetHeap() };
 		native->SetDescriptorHeaps(1, heaps);

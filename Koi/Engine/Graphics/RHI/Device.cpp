@@ -119,6 +119,7 @@ namespace koi
 			TracyD3D12Destroy(m_gpuProfilerCtx);
 			m_gpuProfilerCtx = nullptr;
 		}
+		m_gpuTimers.Shutdown();
 
 		FlushDeferredDeletions(~0ull);
 		ReportLiveResources();
@@ -426,6 +427,7 @@ namespace koi
 
 	void GfxDevice::GpuProfilerNewFrame()
 	{
+		m_gpuTimers.BeginFrame(GetCompletedFenceValue());
 		if (m_gpuProfilerCtx)
 		{
 			TracyD3D12NewFrame(m_gpuProfilerCtx);
@@ -434,6 +436,7 @@ namespace koi
 
 	void GfxDevice::GpuProfilerCollect()
 	{
+		m_gpuTimers.EndFrame(m_nextFenceValue - 1);  // the value Present just signalled
 		if (m_gpuProfilerCtx)
 		{
 			ZoneScoped;
@@ -894,6 +897,8 @@ namespace koi
 		// timestamps, so the copy queue in UploadContext is deliberately left uninstrumented
 		m_gpuProfilerCtx = TracyD3D12Context(m_device.Get(), m_graphicsQueue.Get());
 		TracyD3D12ContextName(m_gpuProfilerCtx, "Graphics", 8);
+
+		m_gpuTimers.Init(m_device.Get(), m_graphicsQueue.Get());
 	}
 
 	void GfxDevice::CreateFences()

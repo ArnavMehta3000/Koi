@@ -5,6 +5,7 @@
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
+#include "Koi/Editor/Panels/ProfilerPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
@@ -73,6 +74,7 @@ namespace koi::editor
 		m_panels.Emplace<InspectorPanel>(m_selection, m_inspectors, *m_assetDatabase);
 		m_panels.Emplace<RenderTargetsPanel>(renderer);
 		m_panels.Emplace<LogPanel>();
+		m_panels.Emplace<ProfilerPanel>();
 		m_viewportPanel     = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
 		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection);
 	}
@@ -163,7 +165,7 @@ namespace koi::editor
 
 	void EditorApp::QueueGizmos()
 	{
-		ZoneScoped;
+		KOI_SCOPE("Editor Gizmos");
 		if (m_gizmos.SelectionBounds) DrawSelectionBounds();
 		if (m_gizmos.Lights)          DrawLightGizmos();
 		if (m_gizmos.CameraFrustum)   DrawCameraFrustum();
@@ -292,7 +294,7 @@ namespace koi::editor
 		m_imgui.BeginFrame(gameOwnsKeyboard);
 
 		{
-			ZoneScopedN("Panels");
+			KOI_SCOPE("ImGui Panels");
 			ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 			DrawMenuBar();
 			m_panels.DrawAll();
