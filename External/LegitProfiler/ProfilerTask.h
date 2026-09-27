@@ -39,7 +39,7 @@ namespace legit
     double endTime;
     std::string name;
     uint32_t color;
-    double GetLength()
+    double GetLength() const
     {
       return endTime - startTime;
     }
