@@ -10,7 +10,7 @@ vsync  = true
 
 [logging]
 file       = "Logs/Surf.log"  # relative to <project>/.koi (editor) or the exe (runtime); empty disables
-level      = "Info"
+level      = "Trace"
 history    = 4096
 console    = false
 debug_sink = true

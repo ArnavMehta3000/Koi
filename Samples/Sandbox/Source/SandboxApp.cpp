@@ -4,6 +4,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Interop/EditorContext.h"
+#include "Koi/Engine/Interop/ReflectInspector.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
@@ -32,7 +33,7 @@ void SandboxApp::OnInit()
 	if (koi::IEditorContext* editor = GetEditorContext())
 	{
 		editor->RegisterInspector<SpinInspector>();
-		editor->RegisterInspector<PlayerControllerInspector>();
+		editor->RegisterInspector<koi::ReflectedInspector<PlayerController>>();
 	}
 }
 

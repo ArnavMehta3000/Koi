@@ -1,103 +1,45 @@
 #pragma once
-#include "Koi/Engine/Math/Ease.h"
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 
 namespace koi
 {
-	template<>
-	struct EnumNames<EaseType>
-	{
-		static std::string_view ToString(EaseType value)                 { return koi::ToString(value); }
-		static std::optional<EaseType> FromString(std::string_view name) { return EaseTypeFromString(name); }
-	};
+	template <typename T> inline constexpr size_t kFloatCount   = 0;
+	template <> inline constexpr size_t kFloatCount<Vector2>    = 2;
+	template <> inline constexpr size_t kFloatCount<Vector3>    = 3;
+	template <> inline constexpr size_t kFloatCount<Vector4>    = 4;
+	template <> inline constexpr size_t kFloatCount<Quaternion> = 4;
 
-	template<>
-	struct Serializer<Vector2>
-	{
-		static toml::array Serialize(const Vector2& f)
-		{
-			return toml::array{ ToTomlFloat(f.x), ToTomlFloat(f.y) };
-		}
+	template <typename T>
+	concept FloatArray = kFloatCount<T> != 0;
 
-		static std::optional<Vector2> Deserialize(const toml::node& node)
+	template <FloatArray T>
+	struct Serializer<T>
+	{
+		static toml::array Serialize(const T& value)
 		{
-			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 2)
+			const f32* components = &value.x;
+
+			toml::array out;
+			for (size_t i = 0; i < kFloatCount<T>; ++i)
 			{
-				const toml::array& arr = *asArr;
-				return Vector2(
-					arr[0].value_or<f32>(0.0f),
-					arr[1].value_or<f32>(0.0f));
+				out.push_back(components[i]);
 			}
-			return std::nullopt;
-		}
-	};
-
-	template<>
-	struct Serializer<Vector3>
-	{
-		static toml::array Serialize(const Vector3& f)
-		{
-			return toml::array{ ToTomlFloat(f.x), ToTomlFloat(f.y), ToTomlFloat(f.z) };
+			return out;
 		}
 
-		static std::optional<Vector3> Deserialize(const toml::node& node)
+		static std::optional<T> Deserialize(const toml::node& node)
 		{
-			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 3)
+			const toml::array* arr = node.as_array();
+			if (!arr || arr->size() != kFloatCount<T>) return std::nullopt;
+
+			T out{};
+			f32* components = &out.x;
+			for (size_t i = 0; i < kFloatCount<T>; ++i)
 			{
-				const toml::array& arr = *asArr;
-				return Vector3(
-					arr[0].value_or<f32>(0.0f),
-					arr[1].value_or<f32>(0.0f),
-					arr[2].value_or<f32>(0.0f));
+				components[i] = (*arr)[i].value_or<f32>(0.0f);
 			}
-			return std::nullopt;
-		}
-	};
-
-	template<>
-	struct Serializer<Vector4>
-	{
-		static toml::array Serialize(const Vector4& f)
-		{
-			return toml::array{ ToTomlFloat(f.x), ToTomlFloat(f.y), ToTomlFloat(f.z), ToTomlFloat(f.w) };
-		}
-
-		static std::optional<Vector4> Deserialize(const toml::node& node)
-		{
-			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 4)
-			{
-				const toml::array& arr = *asArr;
-				return Vector4(
-					arr[0].value_or<f32>(0.0f),
-					arr[1].value_or<f32>(0.0f),
-					arr[2].value_or<f32>(0.0f),
-					arr[3].value_or<f32>(0.0f));
-			}
-			return std::nullopt;
-		}
-	};
-
-	template<>
-	struct Serializer<Quaternion>
-	{
-		static toml::array Serialize(const Quaternion& q)
-		{
-			return toml::array{ ToTomlFloat(q.x), ToTomlFloat(q.y), ToTomlFloat(q.z), ToTomlFloat(q.w) };
-		}
-
-		static std::optional<Quaternion> Deserialize(const toml::node& node)
-		{
-			if (const toml::array* asArr = node.as_array(); asArr && asArr->size() == 4)
-			{
-				const toml::array& arr = *asArr;
-				return Quaternion(
-					arr[0].value_or<f32>(0.0f),
-					arr[1].value_or<f32>(0.0f),
-					arr[2].value_or<f32>(0.0f),
-					arr[3].value_or<f32>(0.0f));
-			}
-			return std::nullopt;
+			return out;
 		}
 	};
 
@@ -105,5 +47,4 @@ namespace koi
 	static_assert(Serializable<Vector3>);
 	static_assert(Serializable<Vector4>);
 	static_assert(Serializable<Quaternion>);
-	static_assert(Serializable<EaseType>);
 }

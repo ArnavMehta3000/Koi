@@ -1,51 +1,15 @@
 #pragma once
 #include "Koi/Engine/ECS/System.h"
-#include "Koi/Engine/Interop/ComponentInspector.h"
-#include "Koi/Engine/Math/MathSerializer.h"
 #include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/Runtime/ReflectSerializer.h"
 
 struct PlayerController
 {
 	static constexpr std::string_view kKey = "player_controller";
+	static constexpr bool kReflect = true;
 
 	koi::f32 MoveSpeed = 5.0f;   // units per second
 	koi::f32 TurnSpeed = 90.0f;  // degrees per second, about the world Y axis
-};
-
-namespace koi
-{
-	template<>
-	struct Serializer<PlayerController>
-	{
-		static toml::table Serialize(const PlayerController& p)
-		{
-			toml::table out;
-			out.insert("move_speed", ToTomlFloat(p.MoveSpeed));
-			out.insert("turn_speed", ToTomlFloat(p.TurnSpeed));
-			return out;
-		}
-
-		static std::optional<PlayerController> Deserialize(const toml::node& node)
-		{
-			const toml::table* tbl = node.as_table();
-			if (!tbl) return std::nullopt;
-
-			return PlayerController
-			{
-				.MoveSpeed = (*tbl)["move_speed"].value_or(5.0f),
-				.TurnSpeed = (*tbl)["turn_speed"].value_or(90.0f),
-			};
-		}
-	};
-
-	static_assert(Serializable<PlayerController>);
-}
-
-class PlayerControllerInspector final : public koi::IComponentInspector
-{
-public:
-	[[nodiscard]] std::string_view Key() const override { return PlayerController::kKey; }
-	void Draw(koi::Entity e) override;
 };
 
 class PlayerControllerSystem final : public koi::System<koi::Transform, const PlayerController>

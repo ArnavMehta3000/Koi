@@ -4,6 +4,7 @@
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
 #include "Koi/Engine/Interop/EditorContext.h"
+#include "Koi/Engine/Interop/ReflectInspector.h"
 
 namespace koi
 {
@@ -37,6 +38,7 @@ namespace game
 		{
 			editor->RegisterInspector<PlayerMoverInspector>();
 			editor->RegisterInspector<ObstacleSpawnerInspector>();
+			editor->RegisterInspector<koi::ReflectedInspector<Obstacle>>();
 		}
 	}
 }

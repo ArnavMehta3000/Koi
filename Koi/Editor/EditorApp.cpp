@@ -18,6 +18,7 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Runtime/Serializer.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
@@ -125,7 +126,7 @@ namespace koi::editor
 		std::ofstream out(path, std::ios::trunc);
 		if (out)
 		{
-			out << root;
+			out << TomlDocument(root);
 		}
 		else
 		{

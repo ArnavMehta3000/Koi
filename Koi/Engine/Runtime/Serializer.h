@@ -5,10 +5,8 @@
 
 #include <concepts>
 #include <optional>
-#include <ranges>
 #include <string>
 #include <string_view>
-#include <type_traits>
 #include <utility>
 
 namespace koi
@@ -16,10 +14,13 @@ namespace koi
 	template <typename T>
 	struct Serializer;
 
-	// toml has no f32: everything lands in the file as a double. This re-derives the
-	// double from the shortest text that still recovers the same f32, which loses nothing and
-	// keeps hand-edited scene files readable
-	[[nodiscard]] f64 ToTomlFloat(f32 value);
+	inline constexpr toml::format_flags kTomlFormatFlags =
+		toml::toml_formatter::default_flags | toml::format_flags::relaxed_float_precision;
+
+	[[nodiscard]] inline toml::toml_formatter TomlDocument(const toml::node& node)
+	{
+		return toml::toml_formatter(node, kTomlFormatFlags);
+	}
 
 	// Types toml++ stores directly, without a table or array wrapper.
 	template <typename T>
@@ -40,39 +41,6 @@ namespace koi
 	// Anything Serialize may hand back: a native, or an owning node
 	template <typename T>
 	concept TomlInsertable = TomlNative<T> || std::derived_from<T, toml::node>;
-
-
-	// --- For enums ---
-	template <typename E>
-	struct EnumNames;
-
-	template <typename E>
-	concept NamedEnum = std::is_enum_v<E> && requires(E value, std::string_view name)
-	{
-		{ EnumNames<E>::ToString(value) } -> std::convertible_to<std::string_view>;
-		{ EnumNames<E>::FromString(name) } -> std::same_as<std::optional<E>>;
-	};
-
-	// Maps with a string-like key, which round-trip as a toml::table.
-	template <typename T>
-	concept StringKeyedMap = requires
-	{
-		typename T::key_type;
-		typename T::mapped_type;
-	}&& std::convertible_to<typename T::key_type, std::string_view>;
-
-	// Ranges we can rebuild element-by-element (vector, list, deque, set...).
-	// Fixed-extent ranges (std::array, std::span, T[N]) need their own
-	// Serializer specialization.
-	template <typename R>
-	concept RebuildableRange =
-		std::ranges::input_range<R>
-		&& std::default_initializable<R>
-		&& requires(R & range, std::ranges::range_value_t<R> && elem)
-	{
-		range.insert(range.end(), std::move(elem));
-	};
-
 
 	template <typename T>
 	concept CustomSerializable = requires(const T & value)
@@ -97,102 +65,12 @@ namespace koi
 		static std::optional<T> Deserialize(const toml::node& node) { return node.value_exact<T>(); }
 	};
 
-	// f32 needs its own: the default above would widen on write
+	// f32 needs its own: the default above would round-trip through value_exact<f32>, which toml has no type for
 	template <>
 	struct Serializer<f32>
 	{
-		static f64 Serialize(f32 value) { return ToTomlFloat(value); }
+		static f64 Serialize(f32 value) { return static_cast<f64>(value); }
 		static std::optional<f32> Deserialize(const toml::node& node) { return node.value<f32>(); }
-	};
-
-	// Enums
-	template <NamedEnum E>
-	struct Serializer<E>
-	{
-		static std::string Serialize(E value)
-		{
-			return std::string{ EnumNames<E>::ToString(value) };
-		}
-
-		static std::optional<E> Deserialize(const toml::node& node)
-		{
-			const auto name = node.value<std::string_view>();
-			return name ? EnumNames<E>::FromString(*name) : std::nullopt;
-		}
-	};
-
-	// Ranges -> toml::array. std::string is excluded via TomlNative, maps take the specialization below
-	template <RebuildableRange R> requires
-		(!TomlNative<R>)
-		&& (!StringKeyedMap<R>)
-		&& Serializable<std::ranges::range_value_t<R>>
-	struct Serializer<R>
-	{
-		using Elem = std::ranges::range_value_t<R>;
-
-		static toml::array Serialize(const R& range)
-		{
-			toml::array out;
-			for (const auto& elem : range)
-			{
-				out.push_back(Serializer<Elem>::Serialize(elem));
-			}
-
-			return out;
-		}
-
-		static std::optional<R> Deserialize(const toml::node& node)
-		{
-			const auto* arr = node.as_array();
-			if (!arr) return std::nullopt;
-
-			R out{};
-			for (const auto& child : *arr)
-			{
-				auto elem = Serializer<Elem>::Deserialize(child);
-				if (!elem) return std::nullopt;
-
-				out.insert(out.end(), std::move(*elem));
-			}
-
-			return out;
-		}
-	};
-
-	// For map types where key is std::string -> toml::table
-	template <StringKeyedMap M>
-		requires Serializable<typename M::mapped_type>
-	struct Serializer<M>
-	{
-		using Mapped = typename M::mapped_type;
-
-		static toml::table Serialize(const M& map)
-		{
-			toml::table out;
-			for (const auto& [key, value] : map)
-			{
-				out.insert_or_assign(std::string_view{ key }, Serializer<Mapped>::Serialize(value));
-			}
-
-			return out;
-		}
-
-		static std::optional<M> Deserialize(const toml::node& node)
-		{
-			const auto* table = node.as_table();
-			if (!table) return std::nullopt;
-
-			M out{};
-			for (const auto& [key, child] : *table)
-			{
-				auto value = Serializer<Mapped>::Deserialize(child);
-				if (!value) return std::nullopt;
-
-				out.emplace(typename M::key_type{ key.str() }, std::move(*value));
-			}
-
-			return out;
-		}
 	};
 
 	// --- Helpers ---
@@ -206,7 +84,7 @@ namespace koi
 	}
 
 	template <CustomSerializable T>
-	void SerializeInto(toml::table& table, std::string_view key, const T& value) 
+	void SerializeInto(toml::table& table, std::string_view key, const T& value)
 	{
 		table.insert_or_assign(key, Serializer<T>::Serialize(value));
 	}
@@ -230,40 +108,3 @@ namespace koi
 		return value ? std::move(*value) : std::move(fallback);
 	}
 }
-
-//-------------------------------------------------------------------------------
-// Example specialization
-//
-//   template <>
-//   struct koi::Serializer<Transform>
-//   {
-//       static toml::table Serialize(const Transform& v)
-//       {
-//           toml::table out;
-//           SerializeInto(out, "position", v.position);
-//           SerializeInto(out, "rotation", v.rotation);
-//           SerializeInto(out, "scale",    v.scale);
-//           return out;
-//       }
-//
-//       static std::optional<Transform> Deserialize(const toml::node& node)
-//       {
-//           const auto* table = node.as_table();
-//           if (!table)
-//               return std::nullopt;
-//
-//           Transform out{};
-//           out.position = DeserializeOr(*table, "position", Vector3::Zero);
-//           out.rotation = DeserializeOr(*table, "rotation", Quaternion::Identity);
-//           out.scale    = DeserializeOr(*table, "scale",    Vector3::One);
-//           return out;
-//       }
-//   };
-//
-//	 template <>
-//	 struct koi::EnumNames<CullMode>
-//	 {
-//	     static std::string_view ToString(CullMode value);
-//	     static std::optional<CullMode> FromString(std::string_view name);
-//	 };
-//-------------------------------------------------------------------------------

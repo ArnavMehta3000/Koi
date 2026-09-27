@@ -3,10 +3,7 @@
 
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Math/Scalar.h"
-#include <array>
 #include <cmath>
-#include <optional>
-#include <string_view>
 
 namespace koi
 {
@@ -21,37 +18,8 @@ namespace koi
 		InBack,    OutBack,    InOutBack,
 		InElastic, OutElastic, InOutElastic,
 		InBounce,  OutBounce,  InOutBounce,
-		Count
+		MAX_COUNT
 	};
-
-	// Indexed by EaseType
-	inline constexpr std::array<std::string_view, static_cast<size_t>(EaseType::Count)> kEaseTypeNames =
-	{
-		"Linear",
-		"InQuad",    "OutQuad",    "InOutQuad",
-		"InCubic",   "OutCubic",   "InOutCubic",
-		"InQuart",   "OutQuart",   "InOutQuart",
-		"InSine",    "OutSine",    "InOutSine",
-		"InExpo",    "OutExpo",    "InOutExpo",
-		"InBack",    "OutBack",    "InOutBack",
-		"InElastic", "OutElastic", "InOutElastic",
-		"InBounce",  "OutBounce",  "InOutBounce",
-	};
-
-	[[nodiscard]] constexpr std::string_view ToString(EaseType type)
-	{
-		const size_t i = static_cast<size_t>(type);
-		return i < kEaseTypeNames.size() ? kEaseTypeNames[i] : "Linear";
-	}
-
-	[[nodiscard]] constexpr std::optional<EaseType> EaseTypeFromString(std::string_view name)
-	{
-		for (size_t i = 0; i < kEaseTypeNames.size(); ++i)
-		{
-			if (kEaseTypeNames[i] == name) return static_cast<EaseType>(i);
-		}
-		return std::nullopt;
-	}
 
 	[[nodiscard]] constexpr f32 EaseLinear(f32 t) { return t; }
 
@@ -162,7 +130,7 @@ namespace koi
 			case EaseType::InBounce:     return EaseInBounce(t);
 			case EaseType::OutBounce:    return EaseOutBounce(t);
 			case EaseType::InOutBounce:  return EaseInOutBounce(t);
-			case EaseType::Count:        break;
+			case EaseType::MAX_COUNT:    break;
 		}
 		return t;
 	}

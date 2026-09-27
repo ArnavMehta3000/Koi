@@ -32,7 +32,7 @@ name = 'Damaged Helmet'
 
     [entity.transform]
     position = [ -5.893, 2.1, 0.0 ]
-    rotation = [ 0.0, 0.40673667, 0.0, 0.9135454 ]
+    rotation = [ 0.0, 0.406737, 0.0, 0.913545 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -40,13 +40,13 @@ name = 'Camera'
 
     [entity.camera]
     far = 1000.0
-    fov = 0.826169
+    fov_y = 0.826169
     near = 0.05
     primary = true
 
     [entity.transform]
     position = [ 6.6, 1.35, -0.3 ]
-    rotation = [ 0.0, 0.70710677, 0.0, 0.7071067 ]
+    rotation = [ 0.0, 0.707107, 0.0, 0.707107 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -54,11 +54,12 @@ name = 'Child Light'
 
     [entity.light]
     casts_shadows = false
-    color = [ 0.6962025, 0.17625378, 0.17625378 ]
+    color = [ 0.696203, 0.176254, 0.176254 ]
     intensity = 1.0
     range = 10.0
     shadow_bias = 0.0015
-    type = 'point'
+    shadow_extent = 0.0
+    type = 'Point'
 
     [entity.transform]
     position = [ 3.35, 0.0, 0.0 ]
@@ -70,14 +71,15 @@ name = 'Point Light'
 
     [entity.light]
     casts_shadows = false
-    color = [ 0.6, 0.47058824, 1.0 ]
+    color = [ 0.6, 0.470588, 1.0 ]
     intensity = 2.6
     range = 10.3
     shadow_bias = 0.0015
-    type = 'point'
+    shadow_extent = 0.0
+    type = 'Point'
 
     [entity.transform]
-    position = [ -4.289, 3.9588375, -0.17466015 ]
+    position = [ -4.289, 3.95884, -0.17466 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
@@ -92,7 +94,7 @@ name = 'Torus'
     speed = 90.0
 
     [entity.transform]
-    position = [ 3.790697, 12.711526, -2.130382 ]
+    position = [ 3.7907, 12.7115, -2.13038 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 15.0, 5.0, 15.0 ]
 
@@ -101,11 +103,12 @@ name = 'Sun'
 
     [entity.light]
     casts_shadows = true
-    color = [ 1.0, 0.92791235, 0.877451 ]
+    color = [ 1.0, 0.927912, 0.877451 ]
     intensity = 2.8
     range = 0.0
     shadow_bias = 0.0015
-    type = 'directional'
+    shadow_extent = 0.0
+    type = 'Directional'
 
     [entity.spin]
     axis = [ 0.2, 0.2, 0.2 ]
@@ -113,5 +116,5 @@ name = 'Sun'
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
-    rotation = [ -0.7040147, 0.0, 0.0, 0.7101854 ]
+    rotation = [ -0.704015, 0.0, 0.0, 0.710185 ]
     scale = [ 1.0, 1.0, 1.0 ]

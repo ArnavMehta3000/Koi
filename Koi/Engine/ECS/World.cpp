@@ -260,7 +260,7 @@ namespace koi
 			return false;
 		}
 
-		out << root;
+		out << TomlDocument(root);
 		KOI_LOG_INFO("Saved scene '{}'", diskPath->string());
 		return true;
 	}

@@ -3,6 +3,7 @@
 #include "Koi/Editor/Assets/MaterialFile.h"
 #include "Koi/Engine/Graphics/MeshLoader.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Runtime/Serializer.h"
 #include <toml++/toml.hpp>
 #include <fstream>
 #include <unordered_set>
@@ -44,7 +45,7 @@ namespace koi::editor
 				return false;
 			}
 
-			out << table << '\n';
+			out << TomlDocument(table) << '\n';
 			return true;
 		}
 

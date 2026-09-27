@@ -343,9 +343,9 @@ namespace koi::editor
 	{
 		toml::table camera;
 		SerializeInto(camera, "target", m_controller.GetOrbitTarget());
-		camera.insert("radius", ToTomlFloat(m_controller.GetOrbitRadius()));
-		camera.insert("yaw",    ToTomlFloat(m_controller.GetYaw()));
-		camera.insert("pitch",  ToTomlFloat(m_controller.GetPitch()));
+		camera.insert("radius", m_controller.GetOrbitRadius());
+		camera.insert("yaw",    m_controller.GetYaw());
+		camera.insert("pitch",  m_controller.GetPitch());
 		return camera;
 	}
 

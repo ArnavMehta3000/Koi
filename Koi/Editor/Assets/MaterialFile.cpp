@@ -1,5 +1,6 @@
 #include "Koi/Editor/Assets/MaterialFile.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Runtime/Serializer.h"
 #include <toml++/toml.hpp>
 #include <fstream>
 
@@ -45,7 +46,7 @@ namespace koi::editor
 			return false;
 		}
 
-		out << root << '\n';
+		out << TomlDocument(root) << '\n';
 		return true;
 	}
 }

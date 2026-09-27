@@ -1,7 +1,6 @@
 #pragma once
-#include "Koi/Engine/Math/Math.h"
+#include "Koi/Engine/Math/MathSerializer.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Runtime/Serializer.h"
 #include <rfl.hpp>
 #include <rfl/toml.hpp>
 #include <algorithm>
@@ -11,20 +10,24 @@
 // A component opts in with `static constexpr bool kReflect = true` and gets Serializer<T> for free
 namespace rfl
 {
-	template <>
-	struct Reflector<koi::Vector3>
+	template <koi::FloatArray T>
+	struct Reflector<T>
 	{
-		using ReflType = std::array<koi::f32, 3>;
-		static ReflType from(const koi::Vector3& v)  { return { v.x, v.y, v.z }; }
-		static koi::Vector3 to(const ReflType& a)    { return { a[0], a[1], a[2] }; }
-	};
+		using ReflType = std::array<koi::f32, koi::kFloatCount<T>>;
 
-	template <>
-	struct Reflector<koi::Quaternion>
-	{
-		using ReflType = std::array<koi::f32, 4>;
-		static ReflType from(const koi::Quaternion& q) { return { q.x, q.y, q.z, q.w }; }
-		static koi::Quaternion to(const ReflType& a)   { return { a[0], a[1], a[2], a[3] }; }
+		static ReflType from(const T& value)
+		{
+			ReflType out{};
+			std::copy_n(&value.x, out.size(), out.begin());
+			return out;
+		}
+
+		static T to(const ReflType& flat)
+		{
+			T out{};
+			std::copy_n(flat.begin(), flat.size(), &out.x);
+			return out;
+		}
 	};
 }
 
@@ -35,31 +38,19 @@ namespace koi
 
 	using ReflectProcessors = rfl::Processors<rfl::CamelCaseToSnakeCase, rfl::DefaultIfMissing>;
 
-	// reflect-cpp widens f32 straight to double; re-shorten so files stay readable like ToTomlFloat does
-	inline void ShortenFloats(toml::node& node)
-	{
-		if (toml::value<f64>* v = node.as_floating_point())
-		{
-			**v = ToTomlFloat(static_cast<f32>(**v));
-		}
-		else if (toml::table* t = node.as_table())
-		{
-			for (auto& [key, child] : *t) ShortenFloats(child);
-		}
-		else if (toml::array* a = node.as_array())
-		{
-			for (toml::node& child : *a) ShortenFloats(child);
-		}
-	}
-
 	// "PopDuration" -> "pop_duration", the same mapping CamelCaseToSnakeCase applies at compile time
 	inline std::string SnakeCase(std::string_view name)
 	{
+		const auto size = name.size();
 		std::string out;
-		for (size_t i = 0; i < name.size(); ++i)
+		out.reserve(size);  // Reserve the same amount of bytes as the name (might be more since '_' will be added)
+
+		for (size_t i = 0; i < size; ++i)
 		{
 			const unsigned char c = static_cast<unsigned char>(name[i]);
-			if (i > 0 && std::isupper(c)) out += '_';
+			if (i > 0 && std::isupper(c))
+				out += '_';
+
 			out += static_cast<char>(std::tolower(c));
 		}
 		return out;
@@ -96,7 +87,6 @@ namespace koi
 			toml::table out;
 			rfl::toml::Writer writer(&out);
 			rfl::toml::Parser<T, ReflectProcessors>::write(writer, value, typename rfl::parsing::Parent<rfl::toml::Writer>::Root{});
-			ShortenFloats(out);
 			return out;
 		}
 

@@ -3,22 +3,8 @@
 #include "Koi/Engine/ECS/SystemRegistry.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include <imgui.h>
+#include "Koi/Engine/Math/Scalar.h"
 #include <numbers>
-
-namespace
-{
-	constexpr koi::f32 kDegToRad = static_cast<koi::f32>(std::numbers::pi) / 180.0f;
-}
-
-void PlayerControllerInspector::Draw(koi::Entity e)
-{
-	PlayerController* controller = e.try_get_mut<PlayerController>();
-	if (!controller) return;
-
-	ImGui::DragFloat("Move Speed", &controller->MoveSpeed, 0.1f, 0.0f, 100.0f, "%.1f u/s");
-	ImGui::DragFloat("Turn Speed", &controller->TurnSpeed, 1.0f, 0.0f, 720.0f, "%.0f deg/s");
-}
 
 void PlayerControllerSystem::Each(const koi::SystemContext& ctx, koi::Entity, koi::Transform& xform, const PlayerController& controller)
 {
@@ -32,8 +18,7 @@ void PlayerControllerSystem::Each(const koi::SystemContext& ctx, koi::Entity, ko
 	const koi::f32 turn = input.GetAction("Turn");
 	if (turn != 0.0f)
 	{
-		const koi::Quaternion delta = koi::Quaternion::CreateFromAxisAngle(
-			koi::Vector3::Up, -turn * controller.TurnSpeed * kDegToRad * dt);
+		const koi::Quaternion delta = koi::Quaternion::CreateFromAxisAngle(koi::Vector3::Up, koi::DegToRad(-turn * controller.TurnSpeed * dt));
 		xform.Rotation = koi::Quaternion::Concatenate(xform.Rotation, delta);
 	}
 }

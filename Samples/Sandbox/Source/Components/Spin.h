@@ -1,48 +1,20 @@
 #pragma once
 #include "Koi/Engine/ECS/System.h"
 #include "Koi/Engine/Interop/ComponentInspector.h"
-#include "Koi/Engine/Math/MathSerializer.h"
 #include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/Runtime/ReflectSerializer.h"
 
-// A component the engine has never heard of: defined, serialized, inspected and
-// simulated entirely from game code
+// A component the engine has never heard of: defined, serialized, inspected and simulated entirely from game code
 struct Spin
 {
 	static constexpr std::string_view kKey = "spin";
+	static constexpr bool kReflect = true;  // Serializer<Spin> comes from reflection; keys are snake_case field names
 
 	koi::Vector3 Axis  = koi::Vector3(0.0f, 1.0f, 0.0f);
 	koi::f32     Speed = 90.0f;  // degrees per second, about Axis in world space
 };
 
-namespace koi
-{
-	template<>
-	struct Serializer<Spin>
-	{
-		static toml::table Serialize(const Spin& s)
-		{
-			toml::table out;
-			SerializeInto(out, "axis", s.Axis);
-			out.insert("speed", ToTomlFloat(s.Speed));
-			return out;
-		}
-
-		static std::optional<Spin> Deserialize(const toml::node& node)
-		{
-			const toml::table* tbl = node.as_table();
-			if (!tbl) return std::nullopt;
-
-			return Spin
-			{
-				.Axis  = DeserializeOr(*tbl, "axis", Vector3(0.0f, 1.0f, 0.0f)),
-				.Speed = (*tbl)["speed"].value_or(90.0f),
-			};
-		}
-	};
-
-	static_assert(Serializable<Spin>);
-}
-
+// Speed gets a custom range and unit; a component without such needs can use koi::ReflectedInspector<T> instead
 class SpinInspector final : public koi::IComponentInspector
 {
 public:

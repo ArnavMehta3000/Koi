@@ -6,6 +6,7 @@ namespace koi
 	struct Transform
 	{
 		static constexpr std::string_view kKey = "transform";
+		static constexpr bool kReflect = true;
 
 		Vector3 Position    = Vector3::Zero;
 		Quaternion Rotation = Quaternion::Identity;

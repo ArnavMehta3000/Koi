@@ -29,6 +29,7 @@ namespace koi
 	struct CameraComponent
 	{
 		static constexpr std::string_view kKey = "camera";
+		static constexpr bool kReflect = true;
 
 		f32  FovY    = 0.8f;     // vertical field of view, radians
 		f32  Near    = 0.05f;
@@ -45,6 +46,7 @@ namespace koi
 	struct Light
 	{
 		static constexpr std::string_view kKey = "light";
+		static constexpr bool kReflect = true;
 
 		LightType Type      = LightType::Point;
 		Vector3   Color     = Vector3(1.0f, 1.0f, 1.0f);
