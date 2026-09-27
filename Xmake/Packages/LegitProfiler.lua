@@ -1,0 +1,7 @@
+target("LegitProfiler")
+	set_kind("headeronly")
+	set_group("External")
+	add_deps("ImGui", { public = true })
+	add_includedirs("$(projectdir)/External/LegitProfiler", { public = true })
+	add_headerfiles("$(projectdir)/External/LegitProfiler/*.h")
+target_end()
