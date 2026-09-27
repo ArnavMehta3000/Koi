@@ -1,16 +1,25 @@
-// Routes every allocation through Tracy in profile builds. Other builds keep the CRT's new/delete
+// Counts every allocation for the editor Profiler, and routes it through Tracy in profile builds
 #include "Koi/Engine/Diagnostics/Profiling.h"
-
-#if KOI_ENABLE_PROFILING
+#include "Koi/Engine/Core/Types.h"
+#include <atomic>
 #include <cstdlib>
 #include <new>
+
+namespace koi::internal
+{
+	constinit std::atomic<u64> g_allocationCount{ 0 };
+}
 
 namespace
 {
 	void* Alloc(std::size_t size, std::size_t align)
 	{
 		void* p = ::_aligned_malloc(size ? size : 1, align);
-		if (p) TracySecureAlloc(p, size);
+		if (p)
+		{
+			koi::internal::g_allocationCount.fetch_add(1, std::memory_order_relaxed);
+			TracySecureAlloc(p, size);
+		}
 		return p;
 	}
 
@@ -45,5 +54,3 @@ void operator delete  (void* p, const std::nothrow_t&)                   noexcep
 void operator delete[](void* p, const std::nothrow_t&)                   noexcept { Free(p); }
 void operator delete  (void* p, std::align_val_t, const std::nothrow_t&) noexcept { Free(p); }
 void operator delete[](void* p, std::align_val_t, const std::nothrow_t&) noexcept { Free(p); }
-
-#endif

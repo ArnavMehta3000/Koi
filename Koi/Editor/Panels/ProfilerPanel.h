@@ -32,13 +32,16 @@ namespace koi::editor
 
 		void Load(Track& track, std::span<const FrameStatSample> samples, f32 dt);
 		void DrawTrack(Track& track, const char* label, int height);
+		void DrawCounters();
 		[[nodiscard]] u32 ColorFor(std::string_view name);
 
 	private:
 		Track m_cpu;
 		Track m_gpu;
 		std::map<std::string, u32, std::less<>> m_colors;
+		std::vector<FrameCounter>               m_counters;  // every counter seen so far, zeroed when absent
 
+		int  m_budgetIndex = 2;
 		int  m_frameOffset = 0;
 		f32  m_scaleMs     = 1000.0f / 60.0f;
 		bool m_paused      = false;

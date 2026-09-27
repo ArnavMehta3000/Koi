@@ -1,7 +1,5 @@
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
-#include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include <imgui.h>
@@ -24,15 +22,6 @@ namespace koi::editor
 		if (ImGui::Begin("Render Targets"))
 		{
 			PassList& passes = m_renderer->GetPasses();
-
-			// Culling is invisible when it works, so the counts are the only way to see it
-			if (ImGui::CollapsingHeader("Culling", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				if (const GBufferPass* pass = passes.Find<GBufferPass>())
-					ImGui::Text("GBuffer: %u drawn, %u culled", pass->GetDrawCount(), pass->GetCulledCount());
-				if (const ShadowPass* pass = passes.Find<ShadowPass>())
-					ImGui::Text("Shadow:  %u drawn, %u culled", pass->GetDrawCount(), pass->GetCulledCount());
-			}
 
 			std::vector<Entry> entries;
 			for (const auto& pass : passes.GetPasses())

@@ -194,7 +194,13 @@ namespace koi
 			m_pendingStagingFree.clear();
 		}
 
-		if (m_pendingUploads.empty()) return;
+		constexpr std::string_view kUploadCounter = "Upload KB";
+
+		if (m_pendingUploads.empty())
+		{
+			FrameStats::Count(kUploadCounter, 0);
+			return;
+		}
 
 		KOI_LOG_TRACE("UploadContext: flushing {} queued upload(s)", m_pendingUploads.size());
 
@@ -204,8 +210,10 @@ namespace koi
 		std::vector<BufferHandle> stagingThisFlush;
 		stagingThisFlush.reserve(m_pendingUploads.size());
 
+		i64 uploadBytes = 0;
 		for (PendingUpload& upload : m_pendingUploads)
 		{
+			uploadBytes += i64(upload.Data.size());
 			std::visit(Match
 			{
 				[&](BufferHandle h)  { stagingThisFlush.push_back(RecordBufferUpload(h,  upload.Data.data(), upload.Data.size())); },
@@ -213,6 +221,7 @@ namespace koi
 			}, upload.Dst);
 		}
 		m_pendingUploads.clear();
+		FrameStats::Count(kUploadCounter, (uploadBytes + 1023) / 1024);
 
 		DX_CHECK(m_cmdList->Close());
 

@@ -428,6 +428,13 @@ namespace koi
 	void GfxDevice::GpuProfilerNewFrame()
 	{
 		m_gpuTimers.BeginFrame(GetCompletedFenceValue());
+
+		DXGI_QUERY_VIDEO_MEMORY_INFO memory{};
+		if (SUCCEEDED(m_adapter->QueryVideoMemoryInfo(0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &memory)))
+		{
+			FrameStats::Count("VRAM MB",        static_cast<i64>(memory.CurrentUsage >> 20));
+			FrameStats::Count("VRAM Budget MB", static_cast<i64>(memory.Budget >> 20));
+		}
 		if (m_gpuProfilerCtx)
 		{
 			TracyD3D12NewFrame(m_gpuProfilerCtx);

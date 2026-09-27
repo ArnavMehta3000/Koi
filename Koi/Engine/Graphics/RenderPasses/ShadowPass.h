@@ -34,8 +34,6 @@ namespace koi
 		[[nodiscard]] inline TextureHandle GetShadowMap() const { return m_hasShadow ? m_output.Texture : TextureHandle(); }
 		[[nodiscard]] inline const Matrix& GetLightViewProjection() const { return m_lightViewProjection; }
 
-		[[nodiscard]] inline u32 GetDrawCount()   const { return static_cast<u32>(m_gather.Draws.size()); }
-		[[nodiscard]] inline u32 GetCulledCount() const { return m_gather.Culled; }
 
 	private:
 		// Ortho light-space view-projection fitted to the world bounds

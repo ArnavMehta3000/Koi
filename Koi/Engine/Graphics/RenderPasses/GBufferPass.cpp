@@ -42,6 +42,8 @@ namespace koi
 		const u32 frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
 
 		m_gatherer.Gather(*m_world, CullVolume::FromCamera(m_camera->View, m_camera->Projection), true, m_gather);
+		FrameStats::Count("GBuffer Draws",  i64(m_gather.Draws.size()));
+		FrameStats::Count("GBuffer Culled", i64(m_gather.Culled));
 
 		constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		cmd.ClearRenderTarget(albedo,   kClearColor);

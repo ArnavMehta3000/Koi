@@ -119,6 +119,8 @@ namespace koi
 
 		// Depth-only, so the normal matrix is never needed
 		m_gatherer.Gather(*m_world, m_cullVolume, false, m_gather);
+		FrameStats::Count("Shadow Draws",  i64(m_gather.Draws.size()));
+		FrameStats::Count("Shadow Culled", i64(m_gather.Culled));
 
 		// Clear unconditionally: LightingPass samples the map whenever m_hasShadow, so an
 		// empty draw list still has to leave a valid RT/Depth map behind

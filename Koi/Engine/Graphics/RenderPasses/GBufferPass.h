@@ -39,8 +39,6 @@ namespace koi
 		[[nodiscard]] inline TextureHandle GetMaterial() const { return m_outputs[size_t(Outputs::Material)].Texture; }
 		[[nodiscard]] inline TextureHandle GetDepth()    const { return m_outputs[size_t(Outputs::Depth)].Texture;    }
 
-		[[nodiscard]] inline u32 GetDrawCount()   const { return static_cast<u32>(m_gather.Draws.size()); }
-		[[nodiscard]] inline u32 GetCulledCount() const { return m_gather.Culled; }
 
 	private:
 		void CreateRenderTargets();

@@ -6,17 +6,25 @@ namespace koi
 {
 	struct FrameStatSample
 	{
-		std::string_view Name;   // must outlive the frame, KOI_SCOPE passes literals
+		std::string_view Name;
 		f64              Start;  // seconds since the frame began
 		f64              End;
 	};
 
-	// Flat per-frame CPU timings for the editor profiler. Main thread only, nested scopes are ignored
+	struct FrameCounter
+	{
+		std::string_view Name;
+		i64              Value;
+	};
+
 	class FrameStats
 	{
 	public:
 		static void NewFrame();
 		[[nodiscard]] static std::span<const FrameStatSample> GetLastFrame();
+
+		static void Count(std::string_view name, i64 value);
+		[[nodiscard]] static std::span<const FrameCounter> GetLastCounters();
 	};
 
 	class FrameStatScope : public NonCopyable
