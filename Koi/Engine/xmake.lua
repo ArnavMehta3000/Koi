@@ -7,6 +7,7 @@ target("Koi.Engine")
 
 	add_packages(
 		"cli11",
+		"stduuid",
 		"spdlog",
 		"toml++",
 		"dxc",

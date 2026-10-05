@@ -10,6 +10,7 @@ add_requires(
     "glfw",
     "directx-headers",
     "cli11",
+    "stduuid",
     "dxc", -- custom package
 	"Flecs" -- custom package
 )
