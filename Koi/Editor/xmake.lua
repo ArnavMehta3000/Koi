@@ -5,6 +5,8 @@ target("Koi.Editor")
 	set_kind("static")
 	add_deps("Koi.Engine", "ImGui", "ImGuizmo", "KoiProfiler", { public = true })
 
+	add_packages("directxtex")
+
 	add_includedirs("$(projectdir)", { public = true })
 	add_headerfiles("**.h", { public = true })
 	add_files("**.cpp")
