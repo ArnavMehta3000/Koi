@@ -63,6 +63,9 @@ namespace koi
 
 		inline void SetOverlay(IRendererOverlay* overlay) noexcept { m_overlay = overlay; }
 
+		void RequestShaderRead(TextureHandle texture);
+		void FlushShaderReadRequests(CommandList& cmd);
+
 		void BeginFrame();
 		void EndFrame();
 
@@ -91,5 +94,6 @@ namespace koi
 		u32                              m_frameSlot = 0;
 		IRendererOverlay*                m_overlay   = nullptr;
 		DebugDrawQueue                   m_debugDraw;
+		std::vector<TextureHandle>       m_shaderReadRequests;  // per-frame, cleared in BeginFrame
 	};
 }

@@ -107,6 +107,28 @@ namespace koi
 		buf->CurrentState = newState;
 	}
 
+	void CommandList::TransitionBarriers(std::span<const TextureHandle> handles, D3D12_RESOURCE_STATES newState)
+	{
+		for (TextureHandle h : handles)
+			TransitionBarrier(h, newState);
+	}
+
+	void CommandList::UAVBarrier(TextureHandle h)
+	{
+		Texture* tex = m_device->Get(h);
+		if (!tex || !tex->Resource) return;
+
+		m_pendingBarriers.push_back(CD3DX12_RESOURCE_BARRIER::UAV(tex->Resource.Get()));
+	}
+
+	void CommandList::UAVBarrier(BufferHandle h)
+	{
+		Buffer* buf = m_device->Get(h);
+		if (!buf || !buf->Resource) return;
+
+		m_pendingBarriers.push_back(CD3DX12_RESOURCE_BARRIER::UAV(buf->Resource.Get()));
+	}
+
 	void CommandList::FlushBarriers()
 	{
 		if (m_pendingBarriers.empty()) return;

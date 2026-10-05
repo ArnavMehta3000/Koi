@@ -61,6 +61,9 @@ namespace koi::editor
 			GfxDevice& device = m_renderer->GetDevice();
 			if (const Texture* tex = device.Get(entries[selected].Texture); tex && tex->SRVIndex != INVALID_DESCRIPTOR)
 			{
+				// No pass leaves its outputs readable for us, so ask for this one explicitly
+				m_renderer->RequestShaderRead(entries[selected].Texture);
+
 				ImGui::TextDisabled("%ux%u", tex->Desc.Width, tex->Desc.Height);
 
 				const ImVec2 avail = ImGui::GetContentRegionAvail();

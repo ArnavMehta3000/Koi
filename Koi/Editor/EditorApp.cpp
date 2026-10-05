@@ -301,12 +301,11 @@ namespace koi::editor
 			PollShortcuts();
 		}
 
+		// Panels above asked for the targets they sample; satisfy all of them in one batch before ImGui::Image reads them
+		engine.GetSubsystem<Renderer>().FlushShaderReadRequests(cmd);
+
 		// ScenePass/TonemapPass render into the Viewport panel's offscreen target rather than
 		// the swapchain back buffer, so the back buffer needs to be bound/cleared explicitly here
-		// before ImGui draws, and the resolved viewport texture needs to be readable by ImGui::Image
-		if (const ViewportTarget* vp = m_viewportPanel->GetTarget())
-			cmd.TransitionBarrier(vp->ResolvedColorBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
 		if (RenderWindow* rw = engine.GetSubsystem<Renderer>().GetMainRenderWindow())
 		{
 			static constexpr std::array kClearColor = { 0.05f, 0.05f, 0.05f, 1.0f };

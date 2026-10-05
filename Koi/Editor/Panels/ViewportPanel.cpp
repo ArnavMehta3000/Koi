@@ -178,6 +178,8 @@ namespace koi::editor
 					if (const Texture* tex = device.Get(m_target.ResolvedColorBuffer);
 						tex && tex->SRVIndex != INVALID_DESCRIPTOR)
 					{
+						m_renderer->RequestShaderRead(m_target.ResolvedColorBuffer);
+
 						// Fit the target inside the panel without distorting it; when the
 						// aspects already agree this is the full region
 						const f32 targetAspect = static_cast<f32>(m_target.Width) / static_cast<f32>(m_target.Height);

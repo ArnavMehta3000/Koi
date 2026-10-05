@@ -138,6 +138,7 @@ namespace koi
 		m_device->GpuProfilerNewFrame();
 
 		m_passes.ResetAll();
+		m_shaderReadRequests.clear();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_frameSlot);
@@ -145,6 +146,20 @@ namespace koi
 		constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 		m_frameContext->List.TransitionBarrier(m_renderWindow->GetHDRColorBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
 		m_frameContext->List.ClearRenderTarget(m_renderWindow->GetHDRColorBuffer(), kClearColor);
+	}
+
+	void Renderer::RequestShaderRead(TextureHandle texture)
+	{
+		if (texture)
+			m_shaderReadRequests.push_back(texture);
+	}
+
+	void Renderer::FlushShaderReadRequests(CommandList& cmd)
+	{
+		ZoneScoped;
+		cmd.TransitionBarriers(m_shaderReadRequests, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		cmd.FlushBarriers();
+		m_shaderReadRequests.clear();
 	}
 
 	void Renderer::EndFrame()

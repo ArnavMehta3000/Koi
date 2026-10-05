@@ -6,6 +6,7 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include <array>
 #include <cassert>
 
 namespace koi
@@ -124,8 +125,8 @@ namespace koi
 		const Texture* depthTex    = device.Get(m_inputs.Depth);
 		if (!albedoTex || !normalTex || !materialTex || !depthTex) return;
 
-		// G-buffer outputs and the shadow map were left shader-readable by the passes that wrote them
-		// only the HDR target needs transitioning
+		const std::array inputs = { m_inputs.Albedo, m_inputs.Normals, m_inputs.Material, m_inputs.Depth, m_inputs.Shadow };
+		cmd.TransitionBarriers(inputs, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 		cmd.TransitionBarrier(m_colorTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		cmd.FlushBarriers();
 

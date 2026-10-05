@@ -168,8 +168,6 @@ namespace koi
 			}
 		}
 
-		cmd.TransitionBarrier(shadowMap, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		cmd.FlushBarriers();
 	}
 
 	void ShadowPass::Reset()

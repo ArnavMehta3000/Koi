@@ -102,12 +102,6 @@ namespace koi
 			}
 		}
 
-		// Leave all outputs shader-readable
-		cmd.TransitionBarrier(albedo,   D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		cmd.TransitionBarrier(normals,  D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		cmd.TransitionBarrier(material, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		if (depth) cmd.TransitionBarrier(depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		cmd.FlushBarriers();
 	}
 
 	void GBufferPass::Reset()

@@ -54,8 +54,7 @@ namespace koi
 
 		cmd.TransitionBarrier(m_colorTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
-		// The lighting pass left the depth buffer readable as an SRV; a writable DSV needs DEPTH_WRITE
-		// even though the pipeline only tests against it
+		// A writable DSV needs DEPTH_WRITE even though the pipeline only tests against it
 		if (m_depth)
 			cmd.TransitionBarrier(m_depth, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 
@@ -73,9 +72,5 @@ namespace koi
 
 		m_lineCount = static_cast<u32>(vertices.size()) / 2;
 		cmd.Draw(static_cast<u32>(vertices.size()));
-
-		// Hand the depth back in the state the rest of the frame (Render Targets panel) expects it in
-		if (m_depth)
-			cmd.TransitionBarrier(m_depth, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 }

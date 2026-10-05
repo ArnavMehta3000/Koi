@@ -27,6 +27,11 @@ namespace koi
 
 		void TransitionBarrier(TextureHandle h, D3D12_RESOURCE_STATES newState);
 		void TransitionBarrier(BufferHandle  h, D3D12_RESOURCE_STATES newState);
+		void TransitionBarriers(std::span<const TextureHandle> handles, D3D12_RESOURCE_STATES newState);
+
+		void UAVBarrier(TextureHandle h);
+		void UAVBarrier(BufferHandle  h);
+
 		void FlushBarriers();
 
 		void ClearRenderTarget(TextureHandle rt, const f32 color[4]);
