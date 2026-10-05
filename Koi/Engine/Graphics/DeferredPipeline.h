@@ -5,6 +5,7 @@ namespace koi
 {
 	class DebugDrawPass;
 	class GBufferPass;
+	class GridPass;
 	class LightingPass;
 	class ShadowPass;
 	class TonemapPass;
@@ -21,5 +22,6 @@ namespace koi
 		LightingPass*  m_lightingPass  = nullptr;
 		DebugDrawPass* m_debugDrawPass = nullptr;
 		TonemapPass*   m_tonemapPass   = nullptr;
+		GridPass*      m_gridPass      = nullptr;
 	};
 }

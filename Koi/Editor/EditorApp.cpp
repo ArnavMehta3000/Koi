@@ -3,6 +3,7 @@
 #include "Koi/Editor/EditorApp.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Panels/AssetsPanel.h"
+#include "Koi/Editor/Panels/GridPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/Panels/ProfilerPanel.h"
@@ -14,11 +15,13 @@
 #include "Koi/Engine/Graphics/DebugDraw.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Graphics/RenderPasses/GridPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/Window.h"
@@ -73,6 +76,7 @@ namespace koi::editor
 		m_panels.Emplace<WorldOutlinePanel>(*m_game, m_selection);
 		m_panels.Emplace<InspectorPanel>(m_selection, m_inspectors, *m_assetDatabase);
 		m_panels.Emplace<RenderTargetsPanel>(renderer);
+		m_panels.Emplace<GridPanel>(renderer);
 		m_panels.Emplace<LogPanel>();
 		m_panels.Emplace<ProfilerPanel>();
 		m_viewportPanel     = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
@@ -106,7 +110,18 @@ namespace koi::editor
 
 		try
 		{
-			return m_viewportPanel->LoadCameraState(toml::parse_file(path.string()));
+			const toml::table root = toml::parse_file(path.string());
+
+			if (const toml::node* grid = root.get(GridPass::Settings::kKey))
+			{
+				if (GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetPasses().Find<GridPass>())
+				{
+					if (auto settings = Serializer<GridPass::Settings>::Deserialize(*grid))
+						pass->GetSettings() = *settings;
+				}
+			}
+
+			return m_viewportPanel->LoadCameraState(root);
 		}
 		catch (const toml::parse_error& e)
 		{
@@ -121,6 +136,9 @@ namespace koi::editor
 
 		toml::table root;
 		root.insert("camera", m_viewportPanel->SaveCameraState());
+
+		if (const GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetPasses().Find<GridPass>())
+			root.insert(GridPass::Settings::kKey, Serializer<GridPass::Settings>::Serialize(pass->GetSettings()));
 
 		std::error_code ec;
 		fs::create_directories(path.parent_path(), ec);
@@ -387,6 +405,10 @@ namespace koi::editor
 	void EditorApp::DrawGizmoMenu()
 	{
 		if (!ImGui::BeginMenu("Gizmos")) return;
+
+		// The grid lives in a pass, so its own Settings is the toggle; see the Grid panel
+		if (GridPass* grid = Engine::Get().GetSubsystem<Renderer>().GetPasses().Find<GridPass>())
+			ImGui::MenuItem("Grid", nullptr, &grid->GetSettings().Enabled);
 
 		ImGui::MenuItem("Selection Bounds", nullptr, &m_gizmos.SelectionBounds);
 		ImGui::MenuItem("Lights",           nullptr, &m_gizmos.Lights);

@@ -2,6 +2,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RenderPasses/DebugDrawPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/GridPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
@@ -40,6 +41,13 @@ namespace koi
 			.Pipeline = renderer.GetDefaultResources().TonemapPipeline,
 		});
 
+		// Over the tonemapped image, under the debug lines
+		m_gridPass = &passes.Add<GridPass>(GridPass::Config
+		{
+			.Device    = &renderer.GetDevice(),
+			.Resources = &renderer.GetDefaultResources(),
+		});
+
 		m_debugDrawPass = &passes.Add<DebugDrawPass>(DebugDrawPass::Config
 		{
 			.Device    = &renderer.GetDevice(),
@@ -68,6 +76,9 @@ namespace koi
 
 		m_tonemapPass->SetInput(m_lightingPass->GetColorOutput())
 			.SetTarget(target.ResolvedColorBuffer, target.Width, target.Height);
+
+		m_gridPass->SetCamera(view.Camera)
+			.SetTarget(target.ResolvedColorBuffer, m_gbufferPass->GetDepth(), target.Width, target.Height);
 
 		m_debugDrawPass->SetCamera(view.Camera)
 			.SetTarget(target.ResolvedColorBuffer, m_gbufferPass->GetDepth(), target.Width, target.Height);

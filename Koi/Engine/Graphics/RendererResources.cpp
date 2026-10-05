@@ -133,6 +133,7 @@ namespace koi
 		LightingPipeline      = {};
 		ShadowPipeline        = {};
 		DebugLinePipeline     = {};
+		GridPipeline          = {};
 		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
 	}
 
@@ -162,6 +163,13 @@ namespace koi
 			"engine://Content/Shaders/LightingVS",
 			"engine://Content/Shaders/LightingPS",
 			Format::R16G16B16A16_FLOAT));
+
+		// --- Editor grid (over the tonemapped image, under the debug lines) ---
+		GridPipeline = library.Register(device, PipelineRecipe::Overlay(
+			"Grid",
+			"engine://Content/Shaders/GridVS",
+			"engine://Content/Shaders/GridPS",
+			Format::R8G8B8A8_UNORM));
 
 		// --- Debug lines (last pass, over the tonemapped image) ---
 		DebugLinePipeline = library.Register(device, PipelineRecipe::Lines(

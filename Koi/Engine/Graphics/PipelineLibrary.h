@@ -18,6 +18,11 @@ namespace koi
 
 		[[nodiscard]] static PipelineRecipe GBuffer   (std::string name, std::string vs, std::string ps);
 		[[nodiscard]] static PipelineRecipe FullScreen(std::string name, std::string vs, std::string ps, Format target);
+
+		// Full-screen triangle, alpha blended over the target and depth-tested against the
+		// scene depth. The pixel shader writes SV_Depth, so depth write stays off
+		[[nodiscard]] static PipelineRecipe Overlay(std::string name, std::string vs, std::string ps, Format target);
+
 		[[nodiscard]] static PipelineRecipe DepthOnly (std::string name, std::string vs);
 		[[nodiscard]] static PipelineRecipe Lines     (std::string name, std::string vs, std::string ps, Format target);
 

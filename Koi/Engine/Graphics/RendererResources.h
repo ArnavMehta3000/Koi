@@ -29,6 +29,7 @@ namespace koi
 		PipelineHandle LightingPipeline{};          // full-screen deferred lighting: samples G-buffer -> HDR
 		PipelineHandle ShadowPipeline{};            // depth-only shadow map: no pixel shader, no render targets
 		PipelineHandle DebugLinePipeline{};         // LINELIST overlay
+		PipelineHandle GridPipeline{};              // editor ground grid: blended full-screen, depth-tested
 
 		void Init(GfxDevice& device, PipelineLibrary& library);
 		void Shutdown();

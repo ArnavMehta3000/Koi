@@ -51,6 +51,32 @@ namespace koi
 		};
 	}
 
+	PipelineRecipe PipelineRecipe::Overlay(std::string name, std::string vs, std::string ps, Format target)
+	{
+		return PipelineRecipe
+		{
+			.Name         = std::move(name),
+			.VertexShader = std::move(vs),
+			.PixelShader  = std::move(ps),
+			.Desc         =
+			{
+				.Rasterizer   = { .CullMode = D3D12_CULL_MODE_NONE },
+				.BlendTargets =
+				{
+					{
+						.BlendEnable = true,
+						.SrcBlend    = D3D12_BLEND_SRC_ALPHA,
+						.DstBlend    = D3D12_BLEND_INV_SRC_ALPHA,
+					}
+				},
+				.DepthStencil        = { .DepthEnable = true, .DepthWrite = false, .DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL },
+				.RenderTargetFormats = { target },
+				.RenderTargetCount   = 1,
+				.DepthFormat         = kDepthFormat,
+			},
+		};
+	}
+
 	PipelineRecipe PipelineRecipe::DepthOnly(std::string name, std::string vs)
 	{
 		return PipelineRecipe
