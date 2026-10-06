@@ -38,7 +38,7 @@ namespace koi
 		return seed;
 	}
 
-	ShaderType InferShaderTypeFromName(std::string_view path)
+	ShaderType ShaderCache::InferType(std::string_view path)
 	{
 		// Strip directory + (optional) extension to get the stem.
 		auto slash = path.find_last_of("/\\");
@@ -57,7 +57,7 @@ namespace koi
 		return ShaderType::Unknown;
 	}
 
-	u64 HashShaderDefines(std::span<const ShaderDefine> defines)
+	u64 ShaderCache::HashDefines(std::span<const ShaderDefine> defines)
 	{
 		std::vector<ShaderDefine> sorted(defines.begin(), defines.end());
 		std::ranges::sort(sorted, {}, &ShaderDefine::Name);
@@ -83,7 +83,7 @@ namespace koi
 	{
 		LoadManifests();
 
-		const ShaderType type = InferShaderTypeFromName(virtualPathNoExt);
+		const ShaderType type = InferType(virtualPathNoExt);
 		if (type == ShaderType::Unknown)
 		{
 			KOI_LOG_ERROR("ShaderCache: cannot infer type from '{}' (expected *VS/*PS/*CS/*HS/*DS/*GS)", virtualPathNoExt);
@@ -94,7 +94,7 @@ namespace koi
 		{
 			.Path        = std::string(virtualPathNoExt),
 			.Type        = type,
-			.DefinesHash = HashShaderDefines(defines),
+			.DefinesHash = HashDefines(defines),
 		};
 
 		if (auto it = m_entries.find(key); it != m_entries.end())
@@ -246,8 +246,8 @@ namespace koi
 				const ShaderKey key
 				{
 					.Path        = source,
-					.Type        = InferShaderTypeFromName(source),
-					.DefinesHash = HashShaderDefines(defines),
+					.Type        = InferType(source),
+					.DefinesHash = HashDefines(defines),
 				};
 				m_built.insert_or_assign(key, std::move(built));
 				++count;
@@ -313,8 +313,8 @@ namespace koi
 		wide.reserve(defines.size() * 2);
 		for (const ShaderDefine& define : defines)
 		{
-			wide.push_back(StringUtils::ToWide(define.Name));
-			wide.push_back(StringUtils::ToWide(define.Value));
+			wide.push_back(utils::ToWide(define.Name));
+			wide.push_back(utils::ToWide(define.Value));
 		}
 
 		// OutDir intentionally left empty - the editor compiles in-memory only

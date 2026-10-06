@@ -10,13 +10,13 @@ namespace koi
 		return Strings.substr(slot.NameOffset, slot.NameLength);
 	}
 
-	std::shared_ptr<const PreparedMesh> ReadPreparedMesh(AssetFile file, std::string_view debugName)
+	std::shared_ptr<const PreparedMesh> PreparedMesh::Read(AssetFile file, std::string_view debugName)
 	{
 		ZoneScoped;
 
 		if (file.Type() != AssetFileType::Mesh)
 		{
-			KOI_LOG_ERROR("{} isn't a mesh, it holds a {}", debugName, ToString(file.Type()));
+			KOI_LOG_ERROR("{} isn't a mesh, it holds a {}", debugName, AssetFile::ToString(file.Type()));
 			return nullptr;
 		}
 

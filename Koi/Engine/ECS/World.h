@@ -10,13 +10,8 @@ namespace koi
 	using Entity   = flecs::entity;
 	using EntityID = flecs::entity_t;
 
+	class EntityBuilder;
 	class ISystem;
-
-	[[nodiscard]] inline std::pair<u64, u64> OrderKey(Entity e)
-	{
-		const SceneOrder* order = e.try_get<SceneOrder>();
-		return { order ? order->Index : ~0ull, e.id() };
-	}
 
 	class World
 	{
@@ -32,6 +27,12 @@ namespace koi
 
 		[[nodiscard]] static std::optional<World> Load(std::string_view virtualPath);
 		[[nodiscard]] static World& From(const flecs::world& ecs);
+
+		// Scene file order, then creation order
+		[[nodiscard]] static std::pair<u64, u64> OrderKey(Entity e);
+
+		// Creates an entity with a Transform. Names are unique per world and looked up by scene files, so runtime spawns should stay unnamed
+		[[nodiscard]] EntityBuilder Spawn(std::string_view name = {});
 
 		[[nodiscard]] inline const std::string& GetSourcePath() const { return m_sourcePath; }
 		[[nodiscard]] inline const BoundingBox& GetBounds()     const { return m_bounds;     }

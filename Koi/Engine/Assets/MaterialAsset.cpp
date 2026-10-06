@@ -16,7 +16,7 @@ namespace koi
 		};
 	}
 
-	std::string_view ToString(MaterialTextureSlot slot)
+	std::string_view Material::SlotName(MaterialTextureSlot slot)
 	{
 		const size_t index = static_cast<size_t>(slot);
 		return index < kSlotKeys.size() ? kSlotKeys[index] : std::string_view("unknown");
@@ -70,7 +70,7 @@ namespace koi
 
 	std::unique_ptr<MaterialSource> AssetTraits<Material>::Load(const std::string& vfsPath)
 	{
-		if (AssetFileTypeForPath(vfsPath) != AssetFileType::Material)
+		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Material)
 		{
 			KOI_LOG_ERROR("{} isn't a .kmat, and materials can only be loaded from those", vfsPath);
 			return nullptr;
@@ -79,16 +79,16 @@ namespace koi
 		const std::optional<AssetFile> file = AssetFile::Load(vfsPath);
 		if (!file) return nullptr;
 
-		const std::optional<MaterialFileContents> contents = ReadMaterialFile(*file, vfsPath);
+		const std::optional<MaterialFileContents> contents = MaterialFileContents::Read(*file, vfsPath);
 		if (!contents) return nullptr;
 
 		const AssetIndex& index = Engine::Get().GetSubsystem<AssetRegistry>().Index();
-		return std::make_unique<MaterialSource>(ToMaterialSource(*contents, [&](const UUID& id)
+		return std::make_unique<MaterialSource>(contents->ToSource([&](const UUID& id)
 		{
 			if (id.is_nil()) return AssetKey();
 			if (const AssetIndexEntry* entry = index.Find(id)) return AssetKey(entry->VirtualPath);
 
-			KOI_LOG_WARN("{} uses texture {}, which isn't in the project anymore", vfsPath, ToString(id));
+			KOI_LOG_WARN("{} uses texture {}, which isn't in the project anymore", vfsPath, utils::ToString(id));
 			return AssetKey();
 		}));
 	}

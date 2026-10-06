@@ -58,13 +58,13 @@ namespace koi
 		}
 	}
 
-	std::optional<MaterialFileContents> ReadMaterialFile(const AssetFile& file, std::string_view debugName)
+	std::optional<MaterialFileContents> MaterialFileContents::Read(const AssetFile& file, std::string_view debugName)
 	{
 		ZoneScoped;
 
 		if (file.Type() != AssetFileType::Material)
 		{
-			KOI_LOG_ERROR("{} isn't a material, it holds a {}", debugName, ToString(file.Type()));
+			KOI_LOG_ERROR("{} isn't a material, it holds a {}", debugName, AssetFile::ToString(file.Type()));
 			return std::nullopt;
 		}
 
@@ -112,20 +112,20 @@ namespace koi
 		return contents;
 	}
 
-	void WriteMaterialChunks(AssetFileWriter& writer, const MaterialFileContents& contents)
+	void MaterialFileContents::Write(AssetFileWriter& writer) const
 	{
 		StringTable strings;
 		MaterialFileHeader header;
-		std::tie(header.NameOffset, header.NameLength)         = strings.Add(contents.Name);
-		std::tie(header.TemplateOffset, header.TemplateLength) = strings.Add(contents.Template);
-		header.AlphaMode    = contents.AlphaMode;
-		header.DoubleSided  = contents.DoubleSided ? 1 : 0;
-		header.ShadingModel = contents.ShadingModel;
-		header.ParamCount   = static_cast<u32>(contents.Params.size());
+		std::tie(header.NameOffset, header.NameLength)         = strings.Add(Name);
+		std::tie(header.TemplateOffset, header.TemplateLength) = strings.Add(Template);
+		header.AlphaMode    = AlphaMode;
+		header.DoubleSided  = DoubleSided ? 1 : 0;
+		header.ShadingModel = ShadingModel;
+		header.ParamCount   = static_cast<u32>(Params.size());
 
 		std::vector<MaterialFileParam> params;
-		params.reserve(contents.Params.size());
-		for (const MaterialFileContents::Param& param : contents.Params)
+		params.reserve(Params.size());
+		for (const MaterialFileContents::Param& param : Params)
 		{
 			MaterialFileParam& out = params.emplace_back();
 			std::tie(out.NameOffset, out.NameLength) = strings.Add(param.Name);
@@ -140,7 +140,7 @@ namespace koi
 		writer.AddChunk(MaterialChunk::Strings, 1, { reinterpret_cast<const byte*>(strings.Bytes.data()), strings.Bytes.size() });
 	}
 
-	MaterialFileContents ToMaterialFileContents(const MaterialSource& source, const TextureIdFor& idFor)
+	MaterialFileContents MaterialFileContents::FromSource(const MaterialSource& source, const TextureIdFor& idFor)
 	{
 		MaterialFileContents contents
 		{
@@ -163,7 +163,7 @@ namespace koi
 			if (!source.Textures[i].IsValid()) continue;
 
 			MaterialFileContents::Param& param = contents.Params.emplace_back();
-			param.Name    = std::string(ToString(static_cast<MaterialTextureSlot>(i)));
+			param.Name    = std::string(Material::SlotName(static_cast<MaterialTextureSlot>(i)));
 			param.Type    = MaterialValueType::Texture;
 			param.Texture = idFor(source.Textures[i]);
 		}
@@ -171,21 +171,21 @@ namespace koi
 		return contents;
 	}
 
-	MaterialSource ToMaterialSource(const MaterialFileContents& contents, const TextureKeyFor& keyFor)
+	MaterialSource MaterialFileContents::ToSource(const TextureKeyFor& keyFor) const
 	{
 		MaterialSource source;
-		source.Name        = contents.Name;
-		source.Template    = contents.Template;
-		source.Mode        = static_cast<ImportMaterial::AlphaMode>(contents.AlphaMode);
-		source.DoubleSided = contents.DoubleSided;
+		source.Name        = Name;
+		source.Template    = Template;
+		source.Mode        = static_cast<ImportMaterial::AlphaMode>(AlphaMode);
+		source.DoubleSided = DoubleSided;
 
-		for (const MaterialFileContents::Param& param : contents.Params)
+		for (const MaterialFileContents::Param& param : Params)
 		{
 			if (param.Type == MaterialValueType::Texture)
 			{
 				for (size_t i = 0; i < kMaterialTextureCount; ++i)
 				{
-					if (param.Name == ToString(static_cast<MaterialTextureSlot>(i)))
+					if (param.Name == Material::SlotName(static_cast<MaterialTextureSlot>(i)))
 						source.Textures[i] = keyFor(param.Texture);
 				}
 				continue;

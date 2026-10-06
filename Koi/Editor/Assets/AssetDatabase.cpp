@@ -83,7 +83,7 @@ namespace koi::editor
 		{
 			if (!file.is_regular_file()) continue;
 
-			const AssetTypeInfo* type = FindAssetTypeForFile(file.path().filename().string());
+			const AssetTypeInfo* type = utils::FindAssetTypeForFile(file.path().filename().string());
 			if (!type) continue;  // .h/.cpp/.bin and anything else unregistered
 
 			const std::string relative = fs::relative(file.path(), root, ec).generic_string();
@@ -202,7 +202,7 @@ namespace koi::editor
 		}
 
 		// The extension is what classifies the asset, so a rename never gets to change it
-		const std::string_view extension = AssetExtensionOf(entry->Name);
+		const std::string_view extension = utils::AssetExtensionOf(entry->Name);
 		const fs::path newDiskPath = entry->DiskPath.parent_path() / (std::string(newBaseName) + std::string(extension));
 
 		return Relocate(*entry, newDiskPath);

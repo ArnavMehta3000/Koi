@@ -23,6 +23,9 @@ namespace koi::editor
 
 		[[nodiscard]] IComponentInspector* Find(std::string_view key);
 
+		// Transform, mesh, material, camera and light
+		void RegisterBuiltins();
+
 	private:
 		std::vector<std::unique_ptr<IComponentInspector>> m_inspectors;
 	};

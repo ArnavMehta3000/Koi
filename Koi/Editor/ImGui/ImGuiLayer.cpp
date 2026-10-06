@@ -83,7 +83,7 @@ namespace koi::editor
 		io.ConfigDpiScaleViewports = true;  // platform windows scale with it too
 
 		m_theme = Theme::CatppuccinMocha;
-		ApplyTheme(m_theme);
+		utils::ApplyTheme(m_theme);
 
 		ImGui::GetStyle().FontSizeBase = 13.0f;
 		io.Fonts->AddFontDefaultVector();
@@ -168,13 +168,13 @@ namespace koi::editor
 	{
 		if (!ImGui::BeginMenu("Theme")) return;
 
-		for (size_t i = 0; i < kThemes.size(); ++i)
+		for (size_t i = 0; i < utils::kThemes.size(); ++i)
 		{
 			const Theme theme = static_cast<Theme>(i);
-			if (ImGui::MenuItem(kThemes[i].Name, nullptr, theme == m_theme))
+			if (ImGui::MenuItem(utils::kThemes[i].Name, nullptr, theme == m_theme))
 			{
 				m_theme = theme;
-				ApplyTheme(m_theme);
+				utils::ApplyTheme(m_theme);
 			}
 		}
 

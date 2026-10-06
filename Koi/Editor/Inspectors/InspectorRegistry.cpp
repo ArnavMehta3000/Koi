@@ -1,4 +1,5 @@
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
+#include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
 
@@ -24,5 +25,14 @@ namespace koi::editor
 			[key](const std::unique_ptr<IComponentInspector>& i) { return i->Key() == key; });
 
 		return it != m_inspectors.end() ? it->get() : nullptr;
+	}
+
+	void InspectorRegistry::RegisterBuiltins()
+	{
+		Emplace<TransformInspector>();
+		Emplace<MeshInspector>();
+		Emplace<MaterialRefInspector>();
+		Emplace<CameraInspector>();
+		Emplace<LightInspector>();
 	}
 }

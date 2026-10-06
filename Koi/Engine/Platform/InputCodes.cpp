@@ -79,7 +79,7 @@ namespace koi
 		}
 	}
 
-	std::optional<KeyCode> ParseKeyCode(std::string_view name)
+	std::optional<KeyCode> utils::ParseKeyCode(std::string_view name)
 	{
 		if (name.size() == 1 && name[0] >= 'A' && name[0] <= 'Z')
 		{
@@ -93,6 +93,6 @@ namespace koi
 		return Lookup(kNamedKeys, name);
 	}
 
-	std::optional<GamepadButton> ParseGamepadButton(std::string_view name) { return Lookup(kGamepadButtons, name); }
-	std::optional<GamepadAxis>   ParseGamepadAxis(std::string_view name)   { return Lookup(kGamepadAxes, name); }
+	std::optional<GamepadButton> utils::ParseGamepadButton(std::string_view name) { return Lookup(kGamepadButtons, name); }
+	std::optional<GamepadAxis>   utils::ParseGamepadAxis(std::string_view name)   { return Lookup(kGamepadAxes, name); }
 }

@@ -18,7 +18,7 @@ void PlayerControllerSystem::Each(const koi::SystemContext& ctx, koi::Entity, ko
 	const koi::f32 turn = input.GetAction("Turn");
 	if (turn != 0.0f)
 	{
-		const koi::Quaternion delta = koi::Quaternion::CreateFromAxisAngle(koi::Vector3::Up, koi::DegToRad(-turn * controller.TurnSpeed * dt));
+		const koi::Quaternion delta = koi::Quaternion::CreateFromAxisAngle(koi::Vector3::Up, koi::math::DegToRad(-turn * controller.TurnSpeed * dt));
 		xform.Rotation = koi::Quaternion::Concatenate(xform.Rotation, delta);
 	}
 }

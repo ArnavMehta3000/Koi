@@ -51,9 +51,12 @@ namespace koi
 		{ AssetKind::Material, "material", internal::kMaterialExt },
 	});
 
-	[[nodiscard]] const AssetTypeInfo* FindAssetTypeForFile(std::string_view fileName);
-	[[nodiscard]] const AssetTypeInfo* FindAssetTypeByName(std::string_view name);
-	[[nodiscard]] const AssetTypeInfo* FindAssetTypeByKind(AssetKind kind);
-	[[nodiscard]] std::string_view AssetExtensionOf(std::string_view fileName);
-	[[nodiscard]] std::string_view ToString(AssetState state);
+	namespace utils
+	{
+		[[nodiscard]] const AssetTypeInfo* FindAssetTypeForFile(std::string_view fileName);
+		[[nodiscard]] const AssetTypeInfo* FindAssetTypeByName(std::string_view name);
+		[[nodiscard]] const AssetTypeInfo* FindAssetTypeByKind(AssetKind kind);
+		[[nodiscard]] std::string_view     AssetExtensionOf(std::string_view fileName);
+		[[nodiscard]] std::string_view     ToString(AssetState state);
+	}
 }

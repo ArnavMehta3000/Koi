@@ -59,7 +59,7 @@ namespace koi
 		}
 	}
 
-	bool ComputeUploadLayout(Format format, u32 width, u32 height, u32 mipLevels, u32 arraySize,
+	bool PreparedTexture::ComputeUploadLayout(Format format, u32 width, u32 height, u32 mipLevels, u32 arraySize,
 		std::vector<TextureSubresourceLayout>& outLayout, u64& outTotalBytes)
 	{
 		const BlockInfo block = GetBlockInfo(format);
@@ -93,13 +93,13 @@ namespace koi
 		return true;
 	}
 
-	std::shared_ptr<const PreparedTexture> ReadPreparedTexture(AssetFile file, std::string_view debugName)
+	std::shared_ptr<const PreparedTexture> PreparedTexture::Read(AssetFile file, std::string_view debugName)
 	{
 		ZoneScoped;
 
 		if (file.Type() != AssetFileType::Texture)
 		{
-			KOI_LOG_ERROR("{} isn't a texture, it holds a {}", debugName, ToString(file.Type()));
+			KOI_LOG_ERROR("{} isn't a texture, it holds a {}", debugName, AssetFile::ToString(file.Type()));
 			return nullptr;
 		}
 

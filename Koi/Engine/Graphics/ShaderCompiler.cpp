@@ -83,7 +83,7 @@ namespace koi
 
 				if (!resolved)
 				{
-					KOI_LOG_ERROR("Shader include not found: {}", StringUtils::FromWide(fileName));
+					KOI_LOG_ERROR("Shader include not found: {}", utils::FromWide(fileName));
 					return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 				}
 
@@ -91,7 +91,7 @@ namespace koi
 				HRESULT hr = m_utils->LoadFile(resolved->wstring().c_str(), nullptr, &blob);
 				if (FAILED(hr)) return hr;
 
-				KOI_LOG_TRACE("Shader include '{}' -> '{}'", StringUtils::FromWide(fileName), resolved->string());
+				KOI_LOG_TRACE("Shader include '{}' -> '{}'", utils::FromWide(fileName), resolved->string());
 
 				m_searchDirs.push_back(resolved->parent_path());
 
@@ -276,7 +276,7 @@ namespace koi
 						hashStr += fmt::format(L"{:02x}", hashDigest[i]);
 					}
 
-					KOI_LOG_TRACE("Compiled shader ({}) hash: {}", StringUtils::FromWide(shaderName), StringUtils::FromWide(hashStr));
+					KOI_LOG_TRACE("Compiled shader ({}) hash: {}", utils::FromWide(shaderName), utils::FromWide(hashStr));
 				}
 			}
 		}

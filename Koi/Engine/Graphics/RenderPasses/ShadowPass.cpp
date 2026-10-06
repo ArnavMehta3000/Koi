@@ -76,10 +76,10 @@ namespace koi
 		if (radius <= 0.0f)
 		{
 			const BoundingBox& bounds = m_world->GetBounds();
-			if (IsEmpty(bounds)) return false;  // nothing loaded yet
+			if (math::IsEmpty(bounds)) return false;  // nothing loaded yet
 
 			center = Vector3(bounds.Center);
-			radius = BoundsRadius(bounds);
+			radius = math::BoundsRadius(bounds);
 		}
 
 		const Vector3 eye = center - lightDir * (radius * 2.0f);

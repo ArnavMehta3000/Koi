@@ -47,7 +47,7 @@ namespace koi
 
 		void Load(Entity e, const toml::table& entityTable) const override
 		{
-			if (std::optional<T> value = DeserializeFrom<T>(entityTable, T::kKey))
+			if (std::optional<T> value = utils::DeserializeFrom<T>(entityTable, T::kKey))
 			{
 				e.set<T>(*value);
 			}

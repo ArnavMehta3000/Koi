@@ -51,8 +51,8 @@ namespace koi::editor
 		UUID IdFor(const fs::path& file)
 		{
 			std::error_code ec;
-			const std::optional<AssetFileHeader> existing = fs::exists(file, ec) ? ReadAssetFileHeader(file) : std::nullopt;
-			return existing ? UUID(existing->Id) : NewUUID();
+			const std::optional<AssetFileHeader> existing = fs::exists(file, ec) ? AssetFile::ReadHeader(file) : std::nullopt;
+			return existing ? UUID(existing->Id) : utils::NewUUID();
 		}
 
 		void StoreId(std::array<byte, 16>& out, const UUID& id)
@@ -152,7 +152,7 @@ namespace koi::editor
 					job.Image       = image;
 					job.Kind        = KindForSlot(static_cast<MaterialTextureSlot>(slot));
 					job.Name        = names.Claim(SafeName(fs::path(model->Images[image].Name).stem().string(), "Texture"));
-					job.File        = request.Folder / (job.Name + std::string(ExtensionFor(AssetFileType::Texture)));
+					job.File        = request.Folder / (job.Name + std::string(AssetFile::ExtensionFor(AssetFileType::Texture)));
 					job.VirtualPath = request.VirtualFolder + "/" + job.File.filename().string();
 					job.Id          = IdFor(job.File);
 					jobForImage[image] = static_cast<i32>(textures.size() - 1);
@@ -227,17 +227,17 @@ namespace koi::editor
 						source.Textures[slot] = AssetKey(textures[job].VirtualPath);
 				}
 
-				const MaterialFileContents contents = ToMaterialFileContents(source, [&](const AssetKey& key)
+				const MaterialFileContents contents = MaterialFileContents::FromSource(source, [&](const AssetKey& key)
 				{
 					const auto it = std::ranges::find(textures, key.Path(), &TextureJob::VirtualPath);
 					return it != textures.end() ? it->Id : UUID();
 				});
 
-				const fs::path file = request.Folder / (names.Claim(SafeName(source.Name, "Material")) + std::string(ExtensionFor(AssetFileType::Material)));
+				const fs::path file = request.Folder / (names.Claim(SafeName(source.Name, "Material")) + std::string(AssetFile::ExtensionFor(AssetFileType::Material)));
 				materialIds[i] = IdFor(file);
 
 				AssetFileWriter writer(AssetFileType::Material, materialIds[i]);
-				WriteMaterialChunks(writer, contents);
+				contents.Write(writer);
 				if (!writer.Save(file)) return fail("couldn't write " + file.filename().string());
 			}
 		}
@@ -319,7 +319,7 @@ namespace koi::editor
 		writer.AddChunkValue(MeshChunk::ImportSettings, 1, settings, ChunkFlags::EditorOnly);
 		writer.AddChunk(MeshChunk::SourcePath, 1, { reinterpret_cast<const byte*>(request.SourceRef.data()), request.SourceRef.size() }, ChunkFlags::EditorOnly);
 
-		const fs::path meshFile = request.Folder / (request.Name + std::string(ExtensionFor(AssetFileType::Mesh)));
+		const fs::path meshFile = request.Folder / (request.Name + std::string(AssetFile::ExtensionFor(AssetFileType::Mesh)));
 		if (!writer.Save(meshFile)) return fail("couldn't write " + meshFile.filename().string());
 
 		progress.EndStage();

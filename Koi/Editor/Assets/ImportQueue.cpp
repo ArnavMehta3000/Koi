@@ -259,15 +259,15 @@ namespace koi::editor
 			// A model gets a folder of its own, for the materials and textures it brings along
 			const bool isModel = item->Type == AssetFileType::Mesh;
 			const Destination& destination = isModel ? *models : *images;
-			const std::string fileName = name + std::string(ExtensionFor(item->Type));
+			const std::string fileName = name + std::string(AssetFile::ExtensionFor(item->Type));
 			const std::string subdir   = isModel ? name + "/" : std::string();
 			item->SourceRef  = MakeSourceRef(item->Source);
 			item->OutputPath = destination.Folder + "/" + subdir + fileName;
 			item->OutputDisk = destination.Disk / subdir / fileName;
 
 			// Importing over an existing file keeps its id, so references to it survive
-			const std::optional<AssetFileHeader> existing = fs::exists(item->OutputDisk) ? ReadAssetFileHeader(item->OutputDisk) : std::nullopt;
-			item->Id = existing ? UUID(existing->Id) : NewUUID();
+			const std::optional<AssetFileHeader> existing = fs::exists(item->OutputDisk) ? AssetFile::ReadHeader(item->OutputDisk) : std::nullopt;
+			item->Id = existing ? UUID(existing->Id) : utils::NewUUID();
 		}
 
 		Start(std::move(m_pending));

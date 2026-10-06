@@ -292,7 +292,7 @@ namespace koi::editor
 					reinterpret_cast<const DirectX::XMFLOAT3*>(&vertices[0].Position), sizeof(Vertex));
 			}
 
-			MergeBounds(mesh.Bounds, sub.Bounds);
+			math::MergeBounds(mesh.Bounds, sub.Bounds);
 			mesh.SubMeshes.push_back(std::move(sub));
 		}
 
@@ -304,7 +304,7 @@ namespace koi::editor
 		KOI_LOG_TRACE("Mesh '{}': {} submesh(es), {} verts, {} indices",
 			mesh.Name, mesh.SubMeshes.size(), mesh.VertexCount, mesh.IndexCount);
 
-		MergeBounds(model.Bounds, mesh.Bounds);
+		math::MergeBounds(model.Bounds, mesh.Bounds);
 		model.Meshes.push_back(std::move(mesh));
 	}
 

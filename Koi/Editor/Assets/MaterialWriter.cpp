@@ -9,7 +9,7 @@ namespace koi::editor
 	bool WriteMaterialFile(const fs::path& file, const UUID& id, const MaterialSource& source)
 	{
 		const AssetIndex& index = Engine::Get().GetSubsystem<AssetRegistry>().Index();
-		const MaterialFileContents contents = ToMaterialFileContents(source, [&](const AssetKey& key)
+		const MaterialFileContents contents = MaterialFileContents::FromSource(source, [&](const AssetKey& key)
 		{
 			if (const AssetIndexEntry* entry = index.FindByPath(key.Path()))
 			{
@@ -20,20 +20,20 @@ namespace koi::editor
 		});
 
 		AssetFileWriter writer(AssetFileType::Material, id);
-		WriteMaterialChunks(writer, contents);
+		contents.Write(writer);
 		return writer.Save(file);
 	}
 
 	bool WriteMaterial(const fs::path& file, const MaterialSource& source)
 	{
-		if (AssetFileTypeForPath(file) != AssetFileType::Material)
+		if (AssetFile::TypeForPath(file) != AssetFileType::Material)
 		{
 			KOI_LOG_ERROR("Materials are saved as .kmat, so {} can't be written", file.filename().string());
 			return false;
 		}
 
 		// Saving over a .kmat keeps its id, so meshes pointing at it don't lose it
-		const std::optional<AssetFileHeader> existing = ReadAssetFileHeader(file);
-		return WriteMaterialFile(file, existing ? UUID(existing->Id) : NewUUID(), source);
+		const std::optional<AssetFileHeader> existing = AssetFile::ReadHeader(file);
+		return WriteMaterialFile(file, existing ? UUID(existing->Id) : utils::NewUUID(), source);
 	}
 }

@@ -19,17 +19,6 @@ namespace koi
 		Paused,
 	};
 
-	constexpr std::string_view ToString(PlayState state)
-	{
-		switch (state)
-		{
-		case PlayState::Edit:    return "Edit";
-		case PlayState::Playing: return "Playing";
-		case PlayState::Paused:  return "Paused";
-		default:                 return "<?>";
-		}
-	}
-
 	class Engine : public NonCopyable
 	{
 	public:
@@ -46,6 +35,17 @@ namespace koi
 		~Engine();
 
 		[[nodiscard]] static Engine& Get() { return *s_instance; }
+
+		[[nodiscard]] static constexpr std::string_view ToString(PlayState state)
+		{
+			switch (state)
+			{
+			case PlayState::Edit:    return "Edit";
+			case PlayState::Playing: return "Playing";
+			case PlayState::Paused:  return "Paused";
+			default:                 return "<?>";
+			}
+		}
 
 		void RunApp(IAppHost& host);
 		void RequestExit() { m_isRunning = false; }

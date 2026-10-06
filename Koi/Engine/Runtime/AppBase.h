@@ -32,6 +32,9 @@ namespace koi
 		AppBase();
 		virtual ~AppBase();
 
+		// Defined by the game. Runs before the project TOML is applied
+		[[nodiscard]] static std::unique_ptr<AppBase> Create(CommandLine& cmd);
+
 		[[nodiscard]] static AppBase& Get() { return *s_instance; }
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override { return m_desc; }
 		[[nodiscard]] Engine* GetEngine() const { return m_engine; }
@@ -85,9 +88,6 @@ namespace koi
 
 		static inline AppBase* s_instance = nullptr;
 	};
-
-	// Runs before the project TOML is applied
-	std::unique_ptr<AppBase> CreateApplication(CommandLine& cmd);
 
 	namespace internal
 	{

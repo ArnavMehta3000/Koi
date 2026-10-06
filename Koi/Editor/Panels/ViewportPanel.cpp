@@ -335,7 +335,7 @@ namespace koi::editor
 	void ViewportPanel::FrameBounds(const BoundingBox& bounds)
 	{
 		const Vector3 center(bounds.Center);
-		const f32 radius = BoundsRadius(bounds);
+		const f32 radius = math::BoundsRadius(bounds);
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
 		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, -0.5f);
@@ -344,7 +344,7 @@ namespace koi::editor
 	toml::table ViewportPanel::SaveCameraState() const
 	{
 		toml::table camera;
-		SerializeInto(camera, "target", m_controller.GetOrbitTarget());
+		utils::SerializeInto(camera, "target", m_controller.GetOrbitTarget());
 		camera.insert("radius", m_controller.GetOrbitRadius());
 		camera.insert("yaw",    m_controller.GetYaw());
 		camera.insert("pitch",  m_controller.GetPitch());
@@ -358,7 +358,7 @@ namespace koi::editor
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
 		m_controller.SetOrbitTarget(
-			DeserializeOr(*camera, "target", Vector3::Zero),
+			utils::DeserializeOr(*camera, "target", Vector3::Zero),
 			(*camera)["radius"].value_or(10.0f),
 			(*camera)["yaw"].value_or(0.0f),
 			(*camera)["pitch"].value_or(-0.5f));

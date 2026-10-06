@@ -47,6 +47,4 @@ namespace koi::editor
 		[[nodiscard]] std::string_view Key() const override { return Light::kKey; }
 		void Draw(Entity e) override;
 	};
-
-	void RegisterBuiltinInspectors(InspectorRegistry& registry);
 }

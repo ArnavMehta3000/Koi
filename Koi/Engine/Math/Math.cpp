@@ -2,7 +2,7 @@
 
 namespace koi
 {
-	void MergeBounds(BoundingBox& inOutBox, const BoundingBox& other)
+	void math::MergeBounds(BoundingBox& inOutBox, const BoundingBox& other)
 	{
 		if (IsEmpty(other)) return;
 
@@ -16,7 +16,7 @@ namespace koi
 		}
 	}
 
-	f32 BoundsRadius(const BoundingBox& b)
+	f32 math::BoundsRadius(const BoundingBox& b)
 	{
 		BoundingSphere sphere;
 		BoundingSphere::CreateFromBoundingBox(sphere, b);

@@ -18,28 +18,31 @@ namespace koi
 
 	inline constexpr int LogLevelCount = 6;
 
-	inline std::string_view ToString(LogLevel level)
+	namespace utils
 	{
-		switch (level)
+		[[nodiscard]] constexpr std::string_view ToString(LogLevel level)
 		{
-		case LogLevel::Trace:    return "Trace";
-		case LogLevel::Debug:    return "Debug";
-		case LogLevel::Info:     return "Info";
-		case LogLevel::Warn:     return "Warn";
-		case LogLevel::Error:    return "Error";
-		case LogLevel::Critical: return "Critical";
-		default:                 return "<Unknown>";
+			switch (level)
+			{
+			case LogLevel::Trace:    return "Trace";
+			case LogLevel::Debug:    return "Debug";
+			case LogLevel::Info:     return "Info";
+			case LogLevel::Warn:     return "Warn";
+			case LogLevel::Error:    return "Error";
+			case LogLevel::Critical: return "Critical";
+			default:                 return "<Unknown>";
+			}
 		}
-	}
 
-	// Case-sensitive, falls back to Trace
-	inline LogLevel LogLevelFromString(std::string_view name)
-	{
-		for (int i = 0; i < LogLevelCount; ++i)
+		// Case-sensitive, falls back to Trace
+		[[nodiscard]] constexpr LogLevel LogLevelFromString(std::string_view name)
 		{
-			const auto level = static_cast<LogLevel>(i);
-			if (ToString(level) == name) return level;
+			for (int i = 0; i < LogLevelCount; ++i)
+			{
+				const auto level = static_cast<LogLevel>(i);
+				if (ToString(level) == name) return level;
+			}
+			return LogLevel::Trace;
 		}
-		return LogLevel::Trace;
 	}
 }

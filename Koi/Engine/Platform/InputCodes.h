@@ -129,7 +129,10 @@ namespace koi
 		Count
 	};
 
-	[[nodiscard]] std::optional<KeyCode>       ParseKeyCode(std::string_view name);
-	[[nodiscard]] std::optional<GamepadButton> ParseGamepadButton(std::string_view name);
-	[[nodiscard]] std::optional<GamepadAxis>   ParseGamepadAxis(std::string_view name);
+	namespace utils
+	{
+		[[nodiscard]] std::optional<KeyCode>       ParseKeyCode(std::string_view name);
+		[[nodiscard]] std::optional<GamepadButton> ParseGamepadButton(std::string_view name);
+		[[nodiscard]] std::optional<GamepadAxis>   ParseGamepadAxis(std::string_view name);
+	}
 }

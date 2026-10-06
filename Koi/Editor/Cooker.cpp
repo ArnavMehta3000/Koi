@@ -52,7 +52,7 @@ namespace koi::editor
 				const fs::path target = dst / fs::relative(file.path(), src, ec);
 				fs::create_directories(target.parent_path(), ec);
 
-				if (AssetFileTypeForPath(file.path()) != AssetFileType::Unknown)
+				if (AssetFile::TypeForPath(file.path()) != AssetFileType::Unknown)
 				{
 					std::ifstream in(file.path(), std::ios::binary | std::ios::ate);
 					std::vector<byte> bytes(static_cast<size_t>(in.tellg()));

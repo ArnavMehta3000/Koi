@@ -6,11 +6,11 @@ namespace koi
 {
 	namespace TextureChunk
 	{
-		inline constexpr u32 Header         = FourCC("TXHD");  // TextureHeader
-		inline constexpr u32 Subresources   = FourCC("TXSR");  // TextureSubresourceLayout[], mip-major per array slice
-		inline constexpr u32 Data           = FourCC("TXDT");  // every subresource, already in upload layout
-		inline constexpr u32 ImportSettings = FourCC("IMPS");  // editor only
-		inline constexpr u32 SourcePath     = FourCC("SRCP");  // editor only, UTF-8
+		inline constexpr u32 Header         = utils::FourCC("TXHD");  // TextureHeader
+		inline constexpr u32 Subresources   = utils::FourCC("TXSR");  // TextureSubresourceLayout[], mip-major per array slice
+		inline constexpr u32 Data           = utils::FourCC("TXDT");  // every subresource, already in upload layout
+		inline constexpr u32 ImportSettings = utils::FourCC("IMPS");  // editor only
+		inline constexpr u32 SourcePath     = utils::FourCC("SRCP");  // editor only, UTF-8
 	}
 
 	enum class TextureFileFlags : u32
@@ -33,11 +33,6 @@ namespace koi
 	};
 	static_assert(sizeof(TextureHeader) == 32 && std::is_trivially_copyable_v<TextureHeader>);
 
-	// The layout D3D12's GetCopyableFootprints produces: rows padded to 256 bytes, subresources 512-byte aligned.
-	// False if the format isn't one Koi knows the block size of
-	[[nodiscard]] bool ComputeUploadLayout(Format format, u32 width, u32 height, u32 mipLevels, u32 arraySize,
-		std::vector<TextureSubresourceLayout>& outLayout, u64& outTotalBytes);
-
 	// A .ktex held in memory, with views into its chunks
 	struct PreparedTexture
 	{
@@ -47,8 +42,13 @@ namespace koi
 		std::span<const byte>                     Data;
 
 		[[nodiscard]] bool Has(TextureFileFlags flag) const { return (Header->Flags & static_cast<u32>(flag)) != 0; }
-	};
 
-	// Checks the chunks agree with each other before anything gets near the GPU
-	[[nodiscard]] std::shared_ptr<const PreparedTexture> ReadPreparedTexture(AssetFile file, std::string_view debugName);
+		// Checks the chunks agree with each other before anything gets near the GPU
+		[[nodiscard]] static std::shared_ptr<const PreparedTexture> Read(AssetFile file, std::string_view debugName);
+
+		// The layout D3D12's GetCopyableFootprints produces: rows padded to 256 bytes, subresources 512-byte aligned.
+		// False if the format isn't one Koi knows the block size of
+		[[nodiscard]] static bool ComputeUploadLayout(Format format, u32 width, u32 height, u32 mipLevels, u32 arraySize,
+			std::vector<TextureSubresourceLayout>& outLayout, u64& outTotalBytes);
+	};
 }

@@ -4,7 +4,7 @@
 
 namespace koi
 {
-	std::wstring StringUtils::ToWide(std::string_view utf8)
+	std::wstring utils::ToWide(std::string_view utf8)
 	{
 		if (utf8.empty())  return {};
 
@@ -23,7 +23,7 @@ namespace koi
 		return out;
 	}
 
-	std::string StringUtils::FromWide(std::wstring_view ws)
+	std::string utils::FromWide(std::wstring_view ws)
 	{
 		if (ws.empty()) return {};
 

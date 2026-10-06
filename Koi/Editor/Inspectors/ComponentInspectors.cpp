@@ -48,13 +48,13 @@ namespace koi::editor
 				{
 					std::string path(static_cast<const char*>(payload->Data));
 
-					if (const AssetTypeInfo* type = FindAssetTypeForFile(path); type && type->Kind == kind)
+					if (const AssetTypeInfo* type = utils::FindAssetTypeForFile(path); type && type->Kind == kind)
 					{
 						dropped = std::move(path);
 					}
 					else
 					{
-						KOI_LOG_WARN("Dropped asset is not a {}: {}", FindAssetTypeByKind(kind)->Name, path);
+						KOI_LOG_WARN("Dropped asset is not a {}: {}", utils::FindAssetTypeByKind(kind)->Name, path);
 					}
 				}
 				ImGui::EndDragDropTarget();
@@ -165,14 +165,5 @@ namespace koi::editor
 				ImGui::SetItemTooltip("Half-size of the shadow box around this entity. 0 fits the whole scene");
 			}
 		}
-	}
-
-	void RegisterBuiltinInspectors(InspectorRegistry& registry)
-	{
-		registry.Emplace<TransformInspector>();
-		registry.Emplace<MeshInspector>();
-		registry.Emplace<MaterialRefInspector>();
-		registry.Emplace<CameraInspector>();
-		registry.Emplace<LightInspector>();
 	}
 }

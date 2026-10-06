@@ -71,7 +71,7 @@ namespace koi::editor
 		m_importQueue = std::make_unique<ImportQueue>(*m_assetDatabase);
 
 		// Game/user project can expect built in inspectors to existat init-time
-		RegisterBuiltinInspectors(m_inspectors);
+		m_inspectors.RegisterBuiltins();
 
 		// Register default editor panels
 		m_panels.Emplace<WorldOutlinePanel>(*m_game, m_selection);
@@ -151,7 +151,7 @@ namespace koi::editor
 		std::ofstream out(path, std::ios::trunc);
 		if (out)
 		{
-			out << TomlDocument(root);
+			out << utils::TomlDocument(root);
 		}
 		else
 		{

@@ -6,12 +6,9 @@
 #include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Interop/ReflectInspector.h"
 
-namespace koi
+std::unique_ptr<koi::AppBase> koi::AppBase::Create([[maybe_unused]] koi::CommandLine& cmd)
 {
-	std::unique_ptr<AppBase> CreateApplication([[maybe_unused]] CommandLine& cmd)
-	{
-		return std::make_unique<game::SurfApp>();
-	}
+	return std::make_unique<game::SurfApp>();
 }
 
 namespace game

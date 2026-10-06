@@ -9,7 +9,7 @@ namespace koi
 	{
 		KOI_ZONE_UNMUTED;  // Texture decode can arrive here from a parallel-for loop
 
-		if (AssetFileTypeForPath(vfsPath) != AssetFileType::Texture)
+		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Texture)
 		{
 			KOI_LOG_ERROR("{} isn't a .ktex. Import the image in the editor and use what it writes", vfsPath);
 			return nullptr;
@@ -19,7 +19,7 @@ namespace koi
 		if (!file) return nullptr;
 
 		auto image      = std::make_unique<ImageAsset>();
-		image->Prepared = ReadPreparedTexture(std::move(*file), vfsPath);
+		image->Prepared = PreparedTexture::Read(std::move(*file), vfsPath);
 		if (!image->Prepared) return nullptr;
 
 		image->Width  = static_cast<i32>(image->Prepared->Header->Width);

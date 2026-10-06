@@ -53,13 +53,13 @@ namespace koi
 		concept RawComPtrType = std::is_pointer_v<T>
 			&& std::is_class_v<std::remove_pointer_t<T>>
 			&& requires(T p) { p->Release(); };
+
+		// Result-check helper. Logs + asserts on failure.
+		void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line);
 	}
 
-	// Result-check helper. Logs + asserts on failure.
-	void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line);
-
 #if KOI_DEBUG
-	#define DX_CHECK(expr) ::koi::ThrowOnHRFail((expr), #expr, (KOI_FILENAME).data(), __LINE__)
+	#define DX_CHECK(expr) ::koi::internal::ThrowOnHRFail((expr), #expr, (KOI_FILENAME).data(), __LINE__)
 #else
 	#define DX_CHECK(expr) (void)(expr)
 #endif

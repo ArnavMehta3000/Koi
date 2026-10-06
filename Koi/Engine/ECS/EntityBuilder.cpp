@@ -53,12 +53,4 @@ namespace koi
 		m_entity.set<Transform>(m_transform);
 		return *this;
 	}
-
-	EntityBuilder Spawn(World& world, std::string_view name)
-	{
-		ECS& ecs = world.GetECS();
-		Entity e = name.empty() ? ecs.entity() : ecs.entity(std::string(name).c_str());
-		e.set<Transform>({});
-		return EntityBuilder(e);
-	}
 }

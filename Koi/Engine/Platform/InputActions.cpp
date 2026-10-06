@@ -20,12 +20,12 @@ namespace koi
 			if (text.starts_with(kGamepadPrefix))
 			{
 				const std::string_view name = text.substr(kGamepadPrefix.size());
-				if (const auto button = ParseGamepadButton(name)) return InputBinding{ *button, scale };
-				if (const auto axis   = ParseGamepadAxis(name))   return InputBinding{ *axis, scale };
+				if (const auto button = utils::ParseGamepadButton(name)) return InputBinding{ *button, scale };
+				if (const auto axis   = utils::ParseGamepadAxis(name))   return InputBinding{ *axis, scale };
 				return std::nullopt;
 			}
 
-			if (const auto key = ParseKeyCode(text)) return InputBinding{ *key, scale };
+			if (const auto key = utils::ParseKeyCode(text)) return InputBinding{ *key, scale };
 			return std::nullopt;
 		}
 
@@ -50,7 +50,7 @@ namespace koi
 		}
 	}
 
-	InputConfig LoadInputConfig(const toml::table& input)
+	InputConfig InputConfig::Load(const toml::table& input)
 	{
 		InputConfig config{};
 		config.Gamepad.StickDeadzone   = input["stick_deadzone"].value_or(config.Gamepad.StickDeadzone);

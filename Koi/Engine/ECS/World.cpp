@@ -1,6 +1,7 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -62,6 +63,19 @@ namespace koi
 		World* world = static_cast<World*>(ecs.get_ctx());
 		assert(world && "flecs world is not owned by a koi::World");
 		return *world;
+	}
+
+	std::pair<u64, u64> World::OrderKey(Entity e)
+	{
+		const SceneOrder* order = e.try_get<SceneOrder>();
+		return { order ? order->Index : ~0ull, e.id() };
+	}
+
+	EntityBuilder World::Spawn(std::string_view name)
+	{
+		Entity e = name.empty() ? m_ecs.entity() : m_ecs.entity(std::string(name).c_str());
+		e.set<Transform>({});
+		return EntityBuilder(e);
 	}
 
 	void World::BuildSystems()
@@ -202,7 +216,7 @@ namespace koi
 		{
 			if (const GPUMesh* gpuMesh = meshes.Get(mesh.Handle))
 			{
-				MergeBounds(m_bounds, gpuMesh->Bounds);
+				math::MergeBounds(m_bounds, gpuMesh->Bounds);
 			}
 		});
 
@@ -212,10 +226,10 @@ namespace koi
 		if (!hasCamera)
 		{
 			Transform camXform;
-			if (!IsEmpty(m_bounds))
+			if (!math::IsEmpty(m_bounds))
 			{
 				const Vector3 center(m_bounds.Center);
-				const f32 radius  = BoundsRadius(m_bounds);
+				const f32 radius  = math::BoundsRadius(m_bounds);
 				camXform.Position = center + Vector3(0.0f, 0.0f, radius * 2.5f);
 			}
 			else
@@ -260,7 +274,7 @@ namespace koi
 			return false;
 		}
 
-		out << TomlDocument(root);
+		out << utils::TomlDocument(root);
 		KOI_LOG_INFO("Saved scene '{}'", diskPath->string());
 		return true;
 	}

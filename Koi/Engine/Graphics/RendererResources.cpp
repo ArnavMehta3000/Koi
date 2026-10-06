@@ -7,48 +7,51 @@
 
 namespace koi
 {
-	// Not real files: generated textures, keyed so nothing on disk can collide with them
-	constexpr std::string_view kFallbackTextureUri = "koi://fallback/checker";
-	constexpr std::string_view kWhiteTextureUri    = "koi://fallback/white";
-	constexpr std::string_view kFallbackMeshPath   = "engine://Content/Meshes/Box.kmesh";
-
-	static D3D12_SAMPLER_DESC MakeLinearWrapDesc()
+	namespace
 	{
-		D3D12_SAMPLER_DESC d{};
-		d.Filter   = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-		d.MaxLOD   = D3D12_FLOAT32_MAX;
-		return d;
-	}
+		// Not real files: generated textures, keyed so nothing on disk can collide with them
+		constexpr std::string_view kFallbackTextureUri = "koi://fallback/checker";
+		constexpr std::string_view kWhiteTextureUri    = "koi://fallback/white";
+		constexpr std::string_view kFallbackMeshPath   = "engine://Content/Meshes/Box.kmesh";
 
-	static D3D12_SAMPLER_DESC MakeLinearClampDesc()
-	{
-		D3D12_SAMPLER_DESC d{};
-		d.Filter   = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		d.MaxLOD   = D3D12_FLOAT32_MAX;
-		return d;
-	}
+		D3D12_SAMPLER_DESC MakeLinearWrapDesc()
+		{
+			D3D12_SAMPLER_DESC d{};
+			d.Filter   = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+			d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+			d.MaxLOD   = D3D12_FLOAT32_MAX;
+			return d;
+		}
 
-	static D3D12_SAMPLER_DESC MakePointClampDesc()
-	{
-		D3D12_SAMPLER_DESC d{};
-		d.Filter   = D3D12_FILTER_MIN_MAG_MIP_POINT;
-		d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-		d.MaxLOD   = D3D12_FLOAT32_MAX;
-		return d;
-	}
+		D3D12_SAMPLER_DESC MakeLinearClampDesc()
+		{
+			D3D12_SAMPLER_DESC d{};
+			d.Filter   = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+			d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+			d.MaxLOD   = D3D12_FLOAT32_MAX;
+			return d;
+		}
 
-	static D3D12_SAMPLER_DESC MakeShadowCompareDesc()
-	{
-		D3D12_SAMPLER_DESC d{};
-		d.Filter         = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-		d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-		d.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
-		// White border = far plane, so anything outside the map compares as lit
-		d.BorderColor[0] = d.BorderColor[1] = d.BorderColor[2] = d.BorderColor[3] = 1.0f;
-		d.MaxLOD         = D3D12_FLOAT32_MAX;
-		return d;
+		D3D12_SAMPLER_DESC MakePointClampDesc()
+		{
+			D3D12_SAMPLER_DESC d{};
+			d.Filter   = D3D12_FILTER_MIN_MAG_MIP_POINT;
+			d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+			d.MaxLOD   = D3D12_FLOAT32_MAX;
+			return d;
+		}
+
+		D3D12_SAMPLER_DESC MakeShadowCompareDesc()
+		{
+			D3D12_SAMPLER_DESC d{};
+			d.Filter         = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+			d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+			d.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+			// White border = far plane, so anything outside the map compares as lit
+			d.BorderColor[0] = d.BorderColor[1] = d.BorderColor[2] = d.BorderColor[3] = 1.0f;
+			d.MaxLOD         = D3D12_FLOAT32_MAX;
+			return d;
+		}
 	}
 
 	void RendererResources::Init(GfxDevice& device, PipelineLibrary& library)

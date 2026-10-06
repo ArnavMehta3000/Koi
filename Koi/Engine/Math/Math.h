@@ -4,17 +4,24 @@
 
 namespace koi
 {
-	// Zero extents is the engine's "no bounds"
-	[[nodiscard]] inline bool IsEmpty(const BoundingBox& b)
+	namespace math
 	{
-		return b.Extents.x <= 0.0f && b.Extents.y <= 0.0f && b.Extents.z <= 0.0f;
+		// Zero extents is the engine's "no bounds"
+		[[nodiscard]] inline bool IsEmpty(const BoundingBox& b)
+		{
+			return b.Extents.x <= 0.0f && b.Extents.y <= 0.0f && b.Extents.z <= 0.0f;
+		}
+
+		// Merges into an accumulator that may still be empty
+		void MergeBounds(BoundingBox& inOutBox, const BoundingBox& other);
+
+		// Radius of the sphere enclosing the box
+		[[nodiscard]] f32 BoundsRadius(const BoundingBox& b);
+
+		// Aligns a value to the nearest multiple of 256
+		template <typename T>
+		[[nodiscard]] constexpr T AlignGPU256(T value) { return (value + static_cast<T>(255)) & ~static_cast<T>(255); }
 	}
-
-	// Merges into an accumulator that may still be empty
-	void MergeBounds(BoundingBox& inOutBox, const BoundingBox& other);
-
-	// Radius of the sphere enclosing the box
-	[[nodiscard]] f32 BoundsRadius(const BoundingBox& b);
 
 	// A camera frustum or a directional light's ortho box
 	class CullVolume
@@ -35,13 +42,5 @@ namespace koi
 		Kind                m_kind = Kind::None;
 		BoundingFrustum     m_frustum;
 		BoundingOrientedBox m_box;
-	};
-
-	class MathUtils
-	{
-	public:
-		// Aligns a value to the nearest multiple of 256
-		template <typename T>
-		static inline T AlignGPU256(T value) { return (value + static_cast<T>(255)) & ~static_cast<T>(255); }
 	};
 }

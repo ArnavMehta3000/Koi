@@ -25,10 +25,10 @@ namespace koi
 		[[nodiscard]] inline std::span<const std::unique_ptr<IComponentType>> All() const { return m_types; }
 		[[nodiscard]] const IComponentType* Find(std::string_view key) const;
 
+		// Called once by the Engine, before anything can load a scene
+		void RegisterEngineComponents();
+
 	private:
 		std::vector<std::unique_ptr<IComponentType>> m_types;
 	};
-
-	// Called once by the Engine, before anything can load a scene
-	void RegisterEngineComponents();
 }

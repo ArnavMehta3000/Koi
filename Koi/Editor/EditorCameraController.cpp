@@ -23,15 +23,18 @@ namespace koi::editor
 	static constexpr MouseButton kORBMoveButton = MouseButton::Left;
 	static constexpr MouseButton kORBPanButton = MouseButton::Middle;
 
-	// Yaw/pitch → unit view direction (right-handed, Y-up): yaw 0 looks down -Z, +yaw turns right
-	static Vector3 ForwardFromYawPitch(f32 yaw, f32 pitch)
+	namespace
 	{
-		const f32 cp = std::cos(pitch);
-		return Vector3(
-			std::sin(yaw) * cp,
-			std::sin(pitch),
-			-std::cos(yaw) * cp
-		);
+		// Yaw/pitch → unit view direction (right-handed, Y-up): yaw 0 looks down -Z, +yaw turns right
+		Vector3 ForwardFromYawPitch(f32 yaw, f32 pitch)
+		{
+			const f32 cp = std::cos(pitch);
+			return Vector3(
+				std::sin(yaw) * cp,
+				std::sin(pitch),
+				-std::cos(yaw) * cp
+			);
+		}
 	}
 
 	CameraController::CameraController(Camera* camera, CameraMode mode)

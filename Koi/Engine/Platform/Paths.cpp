@@ -1,7 +1,7 @@
 #include "Koi/Engine/Platform/Paths.h"
 #include "Koi/Engine/Platform/Win32.h"
 
-namespace koi::Paths
+namespace koi::utils
 {
 	fs::path ExecutableDir()
 	{

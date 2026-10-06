@@ -136,5 +136,8 @@ namespace koi
 		FORCE_UINT                              = 0xffffffff
 	};
 
-	constexpr DXGI_FORMAT ToDXGIFormat(Format format) { return static_cast<DXGI_FORMAT>(format); }
+	namespace utils
+	{
+		[[nodiscard]] constexpr DXGI_FORMAT ToDXGIFormat(Format format) { return static_cast<DXGI_FORMAT>(format); }
+	}
 }

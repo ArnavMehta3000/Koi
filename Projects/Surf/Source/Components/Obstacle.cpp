@@ -13,7 +13,7 @@ namespace game
 		if (!s) return;
 
 		DrawLaneSpheres(s->Positions, -1);
-		koi::DrawReflected(*s);
+		koi::utils::DrawReflected(*s);
 	}
 
 	void ObstacleSpawnSystem::Each(const koi::SystemContext& ctx, koi::Entity, ObstacleSpawner& spawner)
@@ -24,14 +24,14 @@ namespace game
 		*spawner.Countdown -= ctx.DeltaTime;
 		if (*spawner.Countdown > 0.0f) return;
 
-		const koi::f32 ramp     = koi::Ease(spawner.RampEase, *spawner.Elapsed / std::max(spawner.RampDuration, 1e-3f));
-		const koi::f32 interval = koi::Lerp(spawner.Interval, spawner.MinInterval, ramp);
-		const koi::f32 speed    = koi::Lerp(spawner.Speed, spawner.MaxSpeed, ramp);
+		const koi::f32 ramp     = koi::math::Ease(spawner.RampEase, *spawner.Elapsed / std::max(spawner.RampDuration, 1e-3f));
+		const koi::f32 interval = koi::math::Lerp(spawner.Interval, spawner.MinInterval, ramp);
+		const koi::f32 speed    = koi::math::Lerp(spawner.Speed, spawner.MaxSpeed, ramp);
 		spawner.Countdown = interval;
 
 		const koi::i32 lane = (*spawner.Rng).Range(0, static_cast<koi::i32>(spawner.Positions.size()) - 1);
 
-		koi::Spawn(ctx.World)
+		ctx.World.Spawn()
 			.At(spawner.Positions[static_cast<size_t>(lane)])
 			.Scaled(0.0f)
 			.WithMesh(spawner.Mesh)
@@ -43,7 +43,7 @@ namespace game
 	{
 		*obstacle.Age += ctx.DeltaTime;
 		transform.Position.z += obstacle.Speed * ctx.DeltaTime;
-		transform.Scale = koi::Vector3::One * koi::Ease(koi::EaseType::OutBack, *obstacle.Age / std::max(obstacle.PopDuration, 1e-3f));
+		transform.Scale = koi::Vector3::One * koi::math::Ease(koi::EaseType::OutBack, *obstacle.Age / std::max(obstacle.PopDuration, 1e-3f));
 
 		if (transform.Position.z > obstacle.DespawnZ)
 		{

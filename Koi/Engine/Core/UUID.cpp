@@ -20,12 +20,12 @@ namespace koi
 		}
 	}
 
-	UUID NewUUID()
+	UUID utils::NewUUID()
 	{
 		return Generator()();
 	}
 
-	UUID UUIDFromName(std::string_view name)
+	UUID utils::UUIDFromName(std::string_view name)
 	{
 		// Fixed and arbitrary; changing it changes every name-derived UUID
 		static const UUID kKoiNamespace = UUIDFromString("6b1a9f3c-5d84-4d2e-9c17-0a5e7b62d401");

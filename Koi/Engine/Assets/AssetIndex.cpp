@@ -39,10 +39,10 @@ namespace koi
 		{
 			if (!file.is_regular_file()) continue;
 
-			const AssetFileType expected = AssetFileTypeForPath(file.path());
+			const AssetFileType expected = AssetFile::TypeForPath(file.path());
 			if (expected == AssetFileType::Unknown) continue;
 
-			const std::optional<AssetFileHeader> header = ReadAssetFileHeader(file.path());
+			const std::optional<AssetFileHeader> header = AssetFile::ReadHeader(file.path());
 			if (!header) continue;  // already logged why
 
 			const fs::path relative = fs::relative(file.path(), root, ec);
@@ -52,7 +52,7 @@ namespace koi
 			if (header->Type != expected)
 			{
 				KOI_LOG_WARN("{} is named like a {} but holds a {}. Going by what's inside",
-					virtualPath, ToString(expected), ToString(header->Type));
+					virtualPath, AssetFile::ToString(expected), AssetFile::ToString(header->Type));
 			}
 
 			Add(UUID(header->Id), header->Type, std::move(virtualPath));
@@ -73,7 +73,7 @@ namespace koi
 		{
 			// Usually a file copied in Explorer, which copies its id along with it
 			KOI_LOG_WARN("{} and {} share the id {}. Keeping the first, the copy needs a fresh id before it can be used",
-				it->second.VirtualPath, virtualPath, ToString(id));
+				it->second.VirtualPath, virtualPath, utils::ToString(id));
 			return false;
 		}
 

@@ -79,14 +79,17 @@ namespace koi
 		return std::make_pair(virtualPath.substr(0, pos), virtualPath.substr(pos + 3));
 	}
 
-	// Paths without a scheme are implicitly project://. Assets in user-authored
-	// TOMLs are project assets all the time, so the prefix is noise; engine://
-	// stays opt-in for the rare cross-reference.
-	static std::pair<std::string_view, std::string_view> ResolveScheme(std::string_view virtualPath)
+	namespace
 	{
-		if (auto split = VirtualFileSystem::SplitVirtualPath(virtualPath))
-			return *split;
-		return { std::string_view{"project"}, virtualPath };
+		// Paths without a scheme are implicitly project://. Assets in user-authored
+		// TOMLs are project assets all the time, so the prefix is noise; engine://
+		// stays opt-in for the rare cross-reference.
+		std::pair<std::string_view, std::string_view> ResolveScheme(std::string_view virtualPath)
+		{
+			if (auto split = VirtualFileSystem::SplitVirtualPath(virtualPath))
+				return *split;
+			return { std::string_view{"project"}, virtualPath };
+		}
 	}
 
 	std::optional<std::vector<byte>> VirtualFileSystem::Read(std::string_view virtualPath)

@@ -95,14 +95,14 @@ namespace koi::editor
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(110.0f);
-		if (ImGui::BeginCombo("##level", ToString(m_minLevel).data()))
+		if (ImGui::BeginCombo("##level", utils::ToString(m_minLevel).data()))
 		{
 			for (i32 i = 0; i < LogLevelCount; ++i)
 			{
 				const auto level      = static_cast<LogLevel>(i);
 				const bool isSelected = (level == m_minLevel);
 				ImGui::PushStyleColor(ImGuiCol_Text, LevelColor(level));
-				if (ImGui::Selectable(ToString(level).data(), isSelected))
+				if (ImGui::Selectable(utils::ToString(level).data(), isSelected))
 				{
 					m_minLevel    = level;
 					m_filterDirty = true;
@@ -260,7 +260,7 @@ namespace koi::editor
 		ImGui::TextDisabled("%8.3f", record.Time);
 
 		ImGui::TableSetColumnIndex(1);
-		ImGui::TextColored(color, "%s", ToString(record.Level).data());
+		ImGui::TextColored(color, "%s", utils::ToString(record.Level).data());
 
 		ImGui::TableSetColumnIndex(2);
 		const LogCategoryInfo category = Logger::GetCategory(record.Category);

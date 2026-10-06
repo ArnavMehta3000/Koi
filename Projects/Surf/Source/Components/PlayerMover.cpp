@@ -13,7 +13,7 @@ namespace game
 		if (!mover) return;
 
 		DrawLaneSpheres(mover->Positions, *mover->Lane);
-		koi::DrawReflected(*mover);
+		koi::utils::DrawReflected(*mover);
 	}
 
 	void PlayerMoverSystem::Each(const koi::SystemContext& ctx, koi::Entity, koi::Transform& transform, PlayerMover& mover)
@@ -34,6 +34,6 @@ namespace game
 		if (*mover.T >= 1.0f) return;
 
 		mover.T = std::min(*mover.T + ctx.DeltaTime / std::max(mover.Duration, 1e-3f), 1.0f);
-		transform.Position = koi::Vector3::Lerp(*mover.From, mover.Positions[static_cast<size_t>(*mover.Lane)], koi::Ease(mover.Ease, *mover.T));
+		transform.Position = koi::Vector3::Lerp(*mover.From, mover.Positions[static_cast<size_t>(*mover.Lane)], koi::math::Ease(mover.Ease, *mover.T));
 	}
 }

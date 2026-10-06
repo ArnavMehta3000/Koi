@@ -338,7 +338,7 @@ namespace koi::editor
 
 		std::vector<TextureSubresourceLayout> layout;
 		u64 totalBytes = 0;
-		if (!ComputeUploadLayout(outFormat, width, height, mips, 1, layout, totalBytes))
+		if (!PreparedTexture::ComputeUploadLayout(outFormat, width, height, mips, 1, layout, totalBytes))
 			return fail("the importer doesn't know how to lay out " + std::string(DescribeFormat(outFormat)));
 
 		std::vector<byte> data(totalBytes, 0);

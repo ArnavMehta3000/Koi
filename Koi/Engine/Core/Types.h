@@ -87,43 +87,25 @@ namespace koi
 		~NonMovable() = default;
 	};
 
-
-
-	/// No better place to put this
-	consteval std::string_view ExtractFilename(std::string_view path) noexcept
+	namespace internal
 	{
-		// Find the last occurrence of either '/' or '\'
-		size_t lastSlash = path.find_last_of("/\\");
-
-		// No slash found, return the entire string (it's already just a filename)
-		if (lastSlash == std::string_view::npos)
+		consteval std::string_view ExtractFilename(std::string_view path) noexcept
 		{
-			return path;
+			const size_t lastSlash = path.find_last_of("/\\");
+			return lastSlash == std::string_view::npos ? path : path.substr(lastSlash + 1);
 		}
 
-		// Return substring starting after the last slash
-		return path.substr(lastSlash + 1);
-	}
-
-	consteval std::string_view ExtractFilenameNoExt(std::string_view path) noexcept
-	{
-		std::string_view filename = ExtractFilename(path);
-
-		// Find last dot
-		size_t lastDot = filename.find_last_of('.');
-
-		// No dot found, return the entire filename
-		if (lastDot == std::string_view::npos)
+		consteval std::string_view ExtractFilenameNoExt(std::string_view path) noexcept
 		{
-			return filename;
+			const std::string_view filename = ExtractFilename(path);
+			const size_t lastDot = filename.find_last_of('.');
+			return lastDot == std::string_view::npos ? filename : filename.substr(0, lastDot);
 		}
-
-		// Return substring up to (but not including) the last dot
-		return filename.substr(0, lastDot);
 	}
 }
+
 // The filename with extension of the current file
-#define KOI_FILENAME ::koi::ExtractFilename(__FILE__)
+#define KOI_FILENAME ::koi::internal::ExtractFilename(__FILE__)
 
 // The filename without extension of the current file
-#define KOI_FILE ::koi::ExtractFilenameNoExt(__FILE__)
+#define KOI_FILE ::koi::internal::ExtractFilenameNoExt(__FILE__)

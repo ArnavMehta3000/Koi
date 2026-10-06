@@ -8,12 +8,9 @@
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
-namespace koi
+std::unique_ptr<koi::AppBase> koi::AppBase::Create([[maybe_unused]] koi::CommandLine& cmd)
 {
-	std::unique_ptr<AppBase> CreateApplication([[maybe_unused]] CommandLine& cmd)
-	{
-		return std::make_unique<SandboxApp>();
-	}
+	return std::make_unique<SandboxApp>();
 }
 
 void SandboxApp::OnRegisterComponents()

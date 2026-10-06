@@ -19,8 +19,6 @@ namespace koi
 
 	inline constexpr size_t kMaterialTextureCount = static_cast<size_t>(MaterialTextureSlot::COUNT);
 
-	[[nodiscard]] std::string_view ToString(MaterialTextureSlot slot);
-
 	// What a .kmat decodes to, for today's fixed-slot Standard template
 	struct MaterialSource
 	{
@@ -51,6 +49,9 @@ namespace koi
 
 		const MaterialTemplate* Template = nullptr;  // owned by the MaterialTemplateLibrary
 		PipelineHandle          Pipeline;            // the template's build for this cull mode
+
+		// The key a slot's texture parameter is stored under
+		[[nodiscard]] static std::string_view SlotName(MaterialTextureSlot slot);
 
 		[[nodiscard]] DescriptorIndex SRVFor(MaterialTextureSlot slot) const;
 

@@ -157,7 +157,7 @@ namespace koi
 
 		const u32 flags = m_tearingAllowed ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 		DX_CHECK(m_swapChain->ResizeBuffers(
-			BACK_BUFFER_COUNT, width, height, ToDXGIFormat(SWAPCHAIN_FORMAT), flags));
+			BACK_BUFFER_COUNT, width, height, utils::ToDXGIFormat(SWAPCHAIN_FORMAT), flags));
 
 		m_width             = width;
 		m_height            = height;
@@ -205,7 +205,7 @@ namespace koi
 		{
 			.Width       = m_width,
 			.Height      = m_height,
-			.Format      = ToDXGIFormat(m_format),
+			.Format      = utils::ToDXGIFormat(m_format),
 			.SampleDesc  = { 1, 0 },
 			.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
 			.BufferCount = BACK_BUFFER_COUNT,
@@ -264,7 +264,7 @@ namespace koi
 
 				D3D12_RENDER_TARGET_VIEW_DESC rtvDesc
 				{
-					.Format        = ToDXGIFormat(SWAPCHAIN_FORMAT),
+					.Format        = utils::ToDXGIFormat(SWAPCHAIN_FORMAT),
 					.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D
 				};
 

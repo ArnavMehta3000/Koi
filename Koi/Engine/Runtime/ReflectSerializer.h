@@ -38,43 +38,46 @@ namespace koi
 
 	using ReflectProcessors = rfl::Processors<rfl::CamelCaseToSnakeCase, rfl::DefaultIfMissing>;
 
-	// "PopDuration" -> "pop_duration", the same mapping CamelCaseToSnakeCase applies at compile time
-	inline std::string SnakeCase(std::string_view name)
+	namespace internal
 	{
-		const auto size = name.size();
-		std::string out;
-		out.reserve(size);  // Reserve the same amount of bytes as the name (might be more since '_' will be added)
-
-		for (size_t i = 0; i < size; ++i)
+		// "PopDuration" -> "pop_duration", the same mapping CamelCaseToSnakeCase applies at compile time
+		inline std::string SnakeCase(std::string_view name)
 		{
-			const unsigned char c = static_cast<unsigned char>(name[i]);
-			if (i > 0 && std::isupper(c))
-				out += '_';
+			const auto size = name.size();
+			std::string out;
+			out.reserve(size);  // Reserve the same amount of bytes as the name (might be more since '_' will be added)
 
-			out += static_cast<char>(std::tolower(c));
-		}
-		return out;
-	}
-
-	// A renamed or misspelled key would otherwise be silently replaced by the field default
-	template <typename T>
-	void WarnUnknownKeys(const toml::table& table)
-	{
-		static const std::vector<std::string> known = []
-		{
-			std::vector<std::string> names;
-			for (const rfl::MetaField& field : rfl::fields<T>())
+			for (size_t i = 0; i < size; ++i)
 			{
-				names.push_back(SnakeCase(field.name()));
+				const unsigned char c = static_cast<unsigned char>(name[i]);
+				if (i > 0 && std::isupper(c))
+					out += '_';
+
+				out += static_cast<char>(std::tolower(c));
 			}
-			return names;
-		}();
+			return out;
+		}
 
-		for (const auto& [key, value] : table)
+		// A renamed or misspelled key would otherwise be silently replaced by the field default
+		template <typename T>
+		void WarnUnknownKeys(const toml::table& table)
 		{
-			if (!std::ranges::contains(known, key.str()))
+			static const std::vector<std::string> known = []
 			{
-				KOI_LOG_WARN("Component '{}' has unknown key '{}'; it will be dropped on save", T::kKey, key.str());
+				std::vector<std::string> names;
+				for (const rfl::MetaField& field : rfl::fields<T>())
+				{
+					names.push_back(SnakeCase(field.name()));
+				}
+				return names;
+			}();
+
+			for (const auto& [key, value] : table)
+			{
+				if (!std::ranges::contains(known, key.str()))
+				{
+					KOI_LOG_WARN("Component '{}' has unknown key '{}'; it will be dropped on save", T::kKey, key.str());
+				}
 			}
 		}
 	}
@@ -92,7 +95,7 @@ namespace koi
 
 		static std::optional<T> Deserialize(const toml::node& node)
 		{
-			if (const toml::table* table = node.as_table()) WarnUnknownKeys<T>(*table);
+			if (const toml::table* table = node.as_table()) internal::WarnUnknownKeys<T>(*table);
 
 			auto result = rfl::toml::read<T, rfl::CamelCaseToSnakeCase, rfl::DefaultIfMissing>(const_cast<toml::node*>(&node));
 			if (!result)

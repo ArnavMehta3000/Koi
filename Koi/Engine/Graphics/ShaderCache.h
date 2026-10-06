@@ -29,12 +29,6 @@ namespace koi
 		};
 	};
 
-	// *VS -> Vertex, *PS -> Pixel, etc
-	[[nodiscard]] ShaderType InferShaderTypeFromName(std::string_view path);
-
-	// Sorts by name first
-	[[nodiscard]] u64 HashShaderDefines(std::span<const ShaderDefine> defines);
-
 	enum class ShaderBuildState : u8
 	{
 		Missing,   // not in any Shaders.json
@@ -49,6 +43,12 @@ namespace koi
 	{
 	public:
 		static ShaderCache& Get();
+
+		// *VS -> Vertex, *PS -> Pixel, etc
+		[[nodiscard]] static ShaderType InferType(std::string_view path);
+
+		// Sorts by name first
+		[[nodiscard]] static u64 HashDefines(std::span<const ShaderDefine> defines);
 
 		// Bytecode for a virtual path WITHOUT extension ("engine://Content/Shaders/MeshVS").
 		// The span points into cache storage and stays valid until the cache is invalidated.

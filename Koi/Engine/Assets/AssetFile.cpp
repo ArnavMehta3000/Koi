@@ -70,7 +70,7 @@ namespace koi
 		}
 	}
 
-	std::string FourCCToString(u32 code)
+	std::string utils::FourCCToString(u32 code)
 	{
 		std::string text(4, '?');
 		for (size_t i = 0; i < 4; ++i)
@@ -81,19 +81,19 @@ namespace koi
 		return text;
 	}
 
-	std::string_view ToString(AssetFileType type)
+	std::string_view AssetFile::ToString(AssetFileType type)
 	{
 		const FileTypeInfo* info = FindFileType(type);
 		return info ? info->Name : "unknown";
 	}
 
-	std::string_view ExtensionFor(AssetFileType type)
+	std::string_view AssetFile::ExtensionFor(AssetFileType type)
 	{
 		const FileTypeInfo* info = FindFileType(type);
 		return info ? info->Extension : std::string_view();
 	}
 
-	AssetFileType AssetFileTypeForPath(const fs::path& path)
+	AssetFileType AssetFile::TypeForPath(const fs::path& path)
 	{
 		std::string extension = path.extension().string();
 		std::ranges::transform(extension, extension.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -102,7 +102,7 @@ namespace koi
 		return it != std::end(kFileTypes) ? it->Type : AssetFileType::Unknown;
 	}
 
-	std::optional<AssetFileHeader> ReadAssetFileHeader(const fs::path& diskPath)
+	std::optional<AssetFileHeader> AssetFile::ReadHeader(const fs::path& diskPath)
 	{
 		std::ifstream file(diskPath, std::ios::binary);
 		if (!file) return std::nullopt;
@@ -145,7 +145,7 @@ namespace koi
 			if (chunk.Offset % kAssetChunkAlignment != 0 || chunk.Offset > fileSize || chunk.Size > fileSize - chunk.Offset)
 			{
 				KOI_LOG_ERROR("{} has a broken '{}' chunk (offset {}, size {}, file is {} bytes)",
-					debugName, FourCCToString(chunk.Type), chunk.Offset, chunk.Size, fileSize);
+					debugName, utils::FourCCToString(chunk.Type), chunk.Offset, chunk.Size, fileSize);
 				return std::nullopt;
 			}
 		}
@@ -220,7 +220,7 @@ namespace koi
 		const bool duplicate = std::ranges::any_of(m_chunks, [type](const PendingChunk& c) { return c.Entry.Type == type; });
 		if (duplicate)
 		{
-			KOI_LOG_WARN("Asset already has a '{}' chunk, adding another one anyway. Readers will only ever see the first", FourCCToString(type));
+			KOI_LOG_WARN("Asset already has a '{}' chunk, adding another one anyway. Readers will only ever see the first", utils::FourCCToString(type));
 		}
 
 		m_chunks.push_back(PendingChunk
@@ -304,7 +304,7 @@ namespace koi
 		}
 
 		KOI_LOG_INFO("Saved {} {} ({} chunk(s), {:.1f} KB)",
-			ToString(m_header.Type), diskPath.filename().string(), m_chunks.size(), static_cast<f64>(bytes.size()) / 1024.0);
+			AssetFile::ToString(m_header.Type), diskPath.filename().string(), m_chunks.size(), static_cast<f64>(bytes.size()) / 1024.0);
 		return true;
 	}
 }

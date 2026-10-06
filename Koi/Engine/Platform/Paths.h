@@ -1,7 +1,7 @@
 #pragma once
 #include <filesystem>
 
-namespace koi::Paths
+namespace koi::utils
 {
 	namespace fs = std::filesystem;
 

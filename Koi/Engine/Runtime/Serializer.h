@@ -14,14 +14,6 @@ namespace koi
 	template <typename T>
 	struct Serializer;
 
-	inline constexpr toml::format_flags kTomlFormatFlags =
-		toml::toml_formatter::default_flags | toml::format_flags::relaxed_float_precision;
-
-	[[nodiscard]] inline toml::toml_formatter TomlDocument(const toml::node& node)
-	{
-		return toml::toml_formatter(node, kTomlFormatFlags);
-	}
-
 	// Types toml++ stores directly, without a table or array wrapper.
 	template <typename T>
 	concept TomlNative = std::same_as<T, bool>
@@ -73,38 +65,47 @@ namespace koi
 		static std::optional<f32> Deserialize(const toml::node& node) { return node.value<f32>(); }
 	};
 
-	// --- Helpers ---
-
-	template <typename T>
-	void SerializeInto(toml::table&, std::string_view, const T&)
+	namespace utils
 	{
-		static_assert(CustomSerializable<T>,
-			"No koi::Serializer<T> specialization for this type, or its Serialize "
-			"does not return a TOML native / owning node by value.");
-	}
+		inline constexpr toml::format_flags kTomlFormatFlags =
+			toml::toml_formatter::default_flags | toml::format_flags::relaxed_float_precision;
 
-	template <CustomSerializable T>
-	void SerializeInto(toml::table& table, std::string_view key, const T& value)
-	{
-		table.insert_or_assign(key, Serializer<T>::Serialize(value));
-	}
+		[[nodiscard]] inline toml::toml_formatter TomlDocument(const toml::node& node)
+		{
+			return toml::toml_formatter(node, kTomlFormatFlags);
+		}
 
-	// Fails object creation if the key is missing
-	template <CustomDeserializable T>
-	std::optional<T> DeserializeFrom(const toml::table& table, std::string_view key)
-	{
-		const auto* node = table.get(key);
-		if (!node)
-			return std::nullopt;
+		template <typename T>
+		void SerializeInto(toml::table&, std::string_view, const T&)
+		{
+			static_assert(CustomSerializable<T>,
+				"No koi::Serializer<T> specialization for this type, or its Serialize "
+				"does not return a TOML native / owning node by value.");
+		}
 
-		return Serializer<T>::Deserialize(*node);
-	}
+		template <CustomSerializable T>
+		void SerializeInto(toml::table& table, std::string_view key, const T& value)
+		{
+			table.insert_or_assign(key, Serializer<T>::Serialize(value));
+		}
 
-	// Set the fallback default if the key is missing
-	template <CustomDeserializable T>
-	T DeserializeOr(const toml::table& table, std::string_view key, T fallback)
-	{
-		auto value = DeserializeFrom<T>(table, key);
-		return value ? std::move(*value) : std::move(fallback);
+		// Fails object creation if the key is missing
+		template <CustomDeserializable T>
+		std::optional<T> DeserializeFrom(const toml::table& table, std::string_view key)
+		{
+			const auto* node = table.get(key);
+			if (!node)
+				return std::nullopt;
+
+			return Serializer<T>::Deserialize(*node);
+		}
+
+		// Set the fallback default if the key is missing
+		template <CustomDeserializable T>
+		T DeserializeOr(const toml::table& table, std::string_view key, T fallback)
+		{
+			auto value = DeserializeFrom<T>(table, key);
+			return value ? std::move(*value) : std::move(fallback);
+		}
 	}
 }

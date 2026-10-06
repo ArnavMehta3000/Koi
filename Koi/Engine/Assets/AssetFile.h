@@ -13,17 +13,20 @@ namespace koi
 {
 	namespace fs = std::filesystem;
 
-	consteval u32 FourCC(const char (&code)[5])
+	namespace utils
 	{
-		return  static_cast<u32>(static_cast<u8>(code[0]))
-			| (static_cast<u32>(static_cast<u8>(code[1])) << 8)
-			| (static_cast<u32>(static_cast<u8>(code[2])) << 16)
-			| (static_cast<u32>(static_cast<u8>(code[3])) << 24);
+		consteval u32 FourCC(const char (&code)[5])
+		{
+			return  static_cast<u32>(static_cast<u8>(code[0]))
+				| (static_cast<u32>(static_cast<u8>(code[1])) << 8)
+				| (static_cast<u32>(static_cast<u8>(code[2])) << 16)
+				| (static_cast<u32>(static_cast<u8>(code[3])) << 24);
+		}
+
+		[[nodiscard]] std::string FourCCToString(u32 code);
 	}
 
-	[[nodiscard]] std::string FourCCToString(u32 code);
-
-	inline constexpr u32 kAssetFileMagic      = FourCC("KOIA");
+	inline constexpr u32 kAssetFileMagic      = utils::FourCC("KOIA");
 	inline constexpr u16 kAssetFormatVersion  = 1;
 	inline constexpr u64 kAssetChunkAlignment = 16;
 
@@ -48,10 +51,6 @@ namespace koi
 		None       = 0,
 		EditorOnly = KOI_BIT(0),  // import settings, source path, thumbnail; dropped by the cook
 	};
-
-	[[nodiscard]] std::string_view ToString(AssetFileType type);
-	[[nodiscard]] std::string_view ExtensionFor(AssetFileType type);              // ".kmesh"
-	[[nodiscard]] AssetFileType    AssetFileTypeForPath(const fs::path& path);   // Unknown if not a binary asset
 
 	// On-disk layout, parsed as raw bytes
 	struct AssetFileHeader
@@ -82,15 +81,19 @@ namespace koi
 	static_assert(sizeof(ChunkEntry) == 24 && std::is_trivially_copyable_v<ChunkEntry>);
 	static_assert(offsetof(ChunkEntry, Offset) == 8);
 
-	// Read 64 byte header, cheap for scanning
-	[[nodiscard]] std::optional<AssetFileHeader> ReadAssetFileHeader(const fs::path& diskPath);
-
 	// A whole asset file in memory
 	class AssetFile
 	{
 	public:
 		[[nodiscard]] static std::optional<AssetFile> FromBytes(std::vector<byte> bytes, std::string_view debugName);
 		[[nodiscard]] static std::optional<AssetFile> Load(std::string_view virtualPath);
+
+		// Read 64 byte header, cheap for scanning
+		[[nodiscard]] static std::optional<AssetFileHeader> ReadHeader(const fs::path& diskPath);
+
+		[[nodiscard]] static std::string_view ToString(AssetFileType type);
+		[[nodiscard]] static std::string_view ExtensionFor(AssetFileType type);     // ".kmesh"
+		[[nodiscard]] static AssetFileType    TypeForPath(const fs::path& path);    // Unknown if not a binary asset
 
 		[[nodiscard]] const AssetFileHeader&  Header() const { return *reinterpret_cast<const AssetFileHeader*>(m_bytes.data()); }
 		[[nodiscard]] AssetFileType           Type()   const { return Header().Type; }

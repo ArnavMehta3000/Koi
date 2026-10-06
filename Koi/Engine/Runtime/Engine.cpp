@@ -20,7 +20,7 @@ namespace koi
 		m_systems.ConstructAll();
 		KOI_LOG_DEBUG("Engine subsystems constructed");
 
-		RegisterEngineComponents();
+		ComponentRegistry::Get().RegisterEngineComponents();
 	}
 
 	Engine::~Engine()

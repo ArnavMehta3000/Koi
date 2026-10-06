@@ -194,7 +194,7 @@ namespace koi::editor
 
 	void AssetsPanel::DrawRow(const AssetEntry& entry)
 	{
-		const AssetTypeInfo* type  = FindAssetTypeByKind(entry.Kind);
+		const AssetTypeInfo* type  = utils::FindAssetTypeByKind(entry.Kind);
 		const AssetState     state = ResolveState(entry);
 
 		ImGui::TableNextRow();
@@ -207,7 +207,7 @@ namespace koi::editor
 		if (type) ImGui::TextDisabled("%.*s", static_cast<int>(type->Name.size()), type->Name.data());
 
 		ImGui::TableNextColumn();
-		const std::string_view label = ToString(state);
+		const std::string_view label = utils::ToString(state);
 		ImGui::TextColored(StateColor(state), "%.*s", static_cast<int>(label.size()), label.data());
 
 		ImGui::PopID();
@@ -271,7 +271,7 @@ namespace koi::editor
 
 		if (ImGui::MenuItem("Rename", nullptr, false, editable))
 		{
-			const std::string_view extension = AssetExtensionOf(entry.Name);
+			const std::string_view extension = utils::AssetExtensionOf(entry.Name);
 			m_renamingPath       = entry.VirtualPath;
 			m_renameBuffer       = entry.Name.substr(0, entry.Name.size() - extension.size());
 			m_renameFocusPending = true;
@@ -286,7 +286,7 @@ namespace koi::editor
 			m_openDeleteModal = true;
 		}
 
-		const AssetFileType fileType = AssetFileTypeForPath(entry.DiskPath);
+		const AssetFileType fileType = AssetFile::TypeForPath(entry.DiskPath);
 
 		// Runs in the background; the database only refreshes once it's done, so the entry stays valid
 		const bool imported = fileType == AssetFileType::Texture || fileType == AssetFileType::Mesh;

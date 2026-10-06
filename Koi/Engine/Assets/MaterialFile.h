@@ -7,9 +7,9 @@ namespace koi
 {
 	namespace MaterialChunk
 	{
-		inline constexpr u32 Header  = FourCC("MTHD");  // MaterialFileHeader
-		inline constexpr u32 Params  = FourCC("MPRM");  // MaterialFileParam[]
-		inline constexpr u32 Strings = FourCC("STRS");  // UTF-8 names, referenced by offset
+		inline constexpr u32 Header  = utils::FourCC("MTHD");  // MaterialFileHeader
+		inline constexpr u32 Params  = utils::FourCC("MPRM");  // MaterialFileParam[]
+		inline constexpr u32 Strings = utils::FourCC("STRS");  // UTF-8 names, referenced by offset
 	}
 
 	// Same order as MaterialParamType, so a template's reflected parameters can map straight onto it later
@@ -42,6 +42,10 @@ namespace koi
 	};
 	static_assert(sizeof(MaterialFileParam) == 48 && std::is_trivially_copyable_v<MaterialFileParam>);
 
+	// The bridge to today's fixed-slot MaterialSource, until materials become template-driven
+	using TextureIdFor   = std::function<UUID(const AssetKey&)>;
+	using TextureKeyFor  = std::function<AssetKey(const UUID&)>;
+
 	// A .kmat decoded into plain values: template, render state and named parameters
 	struct MaterialFileContents
 	{
@@ -59,14 +63,11 @@ namespace koi
 		bool               DoubleSided  = false;
 		u8                 ShadingModel = 0;
 		std::vector<Param> Params;
+
+		[[nodiscard]] static std::optional<MaterialFileContents> Read(const AssetFile& file, std::string_view debugName);
+		void Write(AssetFileWriter& writer) const;
+
+		[[nodiscard]] static MaterialFileContents FromSource(const MaterialSource& source, const TextureIdFor& idFor);
+		[[nodiscard]] MaterialSource ToSource(const TextureKeyFor& keyFor) const;
 	};
-
-	[[nodiscard]] std::optional<MaterialFileContents> ReadMaterialFile(const AssetFile& file, std::string_view debugName);
-	void WriteMaterialChunks(AssetFileWriter& writer, const MaterialFileContents& contents);
-
-	// The bridge to today's fixed-slot MaterialSource, until materials become template-driven
-	using TextureIdFor   = std::function<UUID(const AssetKey&)>;
-	using TextureKeyFor  = std::function<AssetKey(const UUID&)>;
-	[[nodiscard]] MaterialFileContents ToMaterialFileContents(const MaterialSource& source, const TextureIdFor& idFor);
-	[[nodiscard]] MaterialSource       ToMaterialSource(const MaterialFileContents& contents, const TextureKeyFor& keyFor);
 }

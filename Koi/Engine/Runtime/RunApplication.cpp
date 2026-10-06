@@ -21,7 +21,7 @@ namespace koi::internal
 	{
 		// Custom scoped function for profiling reasons
 		ZoneScoped;
-		return CreateApplication(cmd);
+		return AppBase::Create(cmd);
 	}
 
 	static AppCreateDesc LoadProjectDesc(const fs::path& projectFile)
@@ -54,12 +54,12 @@ namespace koi::internal
 			.LogConfig =
 			{
 				.FilePath        = project["logging"]["file"].value_or(defaults.FilePath),
-				.RuntimeLevel    = LogLevelFromString(project["logging"]["level"].value_or(ToString(defaults.RuntimeLevel))),
+				.RuntimeLevel    = utils::LogLevelFromString(project["logging"]["level"].value_or(utils::ToString(defaults.RuntimeLevel))),
 				.HistoryCapacity = project["logging"]["history"].value_or(defaults.HistoryCapacity),
 				.SpawnConsole    = project["logging"]["console"].value_or(defaults.SpawnConsole),
 				.UseDebugSink    = project["logging"]["debug_sink"].value_or(defaults.UseDebugSink),
 			},
-			.Input          = input ? LoadInputConfig(*input) : InputConfig{},
+			.Input          = input ? InputConfig::Load(*input) : InputConfig{},
 			.AppName        = project["project"]["name"].value_or("Koi Application"),
 			.Scenes         = std::move(scenes),
 			.StartupScene   = project["scenes"]["startup"].value_or(""),
@@ -144,7 +144,7 @@ namespace koi::internal
 				return -1;
 			}
 
-			const fs::path exeDir   = Paths::ExecutableDir();
+			const fs::path exeDir   = utils::ExecutableDir();
 			const bool     isEditor = !desc.ProjectDir.empty();
 			const fs::path savedDir = (isEditor ? desc.ProjectDir : exeDir) / ".koi";
 
@@ -219,7 +219,7 @@ namespace koi::internal
 		std::vector<char*> argv(argc);
 		for (int i = 0; i < argc; ++i)
 		{
-			args[i] = StringUtils::FromWide(wargv[i]);
+			args[i] = utils::FromWide(wargv[i]);
 			argv[i] = args[i].data();
 		}
 		return RunApplication(argc, argv.data(), desc);

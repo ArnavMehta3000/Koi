@@ -32,7 +32,7 @@ namespace koi
 	{
 		GamepadSettings          Gamepad;
 		std::vector<InputAction> Actions;
-	};
 
-	[[nodiscard]] InputConfig LoadInputConfig(const toml::table& input);
+		[[nodiscard]] static InputConfig Load(const toml::table& input);
+	};
 }

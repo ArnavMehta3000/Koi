@@ -28,31 +28,31 @@ namespace koi
 		}
 	}
 
-	const AssetTypeInfo* FindAssetTypeForFile(std::string_view fileName)
+	const AssetTypeInfo* utils::FindAssetTypeForFile(std::string_view fileName)
 	{
 		const AssetTypeInfo* type = nullptr;
 		return MatchExtension(fileName, &type) > 0 ? type : nullptr;
 	}
 
-	std::string_view AssetExtensionOf(std::string_view fileName)
+	std::string_view utils::AssetExtensionOf(std::string_view fileName)
 	{
 		const size_t length = MatchExtension(fileName, nullptr);
 		return length > 0 ? fileName.substr(fileName.size() - length) : std::string_view();
 	}
 
-	const AssetTypeInfo* FindAssetTypeByName(std::string_view name)
+	const AssetTypeInfo* utils::FindAssetTypeByName(std::string_view name)
 	{
 		const auto it = std::ranges::find(kAssetTypes, name, &AssetTypeInfo::Name);
 		return it != kAssetTypes.end() ? &*it : nullptr;
 	}
 
-	const AssetTypeInfo* FindAssetTypeByKind(AssetKind kind)
+	const AssetTypeInfo* utils::FindAssetTypeByKind(AssetKind kind)
 	{
 		const auto it = std::ranges::find(kAssetTypes, kind, &AssetTypeInfo::Kind);
 		return it != kAssetTypes.end() ? &*it : nullptr;
 	}
 
-	std::string_view ToString(AssetState state)
+	std::string_view utils::ToString(AssetState state)
 	{
 		switch (state)
 		{

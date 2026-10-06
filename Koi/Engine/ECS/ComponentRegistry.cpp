@@ -24,7 +24,7 @@ namespace koi
 		{
 			if (const std::optional<std::string> id = table["id"].value<std::string>())
 			{
-				if (const AssetIndexEntry* entry = Engine::Get().GetSubsystem<AssetRegistry>().Index().Find(UUIDFromString(*id)))
+				if (const AssetIndexEntry* entry = Engine::Get().GetSubsystem<AssetRegistry>().Index().Find(utils::UUIDFromString(*id)))
 					return AssetKey(entry->VirtualPath);
 
 				KOI_LOG_WARN("The scene wants {} {}, which isn't in the project anymore. Showing the fallback", what, *id);
@@ -38,7 +38,7 @@ namespace koi
 		void WriteAssetRef(toml::table& table, const AssetKey& key)
 		{
 			if (const AssetIndexEntry* entry = Engine::Get().GetSubsystem<AssetRegistry>().Index().FindByPath(key.Path()))
-				table.insert("id", ToString(entry->Id));
+				table.insert("id", utils::ToString(entry->Id));
 			else
 				table.insert("path", key.Path());  // generated or unindexed, so the path is all there is
 		}
@@ -152,14 +152,12 @@ namespace koi
 		return it != m_types.end() ? it->get() : nullptr;
 	}
 
-	void RegisterEngineComponents()
+	void ComponentRegistry::RegisterEngineComponents()
 	{
-		ComponentRegistry& registry = ComponentRegistry::Get();
-
-		registry.Register<ComponentType<Transform>>(0, true);
-		registry.Register<MeshComponentType>();
-		registry.Register<MaterialComponentType>();
-		registry.Register<ComponentType<CameraComponent>>(20);
-		registry.Register<ComponentType<Light>>(30);
+		Register<ComponentType<Transform>>(0, true);
+		Register<MeshComponentType>();
+		Register<MaterialComponentType>();
+		Register<ComponentType<CameraComponent>>(20);
+		Register<ComponentType<Light>>(30);
 	}
 }

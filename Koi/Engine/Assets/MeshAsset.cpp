@@ -9,7 +9,7 @@ namespace koi
 {
 	std::unique_ptr<ModelAsset> AssetTraits<GPUMesh>::Load(const std::string& vfsPath)
 	{
-		if (AssetFileTypeForPath(vfsPath) != AssetFileType::Mesh)
+		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Mesh)
 		{
 			KOI_LOG_ERROR("{} isn't a .kmesh. Import the model in the editor and use what it writes", vfsPath);
 			return nullptr;
@@ -19,7 +19,7 @@ namespace koi
 		if (!file) return nullptr;
 
 		auto model      = std::make_unique<ModelAsset>();
-		model->Prepared = ReadPreparedMesh(std::move(*file), vfsPath);
+		model->Prepared = PreparedMesh::Read(std::move(*file), vfsPath);
 		if (!model->Prepared) return nullptr;
 
 		const PreparedMesh& mesh = *model->Prepared;
@@ -35,7 +35,7 @@ namespace koi
 			const UUID id(slot.Material);
 			const AssetIndexEntry* entry = id.is_nil() ? nullptr : index.Find(id);
 			if (!id.is_nil() && !entry)
-				KOI_LOG_WARN("{}: slot '{}' wants material {}, which isn't in the project anymore", vfsPath, mesh.SlotName(slot), ToString(id));
+				KOI_LOG_WARN("{}: slot '{}' wants material {}, which isn't in the project anymore", vfsPath, mesh.SlotName(slot), utils::ToString(id));
 
 			model->MaterialBindings.push_back(entry ? AssetKey(entry->VirtualPath) : AssetKey());
 		}

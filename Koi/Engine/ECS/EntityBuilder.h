@@ -32,7 +32,4 @@ namespace koi
 		Entity    m_entity;
 		Transform m_transform;  // written whole on every change, which stays valid while flecs is deferring
 	};
-
-	// Creates an entity with a Transform. Names are unique per world and looked up by scene files, so runtime spawns should stay unnamed
-	[[nodiscard]] EntityBuilder Spawn(World& world, std::string_view name = {});
 }

@@ -25,7 +25,7 @@ namespace koi::editor
 				ecs.each<Transform>([&](Entity e, Transform&) { if (!e.parent()) out.push_back(e); });
 			}
 
-			std::ranges::sort(out, {}, [](Entity e) { return OrderKey(e); });
+			std::ranges::sort(out, {}, [](Entity e) { return World::OrderKey(e); });
 			return out;
 		}
 

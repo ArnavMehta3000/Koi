@@ -6,14 +6,14 @@ namespace koi
 {
 	namespace MeshChunk
 	{
-		inline constexpr u32 Header         = FourCC("MSHD");  // MeshHeader
-		inline constexpr u32 Vertices       = FourCC("VERT");  // Vertex[], in the layout MeshHeader::Layout names
-		inline constexpr u32 Indices        = FourCC("INDX");  // u32[]
-		inline constexpr u32 Submeshes      = FourCC("SUBM");  // MeshSubmesh[]
-		inline constexpr u32 MaterialSlots  = FourCC("MSLT");  // MeshMaterialSlot[]
-		inline constexpr u32 Strings        = FourCC("STRS");  // UTF-8 names, referenced by offset
-		inline constexpr u32 ImportSettings = FourCC("IMPS");  // editor only
-		inline constexpr u32 SourcePath     = FourCC("SRCP");  // editor only
+		inline constexpr u32 Header         = utils::FourCC("MSHD");  // MeshHeader
+		inline constexpr u32 Vertices       = utils::FourCC("VERT");  // Vertex[], in the layout MeshHeader::Layout names
+		inline constexpr u32 Indices        = utils::FourCC("INDX");  // u32[]
+		inline constexpr u32 Submeshes      = utils::FourCC("SUBM");  // MeshSubmesh[]
+		inline constexpr u32 MaterialSlots  = utils::FourCC("MSLT");  // MeshMaterialSlot[]
+		inline constexpr u32 Strings        = utils::FourCC("STRS");  // UTF-8 names, referenced by offset
+		inline constexpr u32 ImportSettings = utils::FourCC("IMPS");  // editor only
+		inline constexpr u32 SourcePath     = utils::FourCC("SRCP");  // editor only
 	}
 
 	// Which vertex stream(s) the file carries. Split position/attribute/skin streams get their own values later
@@ -68,7 +68,7 @@ namespace koi
 		std::string_view                  Strings;
 
 		[[nodiscard]] std::string_view SlotName(const MeshMaterialSlot& slot) const;
-	};
 
-	[[nodiscard]] std::shared_ptr<const PreparedMesh> ReadPreparedMesh(AssetFile file, std::string_view debugName);
+		[[nodiscard]] static std::shared_ptr<const PreparedMesh> Read(AssetFile file, std::string_view debugName);
+	};
 }

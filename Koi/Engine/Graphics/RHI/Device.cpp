@@ -23,61 +23,64 @@
 
 namespace koi
 {
-	CD3DX12FeatureSupport g_featureSupport;
-
-	static D3D12_RESOURCE_FLAGS ToD3DFlags(TextureUsageFlag flag)
+	namespace
 	{
-		D3D12_RESOURCE_FLAGS f = D3D12_RESOURCE_FLAG_NONE;
-		if (flag.Has(TextureUsage::RenderTarget)) f |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
-		if (flag.Has(TextureUsage::DepthStencil)) f |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
-		if (flag.Has(TextureUsage::ShaderWrite))  f |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-		if (flag.Has(TextureUsage::DepthStencil) && !flag.Has(TextureUsage::ShaderRead))
-			f |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+		CD3DX12FeatureSupport g_featureSupport;
 
-		return f;
-	}
-
-	// A sampleable depth texture needs three different DXGI formats over one resource:
-	// - A typeless resource (so it can carry both views)
-	// - A typed depth DSV to render into
-	// - A typed float SRV to sample
-	struct DepthFormats { DXGI_FORMAT Resource; DXGI_FORMAT Dsv; DXGI_FORMAT Srv; };
-	static DepthFormats MapDepthFormats(Format f)
-	{
-		switch (f)
+		D3D12_RESOURCE_FLAGS ToD3DFlags(TextureUsageFlag flag)
 		{
-		case Format::D32_FLOAT:         return { DXGI_FORMAT_R32_TYPELESS,   DXGI_FORMAT_D32_FLOAT,         DXGI_FORMAT_R32_FLOAT };
-		case Format::D24_UNORM_S8_UINT: return { DXGI_FORMAT_R24G8_TYPELESS, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS };
-		case Format::D16_UNORM:         return { DXGI_FORMAT_R16_TYPELESS,   DXGI_FORMAT_D16_UNORM,         DXGI_FORMAT_R16_UNORM };
-		default:                        return { ToDXGIFormat(f), ToDXGIFormat(f), ToDXGIFormat(f) };
-		}
-	}
+			D3D12_RESOURCE_FLAGS f = D3D12_RESOURCE_FLAG_NONE;
+			if (flag.Has(TextureUsage::RenderTarget)) f |= D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+			if (flag.Has(TextureUsage::DepthStencil)) f |= D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+			if (flag.Has(TextureUsage::ShaderWrite))  f |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+			if (flag.Has(TextureUsage::DepthStencil) && !flag.Has(TextureUsage::ShaderRead))
+				f |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
 
-	static void ReportLiveObjects()
-	{
+			return f;
+		}
+
+		// A sampleable depth texture needs three different DXGI formats over one resource:
+		// - A typeless resource (so it can carry both views)
+		// - A typed depth DSV to render into
+		// - A typed float SRV to sample
+		struct DepthFormats { DXGI_FORMAT Resource; DXGI_FORMAT Dsv; DXGI_FORMAT Srv; };
+		DepthFormats MapDepthFormats(Format f)
+		{
+			switch (f)
+			{
+			case Format::D32_FLOAT:         return { DXGI_FORMAT_R32_TYPELESS,   DXGI_FORMAT_D32_FLOAT,         DXGI_FORMAT_R32_FLOAT };
+			case Format::D24_UNORM_S8_UINT: return { DXGI_FORMAT_R24G8_TYPELESS, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R24_UNORM_X8_TYPELESS };
+			case Format::D16_UNORM:         return { DXGI_FORMAT_R16_TYPELESS,   DXGI_FORMAT_D16_UNORM,         DXGI_FORMAT_R16_UNORM };
+			default:                        return { utils::ToDXGIFormat(f), utils::ToDXGIFormat(f), utils::ToDXGIFormat(f) };
+			}
+		}
+
+		void ReportLiveObjects()
+		{
 #if KOI_DEBUG
-		ZoneScoped;
+			ZoneScoped;
 
-		Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
-		if (SUCCEEDED(::DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
-		{
-			debug->ReportLiveObjects(
-				DXGI_DEBUG_ALL,
-				DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)
-			);
-		}
+			Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
+			if (SUCCEEDED(::DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
+			{
+				debug->ReportLiveObjects(
+					DXGI_DEBUG_ALL,
+					DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)
+				);
+			}
 #endif
+		}
 	}
 
 	// From DX12Common.h
-	void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line)
+	void internal::ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line)
 	{
 		if (FAILED(hr))
 		{
 			_com_error err(hr);
 
 			KOI_LOG_ERROR("DX_CHECK failed (0x{:08X} - {}): {} at {}:{}",
-				static_cast<u32>(hr), StringUtils::FromWide(err.ErrorMessage()), expr, file, line);
+				static_cast<u32>(hr), utils::FromWide(err.ErrorMessage()), expr, file, line);
 
 			assert(false && "D3D12/DXC/DXGI call failed");
 		}
@@ -206,7 +209,7 @@ namespace koi
 		const DepthFormats depthFmts     = MapDepthFormats(desc.Format);
 		const DXGI_FORMAT resourceFormat = (isDepth && isShaderRead)
 			? depthFmts.Resource
-			: ToDXGIFormat(desc.Format);
+			: utils::ToDXGIFormat(desc.Format);
 
 		auto rd = CD3DX12_RESOURCE_DESC::Tex2D(
 			resourceFormat,
@@ -227,14 +230,14 @@ namespace koi
 
 		if (isDepth)
 		{
-			clearValue.Format               = ToDXGIFormat(desc.Format);
+			clearValue.Format               = utils::ToDXGIFormat(desc.Format);
 			clearValue.DepthStencil.Depth   = 1.0f;
 			clearValue.DepthStencil.Stencil = 0;
 			pClearValue                     = &clearValue;
 		}
 		else if (isRenderTarget)
 		{
-			clearValue.Format   = ToDXGIFormat(desc.Format);
+			clearValue.Format   = utils::ToDXGIFormat(desc.Format);
 			clearValue.Color[0] = 0.0f;
 			clearValue.Color[1] = 0.0f;
 			clearValue.Color[2] = 0.0f;
@@ -249,7 +252,7 @@ namespace koi
 		tex.CurrentState = initialState;
 		if (!desc.DebugName.empty())
 		{
-			const std::wstring wname = StringUtils::ToWide(desc.DebugName);
+			const std::wstring wname = utils::ToWide(desc.DebugName);
 			tex.Resource->SetName(wname.c_str());
 		}
 
@@ -259,7 +262,7 @@ namespace koi
 
 			D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc
 			{
-				.Format        = ToDXGIFormat(desc.Format),
+				.Format        = utils::ToDXGIFormat(desc.Format),
 				.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D,
 				.Flags         = D3D12_DSV_FLAG_NONE,
 			};
@@ -274,7 +277,7 @@ namespace koi
 			// Depth resources are typeless, so the SRV must use the typed float view format
 			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc
 			{
-				.Format                  = isDepth ? depthFmts.Srv : ToDXGIFormat(desc.Format),
+				.Format                  = isDepth ? depthFmts.Srv : utils::ToDXGIFormat(desc.Format),
 				.ViewDimension           = D3D12_SRV_DIMENSION_TEXTURE2D,
 				.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING,
 				.Texture2D               = { .MostDetailedMip = 0, .MipLevels = desc.MipLevels },
@@ -288,7 +291,7 @@ namespace koi
 
 			D3D12_RENDER_TARGET_VIEW_DESC rtvDesc
 			{
-				.Format        = ToDXGIFormat(desc.Format),
+				.Format        = utils::ToDXGIFormat(desc.Format),
 				.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D,
 			};
 			m_device->CreateRenderTargetView(tex.Resource.Get(), &rtvDesc, m_rtvHeap.CpuHandle(tex.RTVIndex));
@@ -324,7 +327,7 @@ namespace koi
 
 		// Align 256 if its a constant buffer
 		const u64 allocSize = desc.Usage.Has(BufferUsage::Constant)
-			? MathUtils::AlignGPU256(desc.Size)
+			? math::AlignGPU256(desc.Size)
 			: desc.Size;
 
 		CD3DX12_HEAP_PROPERTIES heap(heapType);
@@ -385,7 +388,7 @@ namespace koi
 
 		if (!desc.DebugName.empty())
 		{
-			const std::wstring wname = StringUtils::ToWide(desc.DebugName);
+			const std::wstring wname = utils::ToWide(desc.DebugName);
 			buf.Resource->SetName(wname.c_str());
 		}
 
@@ -560,7 +563,7 @@ namespace koi
 			{
 				.SemanticName         = attr.SemanticName.data(),
 				.SemanticIndex        = attr.SemanticIndex,
-				.Format               = ToDXGIFormat(attr.Format),
+				.Format               = utils::ToDXGIFormat(attr.Format),
 				.InputSlot            = attr.InputSlot,
 				.AlignedByteOffset    = attr.ByteOffset,
 				.InputSlotClass       = attr.PerInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
@@ -619,7 +622,7 @@ namespace koi
 			.InputLayout           = { inputElements.data(), static_cast<u32>(desc.VertexLayout.size())},
 			.PrimitiveTopologyType = desc.TopologyType,
 			.NumRenderTargets      = desc.RenderTargetCount,
-			.DSVFormat             = ToDXGIFormat(desc.DepthFormat),
+			.DSVFormat             = utils::ToDXGIFormat(desc.DepthFormat),
 			.SampleDesc            = { desc.SampleCount , 0 },
 		};
 
@@ -630,7 +633,7 @@ namespace koi
 
 		for (u32 i = 0; i < desc.RenderTargetCount; i++)
 		{
-			psoDesc.RTVFormats[i] = ToDXGIFormat(desc.RenderTargetFormats[i]);
+			psoDesc.RTVFormats[i] = utils::ToDXGIFormat(desc.RenderTargetFormats[i]);
 		}
 
 		// Create pipeline/PSO
@@ -639,7 +642,7 @@ namespace koi
 
 		if (pso && !desc.DebugName.empty())
 		{
-			const std::wstring wname = StringUtils::ToWide(std::string(desc.DebugName));
+			const std::wstring wname = utils::ToWide(std::string(desc.DebugName));
 			pso->SetName(wname.c_str());
 		}
 
@@ -837,7 +840,7 @@ namespace koi
 			if (SUCCEEDED(::D3D12CreateDevice(adapter.Get(), MIN_FEATURE_LEVEL,
 				__uuidof(ID3D12Device), nullptr)))
 			{
-				const std::string name = StringUtils::FromWide(desc.Description);
+				const std::string name = utils::FromWide(desc.Description);
 				KOI_LOG_INFO("D3D12 Adapter selected: VID:{:04X} PID:{:04X} - {}",
 					desc.VendorId, desc.DeviceId, name);
 				break;
