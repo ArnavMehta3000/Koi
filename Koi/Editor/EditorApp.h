@@ -8,6 +8,7 @@
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Panels/PanelHost.h"
 #include "Koi/Editor/Selection.h"
+#include "Koi/Editor/StatusBar.h"
 #include <toml++/toml.hpp>
 #include <filesystem>
 #include <optional>
@@ -79,6 +80,7 @@ namespace koi::editor
 	private:
 		void Setup();
 		void DrawMenuBar();
+		void DrawPlayControls();
 		void DrawGizmoMenu();
 		void PollShortcuts();
 		void ReloadAll(const ReloadRequest& request);
@@ -108,12 +110,13 @@ namespace koi::editor
 		EditorConfig                    m_config{};
 		ImGuiLayer                      m_imgui;
 		PanelHost                       m_panels;
+		StatusBar                       m_statusBar;
 		InspectorRegistry               m_inspectors;
 		std::vector<IReloadable*>       m_reloadables;
 		ViewportPanel*                  m_viewportPanel     = nullptr;
 		Selection                       m_selection{};
 		GizmoOptions                    m_gizmos{};
-		std::string                     m_lastCookStatus;  // shown in menubar after Cook click
+		std::string                     m_lastCookStatus;  // last Save/Cook result, shown in the status bar
 		std::optional<ReloadRequest>    m_pendingReload;
 
 		toml::table                     m_snapshot;            // the world as it was when Play was pressed

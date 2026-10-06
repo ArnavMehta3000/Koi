@@ -231,10 +231,24 @@ namespace koi::editor
 		ImGui::MarkIniSettingsDirty();
 	}
 
+	void ImGuiLayer::SetPlayState(PlayState state)
+	{
+		if (state == m_playState) return;
+
+		m_playState = state;
+		ApplyAppearance();
+	}
+
 	void ImGuiLayer::ApplyAppearance()
 	{
 		ImGui::GetStyle().FontScaleMain = m_fontScale;
 		utils::ApplyTheme(m_theme, m_dpiScale);
+
+		if (m_playState != PlayState::Edit)
+		{
+			const EditorPalette& palette = EditorPalette::Get();
+			utils::ApplyPlayTint(ImGui::GetStyle().Colors, m_playState == PlayState::Playing ? palette.Playing : palette.Paused);
+		}
 	}
 
 	// [KoiEditor][Appearance] in imgui.ini; the theme is stored by name so reordering kThemes is safe

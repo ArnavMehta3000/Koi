@@ -5,6 +5,7 @@ namespace koi
 {
 	class CommandList;
 	class Window;
+	enum class PlayState : u8;
 }
 
 namespace koi::editor
@@ -25,6 +26,9 @@ namespace koi::editor
 		// Contributed to whichever menu the editor puts it in
 		void DrawAppearanceMenu();
 
+		// Tints the theme while the game runs; cheap to call every frame
+		void SetPlayState(PlayState state);
+
 	private:
 		void RegisterSettingsHandler();
 		void ApplyAppearance();
@@ -35,6 +39,7 @@ namespace koi::editor
 		f32   m_dpiScale  = 1.0f;
 		f32   m_fontScale = 1.0f;  // on top of the DPI scale, saved in imgui.ini
 		f32   m_fontScaleEdit = 1.0f;  // slider value, applied on release so the menu doesn't resize under the mouse
+		PlayState m_playState{};
 		bool  m_initialized = false;
 	};
 }

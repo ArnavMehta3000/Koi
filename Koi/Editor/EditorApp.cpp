@@ -2,6 +2,7 @@
 #include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/Cooker.h"
 #include "Koi/Editor/EditorApp.h"
+#include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Panels/GridPanel.h"
@@ -23,6 +24,7 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include "Koi/Engine/Runtime/Serializer.h"
@@ -30,6 +32,8 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <IconsFontAwesome6.h>
+#include <imgui_internal.h>
 #include <fstream>
 #include <utility>
 
@@ -321,12 +325,19 @@ namespace koi::editor
 		Engine& engine = Engine::Get();
 
 		const bool gameOwnsKeyboard = engine.IsPlaying() && engine.GetSubsystem<InputManager>().IsGameFocused();
+		m_imgui.SetPlayState(engine.GetPlayState());
 		m_imgui.BeginFrame(gameOwnsKeyboard);
 
 		{
 			KOI_SCOPE("ImGui Panels");
 			ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 			DrawMenuBar();
+			m_statusBar.Draw({
+				.State     = engine.GetPlayState(),
+				.ScenePath = m_game->GetWorld().GetSourcePath(),
+				.Message   = m_lastCookStatus,
+				.Importing = m_importQueue->IsBusy(),
+			});
 			m_panels.DrawAll();
 			PollShortcuts();
 		}
@@ -360,6 +371,18 @@ namespace koi::editor
 		{
 			SaveScene();
 		}
+
+		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_P, ImGuiInputFlags_RouteGlobal))
+		{
+			TogglePause();
+		}
+		else if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_P, ImGuiInputFlags_RouteGlobal))
+		{
+			if (Engine::Get().GetPlayState() == PlayState::Edit)
+				Play();
+			else
+				Stop();
+		}
 	}
 
 	void EditorApp::DrawMenuBar()
@@ -387,31 +410,44 @@ namespace koi::editor
 			ImGui::EndMenu();
 		}
 
-		ImGui::Separator();
+		DrawPlayControls();
+		ImGui::EndMainMenuBar();
+	}
 
-		const PlayState playState = Engine::Get().GetPlayState();
+	void EditorApp::DrawPlayControls()
+	{
+		const PlayState state = Engine::Get().GetPlayState();
+		const EditorPalette& palette = EditorPalette::Get();
 
-		if (ImGui::MenuItem(playState == PlayState::Edit ? "Play" : "Stop"))
+		const f32 width = ImGui::GetFrameHeight() * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+		ImGui::SetCursorPosX(ImMax(ImGui::GetCursorPosX(), (ImGui::GetWindowWidth() - width) * 0.5f));
+
+		if (koi::utils::IconButton(ICON_FA_PLAY, "Play (Ctrl+P)", state == PlayState::Playing, palette.Playing))
 		{
-			if (playState == PlayState::Edit)
+			if (state == PlayState::Edit)
 				Play();
-			else
-				Stop();
-		}
-
-		if (playState != PlayState::Edit)
-		{
-			if (ImGui::MenuItem(playState == PlayState::Paused ? "Resume" : "Pause"))
+			else if (state == PlayState::Paused)
 				TogglePause();
 		}
 
-		if (!m_lastCookStatus.empty())
+		ImGui::BeginDisabled(state == PlayState::Edit);
+		if (koi::utils::IconButton(ICON_FA_PAUSE, "Pause (Ctrl+Shift+P)", state == PlayState::Paused, palette.Paused))
 		{
-			ImGui::Separator();
-			ImGui::TextUnformatted(m_lastCookStatus.c_str());
+			TogglePause();
 		}
+		if (koi::utils::IconButton(ICON_FA_STOP, "Stop (Ctrl+P)"))
+		{
+			Stop();
+		}
+		ImGui::EndDisabled();
 
-		ImGui::EndMainMenuBar();
+		// Amber rule under the menu bar while the game runs
+		if (state != PlayState::Edit)
+		{
+			const ImRect bar = ImGui::GetCurrentWindow()->Rect();
+			ImGui::GetForegroundDrawList(ImGui::GetWindowViewport())->AddLine(ImVec2(bar.Min.x, bar.Max.y - 1.0f), ImVec2(bar.Max.x, bar.Max.y - 1.0f),
+				ImGui::GetColorU32(state == PlayState::Playing ? palette.Playing : palette.Paused), 2.0f);
+		}
 	}
 
 	void EditorApp::DrawGizmoMenu()

@@ -1,4 +1,5 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
@@ -11,8 +12,11 @@
 #include "Koi/Engine/Math/MathSerializer.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/Engine.h"
+#include <IconsFontAwesome6.h>
 #include <imgui.h>
 #include <ImGuizmo.h>
 #include <cmath>
@@ -121,19 +125,26 @@ namespace koi::editor
 		}
 		else
 		{
-			static constexpr const char* kGizmoLabels[] = { "Translate", "Rotate", "Scale" };
-			static constexpr const char* kSpaceLabels[] = { "World", "Local" };
+			static constexpr koi::utils::Segment kGizmoOps[] =
+			{
+				{ ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, "Translate" },
+				{ ICON_FA_ROTATE,                    "Rotate"    },
+				{ ICON_FA_EXPAND,                    "Scale"     },
+			};
+			static constexpr koi::utils::Segment kGizmoSpaces[] =
+			{
+				{ ICON_FA_GLOBE, "World space" },
+				{ ICON_FA_CUBE,  "Local space" },
+			};
 
 			ImGui::SameLine();
-			ImGui::SetNextItemWidth(100.0f);
-			int op = static_cast<int>(m_gizmoOp);
-			if (ImGui::Combo("##gizmoop", &op, kGizmoLabels, IM_ARRAYSIZE(kGizmoLabels)))
+			i32 op = static_cast<i32>(m_gizmoOp);
+			if (koi::utils::SegmentedControl("##gizmoop", op, kGizmoOps))
 				m_gizmoOp = static_cast<GizmoOp>(op);
 
 			ImGui::SameLine();
-			ImGui::SetNextItemWidth(80.0f);
-			int space = static_cast<int>(m_gizmoSpace);
-			if (ImGui::Combo("##gizmospace", &space, kSpaceLabels, IM_ARRAYSIZE(kSpaceLabels)))
+			i32 space = static_cast<i32>(m_gizmoSpace);
+			if (koi::utils::SegmentedControl("##gizmospace", space, kGizmoSpaces))
 				m_gizmoSpace = static_cast<GizmoSpace>(space);
 		}
 
@@ -205,6 +216,15 @@ namespace koi::editor
 					HandlePicking(imageMin.x, imageMin.y, size.x, size.y);
 				}
 			}
+		}
+
+		// Amber frame while the game runs, so play mode can't be mistaken for editing
+		if (const PlayState state = Engine::Get().GetPlayState(); state != PlayState::Edit)
+		{
+			const EditorPalette& palette = EditorPalette::Get();
+			const ImRect inner = ImGui::GetCurrentWindow()->InnerRect;
+			ImGui::GetWindowDrawList()->AddRect(ImVec2(inner.Min.x + 1.0f, inner.Min.y + 1.0f), ImVec2(inner.Max.x - 1.0f, inner.Max.y - 1.0f),
+				ImGui::GetColorU32(state == PlayState::Playing ? palette.Playing : palette.Paused), 0.0f, 2.0f);
 		}
 	}
 

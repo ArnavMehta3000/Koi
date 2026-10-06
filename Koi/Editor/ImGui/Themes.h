@@ -94,7 +94,7 @@ namespace koi::editor
 			.AccentMuted   = HexColor(0x1F5470),
 			.Link          = HexColor(0x60A5FA), // PanelHyperlink
 			.Info          = HexColor(0x5EABDF), // keywords
-			.Success       = HexColor(0x9AA084), // strings
+			.Success       = HexColor(0x5B928C), // comments
 			.Warning       = HexColor(0xB4911B), // ProgressBar IndicatorFillWarning
 			.Error         = HexColor(0xDA736C), // ProgressBar IndicatorFillCritical
 			.Playing       = HexColor(0xC99A45),
@@ -273,6 +273,13 @@ namespace koi::editor
 			ThemeEntry{ "Obsidian", kObsidianPalette, &ApplyObsidianColors, { .HueStart = 0.52f, .Saturation = 0.62f, .SaturationAlt = 0.45f, .Value = 0.90f, .ValueAlt = 0.74f } },
 		};
 		static_assert(kThemes.size() == static_cast<size_t>(Theme::MAX_COUNT), "Theme enum and array size mismatch!");
+
+		// Play mode recolours the focus cues on top of the active theme
+		inline void ApplyPlayTint(ImVec4* colors, const ImVec4& tint)
+		{
+			colors[ImGuiCol_TabSelectedOverline]       = tint;
+			colors[ImGuiCol_TabDimmedSelectedOverline] = WithAlpha(tint, 0.5f);
+		}
 
 		// Sizes are authored at 96 DPI, so sizeScale is the window's content scale
 		inline void ApplyTheme(Theme theme, f32 sizeScale = 1.0f)
