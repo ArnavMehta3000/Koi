@@ -48,31 +48,30 @@ namespace koi::editor
 		}
 	}
 
+	void ImportPanel::OnUpdate()
+	{
+		if (std::exchange(m_focusPending, false))
+			ImGui::SetNextWindowFocus();
+	}
+
 	void ImportPanel::OnDraw()
 	{
 		ZoneScoped;
 
-		if (std::exchange(m_focusPending, false))
-			ImGui::SetNextWindowFocus();
-
-		if (ImGui::Begin(GetName().data()))
+		if (m_queue.Pending().empty() && m_queue.History().empty())
 		{
-			if (m_queue.Pending().empty() && m_queue.History().empty())
-			{
-				ImGui::TextDisabled("Drag images or glTF models from Explorer onto the editor window to import them");
-				ImGui::TextDisabled("PNG, JPG, TGA, BMP, TIFF, DDS and HDR all valid");
-			}
-
-			if (!m_queue.Pending().empty())
-				DrawPending();
-
-			if (!m_queue.History().empty())
-			{
-				ImGui::SeparatorText("Progress");
-				DrawProgress();
-			}
+			ImGui::TextDisabled("Drag images or glTF models from Explorer onto the editor window to import them");
+			ImGui::TextDisabled("PNG, JPG, TGA, BMP, TIFF, DDS and HDR all valid");
 		}
-		ImGui::End();
+
+		if (!m_queue.Pending().empty())
+			DrawPending();
+
+		if (!m_queue.History().empty())
+		{
+			ImGui::SeparatorText("Progress");
+			DrawProgress();
+		}
 	}
 
 	void ImportPanel::DrawDestination(const char* id, std::string& folder)

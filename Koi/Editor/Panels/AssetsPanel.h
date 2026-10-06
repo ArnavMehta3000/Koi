@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Editor/Selection.h"
 #include "Koi/Engine/Interop/EditorPanel.h"
+#include <imgui.h>
 #include <string>
 #include <string_view>
 
@@ -17,6 +18,7 @@ namespace koi::editor
 		AssetsPanel(AssetDatabase& database, Selection& selection, ImportQueue& imports);
 
 		[[nodiscard]] std::string_view GetName() const override { return "Assets"; }
+		[[nodiscard]] ImGuiWindowFlags GetWindowFlags() const override { return ImGuiWindowFlags_MenuBar; }
 		void OnDraw() override;
 
 	private:

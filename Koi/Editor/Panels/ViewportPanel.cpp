@@ -141,83 +141,71 @@ namespace koi::editor
 		ImGui::PopItemFlag();
 	}
 
+	void ViewportPanel::OnUpdate()
+	{
+		m_isHovered = false;  // OnDraw sets it while the image is on screen
+	}
+
 	void ViewportPanel::OnDraw()
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		if (ImGui::Begin("Viewport"))
+		DrawToolbar();
+
+		// Nothing to size a target from when collapsed, and the aspect maths below would divide by zero
+		const ImVec2 avail = ImGui::GetContentRegionAvail();
+		if (avail.x >= 1.0f && avail.y >= 1.0f)
 		{
-			DrawToolbar();
-
-			// Nothing to size a target from when collapsed, and the aspect maths
-			// below would divide by zero
-			const ImVec2 avail = ImGui::GetContentRegionAvail();
-			if (avail.x >= 1.0f && avail.y >= 1.0f)
+			// Scene view always tracks the panel; the fixed modes render at their own size and get scaled to fit below
+			switch (m_cameraMode == ViewportCamera::Scene ? ViewportResolution::FreeAspect : m_resolution)
 			{
-				// Scene view always tracks the panel; the fixed modes render at their
-				// own size and get scaled to fit below
-				switch (m_cameraMode == ViewportCamera::Scene ? ViewportResolution::FreeAspect : m_resolution)
-				{
-					case ViewportResolution::Window:
-						if (const RenderWindow* rw = m_renderer->GetMainRenderWindow())
-						{
-							m_desiredWidth  = rw->GetWidth();
-							m_desiredHeight = rw->GetHeight();
-							break;
-						}
-						[[fallthrough]];  // no window yet, fall back to the panel
-
-					case ViewportResolution::FreeAspect:
-						m_desiredWidth  = static_cast<u32>(avail.x);
-						m_desiredHeight = static_cast<u32>(avail.y);
-						break;
-
-					case ViewportResolution::R1920x1080: m_desiredWidth = 1920; m_desiredHeight = 1080; break;
-					case ViewportResolution::R1280x720:  m_desiredWidth = 1280; m_desiredHeight = 720;  break;
-				}
-
-				if (m_valid)
-				{
-					GfxDevice& device = m_renderer->GetDevice();
-					if (const Texture* tex = device.Get(m_target.ResolvedColorBuffer);
-						tex && tex->SRVIndex != INVALID_DESCRIPTOR)
+				case ViewportResolution::Window:
+					if (const RenderWindow* rw = m_renderer->GetMainRenderWindow())
 					{
-						m_renderer->RequestShaderRead(m_target.ResolvedColorBuffer);
-
-						// Fit the target inside the panel without distorting it; when the
-						// aspects already agree this is the full region
-						const f32 targetAspect = static_cast<f32>(m_target.Width) / static_cast<f32>(m_target.Height);
-						const f32 availAspect  = avail.x / avail.y;
-
-						const ImVec2 size = (targetAspect > availAspect)
-							? ImVec2(avail.x, avail.x / targetAspect)
-							: ImVec2(avail.y * targetAspect, avail.y);
-
-						const ImVec2 cursor = ImGui::GetCursorPos();
-						ImGui::SetCursorPos(ImVec2(cursor.x + (avail.x - size.x) * 0.5f,
-						                           cursor.y + (avail.y - size.y) * 0.5f));
-
-						const ImVec2 imageMin = ImGui::GetCursorScreenPos();
-						const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
-						ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
-
-						m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
-
-						DrawGizmo(imageMin.x, imageMin.y, size.x, size.y);
-						HandlePicking(imageMin.x, imageMin.y, size.x, size.y);
+						m_desiredWidth  = rw->GetWidth();
+						m_desiredHeight = rw->GetHeight();
+						break;
 					}
+					[[fallthrough]];  // no window yet, fall back to the panel
+
+				case ViewportResolution::FreeAspect:
+					m_desiredWidth  = static_cast<u32>(avail.x);
+					m_desiredHeight = static_cast<u32>(avail.y);
+					break;
+
+				case ViewportResolution::R1920x1080: m_desiredWidth = 1920; m_desiredHeight = 1080; break;
+				case ViewportResolution::R1280x720:  m_desiredWidth = 1280; m_desiredHeight = 720;  break;
+			}
+
+			if (m_valid)
+			{
+				GfxDevice& device = m_renderer->GetDevice();
+				if (const Texture* tex = device.Get(m_target.ResolvedColorBuffer);
+					tex && tex->SRVIndex != INVALID_DESCRIPTOR)
+				{
+					m_renderer->RequestShaderRead(m_target.ResolvedColorBuffer);
+
+					// Fit the target inside the panel without distorting it
+					const f32 targetAspect = static_cast<f32>(m_target.Width) / static_cast<f32>(m_target.Height);
+					const f32 availAspect  = avail.x / avail.y;
+
+					const ImVec2 size = (targetAspect > availAspect)
+						? ImVec2(avail.x, avail.x / targetAspect)
+						: ImVec2(avail.y * targetAspect, avail.y);
+
+					const ImVec2 cursor = ImGui::GetCursorPos();
+					ImGui::SetCursorPos(ImVec2(cursor.x + (avail.x - size.x) * 0.5f,
+					                           cursor.y + (avail.y - size.y) * 0.5f));
+
+					const ImVec2 imageMin = ImGui::GetCursorScreenPos();
+					const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
+					ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
+
+					m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
+
+					DrawGizmo(imageMin.x, imageMin.y, size.x, size.y);
+					HandlePicking(imageMin.x, imageMin.y, size.x, size.y);
 				}
 			}
-			else
-			{
-				m_isHovered = false;
-			}
 		}
-		else
-		{
-			m_isHovered = false;
-		}
-		ImGui::End();
-		ImGui::PopStyleVar();
 	}
 
 	void ViewportPanel::DrawGizmo(f32 x, f32 y, f32 width, f32 height)

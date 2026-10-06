@@ -21,21 +21,17 @@ namespace koi::editor
 	{
 		const Entity selected = m_selection->GetEntity();
 
-		ImGui::Begin("Inspector");
-
 		// Selection is exclusive, so an asset here means no entity is selected
 		if (const AssetEntry* asset = m_database->Find(m_selection->GetAsset());
 		    asset && asset->Kind == AssetKind::Material)
 		{
 			m_materials.Draw(*m_database, *asset);
-			ImGui::End();
 			return;
 		}
 
 		if (!selected.is_alive())
 		{
 			ImGui::TextDisabled("Select a node");
-			ImGui::End();
 			return;
 		}
 
@@ -92,7 +88,5 @@ namespace koi::editor
 			ImGui::Spacing();
 			ImGui::PopID();
 		}
-
-		ImGui::End();
 	}
 }

@@ -94,6 +94,7 @@ namespace koi::editor
 		Setup();
 		m_game->HostInit();
 		m_imgui.Init(Engine::Get().GetWindow());
+		m_panels.RegisterSettingsHandler();
 
 		if (!LoadEditorState())
 		{

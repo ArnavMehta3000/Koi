@@ -5,7 +5,7 @@
 
 namespace koi::editor
 {
-	void ProfilerPanel::OnDraw()
+	void ProfilerPanel::OnUpdate()
 	{
 		m_window.LoadFrameData(0, FrameStats::GetLastFrame());
 		m_window.LoadFrameData(1, Engine::Get().GetSubsystem<Renderer>().GetDevice().GetGpuTimers().GetLastFrame());
@@ -16,11 +16,10 @@ namespace koi::editor
 			m_counters.push_back(prof::MakeCounter(counter.Name, counter.Value));
 		}
 		m_window.LoadCounters(m_counters.data(), m_counters.size());
+	}
 
-		if (ImGui::Begin("Profiler", nullptr, ImGuiWindowFlags_NoScrollbar))
-		{
-			m_window.RenderContents();
-		}
-		ImGui::End();
+	void ProfilerPanel::OnDraw()
+	{
+		m_window.RenderContents();
 	}
 }

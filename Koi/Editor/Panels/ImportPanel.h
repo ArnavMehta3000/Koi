@@ -14,6 +14,7 @@ namespace koi::editor
 		ImportPanel(ImportQueue& queue, AssetDatabase& database) : m_queue(queue), m_database(database) {}
 
 		[[nodiscard]] std::string_view GetName() const override { return "Import"; }
+		void OnUpdate() override;
 		void OnDraw() override;
 
 		// Opens the panel and brings it to the front on the next frame

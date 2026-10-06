@@ -1,15 +1,25 @@
 #pragma once
 #include <string_view>
 
+typedef int ImGuiWindowFlags;  // same as imgui.h, which the engine itself doesn't include
+
 namespace koi
 {
+	// The editor owns the panel's window; OnDraw only fills it
 	class IEditorPanel
 	{
 	public:
 		virtual ~IEditorPanel() = default;
 
+		// Window title and ID, so it must be a literal
 		[[nodiscard]] virtual std::string_view GetName() const = 0;
 		virtual void OnDraw() = 0;
+
+		// Every frame while open, just before the window begins (even when docked out of sight)
+		virtual void OnUpdate() {}
+
+		[[nodiscard]] virtual ImGuiWindowFlags GetWindowFlags() const { return 0; }
+		[[nodiscard]] virtual bool HasWindowPadding() const { return true; }
 
 		// Whether this panel can be toggled off
 		[[nodiscard]] virtual bool IsClosable() const { return true; }

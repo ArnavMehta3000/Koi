@@ -161,8 +161,6 @@ namespace koi::editor
 			}
 		};
 
-		ImGui::Begin("World Outline");
-
 		// F2 renames the current selection wherever it ends up in the tree below
 		if (selected.is_alive() && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2))
 		{
@@ -221,7 +219,5 @@ namespace koi::editor
 		}
 
 		if (renumber) Renumber(ecs);
-
-		ImGui::End();
 	}
 }

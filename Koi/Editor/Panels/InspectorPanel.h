@@ -19,6 +19,7 @@ namespace koi::editor
 		}
 
 		[[nodiscard]] std::string_view GetName() const override { return "Inspector"; }
+		[[nodiscard]] bool IsClosable() const override { return false; }
 		void OnDraw() override;
 
 	private:

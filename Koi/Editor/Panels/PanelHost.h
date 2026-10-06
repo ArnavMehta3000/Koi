@@ -7,7 +7,7 @@
 
 namespace koi::editor
 {
-	class PanelHost : public NonCopyable
+	class PanelHost : public NonCopyable, public NonMovable
 	{
 	public:
 		void Add(std::unique_ptr<IEditorPanel> panel);
@@ -21,8 +21,14 @@ namespace koi::editor
 			return ref;
 		}
 
+		// Open/closed state lives in imgui.ini; call once the ImGui context exists
+		void RegisterSettingsHandler();
+
 		void DrawAll();
 		void DrawMenuItems();
+
+	private:
+		[[nodiscard]] IEditorPanel* Find(std::string_view name) const;
 
 	private:
 		std::vector<std::unique_ptr<IEditorPanel>> m_panels;

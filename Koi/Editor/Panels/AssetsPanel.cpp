@@ -84,36 +84,32 @@ namespace koi::editor
 
 	void AssetsPanel::OnDraw()
 	{
-		if (ImGui::Begin("Assets", nullptr, ImGuiWindowFlags_MenuBar))
+		DrawToolbar();
+
+		constexpr ImGuiTableFlags kSplitFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV;
+		const f32 height = ImGui::GetContentRegionAvail().y;
+
+		if (ImGui::BeginTable("Split", 2, kSplitFlags))
 		{
-			DrawToolbar();
+			ImGui::TableSetupColumn("Folders", ImGuiTableColumnFlags_WidthFixed, 190.0f);
+			ImGui::TableSetupColumn("Assets",  ImGuiTableColumnFlags_WidthStretch);
+			ImGui::TableNextRow();
 
-			constexpr ImGuiTableFlags kSplitFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV;
-			const f32 height = ImGui::GetContentRegionAvail().y;
+			ImGui::TableNextColumn();
+			ImGui::BeginChild("FolderTree", ImVec2(0, height));
+			DrawFolderTree();
+			ImGui::EndChild();
 
-			if (ImGui::BeginTable("Split", 2, kSplitFlags))
-			{
-				ImGui::TableSetupColumn("Folders", ImGuiTableColumnFlags_WidthFixed, 190.0f);
-				ImGui::TableSetupColumn("Assets",  ImGuiTableColumnFlags_WidthStretch);
-				ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::BeginChild("AssetList", ImVec2(0, height));
+			DrawAssetTable();
+			ImGui::EndChild();
 
-				ImGui::TableNextColumn();
-				ImGui::BeginChild("FolderTree", ImVec2(0, height));
-				DrawFolderTree();
-				ImGui::EndChild();
-
-				ImGui::TableNextColumn();
-				ImGui::BeginChild("AssetList", ImVec2(0, height));
-				DrawAssetTable();
-				ImGui::EndChild();
-
-				ImGui::EndTable();
-			}
-
-			DrawDeleteModal();
-			ApplyPendingAction();
+			ImGui::EndTable();
 		}
-		ImGui::End();
+
+		DrawDeleteModal();
+		ApplyPendingAction();
 	}
 
 	void AssetsPanel::DrawToolbar()

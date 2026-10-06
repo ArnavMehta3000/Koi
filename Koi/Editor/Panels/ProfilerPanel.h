@@ -16,6 +16,8 @@ namespace koi::editor
 	{
 	public:
 		[[nodiscard]] inline std::string_view GetName() const override { return "Profiler"; }
+		[[nodiscard]] ImGuiWindowFlags GetWindowFlags() const override { return ImGuiWindowFlags_NoScrollbar; }
+		void OnUpdate() override;
 		void OnDraw() override;
 
 	private:

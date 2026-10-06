@@ -52,7 +52,9 @@ namespace koi::editor
 		~ViewportPanel() override;
 
 		[[nodiscard]] std::string_view GetName() const override { return "Viewport"; }
+		void OnUpdate() override;
 		void OnDraw() override;
+		[[nodiscard]] bool HasWindowPadding() const override { return false; }
 		[[nodiscard]] bool IsClosable() const override { return false; }
 
 		[[nodiscard]] inline const ViewportTarget* GetTarget() const { return m_valid ? &m_target : nullptr; }

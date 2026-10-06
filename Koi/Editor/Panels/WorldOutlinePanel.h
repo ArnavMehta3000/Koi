@@ -16,6 +16,7 @@ namespace koi::editor
 		WorldOutlinePanel(AppBase& game, Selection& selection) : m_game(&game), m_selection(&selection) {}
 
 		[[nodiscard]] std::string_view GetName() const override { return "World Outline"; }
+		[[nodiscard]] bool IsClosable() const override { return false; }
 		void OnDraw() override;
 
 	private:

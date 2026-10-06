@@ -62,14 +62,10 @@ namespace koi::editor
 
 	void LogPanel::OnDraw()
 	{
-		if (ImGui::Begin("Log"))
-		{
-			Pull();
-			DrawToolbar();
-			ImGui::Separator();
-			DrawTable();
-		}
-		ImGui::End();
+		Pull();
+		DrawToolbar();
+		ImGui::Separator();
+		DrawTable();
 	}
 
 	void LogPanel::DrawToolbar()
