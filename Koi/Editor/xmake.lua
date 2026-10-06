@@ -5,7 +5,7 @@ target("Koi.Editor")
 	set_kind("static")
 	add_deps("Koi.Engine", "ImGui", "ImGuizmo", "KoiProfiler", { public = true })
 
-	add_packages("directxtex")
+	add_packages("directxtex", "fastgltf", "stb")  -- importers only: the runtime reads Koi's own formats
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_headerfiles("**.h", { public = true })

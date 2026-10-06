@@ -3,14 +3,14 @@
 #include <filesystem>
 #include <memory>
 
-namespace koi
+namespace koi::editor
 {
 	namespace fs = std::filesystem;
 
 	class MeshLoader
 	{
 	public:
-		// Embedded images are only decoded for import; the runtime loads the extracted files by path
+		// Embedded images come back decoded when asked; external ones only as paths
 		static std::unique_ptr<ModelAsset> Load(const fs::path& modelPath, bool decodeEmbeddedImages = false);
 	};
 }

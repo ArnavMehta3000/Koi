@@ -21,7 +21,7 @@ namespace koi
 
 	[[nodiscard]] std::string_view ToString(MaterialTextureSlot slot);
 
-	// .mat.toml contents
+	// What a .kmat decodes to, for today's fixed-slot Standard template
 	struct MaterialSource
 	{
 		std::string Name;

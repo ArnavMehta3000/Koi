@@ -1,6 +1,6 @@
 #include "Koi/Editor/Inspectors/MaterialInspector.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
-#include "Koi/Editor/Assets/MaterialFile.h"
+#include "Koi/Editor/Assets/MaterialWriter.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Runtime/Engine.h"

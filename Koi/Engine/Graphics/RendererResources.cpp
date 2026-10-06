@@ -10,7 +10,7 @@ namespace koi
 	// Not real files: generated textures, keyed so nothing on disk can collide with them
 	constexpr std::string_view kFallbackTextureUri = "koi://fallback/checker";
 	constexpr std::string_view kWhiteTextureUri    = "koi://fallback/white";
-	constexpr std::string_view kFallbackMeshPath   = "engine://Content/Meshes/Box.gltf";
+	constexpr std::string_view kFallbackMeshPath   = "engine://Content/Meshes/Box.kmesh";
 
 	static D3D12_SAMPLER_DESC MakeLinearWrapDesc()
 	{

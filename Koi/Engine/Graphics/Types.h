@@ -6,6 +6,7 @@
 #include "Koi/Engine/Graphics/Format.h"
 #include "Koi/Engine/Math/Math.h"
 #include <array>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -124,6 +125,9 @@ namespace koi
 		Vector2 UV;
 	};
 
+	struct PreparedTexture;
+	struct PreparedMesh;
+
 	struct ImageAsset
 	{
 		std::string Name;
@@ -133,7 +137,21 @@ namespace koi
 		i32 Height        = -1;
 		i32 Channels      = -1;
 		std::vector<koi::byte> Pixels;
+
+		// Set for a .ktex: every mip, already compressed and laid out for upload. Pixels stays empty
+		std::shared_ptr<const PreparedTexture> Prepared;
 	};
+
+	// Where one mip of one array slice sits in a block of upload data. Also stored as-is in .ktex files
+	struct TextureSubresourceLayout
+	{
+		u64 Offset   = 0;
+		u32 RowPitch = 0;
+		u32 NumRows  = 0;  // block rows for compressed formats
+		u32 RowBytes = 0;  // the meaningful part of each row, the rest is padding
+		u32 Reserved = 0;
+	};
+	static_assert(sizeof(TextureSubresourceLayout) == 24);
 
 	struct ImportMaterial
 	{
@@ -189,6 +207,9 @@ namespace koi
 		std::vector<AssetKey> MaterialBindings;  // slot -> material asset, from the mesh sidecar
 		std::vector<ImageAsset> Images;
 		BoundingBox Bounds{ {}, {} };
+
+		// Set for a .kmesh: geometry straight from the file, Meshes and Materials stay empty
+		std::shared_ptr<const PreparedMesh> Prepared;
 	};
 }
 KOI_ENABLE_ENUM_FLAGS(koi::TextureUsage);

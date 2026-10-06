@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/GPUTexture.h"
+#include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -6,9 +7,63 @@
 
 namespace koi
 {
+	namespace
+	{
+		// Nothing in the renderer decodes sRGB yet (the swapchain is UNORM and tonemap writes raw values),
+		// so sRGB textures are viewed as UNORM to keep the look unchanged. Flip once the output encodes sRGB
+		constexpr bool kDecodeSRGB = false;
+
+		Format WithoutSRGB(Format format)
+		{
+			switch (format)
+			{
+				case Format::BC1_UNORM_SRGB:      return Format::BC1_UNORM;
+				case Format::BC2_UNORM_SRGB:      return Format::BC2_UNORM;
+				case Format::BC3_UNORM_SRGB:      return Format::BC3_UNORM;
+				case Format::BC7_UNORM_SRGB:      return Format::BC7_UNORM;
+				case Format::R8G8B8A8_UNORM_SRGB: return Format::R8G8B8A8_UNORM;
+				case Format::B8G8R8A8_UNORM_SRGB: return Format::B8G8R8A8_UNORM;
+				default:                          return format;
+			}
+		}
+
+		GPUTexture UploadPrepared(GfxDevice& device, const ImageAsset& image)
+		{
+			const PreparedTexture& prepared = *image.Prepared;
+			const TextureHeader& header     = *prepared.Header;
+
+			GPUTexture out;
+			out.Width  = header.Width;
+			out.Height = header.Height;
+
+			out.Handle = device.CreateTexture(TextureDesc
+			{
+				.Width        = header.Width,
+				.Height       = header.Height,
+				.DepthOrArray = header.ArraySize,
+				.MipLevels    = header.MipLevels,
+				.Format       = kDecodeSRGB ? header.Format : WithoutSRGB(header.Format),
+				.Usage        = TextureUsage::ShaderRead,
+				.DebugName    = image.Name,
+			});
+
+			GfxDevice::UploadContext& upload = device.GetUploadContext();
+			upload.Begin();
+			upload.UploadTextureSubresources(out.Handle, prepared.Data, prepared.Subresources);
+			upload.End();
+
+			if (const Texture* tex = device.Get(out.Handle))
+				out.SRVIndex = tex->SRVIndex;
+
+			return out;
+		}
+	}
+
 	GPUTexture GPUTexture::Upload(GfxDevice& device, const ImageAsset& image)
 	{
 		ZoneScoped;
+
+		if (image.Prepared) return UploadPrepared(device, image);
 
 		assert(image.Width > 0 && image.Height > 0 && !image.Pixels.empty() && "GPUTexture::Upload: empty image");
 

@@ -2,6 +2,7 @@
 #include "Koi/Engine/Core/Patterns/Match.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include <algorithm>
 #include <cassert>
 #include <cstring>
 
@@ -112,6 +113,15 @@ namespace koi
 		assert(m_device->m_textures.IsValid(dst) && "UploadTexture: invalid destination texture handle");
 
 		m_activeStagingBuffers.push_back(RecordTextureUpload(dst, data, size));
+	}
+
+	void GfxDevice::UploadContext::UploadTextureSubresources(TextureHandle dst, std::span<const byte> data, std::span<const TextureSubresourceLayout> layout)
+	{
+		assert(m_recordDepth > 0 && "UploadTextureSubresources called without a matching Begin()");
+		assert(!data.empty() && !layout.empty() && "UploadTextureSubresources: nothing to upload");
+		assert(m_device->m_textures.IsValid(dst) && "UploadTextureSubresources: invalid destination texture handle");
+
+		m_activeStagingBuffers.push_back(RecordSubresourcesUpload(dst, data, layout));
 	}
 
 	void GfxDevice::UploadContext::End()
@@ -301,6 +311,71 @@ namespace koi
 		const CD3DX12_TEXTURE_COPY_LOCATION dstLoc(tex->Resource.Get(), 0);
 		const CD3DX12_TEXTURE_COPY_LOCATION srcLoc(stagingBuf->Resource.Get(), footprint);
 		m_cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+
+		return staging;
+	}
+
+	BufferHandle GfxDevice::UploadContext::RecordSubresourcesUpload(TextureHandle dst, std::span<const byte> data, std::span<const TextureSubresourceLayout> layout)
+	{
+		ZoneScoped;
+
+		const D3D12_RESOURCE_DESC rd = m_device->m_textures.Get(dst)->Resource->GetDesc();
+		const u32 count = static_cast<u32>(layout.size());
+		assert(count == static_cast<u32>(rd.MipLevels) * rd.DepthOrArraySize && "RecordSubresourcesUpload: layout doesn't cover every subresource");
+
+		std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> footprints(count);
+		std::vector<u32> numRows(count);
+		std::vector<u64> rowBytes(count);
+		u64 totalBytes = 0;
+		m_device->m_device->GetCopyableFootprints(&rd, 0, count, 0, footprints.data(), numRows.data(), rowBytes.data(), &totalBytes);
+
+		BufferHandle staging = m_device->CreateBuffer(BufferDesc
+		{
+			.Size      = totalBytes,
+			.Usage     = BufferUsage::CopySource,
+			.Memory    = MemoryUsage::CpuToGpu,
+			.DebugName = "Texture Upload Staging",
+		});
+
+		Texture* tex       = m_device->m_textures.Get(dst);
+		Buffer* stagingBuf = m_device->m_buffers.Get(staging);
+		assert((stagingBuf && stagingBuf->MappedPtr) && "RecordSubresourcesUpload: staging buffer mapping failed");
+
+		byte* mapped = static_cast<byte*>(stagingBuf->MappedPtr);
+
+		bool sameLayout = totalBytes == data.size();
+		for (u32 i = 0; i < count && sameLayout; ++i)
+		{
+			sameLayout = footprints[i].Offset == layout[i].Offset
+				&& footprints[i].Footprint.RowPitch == layout[i].RowPitch
+				&& numRows[i] == layout[i].NumRows;
+		}
+
+		if (sameLayout)
+		{
+			std::memcpy(mapped, data.data(), data.size());  // the whole point of the .ktex layout
+		}
+		else
+		{
+			KOI_LOG_DEBUG("Texture layout differs from this GPU's footprints, copying it row by row");
+			for (u32 i = 0; i < count; ++i)
+			{
+				const u32 rows  = std::min(numRows[i], layout[i].NumRows);
+				const u64 bytes = std::min<u64>(rowBytes[i], layout[i].RowBytes);
+				for (u32 row = 0; row < rows; ++row)
+				{
+					std::memcpy(mapped + footprints[i].Offset + static_cast<u64>(row) * footprints[i].Footprint.RowPitch,
+						data.data() + layout[i].Offset + static_cast<u64>(row) * layout[i].RowPitch, bytes);
+				}
+			}
+		}
+
+		for (u32 i = 0; i < count; ++i)
+		{
+			const CD3DX12_TEXTURE_COPY_LOCATION dstLoc(tex->Resource.Get(), i);
+			const CD3DX12_TEXTURE_COPY_LOCATION srcLoc(stagingBuf->Resource.Get(), footprints[i]);
+			m_cmdList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+		}
 
 		return staging;
 	}

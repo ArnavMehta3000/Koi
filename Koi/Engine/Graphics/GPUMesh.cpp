@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Assets/MeshFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -9,90 +10,92 @@
 
 namespace koi
 {
+	namespace
+	{
+		BoundingBox BoxFrom(const f32 (&min)[3], const f32 (&max)[3])
+		{
+			const Vector3 lo(min), hi(max);
+			return BoundingBox((lo + hi) * 0.5f, (hi - lo) * 0.5f);
+		}
+
+		void CreateBuffers(GfxDevice& device, GPUMesh& mesh, std::span<const Vertex> vertices, std::span<const u32> indices)
+		{
+			const u64 vbSize = vertices.size_bytes();
+			const u64 ibSize = indices.size_bytes();
+			assert(vbSize > 0 && ibSize > 0 && "GPUMesh::Upload: model has no geometry");
+
+			mesh.VertexBuffer = device.CreateBuffer(BufferDesc
+			{
+				.Size      = vbSize,
+				.Stride    = sizeof(Vertex),
+				.Usage     = BufferUsage::Storage | BufferUsage::CopyDest,
+				.Memory    = MemoryUsage::GpuOnly,
+				.DebugName = "Mesh VB",
+			});
+
+			mesh.IndexBuffer = device.CreateBuffer(BufferDesc
+			{
+				.Size      = ibSize,
+				.Stride    = sizeof(u32),
+				.Usage     = BufferUsage::Index | BufferUsage::CopyDest,
+				.Memory    = MemoryUsage::GpuOnly,
+				.DebugName = "Mesh IB",
+			});
+
+			GfxDevice::UploadContext& upload = device.GetUploadContext();
+			upload.Begin();
+			upload.UploadBuffer(mesh.VertexBuffer, vertices.data(), vbSize);
+			upload.UploadBuffer(mesh.IndexBuffer,  indices.data(),  ibSize);
+			upload.End();
+
+			mesh.VertexBufferSRV = device.Get(mesh.VertexBuffer)->SRVIndex;
+			assert(mesh.VertexBufferSRV != INVALID_DESCRIPTOR && "Vertex buffer has no bindless SRV");
+		}
+
+		// A .kmesh is already one flat vertex and index buffer, so it goes up without any copying
+		GPUMesh UploadPrepared(GfxDevice& device, const ModelAsset& model)
+		{
+			const PreparedMesh& prepared = *model.Prepared;
+
+			GPUMesh mesh;
+			mesh.Bounds = model.Bounds;
+			mesh.DrawItems.reserve(prepared.Submeshes.size());
+			for (const MeshSubmesh& sub : prepared.Submeshes)
+			{
+				mesh.DrawItems.push_back(GPUMeshDraw
+				{
+					.IndexCount   = sub.IndexCount,
+					.IndexOffset  = sub.IndexOffset,
+					.VertexOffset = sub.VertexOffset,
+					.MaterialSlot = sub.MaterialSlot,
+					.Bounds       = BoxFrom(sub.BoundsMin, sub.BoundsMax),
+				});
+			}
+
+			CreateBuffers(device, mesh, prepared.Vertices, prepared.Indices);
+			KOI_LOG_DEBUG("GPUMesh uploaded from {}: {} draws, {} verts, {} indices",
+				model.SourcePath, mesh.DrawItems.size(), prepared.Vertices.size(), prepared.Indices.size());
+			return mesh;
+		}
+	}
+
 	GPUMesh GPUMesh::Upload(GfxDevice& device, const ModelAsset& model)
 	{
 		ZoneScoped;
 
-		GPUMesh mesh;
-		mesh.Bounds = model.Bounds;
-
-		// Submeshes with no material land on a slot one past the last one the model declares
-		const u32 defaultSlot = static_cast<u32>(model.Materials.size());
-
-		// Flatten all mesh vertices and indices into a single pair of buffers.
-		std::vector<Vertex> vertices;
-		std::vector<u32>    indices;
-
-		for (const Mesh& m : model.Meshes)
-		{
-			const u32 baseVertex = static_cast<u32>(vertices.size());
-			const u32 baseIndex  = static_cast<u32>(indices.size());
-
-			vertices.insert(vertices.end(), m.Vertices.begin(), m.Vertices.end());
-			indices.insert(indices.end(),   m.Indices.begin(),  m.Indices.end());
-
-			// Get sub mesh data
-			for (const SubMesh& sub : m.SubMeshes)
-			{
-				const bool validMaterial = sub.MaterialIndex >= 0
-					&& static_cast<size_t>(sub.MaterialIndex) < model.Materials.size();
-
-				mesh.DrawItems.push_back(GPUMeshDraw
-				{
-					.IndexCount   = sub.IndexCount,
-					.IndexOffset  = baseIndex  + sub.IndexOffset,
-					.VertexOffset = static_cast<i32>(baseVertex + sub.VertexOffset),
-					.MaterialSlot = validMaterial ? static_cast<u32>(sub.MaterialIndex) : defaultSlot,
-					.Bounds       = sub.Bounds,
-				});
-			}
-		}
-
-		const u64 vbSize = vertices.size() * sizeof(Vertex);
-		const u64 ibSize = indices.size()  * sizeof(u32);
-		assert(vbSize > 0 && ibSize > 0 && "GPUMesh::Upload: model has no geometry");
-
-		mesh.VertexBuffer = device.CreateBuffer(BufferDesc
-		{
-			.Size      = vbSize,
-			.Stride    = sizeof(Vertex),
-			.Usage     = BufferUsage::Storage | BufferUsage::CopyDest,
-			.Memory    = MemoryUsage::GpuOnly,
-			.DebugName = "Mesh VB",
-		});
-
-		mesh.IndexBuffer = device.CreateBuffer(BufferDesc
-		{
-			.Size      = ibSize,
-			.Stride    = sizeof(u32),
-			.Usage     = BufferUsage::Index | BufferUsage::CopyDest,
-			.Memory    = MemoryUsage::GpuOnly,
-			.DebugName = "Mesh IB",
-		});
-
-		GfxDevice::UploadContext& upload = device.GetUploadContext();
-		upload.Begin();
-		upload.UploadBuffer(mesh.VertexBuffer, vertices.data(), vbSize);
-		upload.UploadBuffer(mesh.IndexBuffer,  indices.data(),  ibSize);
-		upload.End();
-
-		mesh.VertexBufferSRV = device.Get(mesh.VertexBuffer)->SRVIndex;
-		assert(mesh.VertexBufferSRV != INVALID_DESCRIPTOR && "Vertex buffer has no bindless SRV");
-
-		KOI_LOG_DEBUG("GPUMesh geometry uploaded: {} draws, {} verts, {} indices",
-		              mesh.DrawItems.size(), vertices.size(), indices.size());
-
-		return mesh;
+		assert(model.Prepared && "GPUMesh::Upload: meshes only come from .kmesh files");
+		return UploadPrepared(device, model);
 	}
 
-	// Every slot the sidecar bound resolves to a material asset, which owns its own table row and
-	// its own texture references. A mesh that was never imported draws every slot with the fallback
+	// Every slot resolves to a material asset, which owns its own table row and its own texture
+	// references. A slot with no material draws with the fallback
 	void GPUMesh::BindMaterials(GfxDevice& device, const ModelAsset& model)
 	{
 		ZoneScoped;
 		AssetCache<Material>& cache = Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>();
 
-		for (size_t i = 0; i < model.Materials.size(); ++i)
+		const size_t slotCount = model.Prepared->Slots.size();
+		for (size_t i = 0; i < slotCount; ++i)
 		{
 			const AssetKey* key = i < model.MaterialBindings.size() ? &model.MaterialBindings[i] : nullptr;
 
@@ -107,11 +110,6 @@ namespace koi
 		// The slot Upload gave every submesh whose material index was missing or out of range
 		TableSlots.push_back(MaterialTable::kFallbackSlot);
 		SlotPipelines.push_back(PipelineHandle());
-
-		if (model.MaterialBindings.empty() && !model.Materials.empty())
-		{
-			KOI_LOG_WARN("Mesh '{}' has no .mesh.toml sidecar; import it to bind materials", model.SourcePath);
-		}
 
 		KOI_LOG_DEBUG("GPUMesh materials bound: {} slot(s), {} material asset(s)", TableSlots.size(), Materials.size());
 	}

@@ -21,9 +21,6 @@ namespace koi
 		Loaded,        // resident in an AssetCache
 	};
 
-	// Slot -> material bindings, written beside a mesh under its own name
-	inline constexpr std::string_view kMeshSidecarExt = ".mesh.toml";
-
 	// ImGui drag-drop payload id for an asset dragged out of the Assets panel
 	inline constexpr const char* kAssetDragDropType = "KOI_ASSET";
 
@@ -38,11 +35,11 @@ namespace koi
 	{
 		using namespace std::string_view_literals;  // For sv
 
-		inline constexpr std::array kMeshExt    = { ".gltf"sv, ".glb"sv };
-		inline constexpr std::array kTextureExt = { ".png"sv, ".jpg"sv, ".jpeg"sv, ".dds"sv };
+		inline constexpr std::array kMeshExt    = { ".kmesh"sv };
+		inline constexpr std::array kTextureExt = { ".ktex"sv };
 		inline constexpr std::array kShaderExt  = { ".hlsl"sv };
 		inline constexpr std::array kSceneExt    = { ".scene.toml"sv };
-		inline constexpr std::array kMaterialExt = { ".mat.toml"sv };
+		inline constexpr std::array kMaterialExt = { ".kmat"sv };
 	}
 
 	inline constexpr std::array kAssetTypes = std::to_array<AssetTypeInfo>(

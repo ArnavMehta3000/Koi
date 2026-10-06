@@ -1,10 +1,9 @@
 #include "Koi/Engine/Assets/MaterialAsset.h"
+#include "Koi/Engine/Assets/MaterialFile.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include <toml++/toml.hpp>
 
 namespace koi
 {
@@ -15,26 +14,6 @@ namespace koi
 		{
 			"base_color", "metallic_roughness", "normal", "occlusion", "emissive"
 		};
-
-		static ImportMaterial::AlphaMode ParseAlphaMode(std::string_view text)
-		{
-			if (text == "mask")  return ImportMaterial::AlphaMode::Mask;
-			if (text == "blend") return ImportMaterial::AlphaMode::Blend;
-			return ImportMaterial::AlphaMode::Opaque;
-		}
-
-		template<typename View, typename T>
-		void ReadFloats(View node, T& out, size_t count)
-		{
-			const toml::array* array = node.as_array();
-			if (!array) return;
-
-			f32* fields = &out.x;
-			for (size_t i = 0; i < count && i < array->size(); ++i)
-			{
-				fields[i] = static_cast<f32>((*array)[i].value_or(fields[i]));
-			}
-		}
 	}
 
 	std::string_view ToString(MaterialTextureSlot slot)
@@ -91,43 +70,27 @@ namespace koi
 
 	std::unique_ptr<MaterialSource> AssetTraits<Material>::Load(const std::string& vfsPath)
 	{
-		const fs::path diskPath = VirtualFileSystem::Get().TryResolveToDisk(vfsPath).value_or(fs::path(vfsPath));
-
-		toml::table root;
-		try
+		if (AssetFileTypeForPath(vfsPath) != AssetFileType::Material)
 		{
-			root = toml::parse_file(diskPath.string());
-		}
-		catch (const toml::parse_error& e)
-		{
-			KOI_LOG_ERROR("Material '{}' did not parse: {}", diskPath.string(), e.description());
+			KOI_LOG_ERROR("{} isn't a .kmat, and materials can only be loaded from those", vfsPath);
 			return nullptr;
 		}
 
-		auto source = std::make_unique<MaterialSource>();
-		source->Name        = root["name"].value_or(diskPath.stem().string());
-		source->Template    = root["template"].value_or(std::string());
-		source->Mode        = ParseAlphaMode(root["alpha_mode"].value_or(std::string_view("opaque")));
-		source->DoubleSided = root["double_sided"].value_or(false);
+		const std::optional<AssetFile> file = AssetFile::Load(vfsPath);
+		if (!file) return nullptr;
 
-		ImportMaterial::Constants& c = source->Constants;
-		const auto constants = root["constants"];
-		ReadFloats(constants["base_color"], c.BaseColorFactor, 4);
-		ReadFloats(constants["emissive"],   c.EmissiveFactor,  3);
-		c.MetallicFactor    = constants["metallic"].value_or(c.MetallicFactor);
-		c.RoughnessFactor   = constants["roughness"].value_or(c.RoughnessFactor);
-		c.NormalScale       = constants["normal_scale"].value_or(c.NormalScale);
-		c.OcclusionStrength = constants["occlusion_strength"].value_or(c.OcclusionStrength);
-		c.AlphaCutoff       = constants["alpha_cutoff"].value_or(c.AlphaCutoff);
+		const std::optional<MaterialFileContents> contents = ReadMaterialFile(*file, vfsPath);
+		if (!contents) return nullptr;
 
-		const auto textures = root["textures"];
-		for (size_t i = 0; i < kMaterialTextureCount; ++i)
+		const AssetIndex& index = Engine::Get().GetSubsystem<AssetRegistry>().Index();
+		return std::make_unique<MaterialSource>(ToMaterialSource(*contents, [&](const UUID& id)
 		{
-			if (const std::optional<std::string> key = textures[kSlotKeys[i]].value<std::string>())
-				source->Textures[i] = AssetKey(*key);
-		}
+			if (id.is_nil()) return AssetKey();
+			if (const AssetIndexEntry* entry = index.Find(id)) return AssetKey(entry->VirtualPath);
 
-		return source;
+			KOI_LOG_WARN("{} uses texture {}, which isn't in the project anymore", vfsPath, ToString(id));
+			return AssetKey();
+		}));
 	}
 
 	Material AssetTraits<Material>::Upload(GfxDevice& device, const MaterialSource& source)

@@ -117,7 +117,7 @@ namespace koi::editor
 			return;
 		}
 
-		ImGui::TextDisabled("Select the .mat.toml in the Assets panel to edit it");
+		ImGui::TextDisabled("Select the .kmat in the Assets panel to edit it");
 	}
 
 	void CameraInspector::Draw(Entity e)

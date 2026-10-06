@@ -1,63 +1,44 @@
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
-#include "Koi/Engine/Graphics/MeshLoader.h"
-#include "Koi/Engine/IO/VirtualFileSystem.h"
+#include "Koi/Engine/Assets/MeshFile.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include <toml++/toml.hpp>
+#include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi
 {
-	namespace
-	{
-		static void ReadMeshSidecar(const std::string& vfsPath, ModelAsset& model)
-		{
-			const std::string_view extension = AssetExtensionOf(vfsPath);
-			if (extension.empty()) return;
-
-			const std::string sidecarPath = vfsPath.substr(0, vfsPath.size() - extension.size()) + std::string(kMeshSidecarExt);
-
-			const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(sidecarPath);
-			if (!diskPath || !fs::exists(*diskPath)) return;
-
-			toml::table root;
-			try
-			{
-				root = toml::parse_file(diskPath->string());
-			}
-			catch (const toml::parse_error& e)
-			{
-				KOI_LOG_WARN("Mesh sidecar '{}' did not parse: {}", diskPath->string(), e.description());
-				return;
-			}
-
-			const toml::array* slots = root["slot"].as_array();
-			if (!slots) return;
-
-			for (const toml::node& node : *slots)
-			{
-				const toml::table* slot = node.as_table();
-				if (!slot) continue;
-
-				const std::optional<u32>         index = (*slot)["index"].value<u32>();
-				const std::optional<std::string> key   = (*slot)["material"].value<std::string>();
-				if (!index || !key) continue;
-
-				if (*index >= model.MaterialBindings.size()) model.MaterialBindings.resize(*index + 1);
-				model.MaterialBindings[*index] = AssetKey(*key);
-			}
-
-			KOI_LOG_DEBUG("Mesh sidecar '{}': {} slot(s)", sidecarPath, model.MaterialBindings.size());
-		}
-	}
-
 	std::unique_ptr<ModelAsset> AssetTraits<GPUMesh>::Load(const std::string& vfsPath)
 	{
-		std::unique_ptr<ModelAsset> model = MeshLoader::Load(vfsPath);
-		if (model && model->Meshes.empty())
+		if (AssetFileTypeForPath(vfsPath) != AssetFileType::Mesh)
+		{
+			KOI_LOG_ERROR("{} isn't a .kmesh. Import the model in the editor and use what it writes", vfsPath);
 			return nullptr;
+		}
 
-		if (model) ReadMeshSidecar(vfsPath, *model);
+		std::optional<AssetFile> file = AssetFile::Load(vfsPath);
+		if (!file) return nullptr;
 
+		auto model      = std::make_unique<ModelAsset>();
+		model->Prepared = ReadPreparedMesh(std::move(*file), vfsPath);
+		if (!model->Prepared) return nullptr;
+
+		const PreparedMesh& mesh = *model->Prepared;
+		model->SourcePath = vfsPath;
+		model->Bounds     = BoundingBox(
+			Vector3(mesh.Header->BoundsMin) * 0.5f + Vector3(mesh.Header->BoundsMax) * 0.5f,
+			Vector3(mesh.Header->BoundsMax) * 0.5f - Vector3(mesh.Header->BoundsMin) * 0.5f);
+
+		// Each slot names its default material by id; the index knows where that file lives today
+		const AssetIndex& index = Engine::Get().GetSubsystem<AssetRegistry>().Index();
+		for (const MeshMaterialSlot& slot : mesh.Slots)
+		{
+			const UUID id(slot.Material);
+			const AssetIndexEntry* entry = id.is_nil() ? nullptr : index.Find(id);
+			if (!id.is_nil() && !entry)
+				KOI_LOG_WARN("{}: slot '{}' wants material {}, which isn't in the project anymore", vfsPath, mesh.SlotName(slot), ToString(id));
+
+			model->MaterialBindings.push_back(entry ? AssetKey(entry->VirtualPath) : AssetKey());
+		}
 		return model;
 	}
 

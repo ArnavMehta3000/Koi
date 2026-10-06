@@ -15,8 +15,33 @@ namespace koi
 		AssetCache<Material>& Materials() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>(); }
 		GfxDevice&            Device()    { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
 
-		constexpr std::string_view kDefaultMesh     = "engine://Content/Meshes/Box.gltf";
-		constexpr std::string_view kDefaultMaterial = "engine://Content/Materials/Default.mat.toml";
+		constexpr std::string_view kDefaultMesh     = "engine://Content/Meshes/Box.kmesh";
+		constexpr std::string_view kDefaultMaterial = "engine://Content/Materials/Default.kmat";
+
+		// Scenes name binary assets by id, so moving or renaming the file doesn't break them. A missing
+		// asset still hands back an (empty) key, so the entity shows the fallback instead of vanishing
+		AssetKey ReadAssetRef(const toml::table& table, std::string_view what)
+		{
+			if (const std::optional<std::string> id = table["id"].value<std::string>())
+			{
+				if (const AssetIndexEntry* entry = Engine::Get().GetSubsystem<AssetRegistry>().Index().Find(UUIDFromString(*id)))
+					return AssetKey(entry->VirtualPath);
+
+				KOI_LOG_WARN("The scene wants {} {}, which isn't in the project anymore. Showing the fallback", what, *id);
+				return AssetKey();
+			}
+
+			// Hand-written scenes may still name the file
+			return AssetKey(table["path"].value_or(std::string()));
+		}
+
+		void WriteAssetRef(toml::table& table, const AssetKey& key)
+		{
+			if (const AssetIndexEntry* entry = Engine::Get().GetSubsystem<AssetRegistry>().Index().FindByPath(key.Path()))
+				table.insert("id", ToString(entry->Id));
+			else
+				table.insert("path", key.Path());  // generated or unindexed, so the path is all there is
+		}
 
 		// MeshRef is a cache handle rather than plain data, so it cannot depend on Serializer<T>
 		class MeshComponentType final : public IComponentType
@@ -42,10 +67,7 @@ namespace koi
 				const toml::table* meshTable = entityTable[Key()].as_table();
 				if (!meshTable) return;
 
-				const AssetKey key((*meshTable)["path"].value_or(std::string()));
-				if (!key) return;
-
-				const MeshHandle handle = Meshes().Acquire(Device(), key);
+				const MeshHandle handle = Meshes().Acquire(Device(), ReadAssetRef(*meshTable, "mesh"));
 				if (handle) e.set<MeshRef>({ handle });
 			}
 
@@ -55,12 +77,12 @@ namespace koi
 				if (!meshRef) return;
 
 				toml::table meshTable;
-				meshTable.insert("path", Meshes().GetKey(meshRef->Handle).Path());
+				WriteAssetRef(meshTable, Meshes().GetKey(meshRef->Handle));
 				entityTable.insert(Key(), std::move(meshTable));
 			}
 		};
 
-		// Same shape as MeshComponentType: a cache handle, keyed by path in the scene file
+		// Same shape as MeshComponentType: a cache handle, named by id in the scene file
 		class MaterialComponentType final : public IComponentType
 		{
 		public:
@@ -82,10 +104,7 @@ namespace koi
 				const toml::table* table = entityTable[Key()].as_table();
 				if (!table) return;
 
-				const AssetKey key((*table)["path"].value_or(std::string()));
-				if (!key) return;
-
-				const MaterialHandle handle = Materials().Acquire(Device(), key);
+				const MaterialHandle handle = Materials().Acquire(Device(), ReadAssetRef(*table, "material"));
 				if (handle) e.set<MaterialRef>({ handle });
 			}
 
@@ -95,7 +114,7 @@ namespace koi
 				if (!ref) return;
 
 				toml::table table;
-				table.insert("path", Materials().GetKey(ref->Handle).Path());
+				WriteAssetRef(table, Materials().GetKey(ref->Handle));
 				entityTable.insert(Key(), std::move(table));
 			}
 		};

@@ -11,8 +11,7 @@ namespace koi
 
 		using Source = ImageAsset;
 
-		// Decodes a standalone image file. Images embedded in a container have
-		// no file of their own, so they are registered through AssetCache::AcquireFrom instead.
+		// Reads a .ktex. Generated textures have no file, so they come in through AssetCache::AcquireFrom
 		static std::unique_ptr<Source> Load(const std::string& vfsPath);
 		static GPUTexture Upload(GfxDevice& device, const Source& source);
 		static void Destroy(GfxDevice& device, GPUTexture& resource);

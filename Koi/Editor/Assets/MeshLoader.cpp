@@ -1,4 +1,4 @@
-#include "Koi/Engine/Graphics/MeshLoader.h"
+#include "Koi/Editor/Assets/MeshLoader.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -7,11 +7,9 @@
 #include <fastgltf/types.hpp>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
 #include <cstring>
-#include <unordered_map>
 
-namespace koi
+namespace koi::editor
 {
 	namespace
 	{
@@ -29,9 +27,9 @@ namespace koi
 		{
 			fastgltf::Asset* Asset = nullptr;
 			fs::path BasePath;
-			fs::path SourcePath;      // the glTF itself; used to key images embedded inside it
-			std::string VirtualPath;  // the glTF's VFS path
-			std::string VirtualBase;  // ...and its parent, for keying sibling image files
+			fs::path SourcePath;                // the glTF itself; used to key images embedded inside it
+			std::string VirtualPath;            // the glTF's VFS path
+			std::string VirtualBase;            // ...and its parent, for keying sibling image files
 			bool DecodeEmbeddedImages = false;  // import only: the runtime reads extracted files instead
 
 			// glTF image index -> index into ModelAsset::Images
@@ -50,7 +48,12 @@ namespace koi
 		ZoneScoped;
 
 		fs::path path;
-		if (std::optional<fs::path> resolveResult = VirtualFileSystem::Get().TryResolveToDisk(modelPath.string()))
+		std::error_code ec;
+		if (modelPath.is_absolute() && fs::exists(modelPath, ec))
+		{
+			path = modelPath;  // a file being imported from anywhere on disk
+		}
+		else if (std::optional<fs::path> resolveResult = VirtualFileSystem::Get().TryResolveToDisk(modelPath.string()))
 		{
 			path = *resolveResult;
 		}

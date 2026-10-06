@@ -5,6 +5,7 @@
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/RHI/PipelineDesc.h"
 #include <queue>
+#include <span>
 #include <variant>
 #include <vector>
 
@@ -29,6 +30,9 @@ namespace koi
 			void Begin();
 			void UploadBuffer(BufferHandle dst, const void* data, u64 size);
 			void UploadTexture(TextureHandle dst, const void* data, u64 size);
+
+			// Every subresource at once, from data already laid out as described (a .ktex payload)
+			void UploadTextureSubresources(TextureHandle dst, std::span<const byte> data, std::span<const TextureSubresourceLayout> layout);
 			void End();
 
 			// Deferred -> takes ownership of data, submitted at the next Renderer::BeginFrame.
@@ -47,6 +51,7 @@ namespace koi
 
 			[[nodiscard]] BufferHandle RecordBufferUpload(BufferHandle dst, const void* data, u64 size);
 			[[nodiscard]] BufferHandle RecordTextureUpload(TextureHandle dst, const void* data, u64 size);
+			[[nodiscard]] BufferHandle RecordSubresourcesUpload(TextureHandle dst, std::span<const byte> data, std::span<const TextureSubresourceLayout> layout);
 
 			GfxDevice*                        m_device               = nullptr;
 			ComPtr<dx12::CommandQueue>        m_copyQueue;

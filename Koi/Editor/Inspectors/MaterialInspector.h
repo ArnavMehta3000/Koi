@@ -6,7 +6,7 @@ namespace koi::editor
 	class AssetDatabase;
 	struct AssetEntry;
 
-	// Edits a .mat.toml in place. Which fields appear, and in what order, comes from the
+	// Edits a .kmat in place. Which fields appear, and in what order, comes from the
 	// material's template rather than from this file
 	class MaterialInspector
 	{
