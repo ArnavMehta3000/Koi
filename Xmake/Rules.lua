@@ -1,3 +1,5 @@
+includes("ShaderRule.lua")
+
 -- A Koi game is always its own executable. With the editor it links Koi.Editor and bakes in
 -- its source dirs. Standalone it runs from cooked content beside the exe (or the rundir)
 rule("KoiGame")
@@ -17,6 +19,11 @@ rule("KoiGame")
 			path.join(root, "Content/**.hlsl"),
 			path.join(root, "Content/**.gltf"))
 
+		local shaders = path.join(root, "Content", "Shaders", "Shaders.json")
+		if os.isfile(shaders) then
+			target:add("files", shaders, { rule = "KoiShaders", koi_scheme = "project" })
+		end
+
 		if with_editor then
 			target:set("basename", target:name() .. "-Editor")
 			target:add("deps", "Koi.Editor")
@@ -31,6 +38,18 @@ rule("KoiGame")
 				target:add("rules", "win.sdk.application")
 			end
 		end
+	end)
+
+	-- The editor mounts each target's compiled shaders beside its source tree. autogendir() is relative to
+	-- the repo, and the editor runs from elsewhere, hence absolute
+	on_config(function(target)
+		local _we = get_config("WithEditor")
+		if not (_we == 1 or _we == "1" or _we == true) then return end
+
+		local engine = assert(target:dep("Koi.Engine"), "%s doesn't depend on Koi.Engine", target:name())
+		target:add("defines",
+			'KOI_ENGINE_BUILD_DIR="'  .. path.unix(path.absolute(path.join(engine:autogendir(), "Built"), os.projectdir())) .. '"',
+			'KOI_PROJECT_BUILD_DIR="' .. path.unix(path.absolute(path.join(target:autogendir(), "Built"), os.projectdir())) .. '"')
 	end)
 
 	-- `xmake install <Game>` assembles a self-contained folder: exe + cooked Engine/ + Project/

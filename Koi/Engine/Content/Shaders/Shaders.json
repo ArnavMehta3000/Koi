@@ -1,0 +1,15 @@
+{
+	"shaders": [
+		{ "source": "DebugLineVS.hlsl" },
+		{ "source": "DebugLinePS.hlsl" },
+		{ "source": "GBufferVS.hlsl" },
+		{ "source": "GBufferPS.hlsl" },
+		{ "source": "GridVS.hlsl" },
+		{ "source": "GridPS.hlsl" },
+		{ "source": "LightingVS.hlsl" },
+		{ "source": "LightingPS.hlsl" },
+		{ "source": "ShadowVS.hlsl" },
+		{ "source": "TonemapVS.hlsl" },
+		{ "source": "TonemapPS.hlsl" }
+	]
+}

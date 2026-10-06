@@ -44,4 +44,5 @@ target("Koi.Engine")
 	end
 
 	add_extrafiles("Content/Shaders/**.hlsl")
+	add_files("Content/Shaders/Shaders.json", { rule = "KoiShaders", koi_scheme = "engine" })
 target_end()

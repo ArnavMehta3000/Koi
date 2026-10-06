@@ -18,15 +18,17 @@ namespace
 		return std::make_unique<koi::editor::EditorApp>(std::move(game), config);
 	}
 
-	// KOI_ENGINE_DIR comes from the generated config header, KOI_PROJECT_* from the KoiGame rule
+	// KOI_ENGINE_DIR comes from the generated config header, KOI_PROJECT_* and KOI_*_BUILD_DIR from the KoiGame rule
 	koi::internal::LaunchDesc Launch()
 	{
 		return
 		{
-			.EngineDir   = KOI_ENGINE_DIR,
-			.ProjectDir  = KOI_PROJECT_DIR,
-			.ProjectFile = KOI_PROJECT_FILE,
-			.Adapter     = MakeEditorHost,
+			.EngineDir       = KOI_ENGINE_DIR,
+			.ProjectDir      = KOI_PROJECT_DIR,
+			.ProjectFile     = KOI_PROJECT_FILE,
+			.EngineBuildDir  = KOI_ENGINE_BUILD_DIR,
+			.ProjectBuildDir = KOI_PROJECT_BUILD_DIR,
+			.Adapter         = MakeEditorHost,
 		};
 	}
 }

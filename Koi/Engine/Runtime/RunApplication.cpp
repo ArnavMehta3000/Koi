@@ -66,16 +66,19 @@ namespace koi::internal
 		};
 	}
 
-	// Editor: source trees are baked into the launcher
+	// Editor: source trees are baked into the launcher, with the build output (compiled shaders) behind them
 	static void MountSourceTree(const LaunchDesc& desc)
 	{
+		std::vector<fs::path> engineRoots  = { desc.EngineDir,  desc.EngineBuildDir  };
+		std::vector<fs::path> projectRoots = { desc.ProjectDir, desc.ProjectBuildDir };
+
 		auto& vfs = VirtualFileSystem::Get();
-		vfs.Mount("engine",  std::make_unique<FilesystemMount>(desc.EngineDir));
-		vfs.Mount("project", std::make_unique<FilesystemMount>(desc.ProjectDir));
+		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoots));
+		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
 
 		KOI_LOG_DEBUG("Source VFS mounts:");
-		KOI_LOG_DEBUG("\tengine  <- {}", desc.EngineDir.string());
-		KOI_LOG_DEBUG("\tproject <- {}", desc.ProjectDir.string());
+		KOI_LOG_DEBUG("\tengine  <- {} (+ {})", desc.EngineDir.string(),  desc.EngineBuildDir.string());
+		KOI_LOG_DEBUG("\tproject <- {} (+ {})", desc.ProjectDir.string(), desc.ProjectBuildDir.string());
 	}
 
 	// Runtime: cooked content is laid out as <root>/Engine + <root>/Project, where root is

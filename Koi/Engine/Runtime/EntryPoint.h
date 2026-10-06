@@ -42,9 +42,11 @@ namespace koi::internal
 	// Editor defines them and runtime leave them empty to find cooked content in the sam dir
 	struct LaunchDesc
 	{
-		std::filesystem::path EngineDir;    // <repo>/Koi/Engine (editor only)
-		std::filesystem::path ProjectDir;   // game source root (editor only)
-		std::filesystem::path ProjectFile;  // default project TOML; -p overrides
+		std::filesystem::path EngineDir;        // <repo>/Koi/Engine (editor only)
+		std::filesystem::path ProjectDir;       // game source root (editor only)
+		std::filesystem::path ProjectFile;      // default project TOML; -p overrides
+		std::filesystem::path EngineBuildDir;   // xmake output (compiled shaders) mounted beside EngineDir (editor only)
+		std::filesystem::path ProjectBuildDir;  // same, beside ProjectDir
 		HostAdapter Adapter = nullptr;
 	};
 

@@ -32,11 +32,19 @@ namespace koi
 	// *VS -> Vertex, *PS -> Pixel, etc
 	[[nodiscard]] ShaderType InferShaderTypeFromName(std::string_view path);
 
-	// Order sensitive, so callers must list their defines consistently
+	// Sorts by name first
 	[[nodiscard]] u64 HashShaderDefines(std::span<const ShaderDefine> defines);
 
+	enum class ShaderBuildState : u8
+	{
+		Missing,   // not in any Shaders.json
+		Stale,     // a source or include changed since xmake last built it
+		UpToDate,
+	};
+
 	// Owns the bytecode of every shader variant loaded, keyed by source path, stage and defines
-	// Editor builds compile "<path>.hlsl" on demand, runtime builds read the cooked "<path>.cso"
+	// Prebuilt variants come from <scheme>://Shaders/Manifest.toml (written by the KoiShaders xmake rule)
+	// Where the .hlsl is on disk too (the editor), a stale or unlisted shader is compiled on the spot
 	class ShaderCache : public NonCopyable
 	{
 	public:
@@ -58,6 +66,9 @@ namespace koi
 		// Drops every entry, so the next GetShader recompiles
 		void InvalidateAll();
 
+		// How the build output compares to the sources, across every variant of this shader
+		[[nodiscard]] ShaderBuildState GetBuildState(std::string_view virtualPathNoExt);
+
 	private:
 		struct Dependency
 		{
@@ -71,10 +82,22 @@ namespace koi
 			std::vector<Dependency> Dependencies;  // the source itself, then everything it includes
 		};
 
+		// One record of a Manifest.toml, all paths virtual
+		struct BuiltShader
+		{
+			std::string              Bytecode;
+			std::vector<std::string> Dependencies;  // the source, then its includes
+		};
+
 		ShaderCache() = default;
 
+		void LoadManifests();
+
 		[[nodiscard]] bool LoadBytecode(const ShaderKey& key, std::span<const ShaderDefine> defines, Entry& outEntry) const;
-		[[nodiscard]] bool LoadCooked(const ShaderKey& key, Entry& outEntry) const;
+		[[nodiscard]] bool LoadBuilt(const BuiltShader& built, bool trackDependencies, Entry& outEntry) const;
+		[[nodiscard]] bool Compile(const ShaderKey& key, std::span<const ShaderDefine> defines, const fs::path& source, Entry& outEntry) const;
+
+		[[nodiscard]] static bool IsStale(const BuiltShader& built);
 
 		// The first dependency that no longer matches its recorded timestamp, or null if none
 		[[nodiscard]] static const fs::path* FindChangedDependency(const Entry& entry);
@@ -82,6 +105,8 @@ namespace koi
 		static void AddDependency(Entry& entry, const fs::path& path);
 
 	private:
-		std::unordered_map<ShaderKey, Entry, ShaderKey::Hash> m_entries;
+		std::unordered_map<ShaderKey, Entry, ShaderKey::Hash>       m_entries;
+		std::unordered_map<ShaderKey, BuiltShader, ShaderKey::Hash> m_built;
+		bool                                                        m_manifestsLoaded = false;
 	};
 }
