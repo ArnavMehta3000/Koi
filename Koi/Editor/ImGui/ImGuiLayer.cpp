@@ -82,7 +82,7 @@ namespace koi::editor
 		io.ConfigDpiScaleFonts     = true;  // style.FontScaleDpi tracks the viewport's monitor
 		io.ConfigDpiScaleViewports = true;  // platform windows scale with it too
 
-		m_theme    = Theme::CatppuccinMocha;
+		m_theme    = Theme::Zero;
 		m_dpiScale = window.GetContentScale();
 		ImGui::GetStyle().FontScaleDpi = m_dpiScale;
 		utils::ApplyTheme(m_theme, m_dpiScale);
