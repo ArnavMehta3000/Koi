@@ -18,9 +18,13 @@
 #include <string_view>
 #include <system_error>
 
-// Koi/Editor/Content/DefaultLayout.ini, linked in as an object by xmake's utils.bin2obj rule
+// Koi/Editor/Content files, linked in as objects by xmake's utils.bin2obj rule
 extern "C" const char _binary_DefaultLayout_ini_start[];
 extern "C" const char _binary_DefaultLayout_ini_end[];
+extern "C" const char _binary_MapleMonoRegular_ttf_start[];
+extern "C" const char _binary_MapleMonoRegular_ttf_end[];
+extern "C" const char _binary_FontAwesomeSolid_ttf_start[];
+extern "C" const char _binary_FontAwesomeSolid_ttf_end[];
 
 namespace koi::editor
 {
@@ -30,6 +34,23 @@ namespace koi::editor
 		{
 			return std::string_view(_binary_DefaultLayout_ini_start,
 				static_cast<size_t>(_binary_DefaultLayout_ini_end - _binary_DefaultLayout_ini_start));
+		}
+
+		// The atlas reads the embedded data for its whole lifetime, so it must not take ownership
+		static void AddEmbeddedFont(const char* start, const char* end, f32 sizePixels, ImFontConfig config)
+		{
+			config.FontDataOwnedByAtlas = false;
+			ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<char*>(start), static_cast<int>(end - start), sizePixels, &config);
+		}
+
+		static void LoadFonts(f32 sizePixels)
+		{
+			AddEmbeddedFont(_binary_MapleMonoRegular_ttf_start, _binary_MapleMonoRegular_ttf_end, sizePixels, {});
+
+			ImFontConfig icons;
+			icons.MergeMode        = true;
+			icons.GlyphMinAdvanceX = sizePixels;  // fixed-width icons line up in lists
+			AddEmbeddedFont(_binary_FontAwesomeSolid_ttf_start, _binary_FontAwesomeSolid_ttf_end, sizePixels * 0.85f, icons);
 		}
 
 		static void SrvAlloc(ImGui_ImplDX12_InitInfo* /*info*/,
@@ -87,8 +108,9 @@ namespace koi::editor
 		ImGui::GetStyle().FontScaleDpi = m_dpiScale;
 		utils::ApplyTheme(m_theme, m_dpiScale);
 
-		ImGui::GetStyle().FontSizeBase = 13.0f;
-		io.Fonts->AddFontDefaultVector();
+		constexpr f32 kFontSize = 14.0f;
+		ImGui::GetStyle().FontSizeBase = kFontSize;
+		LoadFonts(kFontSize);
 
 		// If there is no local layout file, load default from memory
 		const char* iniPath = io.IniFilename ? io.IniFilename : "imgui.ini";

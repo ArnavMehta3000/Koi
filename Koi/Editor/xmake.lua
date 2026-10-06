@@ -9,11 +9,13 @@ target("Koi.Editor")
 	add_syslinks("ole32", "d3d11", "dxgi", { public = true })  -- COM for WIC decoding, D3D11 for GPU BC6H/BC7
 
 	add_includedirs("$(projectdir)", { public = true })
+	add_includedirs("$(projectdir)/External/IconFontCppHeaders", { public = true })
 	add_headerfiles("**.h", { public = true })
 	add_files("**.cpp")
 
 	add_rules("utils.bin2obj")
 	add_files("Content/DefaultLayout.ini", { rule = "utils.bin2obj" })
+	add_files("Content/Fonts/*.ttf", { rule = "utils.bin2obj" })
 target_end()
 
 end
