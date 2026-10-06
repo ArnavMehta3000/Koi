@@ -1,8 +1,8 @@
 #include "Koi/Engine/Graphics/GPUTexture.h"
+#include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include <cassert>
 
 namespace koi

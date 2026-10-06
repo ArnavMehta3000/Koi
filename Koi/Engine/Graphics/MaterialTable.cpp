@@ -1,5 +1,4 @@
 #include "Koi/Engine/Graphics/MaterialTable.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include <cassert>
 
 namespace koi

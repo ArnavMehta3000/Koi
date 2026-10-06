@@ -1,13 +1,31 @@
 #include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Interop/AppHost.h"
+#include "Koi/Engine/Platform/InputManager.h"
+#include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/Subsystems.h"
 #include <cassert>
 
 namespace koi
 {
+	// Declaration order is init order | shutdown runs in reverse
+	struct Engine::Subsystems : SubsystemSet<InputManager, Renderer, AssetRegistry> {};
+
+	template <typename T>
+	T& Engine::GetSubsystem()
+	{
+		return m_systems->Get<T>();
+	}
+
+	template InputManager&  Engine::GetSubsystem<InputManager>();
+	template Renderer&      Engine::GetSubsystem<Renderer>();
+	template AssetRegistry& Engine::GetSubsystem<AssetRegistry>();
+
 	Engine::Engine()
 	{
 		ZoneScoped;
@@ -17,7 +35,8 @@ namespace koi
 
 		KOI_LOG_INFO("Engine initializing");
 
-		m_systems.ConstructAll();
+		m_systems = std::make_unique<Subsystems>();
+		m_systems->ConstructAll();
 		KOI_LOG_DEBUG("Engine subsystems constructed");
 
 		ComponentRegistry::Get().RegisterEngineComponents();
@@ -30,7 +49,7 @@ namespace koi
 		// Runs here, not at the end of RunApp: the host outlives RunApp and releases GPU
 		// resources in its own destructor, so the device has to still be alive for it
 		GfxDevice& device = GetSubsystem<Renderer>().GetDevice();
-		m_systems.ShutdownAll(device);
+		m_systems->ShutdownAll(device);
 		KOI_LOG_DEBUG("Engine subsystems shut down");
 
 		m_window.reset();
@@ -44,7 +63,7 @@ namespace koi
 		const AppCreateDesc& desc = host.GetDesc();
 		const WindowDesc& mainWndDesc = desc.WindowDesc;
 
-		m_window.emplace(mainWndDesc);
+		m_window = std::make_unique<Window>(mainWndDesc);
 		Window& window = *m_window;
 
 		host.SetWindow(window);
@@ -55,7 +74,7 @@ namespace koi
 			.VSync          = mainWndDesc.VSync,
 			.Input          = desc.Input,
 		};
-		m_systems.InitAll(initCtx);
+		m_systems->InitAll(initCtx);
 		KOI_LOG_DEBUG("Engine subsystems initialized");
 
 		window.SetCloseCallback([this]() { RequestExit(); });

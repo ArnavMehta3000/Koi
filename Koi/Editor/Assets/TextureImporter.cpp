@@ -1,4 +1,6 @@
 #include "Koi/Editor/Assets/TextureImporter.h"
+#include "Koi/Engine/Assets/AssetData.h"
+#include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <d3d11.h>

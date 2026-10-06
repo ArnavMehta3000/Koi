@@ -1,7 +1,7 @@
 #pragma once
-#include "Koi/Engine/Assets/MaterialAsset.h"
+#include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Graphics/Types.h"
-#include "Koi/Engine/Graphics/GPUSceneTypes.h"
+#include "Koi/Engine/Math/MathTypes.h"
 #include <vector>
 
 namespace koi

@@ -1,16 +1,16 @@
 #pragma once
-#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Platform/InputManager.h"
-#include "Koi/Engine/Platform/Window.h"
-#include "Koi/Engine/Runtime/Subsystems.h"
 #include "Koi/Engine/Runtime/Timer.h"
-#include <optional>
+#include <memory>
+#include <string_view>
 
 namespace koi
 {
+	class AssetRegistry;
 	class IAppHost;
+	class InputManager;
+	class Renderer;
+	class Window;
 
 	enum class PlayState : u8
 	{
@@ -53,7 +53,8 @@ namespace koi
 		[[nodiscard]] inline Window&       GetWindow()       { return *m_window; }
 		[[nodiscard]] inline const Window& GetWindow() const { return *m_window; }
 
-		template <typename T> [[nodiscard]] inline T& GetSubsystem() { return m_systems.Get<T>(); }
+		// Instantiated in Engine.cpp for each subsystem; include the subsystem's own header to use it
+		template <typename T> [[nodiscard]] T& GetSubsystem();
 
 		[[nodiscard]] Stats GetStats() const;
 
@@ -70,11 +71,10 @@ namespace koi
 	private:
 		static inline Engine* s_instance = nullptr;
 
-		// Declaration order is init order | shutdown runs in reverse
-		using Subsystems = SubsystemSet<InputManager, Renderer, AssetRegistry>;
+		struct Subsystems;
 
-		std::optional<Window> m_window;
-		Subsystems            m_systems;
+		std::unique_ptr<Window>     m_window;
+		std::unique_ptr<Subsystems> m_systems;
 
 		IAppHost* m_host = nullptr;  // valid for the duration of RunApp
 
@@ -82,4 +82,8 @@ namespace koi
 		bool      m_isRunning = true;
 		PlayState m_playState = PlayState::Edit;
 	};
+
+	extern template InputManager&  Engine::GetSubsystem<InputManager>();
+	extern template Renderer&      Engine::GetSubsystem<Renderer>();
+	extern template AssetRegistry& Engine::GetSubsystem<AssetRegistry>();
 }

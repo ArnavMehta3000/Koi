@@ -1,12 +1,16 @@
 #include "Koi/Engine/Assets/MaterialAsset.h"
 #include "Koi/Engine/Assets/MaterialFile.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Graphics/GPUTexture.h"
+#include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi
 {
+	static_assert(AssetType<Material>, "AssetTraits<Material> does not satisfy AssetType");
+
 	namespace
 	{
 		// The [textures] key each slot is written under

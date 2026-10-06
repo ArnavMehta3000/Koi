@@ -1,7 +1,6 @@
 #include "Koi/Engine/Graphics/RHI/CommandQueue.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
 #include <cassert>
 
 namespace koi

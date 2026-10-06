@@ -2,7 +2,6 @@
 #include "Koi/Engine/Diagnostics/FrameStats.h"
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include <KoiProfiler.h>
-#include <string>
 #include <vector>
 
 template <>

@@ -3,7 +3,6 @@
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
-#include <imgui.h>
 
 namespace game
 {

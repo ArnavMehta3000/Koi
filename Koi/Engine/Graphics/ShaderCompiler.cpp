@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <span>
+#include <spdlog/fmt/xchar.h>
 #include <unordered_map>
 
 namespace koi

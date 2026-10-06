@@ -1,7 +1,11 @@
 #pragma once
-#include "Koi/Engine/Graphics/Types.h"
 #include <filesystem>
 #include <memory>
+
+namespace koi
+{
+	struct ModelAsset;
+}
 
 namespace koi::editor
 {

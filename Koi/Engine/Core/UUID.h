@@ -1,6 +1,7 @@
 #pragma once
-#include "Koi/Engine/Core/Types.h"
 #include <stduuid/uuid.h>
+#include <string>
+#include <string_view>
 
 namespace koi
 {

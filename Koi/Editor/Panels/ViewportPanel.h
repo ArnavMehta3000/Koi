@@ -3,7 +3,8 @@
 #include "Koi/Engine/Interop/ViewportTarget.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Editor/EditorCameraController.h"
-#include <toml++/toml.hpp>
+
+namespace toml { inline namespace v3 { class table; } }
 
 namespace koi
 {

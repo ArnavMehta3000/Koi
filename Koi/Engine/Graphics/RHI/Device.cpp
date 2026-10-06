@@ -3,6 +3,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <comdef.h>
 #include <cassert>

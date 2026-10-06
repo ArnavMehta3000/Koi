@@ -2,6 +2,7 @@
 #include "Koi/Editor/Assets/MeshLoader.h"
 #include "Koi/Editor/Assets/TextureImporter.h"
 #include "Koi/Engine/Assets/MaterialFile.h"
+#include "Koi/Engine/Assets/MeshFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"

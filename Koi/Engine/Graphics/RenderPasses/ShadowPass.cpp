@@ -1,10 +1,11 @@
 #include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include <cassert>
 
 namespace koi

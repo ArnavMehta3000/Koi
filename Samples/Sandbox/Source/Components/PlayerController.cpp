@@ -4,7 +4,6 @@
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Math/Scalar.h"
-#include <numbers>
 
 void PlayerControllerSystem::Each(const koi::SystemContext& ctx, koi::Entity, koi::Transform& xform, const PlayerController& controller)
 {

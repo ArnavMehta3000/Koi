@@ -1,7 +1,7 @@
 #pragma once
-#include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
-#include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/Math/Math.h"
 #include <vector>
 
 namespace koi

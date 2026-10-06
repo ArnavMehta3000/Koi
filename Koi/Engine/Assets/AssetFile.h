@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Engine/Core/EnumFlags.h"
 #include "Koi/Engine/Core/Macros.h"
+#include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Core/UUID.h"
 #include <array>
 #include <filesystem>

@@ -2,7 +2,6 @@
 #include "Components/PlayerController.h"
 #include "Components/Spin.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Interop/ReflectInspector.h"
 #include "Koi/Engine/Platform/InputManager.h"

@@ -1,5 +1,7 @@
 #include "Koi/Engine/Graphics/MeshGather.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Runtime/Engine.h"

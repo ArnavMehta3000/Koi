@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Math/Math.h"
+#include "Koi/Engine/Math/MathTypes.h"
 #include "Koi/Engine/Platform/InputActions.h"
 #include "Koi/Engine/Platform/InputCodes.h"
 #include "Koi/Engine/Runtime/Subsystems.h"

@@ -2,9 +2,9 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Interop/EditorContext.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi

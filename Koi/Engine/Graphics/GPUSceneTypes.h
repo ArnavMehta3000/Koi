@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Math/Math.h"
+#include "Koi/Engine/Math/MathTypes.h"
 
 namespace koi
 {

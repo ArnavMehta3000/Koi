@@ -4,7 +4,6 @@
 #include "Koi/Engine/Interop/RendererOverlay.h"
 #include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Interop/Reloadable.h"
-#include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Editor/ImGui/ImGuiLayer.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Panels/PanelHost.h"

@@ -3,7 +3,6 @@
 #include "Koi/Engine/Interop/ReflectInspector.h"
 #include "Koi/Engine/Math/Scalar.h"
 #include <algorithm>
-#include <imgui.h>
 
 namespace game
 {

@@ -1,5 +1,4 @@
 #pragma once
-#include "Koi/Engine/Logging/Logger.h"
 #include <CLI/CLI.hpp>
 #include <filesystem>
 #include <functional>
@@ -20,19 +19,7 @@ namespace koi
 
 		virtual ~CommandLine() = default;
 
-		int ParseArgs(int argc, char* argv[])
-		{
-			try
-			{
-				CLI::App::parse(argc, argv);
-			}
-			catch (const std::exception& e)
-			{
-				KOI_LOG_ERROR("Command line: {}", e.what());
-				return 1;
-			}
-			return 0;
-		}
+		int ParseArgs(int argc, char* argv[]);
 
 		inline const fs::path& GetProjectFile() const { return m_projectFile; }
 

@@ -1,5 +1,8 @@
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/Core/UUID.h"
+#include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"

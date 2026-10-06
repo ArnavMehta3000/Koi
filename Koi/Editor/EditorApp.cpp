@@ -12,6 +12,7 @@
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/DebugDraw.h"

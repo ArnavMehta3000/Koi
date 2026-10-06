@@ -8,7 +8,6 @@
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Interop/ViewportTarget.h"
-#include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {

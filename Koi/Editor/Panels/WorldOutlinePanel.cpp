@@ -1,4 +1,5 @@
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
+#include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>

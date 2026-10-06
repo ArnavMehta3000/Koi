@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Graphics/Types.h"
 
 namespace koi
@@ -25,5 +26,4 @@ namespace koi
 		void Release(GfxDevice& device);
 	};
 
-	using GPUTextureHandle = Handle<GPUTexture>;
 }

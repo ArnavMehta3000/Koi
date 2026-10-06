@@ -1,5 +1,5 @@
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
-#include "Koi/Editor/Inspectors/InspectorRegistry.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/ECS/Components.h"

@@ -1,4 +1,5 @@
 #include "Koi/Editor/Assets/MeshLoader.h"
+#include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -6,6 +7,7 @@
 #include <fastgltf/tools.hpp>
 #include <fastgltf/types.hpp>
 #define STB_IMAGE_IMPLEMENTATION
+#include "Koi/Engine/Math/Math.h"
 #include "stb_image.h"
 #include <cstring>
 

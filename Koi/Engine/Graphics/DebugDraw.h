@@ -1,5 +1,4 @@
 #pragma once
-#include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Math/Transform.h"
 #include <span>
 #include <vector>

@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Editor/Assets/ImportProgress.h"
-#include "Koi/Engine/Assets/MeshFile.h"
+#include "Koi/Engine/Assets/AssetFile.h"
 
 namespace koi::editor
 {

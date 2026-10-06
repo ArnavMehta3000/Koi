@@ -1,7 +1,7 @@
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Camera.h"
+#include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"

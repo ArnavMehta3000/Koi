@@ -1,8 +1,7 @@
 #pragma once
-#include "Koi/Engine/Core/Handle.h"
+#include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Assets/AssetKey.h"
 #include "Koi/Engine/Assets/AssetTraits.h"
-#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <unordered_map>
 #include <cassert>
@@ -10,9 +9,6 @@
 namespace koi
 {
 	class GfxDevice;
-
-	template<typename T>
-	using AssetHandle = Handle<T>;
 
 	// Owns every loaded asset of one type, de-duplicated by AssetKey, ref-counted
 	// Acquiring adds a reference, releasing drops one. Freeing the resource when the last ref goes

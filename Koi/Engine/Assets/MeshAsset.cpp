@@ -1,12 +1,15 @@
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
-#include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshFile.h"
+#include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi
 {
+	static_assert(AssetType<GPUMesh>, "AssetTraits<GPUMesh> does not satisfy AssetType");
+
 	std::unique_ptr<ModelAsset> AssetTraits<GPUMesh>::Load(const std::string& vfsPath)
 	{
 		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Mesh)

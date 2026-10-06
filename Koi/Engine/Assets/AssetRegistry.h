@@ -4,6 +4,8 @@
 #include "Koi/Engine/Assets/MaterialAsset.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/Assets/TextureAsset.h"
+#include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Graphics/GPUTexture.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
 #include <tuple>
 
@@ -37,5 +39,6 @@ namespace koi
 		AssetIndex                    m_index;
 	};
 
-	using AssetRegistry = AssetRegistryFor<GPUMesh, GPUTexture, Material>;
+	// A class rather than an alias so it can be forward declared
+	class AssetRegistry : public AssetRegistryFor<GPUMesh, GPUTexture, Material> {};
 }

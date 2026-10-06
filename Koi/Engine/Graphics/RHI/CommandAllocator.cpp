@@ -1,8 +1,8 @@
 #include "Koi/Engine/Graphics/RHI/CommandAllocator.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include <cassert>
+#include <spdlog/fmt/xchar.h>
 
 namespace koi
 {

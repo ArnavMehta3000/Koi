@@ -3,7 +3,6 @@
 #include "Koi/Engine/Graphics/DeferredPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
-#include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"

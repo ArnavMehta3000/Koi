@@ -5,6 +5,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include <cassert>
+#include <spdlog/fmt/xchar.h>
 
 #define KOI_LOG_RESIZE_INFO 0
 #if KOI_LOG_RESIZE_INFO

@@ -1,9 +1,10 @@
 #pragma once
-#include "Koi/Engine/Assets/AssetCache.h"
-#include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Assets/AssetHandles.h"
+#include "Koi/Engine/Assets/AssetTraits.h"
 
 namespace koi
 {
+	class GfxDevice;
 	struct ModelAsset;
 
 	template<>
@@ -18,7 +19,4 @@ namespace koi
 		static void Destroy(GfxDevice& device, GPUMesh& resource);
 	};
 
-	static_assert(AssetType<GPUMesh>, "AssetTraits<GPUMesh> does not satisfy AssetType");
-
-	using MeshHandle = AssetHandle<GPUMesh>;
 }

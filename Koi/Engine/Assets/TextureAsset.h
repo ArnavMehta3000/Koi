@@ -1,9 +1,12 @@
 #pragma once
-#include "Koi/Engine/Assets/AssetCache.h"
-#include "Koi/Engine/Graphics/GPUTexture.h"
+#include "Koi/Engine/Assets/AssetHandles.h"
+#include "Koi/Engine/Assets/AssetTraits.h"
 
 namespace koi
 {
+	class GfxDevice;
+	struct ImageAsset;
+
 	template<>
 	struct AssetTraits<GPUTexture>
 	{
@@ -16,6 +19,4 @@ namespace koi
 		static GPUTexture Upload(GfxDevice& device, const Source& source);
 		static void Destroy(GfxDevice& device, GPUTexture& resource);
 	};
-
-	static_assert(AssetType<GPUTexture>, "AssetTraits<GPUTexture> does not satisfy AssetType");
 }

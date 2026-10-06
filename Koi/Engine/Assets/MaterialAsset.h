@@ -1,11 +1,18 @@
 #pragma once
-#include "Koi/Engine/Assets/AssetCache.h"
-#include "Koi/Engine/Graphics/GPUTexture.h"
-#include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
+#include "Koi/Engine/Assets/AssetData.h"
+#include "Koi/Engine/Assets/AssetHandles.h"
+#include "Koi/Engine/Assets/AssetKey.h"
+#include "Koi/Engine/Assets/AssetTraits.h"
+#include "Koi/Engine/Graphics/Types.h"
 #include <array>
+#include <memory>
+#include <string>
 
 namespace koi
 {
+	class GfxDevice;
+	struct MaterialTemplate;
+
 	// The texture channels a material can bind, in the order the GPU row writes them
 	enum class MaterialTextureSlot : u8
 	{
@@ -72,7 +79,4 @@ namespace koi
 		static void Destroy(GfxDevice& device, Material& resource);
 	};
 
-	static_assert(AssetType<Material>, "AssetTraits<Material> does not satisfy AssetType");
-
-	using MaterialHandle = AssetHandle<Material>;
 }

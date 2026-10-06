@@ -1,10 +1,14 @@
 #include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
 #include <cassert>

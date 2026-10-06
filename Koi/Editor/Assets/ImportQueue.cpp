@@ -1,6 +1,7 @@
 #include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"

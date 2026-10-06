@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Koi/Engine/Math/MathTypes.h"
-#include <cmath>
 #include <span>
 #include <utility>
 

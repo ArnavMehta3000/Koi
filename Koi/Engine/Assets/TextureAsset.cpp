@@ -1,10 +1,14 @@
 #include "Koi/Engine/Assets/TextureAsset.h"
+#include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Graphics/GPUTexture.h"
 #include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {
+	static_assert(AssetType<GPUTexture>, "AssetTraits<GPUTexture> does not satisfy AssetType");
+
 	std::unique_ptr<ImageAsset> AssetTraits<GPUTexture>::Load(const std::string& vfsPath)
 	{
 		KOI_ZONE_UNMUTED;  // Texture decode can arrive here from a parallel-for loop

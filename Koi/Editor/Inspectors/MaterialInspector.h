@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Assets/MaterialAsset.h"
+#include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
 
 namespace koi::editor
 {

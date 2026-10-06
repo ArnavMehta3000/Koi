@@ -1,8 +1,15 @@
 #pragma once
-#include "Koi/Engine/ECS/Components.h"
+#include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include <flecs.h>
-#include <toml++/toml.hpp>
+#include <memory>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+namespace toml { inline namespace v3 { class table; } }
 
 namespace koi
 {
