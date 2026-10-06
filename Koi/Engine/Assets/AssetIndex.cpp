@@ -58,7 +58,10 @@ namespace koi
 			Add(UUID(header->Id), header->Type, std::move(virtualPath));
 		}
 
-		if (ec) KOI_LOG_WARN("Stopped scanning {} early: {}", contentRoot.string(), ec.message());
+		if (ec)
+		{
+			KOI_LOG_WARN("Stopped scanning {} early: {}", contentRoot.string(), ec.message());
+		}
 	}
 
 	bool AssetIndex::Add(const UUID& id, AssetFileType type, std::string virtualPath)

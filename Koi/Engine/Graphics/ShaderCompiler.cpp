@@ -257,7 +257,9 @@ namespace koi
 
 					fs::path outPath = (args.OutDir.value() / pdbFileName).lexically_normal();
 					if (!writeFile(outPath, pdbBlob))
+					{
 						KOI_LOG_ERROR("Failed to write shader PDB file: {}", outPath.string());
+					}
 				}
 			}
 

@@ -35,7 +35,9 @@ namespace koi
 			const UUID id(slot.Material);
 			const AssetIndexEntry* entry = id.is_nil() ? nullptr : index.Find(id);
 			if (!id.is_nil() && !entry)
+			{
 				KOI_LOG_WARN("{}: slot '{}' wants material {}, which isn't in the project anymore", vfsPath, mesh.SlotName(slot), utils::ToString(id));
+			}
 
 			model->MaterialBindings.push_back(entry ? AssetKey(entry->VirtualPath) : AssetKey());
 		}

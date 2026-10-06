@@ -116,7 +116,9 @@ namespace koi
 		if (!material.Template)
 		{
 			if (!source.Template.empty())
+			{
 				KOI_LOG_WARN("Material '{}' names unknown template '{}'", source.Name, source.Template);
+			}
 
 			material.Template = templates.Default();
 		}

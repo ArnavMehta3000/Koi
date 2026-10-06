@@ -14,9 +14,9 @@
 // Enable to log handle deletion logs
 #define KOI_LOG_HANDLE_INFO 0
 #if KOI_LOG_HANDLE_INFO
-	#define LOG_HANDLE_TRACE(msg, h) KOI_LOG_TRACE(msg, h.GetIndex(), h.GetGeneration());
+	#define LOG_HANDLE_TRACE(msg, h) KOI_LOG_TRACE(msg, (h).GetIndex(), (h).GetGeneration())
 #else
-	#define LOG_HANDLE_TRACE(msg, h) void(0);
+	#define LOG_HANDLE_TRACE(msg, h) do {} while (false)
 #endif
 
 
@@ -174,7 +174,9 @@ namespace koi
 
 		KOI_LOG_WARN("{} GPU resource(s) still live at device destruction:", live.size());
 		for (const std::string_view name : live)
+		{
 			KOI_LOG_WARN("\t{}", name);
+		}
 	}
 
 	u64 GfxDevice::GetCompletedFenceValue() const noexcept
@@ -815,7 +817,9 @@ namespace koi
 		}
 		m_supportsTearing = (allowTearing == TRUE);
 		if (!m_supportsTearing)
+		{
 			KOI_LOG_WARN("Variable refresh rate / tearing not supported");
+		}
 	}
 
 	void GfxDevice::PickAdapter()

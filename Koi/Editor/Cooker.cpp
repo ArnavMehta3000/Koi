@@ -165,7 +165,9 @@ namespace koi::editor
 			std::error_code cec;
 			fs::copy_file(request.ProjectFile, projRoot / "Project.koi.toml", fs::copy_options::overwrite_existing, cec);
 			if (cec)
+			{
 				KOI_LOG_WARN("Cook: copy project TOML failed: {}", cec.message());
+			}
 		}
 
 		std::string status = "Cook: " + std::to_string(shaders.Ok) + "/" + std::to_string(shaders.Total) + " shaders ok";

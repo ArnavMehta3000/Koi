@@ -326,7 +326,9 @@ namespace koi::editor
 		progress.Report("Done", 1.0f);
 
 		if (failedTextures > 0)
+		{
 			KOI_LOG_WARN("{} imported, but {} of its {} texture(s) didn't. The log above says why", request.Name, failedTextures, textures.size());
+		}
 		return true;
 	}
 }
