@@ -1,6 +1,6 @@
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
-#include "Koi/Editor/Assets/AssetImporter.h"
+#include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
@@ -67,9 +67,10 @@ namespace koi::editor
 		}
 	}
 
-	AssetsPanel::AssetsPanel(AssetDatabase& database, Selection& selection)
+	AssetsPanel::AssetsPanel(AssetDatabase& database, Selection& selection, ImportQueue& imports)
 		: m_database(database)
 		, m_selection(selection)
+		, m_imports(imports)
 	{
 		const std::span<const std::string> folders = m_database.Folders();
 		if (!folders.empty()) m_selectedFolder = folders.front();
@@ -285,11 +286,12 @@ namespace koi::editor
 			m_openDeleteModal = true;
 		}
 
-		if (entry.Kind == AssetKind::Mesh && ImGui::MenuItem("Import Materials", nullptr, false, editable))
-		{
-			m_pending     = Action::Import;
-			m_pendingPath = entry.VirtualPath;
-		}
+		const AssetFileType fileType = AssetFileTypeForPath(entry.DiskPath);
+
+		// Runs in the background; the database only refreshes once it's done, so the entry stays valid
+		const bool imported = fileType == AssetFileType::Texture || fileType == AssetFileType::Mesh;
+		if (imported && ImGui::MenuItem("Reimport", nullptr, false, editable))
+			m_imports.Reimport(entry.VirtualPath);
 
 		ImGui::Separator();
 		if (ImGui::MenuItem("Copy Virtual Path")) ImGui::SetClipboardText(entry.VirtualPath.c_str());
@@ -355,7 +357,6 @@ namespace koi::editor
 		case Action::Rename: m_database.Rename(m_pendingPath, m_pendingArg); break;
 		case Action::Move:   m_database.Move  (m_pendingPath, m_pendingArg); break;
 		case Action::Delete: m_database.Delete(m_pendingPath);              break;
-		case Action::Import: ImportMesh(m_database, m_pendingPath);         break;
 		default: break;
 		}
 

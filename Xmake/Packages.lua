@@ -18,7 +18,7 @@ add_requires(
 add_requires("tracy-profiler", { configs = { tracy_enable = is_mode("profile") } })  -- custom package
 add_requires("stb 31c1ad37456438565541f4919958214b6e762fb4")
 add_requires("toml++ f22f035fe2d63e2be3d266d8f100e7812a9ab9bd")
-add_requires("directxtex 2025.07", { configs = { dx11 = false, dx12 = true, openmp = true }})  -- editor-only
+add_requires("directxtex 2025.07", { configs = { dx11 = true, dx12 = true, openmp = true }})  -- editor-only
 add_requires("fastgltf", { configs = { cxx_standard = "20" }})
 add_requires("spdlog", { configs = { wchar = true, std_format = false, fmt_external = false }})
 

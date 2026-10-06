@@ -2,7 +2,9 @@
 
 #pragma once
 #include "Koi/Engine/Core/Types.h"
+#include <filesystem>
 #include <functional>
+#include <span>
 #include <string>
 
 struct GLFWwindow;
@@ -34,6 +36,7 @@ namespace koi
 		using ResizeCallback = std::function<void(u32, u32)>;
 		using CloseCallback = std::function<void()>;
 		using FocusCallback = std::function<void(bool)>;
+		using DropCallback  = std::function<void(std::span<const std::filesystem::path>)>;
 
 	public:
 		explicit Window(const WindowDesc& desc);
@@ -61,6 +64,7 @@ namespace koi
 
 		inline void SetResizeCallback(ResizeCallback cb) { m_onResize = std::move(cb); }
 		inline void SetCloseCallback(CloseCallback cb) { m_onClose = std::move(cb); }
+		inline void SetDropCallback(DropCallback cb) { m_onDrop = std::move(cb); }  // files dragged in from Explorer
 
 		[[nodiscard]] inline WindowMode GetMode() const noexcept { return m_mode; }
 		[[nodiscard]] inline void* GetNativeHandle() const noexcept { return m_nativeHandle; }
@@ -78,6 +82,7 @@ namespace koi
 		static void OnResize(GLFWwindow* w, i32 width, i32 height) noexcept;
 		static void OnClose(GLFWwindow* w) noexcept;
 		static void OnFocus(GLFWwindow* w, i32 focused) noexcept;
+		static void OnDrop(GLFWwindow* w, i32 count, const char** paths) noexcept;
 
 	private:
 		GLFWwindow*   m_window       = nullptr;
@@ -95,6 +100,7 @@ namespace koi
 		ResizeCallback m_onResize;
 		CloseCallback  m_onClose;
 		FocusCallback  m_onFocus;
+		DropCallback   m_onDrop;
 
 		static inline u32 s_windowCount = 0;
 	};

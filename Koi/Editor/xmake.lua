@@ -6,6 +6,7 @@ target("Koi.Editor")
 	add_deps("Koi.Engine", "ImGui", "ImGuizmo", "KoiProfiler", { public = true })
 
 	add_packages("directxtex", "fastgltf", "stb")  -- importers only: the runtime reads Koi's own formats
+	add_syslinks("ole32", "d3d11", "dxgi", { public = true })  -- COM for WIC decoding, D3D11 for GPU BC6H/BC7
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_headerfiles("**.h", { public = true })

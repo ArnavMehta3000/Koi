@@ -85,6 +85,7 @@ namespace koi
 		, m_onResize(std::move(other.m_onResize))
 		, m_onClose(std::move(other.m_onClose))
 		, m_onFocus(std::move(other.m_onFocus))
+		, m_onDrop(std::move(other.m_onDrop))
 	{
 		other.m_window = nullptr;
 		// Re-point GLFW user pointer to the new address
@@ -107,6 +108,7 @@ namespace koi
 			m_onResize = std::move(other.m_onResize);
 			m_onClose  = std::move(other.m_onClose);
 			m_onFocus  = std::move(other.m_onFocus);
+			m_onDrop   = std::move(other.m_onDrop);
 
 			other.m_window = nullptr;
 			if (m_window) ::glfwSetWindowUserPointer(m_window, this);
@@ -328,6 +330,7 @@ namespace koi
 		::glfwSetWindowUserPointer(m_window, this);
 		::glfwSetFramebufferSizeCallback(m_window, &Window::OnResize);
 		::glfwSetWindowCloseCallback(m_window, &Window::OnClose);
+		::glfwSetDropCallback(m_window, &Window::OnDrop);
 
 		::glfwGetWindowPos(m_window, &m_savedX, &m_savedY);
 		m_savedW= m_width;
@@ -392,5 +395,20 @@ namespace koi
 			if (self->m_onFocus)
 				self->m_onFocus(focused == GLFW_TRUE);
 		}
+	}
+
+	void Window::OnDrop(GLFWwindow* w, i32 count, const char** paths) noexcept
+	{
+		ZoneScoped;
+		Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w));
+		if (!self || !self->m_onDrop || count <= 0) return;
+
+		// GLFW hands over UTF-8
+		std::vector<std::filesystem::path> files;
+		files.reserve(static_cast<size_t>(count));
+		for (i32 i = 0; i < count; ++i)
+			files.emplace_back(std::u8string_view(reinterpret_cast<const char8_t*>(paths[i])));
+
+		self->m_onDrop(files);
 	}
 }

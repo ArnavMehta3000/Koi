@@ -7,13 +7,14 @@
 namespace koi::editor
 {
 	class AssetDatabase;
+	class ImportQueue;
 	struct AssetEntry;
 
 	// Queries the asset database to draw
 	class AssetsPanel : public IEditorPanel
 	{
 	public:
-		AssetsPanel(AssetDatabase& database, Selection& selection);
+		AssetsPanel(AssetDatabase& database, Selection& selection, ImportQueue& imports);
 
 		[[nodiscard]] std::string_view GetName() const override { return "Assets"; }
 		void OnDraw() override;
@@ -34,11 +35,12 @@ namespace koi::editor
 		[[nodiscard]] bool PassesFilter(const AssetEntry& entry) const;
 
 	private:
-		enum class Action { None, Rename, Move, Delete, Import };
+		enum class Action { None, Rename, Move, Delete };
 
 	private:
 		AssetDatabase&                        m_database;
 		Selection&                            m_selection;
+		ImportQueue&                          m_imports;
 
 		std::string m_selectedFolder;
 		std::string m_search;

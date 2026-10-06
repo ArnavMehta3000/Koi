@@ -11,7 +11,10 @@ namespace koi::editor
 		const AssetIndex& index = Engine::Get().GetSubsystem<AssetRegistry>().Index();
 		const MaterialFileContents contents = ToMaterialFileContents(source, [&](const AssetKey& key)
 		{
-			if (const AssetIndexEntry* entry = index.FindByPath(key.Path())) return entry->Id;
+			if (const AssetIndexEntry* entry = index.FindByPath(key.Path()))
+			{
+				return entry->Id;
+			}
 			KOI_LOG_WARN("{} can't reference {} until it's imported as a .ktex, so that slot stays empty", file.filename().string(), key.Path());
 			return UUID();
 		});

@@ -1,9 +1,11 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
+#include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/Cooker.h"
 #include "Koi/Editor/EditorApp.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Panels/GridPanel.h"
+#include "Koi/Editor/Panels/ImportPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/Panels/ProfilerPanel.h"
@@ -27,8 +29,6 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
-
-#include <imgui.h>
 #include <fstream>
 #include <utility>
 
@@ -68,6 +68,7 @@ namespace koi::editor
 		// Scan content and reconcile the manifest before any panel can query it
 		m_assetDatabase = std::make_unique<AssetDatabase>(m_config.EngineSource, m_config.ProjectSource);
 		m_assetDatabase->Refresh();
+		m_importQueue = std::make_unique<ImportQueue>(*m_assetDatabase);
 
 		// Game/user project can expect built in inspectors to existat init-time
 		RegisterBuiltinInspectors(m_inspectors);
@@ -80,7 +81,11 @@ namespace koi::editor
 		m_panels.Emplace<LogPanel>();
 		m_panels.Emplace<ProfilerPanel>();
 		m_viewportPanel     = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
-		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection);
+		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection, *m_importQueue);
+		m_importPanel = &m_panels.Emplace<ImportPanel>(*m_importQueue, *m_assetDatabase);
+
+		// Files dragged in from Explorer land in the Import panel to have their settings checked
+		Engine::Get().GetWindow().SetDropCallback([this](std::span<const fs::path> files) { m_importQueue->AddFiles(files); });
 	}
 
 	void EditorApp::HostInit()
@@ -164,6 +169,8 @@ namespace koi::editor
 			ReloadAll(*std::exchange(m_pendingReload, std::nullopt));
 
 		m_viewportPanel->Update(dt, input);
+		m_importQueue->Update();
+		if (m_importQueue->ConsumeAttention()) m_importPanel->Focus();
 
 		// The game always ticks. What play state gates is the world's simulation, and
 		// World::Update decides that itself, so nothing here has to know the difference
@@ -258,6 +265,9 @@ namespace koi::editor
 
 	void EditorApp::HostShutdown()
 	{
+		Engine::Get().GetWindow().SetDropCallback({});
+		m_importQueue.reset();  // cancels running imports and waits for them
+
 		SaveEditorState();
 		m_game->HostShutdown();
 		m_imgui.Shutdown();
