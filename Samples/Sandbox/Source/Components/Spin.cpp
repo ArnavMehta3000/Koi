@@ -1,6 +1,7 @@
 #include "Components/Spin.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include <imgui.h>
 #include <numbers>
 
@@ -14,7 +15,7 @@ void SpinInspector::Draw(koi::Entity e)
 	Spin* spin = e.try_get_mut<Spin>();
 	if (!spin) return;
 
-	ImGui::DragFloat3("Axis", &spin->Axis.x, 0.01f);
+	koi::utils::DragAxes("Axis", &spin->Axis.x, 3, 0.01f);
 	ImGui::DragFloat("Speed", &spin->Speed, 1.0f, -1440.0f, 1440.0f, "%.1f deg/s");
 }
 

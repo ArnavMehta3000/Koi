@@ -5,7 +5,7 @@ name = 'Sponza'
     id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
     [entity.transform]
-    position = [ 0.0, 0.0, 0.0 ]
+    position = [ 6.1, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
@@ -31,7 +31,7 @@ name = 'Damaged Helmet'
     turn_speed = 90.0
 
     [entity.transform]
-    position = [ -5.893, 2.1, 0.0 ]
+    position = [ 2.007, 2.1, 0.0 ]
     rotation = [ 0.0, 0.406737, 0.0, 0.913545 ]
     scale = [ 1.0, 1.0, 1.0 ]
 

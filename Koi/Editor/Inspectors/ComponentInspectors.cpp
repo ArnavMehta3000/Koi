@@ -4,6 +4,7 @@
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -76,15 +77,15 @@ namespace koi::editor
 			m_eulerRot = local->Rotation;
 		}
 
-		ImGui::DragFloat3("Position", &local->Position.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
+		koi::utils::DragAxes("Position", &local->Position.x, 3, 0.05f);
 
-		if (ImGui::DragFloat3("Rotation", &m_eulerDeg.x, 0.5f))
+		if (koi::utils::DragAxes("Rotation", &m_eulerDeg.x, 3, 0.5f, "%.1f"))
 		{
 			local->Rotation = Quaternion::CreateFromYawPitchRoll(
 				m_eulerDeg.y * kDegToRad, m_eulerDeg.x * kDegToRad, m_eulerDeg.z * kDegToRad);
 			m_eulerRot = local->Rotation;
 		}
-		ImGui::DragFloat3("Scale", &local->Scale.x, 0.05f, ImGuiSliderFlags_ColorMarkers);
+		koi::utils::DragAxes("Scale", &local->Scale.x, 3, 0.05f);
 	}
 
 	void MeshInspector::Draw(Entity e)

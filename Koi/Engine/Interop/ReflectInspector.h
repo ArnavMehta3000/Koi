@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Interop/ComponentInspector.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -52,7 +53,7 @@ namespace koi
 			else if constexpr (std::is_same_v<T, i32>)         return ImGui::DragInt(label, &value);
 			else if constexpr (std::is_same_v<T, u64>)         return ImGui::InputScalar(label, ImGuiDataType_U64, &value);
 			else if constexpr (std::is_same_v<T, std::string>) return ImGui::InputText(label, &value);
-			else if constexpr (std::is_same_v<T, Vector3>)     return ImGui::DragFloat3(label, &value.x, 0.05f);
+			else if constexpr (std::is_same_v<T, Vector3>)     return DragAxes(label, &value.x, 3);
 			else if constexpr (std::is_enum_v<T>)              return DrawReflectedEnum(label, value);
 			else if constexpr (requires { typename T::Type; value.get(); })  // rfl::Skip<> runtime state
 			{
