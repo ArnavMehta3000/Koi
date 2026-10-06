@@ -116,4 +116,15 @@ namespace koi
 
 		return it->second->TryResolveToDisk(path);
 	}
+
+	void VirtualFileSystem::ForEachDiskRoot(const std::function<void(std::string_view scheme, const fs::path& root)>& visit) const
+	{
+		for (const auto& [scheme, backend] : m_mounts)
+		{
+			for (const fs::path& root : backend->GetRoots())
+			{
+				visit(scheme, root);
+			}
+		}
+	}
 }

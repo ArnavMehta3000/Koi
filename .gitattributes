@@ -11,3 +11,6 @@
 *.cso  -text
 *.gltf -text
 *.glb  -text
+*.kmesh -text
+*.kmat  -text
+*.ktex  -text

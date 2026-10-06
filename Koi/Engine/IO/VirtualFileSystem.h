@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Engine/Core/Types.h"
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -23,6 +24,9 @@ namespace koi
 
 		// Resolve a virtual path to a concrete disk path (if using a filesystem mount)
 		[[nodiscard]] virtual std::optional<fs::path> TryResolveToDisk(std::string_view relativePath) = 0;
+
+		// Directories this mount reads from, empty for anything not backed by the filesystem
+		[[nodiscard]] virtual std::span<const fs::path> GetRoots() const { return {}; }
 	};
 
 	class FilesystemMount : public IMountBackend
@@ -31,7 +35,7 @@ namespace koi
 		explicit FilesystemMount(const fs::path& root);
 		explicit FilesystemMount(std::span<fs::path> roots);
 
-		[[nodiscard]] inline std::span<const fs::path> GetRoots() const { return m_roots; }
+		[[nodiscard]] std::span<const fs::path> GetRoots() const override { return m_roots; }
 
 		[[nodiscard]] std::optional<std::vector<byte>> Read(std::string_view relativePath) override;
 		[[nodiscard]] std::optional<fs::path> TryResolveToDisk(std::string_view relativePath) override;
@@ -53,6 +57,9 @@ namespace koi
 
 		[[nodiscard]] std::optional<std::vector<byte>> Read(std::string_view virtualPath);
 		[[nodiscard]] std::optional<fs::path> TryResolveToDisk(std::string_view virtualPath);
+
+		// Visits every disk directory behind every mount, with the scheme it is mounted under
+		void ForEachDiskRoot(const std::function<void(std::string_view scheme, const fs::path& root)>& visit) const;
 
 	private:
 		std::unordered_map<std::string, std::unique_ptr<IMountBackend>> m_mounts;

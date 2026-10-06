@@ -1,5 +1,8 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
+#include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
 #include <fstream>
 #include <sstream>
@@ -50,6 +53,8 @@ namespace koi::editor
 
 	void AssetDatabase::Refresh()
 	{
+		ZoneScoped;
+
 		m_entries.clear();
 		m_folders.clear();
 
@@ -62,7 +67,10 @@ namespace koi::editor
 		std::ranges::sort(m_folders);
 		m_folders.erase(std::ranges::unique(m_folders).begin(), m_folders.end());
 
-		KOI_LOG_INFO("Asset database: {} asset(s)", m_entries.size());
+		KOI_LOG_INFO("Asset browser found {} file(s) across {} folder(s)", m_entries.size(), m_folders.size());
+
+		// Files may have moved or been deleted, so ids need to point at their new homes
+		Engine::Get().GetSubsystem<AssetRegistry>().Index().Rebuild();
 	}
 
 	void AssetDatabase::ScanRoot(const fs::path& root, std::string_view scheme, std::string_view contentDir)

@@ -12,7 +12,7 @@ namespace koi::editor
 
 	struct AssetEntry
 	{
-		std::string VirtualPath;   // "project://Assets/Models/DamagedHelmet.gltf"; also the cache key
+		std::string VirtualPath;   // "project://Content/Models/DamagedHelmet/DamagedHelmet.kmesh"; also the cache key
 		std::string Name;          // filename, for display and search
 		std::string Folder;        // virtual parent dir, for the folder tree
 		AssetKind   Kind     = AssetKind::Unknown;
