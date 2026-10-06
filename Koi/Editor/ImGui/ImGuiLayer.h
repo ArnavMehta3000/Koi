@@ -27,6 +27,7 @@ namespace koi::editor
 
 	private:
 		Theme m_theme{};  // real default is applied in Init, where Themes.h is visible
+		f32   m_dpiScale = 1.0f;
 		bool  m_initialized = false;
 	};
 }

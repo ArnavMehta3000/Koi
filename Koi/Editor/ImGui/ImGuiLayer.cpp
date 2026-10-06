@@ -82,8 +82,10 @@ namespace koi::editor
 		io.ConfigDpiScaleFonts     = true;  // style.FontScaleDpi tracks the viewport's monitor
 		io.ConfigDpiScaleViewports = true;  // platform windows scale with it too
 
-		m_theme = Theme::CatppuccinMocha;
-		utils::ApplyTheme(m_theme);
+		m_theme    = Theme::CatppuccinMocha;
+		m_dpiScale = window.GetContentScale();
+		ImGui::GetStyle().FontScaleDpi = m_dpiScale;
+		utils::ApplyTheme(m_theme, m_dpiScale);
 
 		ImGui::GetStyle().FontSizeBase = 13.0f;
 		io.Fonts->AddFontDefaultVector();
@@ -174,7 +176,7 @@ namespace koi::editor
 			if (ImGui::MenuItem(utils::kThemes[i].Name, nullptr, theme == m_theme))
 			{
 				m_theme = theme;
-				utils::ApplyTheme(m_theme);
+				utils::ApplyTheme(m_theme, m_dpiScale);
 			}
 		}
 

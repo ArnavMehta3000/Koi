@@ -206,7 +206,8 @@ namespace koi::editor
 		};
 		static_assert(kThemes.size() == static_cast<size_t>(Theme::MAX_COUNT), "Theme enum and array size mismatch!");
 
-		inline void ApplyTheme(Theme theme)
+		// Sizes are authored at 96 DPI, so sizeScale is the window's content scale
+		inline void ApplyTheme(Theme theme, f32 sizeScale = 1.0f)
 		{
 			ImGuiStyle& style       = ImGui::GetStyle();
 			const f32 fontSizeBase  = style.FontSizeBase;
@@ -219,6 +220,7 @@ namespace koi::editor
 			style.FontScaleDpi  = fontScaleDpi;
 
 			kThemes[static_cast<size_t>(theme)].Apply();
+			style.ScaleAllSizes(sizeScale);
 		}
 	}
 }

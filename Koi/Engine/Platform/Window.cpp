@@ -11,6 +11,7 @@
 #include <GLFW/glfw3native.h>
 #include <dwmapi.h>
 
+#include <algorithm>
 #include <cassert>
 #include <stdexcept>
 
@@ -18,21 +19,40 @@ namespace koi
 {
 	namespace
 	{
-		static GLFWmonitor* SelectMonitor(i32 index)
+		struct WorkArea
 		{
-			ZoneScoped;
-			i32 count = 0;
-			if (GLFWmonitor** monitors = ::glfwGetMonitors(&count))
+			i32 X      = 0;
+			i32 Y      = 0;
+			i32 Width  = 1280;
+			i32 Height = 720;
+			f32 Scale  = 1.0f;  // monitor content scale ->  the DPI setting
+		};
+
+		WorkArea PrimaryWorkArea()
+		{
+			WorkArea area;
+			if (GLFWmonitor* monitor = ::glfwGetPrimaryMonitor())
 			{
-				assert(count != 0);  // We should have at least one monitor
-
-				if (index < 0 || index >= count)
-					index = 0;
-
-				return monitors[index];
+				::glfwGetMonitorWorkarea(monitor, &area.X, &area.Y, &area.Width, &area.Height);
+				f32 scaleY = 1.0f;
+				::glfwGetMonitorContentScale(monitor, &area.Scale, &scaleY);
 			}
+			return area;
+		}
 
-			return nullptr;
+		// Centers the window, frame included, on the primary monitor's work area
+		void CenterOnWorkArea(GLFWwindow* window, const WorkArea& area)
+		{
+			i32 width = 0, height = 0;
+			i32 left = 0, top = 0, right = 0, bottom = 0;
+			::glfwGetWindowSize(window, &width, &height);
+			::glfwGetWindowFrameSize(window, &left, &top, &right, &bottom);
+
+			const i32 outerWidth  = width + left + right;
+			const i32 outerHeight = height + top + bottom;
+			::glfwSetWindowPos(window,
+				area.X + std::max(0, (area.Width - outerWidth) / 2) + left,
+				area.Y + std::max(0, (area.Height - outerHeight) / 2) + top);
 		}
 	}
 
@@ -139,13 +159,10 @@ namespace koi
 		if (m_mode == WindowMode::Windowed || m_mode == WindowMode::Borderless)
 		{
 			::glfwGetWindowPos(m_window, &m_savedX, &m_savedY);
-			i32 w, h;
-			::glfwGetWindowSize(m_window, &w, &h);
-			m_savedW = static_cast<u32>(w);
-			m_savedH = static_cast<u32>(h);
+			::glfwGetWindowSize(m_window, &m_savedW, &m_savedH);
 		}
 
-		GLFWmonitor* monitor = SelectMonitor(0);
+		GLFWmonitor* monitor = ::glfwGetPrimaryMonitor();
 		const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
 
 		switch (newMode)
@@ -252,6 +269,13 @@ namespace koi
 			::glfwSetWindowSize(m_window, width, height);
 	}
 
+	f32 Window::GetContentScale() const noexcept
+	{
+		f32 x = 1.0f, y = 1.0f;
+		if (m_window) ::glfwGetWindowContentScale(m_window, &x, &y);
+		return x;
+	}
+
 	void Window::PollEvents() noexcept
 	{
 		ZoneScoped;
@@ -263,10 +287,16 @@ namespace koi
 		ZoneScoped;
 		::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		::glfwWindowHint(GLFW_RESIZABLE, desc.Resizable ? GLFW_TRUE : GLFW_FALSE);
+		::glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);  // desc size is in logical pixels, and follows DPI across monitors
+		::glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);          // shown once centered
 
-		GLFWmonitor* monitor = nullptr;
-		i32 w = static_cast<i32>(desc.Width);
-		i32 h = static_cast<i32>(desc.Height);
+		const WorkArea area = PrimaryWorkArea();
+		GLFWmonitor* fullscreenMonitor = nullptr;
+
+		// Logical size: most of the work area, usign desc size as a floor
+		const auto logical = [&](i32 extent, f32 fraction) { return static_cast<i32>(static_cast<f32>(extent) * fraction / area.Scale); };
+		i32 w = std::min(std::max(static_cast<i32>(desc.Width),  logical(area.Width,  0.85f)), logical(area.Width,  0.9f));
+		i32 h = std::min(std::max(static_cast<i32>(desc.Height), logical(area.Height, 0.85f)), logical(area.Height, 0.9f));
 
 		switch (desc.Mode)
 		{
@@ -275,57 +305,56 @@ namespace koi
 			break;
 
 		case WindowMode::Borderless:
-		{
 			::glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-			monitor = SelectMonitor(desc.MonitorID);
-			const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
-			i32 mx, my;
-			::glfwGetMonitorPos(monitor, &mx, &my);
-			::glfwWindowHint(GLFW_POSITION_X, mx + (vm->width - w) / 2);
-			::glfwWindowHint(GLFW_POSITION_Y, my + (vm->height - h) / 2);
-			monitor = nullptr;
 			break;
-		}
 
 		case WindowMode::WindowedFullscreen:
+		case WindowMode::ExclusiveFullscreen:
 		{
-			::glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-
-			monitor = SelectMonitor(desc.MonitorID);
+			GLFWmonitor* monitor = ::glfwGetPrimaryMonitor();
 			const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
-
 			w = vm->width;
 			h = vm->height;
 
-			i32 mx, my;
-			::glfwGetMonitorPos(monitor, &mx, &my);
-			::glfwWindowHint(GLFW_POSITION_X, mx);
-			::glfwWindowHint(GLFW_POSITION_Y, my);
-			break;
-		}
+			if (desc.Mode == WindowMode::WindowedFullscreen)
+			{
+				::glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
+				::glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_FALSE);  // already in pixels
+				break;
+			}
 
-		case WindowMode::ExclusiveFullscreen:
-		{
 			::glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-
-			monitor = SelectMonitor(desc.MonitorID);
-			const GLFWvidmode* vm = ::glfwGetVideoMode(monitor);
-
 			::glfwWindowHint(GLFW_RED_BITS    , vm->redBits);
 			::glfwWindowHint(GLFW_GREEN_BITS  , vm->greenBits);
 			::glfwWindowHint(GLFW_BLUE_BITS   , vm->blueBits);
 			::glfwWindowHint(GLFW_REFRESH_RATE, vm->refreshRate);
+			fullscreenMonitor = monitor;
 
 			// [TODO]: Handle fullscreen state change in DXGI/D3D swapchain
 			break;
 		}
 		}
 
-		m_window = ::glfwCreateWindow(w, h, m_title.c_str(), monitor, nullptr);
+		m_window = ::glfwCreateWindow(w, h, m_title.c_str(), fullscreenMonitor, nullptr);
 		assert(m_window && "Failed to create GLFW window");
+		::glfwDefaultWindowHints();
 
-		m_width = static_cast<u32>(w);
-		m_height = static_cast<u32>(h);
+		if (desc.Mode == WindowMode::WindowedFullscreen)
+		{
+			i32 mx = 0, my = 0;
+			::glfwGetMonitorPos(::glfwGetPrimaryMonitor(), &mx, &my);
+			::glfwSetWindowPos(m_window, mx, my);
+		}
+		else if (!fullscreenMonitor)
+		{
+			CenterOnWorkArea(m_window, area);
+		}
+
+		// The swapchain is sized in pixels, which is the scaled size
+		i32 fbWidth = 0, fbHeight = 0;
+		::glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
+		m_width  = static_cast<u32>(fbWidth);
+		m_height = static_cast<u32>(fbHeight);
 
 		::glfwSetWindowUserPointer(m_window, this);
 		::glfwSetFramebufferSizeCallback(m_window, &Window::OnResize);
@@ -333,8 +362,7 @@ namespace koi
 		::glfwSetDropCallback(m_window, &Window::OnDrop);
 
 		::glfwGetWindowPos(m_window, &m_savedX, &m_savedY);
-		m_savedW= m_width;
-		m_savedH = m_height;
+		::glfwGetWindowSize(m_window, &m_savedW, &m_savedH);
 
 		HWND hwnd = ::glfwGetWin32Window(m_window);
 		assert(hwnd && "Failed to get Win32 window handle");
@@ -344,8 +372,9 @@ namespace koi
 		::DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &enable, sizeof(enable));
 		::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
 			SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+		::glfwShowWindow(m_window);
 
-		KOI_LOG_INFO("Window created: '{}' ({}x{})", m_title, m_width, m_height);
+		KOI_LOG_INFO("Window created: '{}' ({}x{}, {:.0f}% scale)", m_title, m_width, m_height, GetContentScale() * 100.0f);
 	}
 
 	void Window::Destroy()

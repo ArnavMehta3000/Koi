@@ -23,7 +23,6 @@ namespace koi
 	{
 		std::string Title  = "Koi Window";
 		WindowMode Mode    = WindowMode::Windowed;
-		i32 MonitorID      = 0;
 		u32 Width          = 1280;
 		u32 Height         = 720;
 		bool Resizable     = true;
@@ -72,6 +71,9 @@ namespace koi
 		[[nodiscard]] inline u32 GetWidth() const noexcept { return m_width; }
 		[[nodiscard]] inline u32 GetHeight() const noexcept { return m_height; }
 		[[nodiscard]] inline f32 AspectRatio() const noexcept { return static_cast<f32>(m_width) / static_cast<f32>(m_height); }
+
+		// The DPI scale of the monitor the window is on, 1 at 96 DPI
+		[[nodiscard]] f32 GetContentScale() const noexcept;
 
 		static void PollEvents() noexcept;
 
