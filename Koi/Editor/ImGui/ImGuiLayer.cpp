@@ -12,8 +12,12 @@
 #include <backends/imgui_impl_dx12.h>
 #include <backends/imgui_impl_glfw.h>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <ImGuizmo.h>
 
+#include <algorithm>
+#include <charconv>
+#include <cstring>
 #include <filesystem>
 #include <string_view>
 #include <system_error>
@@ -95,6 +99,7 @@ namespace koi::editor
 			[](void* ptr, void*) { ::operator delete(ptr); });
 
 		ImGui::CreateContext();
+		RegisterSettingsHandler();
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -106,7 +111,7 @@ namespace koi::editor
 		m_theme    = Theme::Zero;
 		m_dpiScale = window.GetContentScale();
 		ImGui::GetStyle().FontScaleDpi = m_dpiScale;
-		utils::ApplyTheme(m_theme, m_dpiScale);
+		ApplyAppearance();
 
 		constexpr f32 kFontSize = 14.0f;
 		ImGui::GetStyle().FontSizeBase = kFontSize;
@@ -188,9 +193,9 @@ namespace koi::editor
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), native);
 	}
 
-	void ImGuiLayer::DrawThemeMenu()
+	void ImGuiLayer::DrawAppearanceMenu()
 	{
-		if (!ImGui::BeginMenu("Theme")) return;
+		if (!ImGui::BeginMenu("Appearance")) return;
 
 		for (size_t i = 0; i < utils::kThemes.size(); ++i)
 		{
@@ -198,10 +203,80 @@ namespace koi::editor
 			if (ImGui::MenuItem(utils::kThemes[i].Name, nullptr, theme == m_theme))
 			{
 				m_theme = theme;
-				utils::ApplyTheme(m_theme, m_dpiScale);
+				ApplyAppearance();
+				ImGui::MarkIniSettingsDirty();
 			}
 		}
 
+		ImGui::Separator();
+		ImGui::SetNextItemWidth(ImGui::GetFontSize() * 10.0f);
+		ImGui::SliderFloat("Font Scale", &m_fontScaleEdit, 0.75f, 2.0f, "%.2fx");
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			SetFontScale(m_fontScaleEdit);
+		}
+		if (ImGui::MenuItem("Reset Font Scale", nullptr, false, m_fontScale != 1.0f))
+		{
+			SetFontScale(1.0f);
+		}
+
 		ImGui::EndMenu();
+	}
+
+	void ImGuiLayer::SetFontScale(f32 scale)
+	{
+		m_fontScale     = std::clamp(scale, 0.75f, 2.0f);
+		m_fontScaleEdit = m_fontScale;
+		ImGui::GetStyle().FontScaleMain = m_fontScale;
+		ImGui::MarkIniSettingsDirty();
+	}
+
+	void ImGuiLayer::ApplyAppearance()
+	{
+		ImGui::GetStyle().FontScaleMain = m_fontScale;
+		utils::ApplyTheme(m_theme, m_dpiScale);
+	}
+
+	// [KoiEditor][Appearance] in imgui.ini; the theme is stored by name so reordering kThemes is safe
+	void ImGuiLayer::RegisterSettingsHandler()
+	{
+		ImGuiSettingsHandler handler;
+		handler.TypeName   = "KoiEditor";
+		handler.TypeHash   = ImHashStr("KoiEditor");
+		handler.UserData   = this;
+		handler.ReadOpenFn = [](ImGuiContext*, ImGuiSettingsHandler*, const char* name) -> void*
+		{
+			return std::strcmp(name, "Appearance") == 0 ? reinterpret_cast<void*>(1) : nullptr;
+		};
+		handler.ReadLineFn = [](ImGuiContext*, ImGuiSettingsHandler* h, void*, const char* line)
+		{
+			auto* self = static_cast<ImGuiLayer*>(h->UserData);
+			const std::string_view entry(line);
+			if (entry.starts_with("Theme="))
+			{
+				const std::string_view name = entry.substr(6);
+				for (size_t i = 0; i < utils::kThemes.size(); ++i)
+				{
+					if (name == utils::kThemes[i].Name) self->m_theme = static_cast<Theme>(i);
+				}
+			}
+			else if (f32 scale = 1.0f; entry.starts_with("FontScale=")
+				&& std::from_chars(entry.data() + 10, entry.data() + entry.size(), scale).ec == std::errc{})
+			{
+				self->m_fontScale     = std::clamp(scale, 0.75f, 2.0f);
+				self->m_fontScaleEdit = self->m_fontScale;
+			}
+		};
+		handler.ApplyAllFn = [](ImGuiContext*, ImGuiSettingsHandler* h)
+		{
+			static_cast<ImGuiLayer*>(h->UserData)->ApplyAppearance();
+		};
+		handler.WriteAllFn = [](ImGuiContext*, ImGuiSettingsHandler* h, ImGuiTextBuffer* buf)
+		{
+			const auto* self = static_cast<const ImGuiLayer*>(h->UserData);
+			buf->appendf("[KoiEditor][Appearance]\nTheme=%s\nFontScale=%.2f\n\n",
+				utils::kThemes[static_cast<size_t>(self->m_theme)].Name, self->m_fontScale);
+		};
+		ImGui::AddSettingsHandler(&handler);
 	}
 }

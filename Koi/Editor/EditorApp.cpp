@@ -382,7 +382,7 @@ namespace koi::editor
 			ImGui::Separator();
 			DrawGizmoMenu();
 			ImGui::Separator();
-			m_imgui.DrawThemeMenu();
+			m_imgui.DrawAppearanceMenu();
 			ImGui::EndMenu();
 		}
 
