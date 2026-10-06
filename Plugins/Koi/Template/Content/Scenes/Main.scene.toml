@@ -2,7 +2,7 @@
 name = 'Floor'
 
     [entity.mesh]
-    path = 'engine://Content/Meshes/Plane.gltf'
+    id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'  # engine Plane
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
@@ -13,7 +13,7 @@ name = 'Floor'
 name = 'Box'
 
     [entity.mesh]
-    path = 'engine://Content/Meshes/Box.gltf'
+    id = '8e985361-92e3-5bd0-89b0-eabe0e977013'  # engine Box
 
     [entity.transform]
     position = [ 0.0, 0.5, 0.0 ]

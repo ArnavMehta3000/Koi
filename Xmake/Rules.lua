@@ -16,8 +16,7 @@ rule("KoiGame")
 		target:add("extrafiles",
 			path.join(root, target:name() .. ".koi.toml"),
 			path.join(root, "Content/**.toml"),
-			path.join(root, "Content/**.hlsl"),
-			path.join(root, "Content/**.gltf"))
+			path.join(root, "Content/**.hlsl"))
 
 		local shaders = path.join(root, "Content", "Shaders", "Shaders.json")
 		if os.isfile(shaders) then

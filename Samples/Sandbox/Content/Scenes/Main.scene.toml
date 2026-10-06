@@ -2,7 +2,7 @@
 name = 'Sponza'
 
     [entity.mesh]
-    path = 'project://Content/Models/Sponza/Sponza.gltf'
+    id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
     [entity.transform]
     position = [ 0.0, 0.0, 0.0 ]
@@ -13,7 +13,7 @@ name = 'Sponza'
 name = 'Sponza 2'
 
     [entity.mesh]
-    path = 'project://Content/Models/Sponza/Sponza.gltf'
+    id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
     [entity.transform]
     position = [ -5.45, 0.0, 18.65 ]
@@ -24,7 +24,7 @@ name = 'Sponza 2'
 name = 'Damaged Helmet'
 
     [entity.mesh]
-    path = 'project://Content/Models/DamagedHelmet.gltf'
+    id = 'f4379ca6-29d4-41f2-8767-bee96cad2942'
 
     [entity.player_controller]
     move_speed = 5.0
@@ -87,7 +87,7 @@ name = 'Point Light'
 name = 'Torus'
 
     [entity.mesh]
-    path = 'engine://Content/Meshes/Torus.gltf'
+    id = 'b6f9ebda-dac3-584a-af18-287555e3c7e3'
 
     [entity.spin]
     axis = [ 1.0, 0.0, 1.0 ]

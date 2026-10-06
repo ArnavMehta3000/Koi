@@ -33,10 +33,10 @@ name = 'Sun'
 name = 'Floor'
 
     [entity.material]
-    path = 'project://Content/Materials/Ground.mat.toml'
+    id = '0acd1038-726c-4a42-b244-2903d7873620'
 
     [entity.mesh]
-    path = 'engine://Content/Meshes/Plane.gltf'
+    id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
 
     [entity.transform]
     position = [ 0.0, 0.0, -13.8 ]
@@ -52,10 +52,10 @@ name = 'Player'
     positions = [ [ -4.0, 0.5, 3.0 ], [ 0.0, 0.5, 3.0 ], [ 4.0, 0.5, 3.0 ] ]
 
     [entity.material]
-    path = 'project://Content/Materials/Player.mat.toml'
+    id = '4538f4f5-b7a9-46db-a318-afafc5bddbb0'
 
     [entity.mesh]
-    path = 'engine://Content/Meshes/Cone.gltf'
+    id = '5bbca827-62e3-52c1-acca-9a2a45322624'
 
     [entity.transform]
     position = [ 0.0, 0.5, 3.0 ]
@@ -68,9 +68,9 @@ name = 'Spawner'
     [entity.'game:obstacle_spawner']
     despawn_z = 10.0
     interval = 2.0
-    material = 'project://Content/Materials/Obstacle.mat.toml'
+    material = 'project://Content/Materials/Obstacle.kmat'
     max_speed = 50.0
-    mesh = 'engine://Content/Meshes/Box.gltf'
+    mesh = 'engine://Content/Meshes/Box.kmesh'
     min_interval = 0.35
     pop_duration = 0.25
     positions = [ [ -4.0, 0.5, -15.0 ], [ 0.0, 0.5, -15.0 ], [ 4.0, 0.5, -15.0 ] ]

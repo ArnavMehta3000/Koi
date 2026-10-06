@@ -1,5 +1,0 @@
-source = 'project://Content/Models/DamagedHelmet.gltf'
-
-[[slot]]
-index = 0
-material = 'project://Content/Models/DamagedHelmet.Material_MR.mat.toml'

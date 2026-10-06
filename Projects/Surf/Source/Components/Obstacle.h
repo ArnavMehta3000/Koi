@@ -27,8 +27,8 @@ namespace game
 		static constexpr bool kReflect = true;
 
 		Lanes         Positions;
-		std::string   Mesh         = "engine://Content/Meshes/Box.gltf";
-		std::string   Material     = "project://Content/Materials/Obstacle.mat.toml";
+		std::string   Mesh         = "engine://Content/Meshes/Box.kmesh";
+		std::string   Material     = "project://Content/Materials/Obstacle.kmat";
 		koi::u64      Seed         = 0;      // 0 picks one at boot
 		koi::f32      Interval     = 1.0f;   // seconds between spawns at the start
 		koi::f32      MinInterval  = 0.35f;
