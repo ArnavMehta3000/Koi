@@ -1,6 +1,7 @@
 #include "Koi/Editor/Panels/ImportPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
+#include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -264,7 +265,7 @@ namespace koi::editor
 						break;
 					case ImportStatus::Failed:
 						ImGui::AlignTextToFramePadding();
-						ImGui::TextColored(ImVec4(0.95f, 0.45f, 0.4f, 1.0f), "Failed: %s", item.Error.c_str());
+						ImGui::TextColored(EditorPalette::Get().Error, "Failed: %s", item.Error.c_str());
 						break;
 					case ImportStatus::Cancelled:
 						ImGui::AlignTextToFramePadding();

@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Engine/Core/Types.h"
 #include <imgui.h>
 #include <KoiProfiler.h>
@@ -17,7 +18,8 @@ namespace koi::editor
 	struct ThemeEntry
 	{
 		const char*             Name;
-		void                  (*ApplyColors)(ImVec4* colors);
+		EditorPalette           Palette;
+		void                  (*ApplyColors)(const EditorPalette& palette, ImVec4* colors);
 		prof::GoldenRatioParams ProfilerPalette;
 	};
 
@@ -31,6 +33,12 @@ namespace koi::editor
 						  static_cast<f32>((rgb >> 8) & 0xFF) / 255.0f,
 						  static_cast<f32>(rgb & 0xFF) / 255.0f,
 						  alpha);
+		}
+
+		inline constexpr ImVec4 WithAlpha(ImVec4 color, f32 alpha)
+		{
+			color.w = alpha;
+			return color;
 		}
 
 		inline void ApplyEditorStyle(ImGuiStyle& style)
@@ -67,167 +75,193 @@ namespace koi::editor
 		}
 
 		// Port of the Zero Visual Studio 2026 theme (AgitoReiKen)
-		inline void ApplyZeroColors(ImVec4* colors)
+		inline constexpr EditorPalette kZeroPalette
 		{
-			constexpr ImVec4 kEnvironment = HexColor(0x0F1116); // EnvironmentBackground, ToolWindowBackground
-			constexpr ImVec4 kSurface     = HexColor(0x101319); // editor, PanelTitleBar, CommandBar
-			constexpr ImVec4 kBorder      = HexColor(0x15181F); // ActiveBorder, AccentBorder
-			constexpr ImVec4 kRaised      = HexColor(0x171A21); // ComboBoxPopupBorder, SolidBackgroundFillQuaternary
-			constexpr ImVec4 kRaisedHover = HexColor(0x1C2027); // TextBoxBorderFocused (VS2022 Zero)
-			constexpr ImVec4 kSelection   = HexColor(0x2B3959); // Selected Text, ScrollBarThumb
-			constexpr ImVec4 kMuted       = HexColor(0x4B5B7E); // ToolWindowTabText, ButtonBorder
-			constexpr ImVec4 kSecondary   = HexColor(0x8398B9); // TextFillSecondary, ButtonBorderFocused
-			constexpr ImVec4 kText        = HexColor(0xC2CCE0); // ToolWindowText
-			constexpr ImVec4 kAccent      = HexColor(0x2A7195); // AccentFillDefault
-			constexpr ImVec4 kAccentHi    = HexColor(0x2AA1D9); // FileTabLastActiveDocumentBorder
-			constexpr ImVec4 kLink        = HexColor(0x60A5FA); // PanelHyperlink
-			constexpr ImVec4 kNone        = HexColor(0x000000, 0.0f);
+			.Base          = HexColor(0x0F1116), // EnvironmentBackground, ToolWindowBackground
+			.Surface       = HexColor(0x101319), // editor, PanelTitleBar, CommandBar
+			.Elevated      = HexColor(0x101319), // GridHeadingBackground
+			.Raised        = HexColor(0x171A21), // ComboBoxPopupBorder, SolidBackgroundFillQuaternary
+			.RaisedHover   = HexColor(0x1C2027), // TextBoxBorderFocused (VS2022 Zero)
+			.RaisedActive  = HexColor(0x2B3959), // Selected Text
+			.Border        = HexColor(0x15181F), // ActiveBorder, AccentBorder
+			.BorderStrong  = HexColor(0x171A21), // ComboBoxPopupBorder
+			.Selection     = HexColor(0x2B3959), // Selected Text, ScrollBarThumb
+			.Text          = HexColor(0xC2CCE0), // ToolWindowText
+			.TextSecondary = HexColor(0x8398B9), // TextFillSecondary, ButtonBorderFocused
+			.TextDisabled  = HexColor(0x4B5B7E), // ToolWindowTabText, ButtonBorder
+			.Accent        = HexColor(0x2A7195), // AccentFillDefault
+			.AccentHover   = HexColor(0x2AA1D9), // FileTabLastActiveDocumentBorder
+			.AccentMuted   = HexColor(0x1F5470),
+			.Link          = HexColor(0x60A5FA), // PanelHyperlink
+			.Info          = HexColor(0x5EABDF), // keywords
+			.Success       = HexColor(0x9AA084), // strings
+			.Warning       = HexColor(0xB4911B), // ProgressBar IndicatorFillWarning
+			.Error         = HexColor(0xDA736C), // ProgressBar IndicatorFillCritical
+			.Playing       = HexColor(0xC99A45),
+			.Paused        = HexColor(0x8C7444),
+		};
 
-			colors[ImGuiCol_Text]                      = kText;
-			colors[ImGuiCol_TextDisabled]              = kMuted;
-			colors[ImGuiCol_WindowBg]                  = kEnvironment;
+		inline void ApplyZeroColors(const EditorPalette& p, ImVec4* colors)
+		{
+			constexpr ImVec4 kNone = HexColor(0x000000, 0.0f);
+
+			colors[ImGuiCol_Text]                      = p.Text;
+			colors[ImGuiCol_TextDisabled]              = p.TextDisabled;
+			colors[ImGuiCol_WindowBg]                  = p.Base;
 			colors[ImGuiCol_ChildBg]                   = kNone;
-			colors[ImGuiCol_PopupBg]                   = kEnvironment;
-			colors[ImGuiCol_Border]                    = kBorder;
+			colors[ImGuiCol_PopupBg]                   = p.Base;
+			colors[ImGuiCol_Border]                    = p.Border;
 			colors[ImGuiCol_BorderShadow]              = kNone;
-			colors[ImGuiCol_FrameBg]                   = kRaised;
-			colors[ImGuiCol_FrameBgHovered]            = kRaisedHover;
-			colors[ImGuiCol_FrameBgActive]             = kSelection;
-			colors[ImGuiCol_TitleBg]                   = kEnvironment;
-			colors[ImGuiCol_TitleBgActive]             = kSurface;
-			colors[ImGuiCol_TitleBgCollapsed]          = kEnvironment;
-			colors[ImGuiCol_MenuBarBg]                 = kSurface;
+			colors[ImGuiCol_FrameBg]                   = p.Raised;
+			colors[ImGuiCol_FrameBgHovered]            = p.RaisedHover;
+			colors[ImGuiCol_FrameBgActive]             = p.RaisedActive;
+			colors[ImGuiCol_TitleBg]                   = p.Base;
+			colors[ImGuiCol_TitleBgActive]             = p.Surface;
+			colors[ImGuiCol_TitleBgCollapsed]          = p.Base;
+			colors[ImGuiCol_MenuBarBg]                 = p.Surface;
 			colors[ImGuiCol_ScrollbarBg]               = kNone;
-			colors[ImGuiCol_ScrollbarGrab]             = HexColor(0x2B3959, 0.55f);
-			colors[ImGuiCol_ScrollbarGrabHovered]      = HexColor(0x2B3959, 0.85f);
-			colors[ImGuiCol_ScrollbarGrabActive]       = kMuted;
-			colors[ImGuiCol_CheckMark]                 = kText;
-			colors[ImGuiCol_CheckboxSelectedBg]        = kAccent;
-			colors[ImGuiCol_SliderGrab]                = kMuted;
-			colors[ImGuiCol_SliderGrabActive]          = kAccentHi;
-			colors[ImGuiCol_Button]                    = kRaised;
-			colors[ImGuiCol_ButtonHovered]             = kRaisedHover;
-			colors[ImGuiCol_ButtonActive]              = kAccent;
-			colors[ImGuiCol_Header]                    = kRaised;
-			colors[ImGuiCol_HeaderHovered]             = kRaisedHover;
-			colors[ImGuiCol_HeaderActive]              = kSelection;
-			colors[ImGuiCol_Separator]                 = kBorder;
-			colors[ImGuiCol_SeparatorHovered]          = kAccent;
-			colors[ImGuiCol_SeparatorActive]           = kAccentHi;
-			colors[ImGuiCol_ResizeGrip]                = HexColor(0x2B3959, 0.20f);
-			colors[ImGuiCol_ResizeGripHovered]         = kAccent;
-			colors[ImGuiCol_ResizeGripActive]          = kAccentHi;
-			colors[ImGuiCol_InputTextCursor]           = kText;
+			colors[ImGuiCol_ScrollbarGrab]             = WithAlpha(p.Selection, 0.55f);
+			colors[ImGuiCol_ScrollbarGrabHovered]      = WithAlpha(p.Selection, 0.85f);
+			colors[ImGuiCol_ScrollbarGrabActive]       = p.TextDisabled;
+			colors[ImGuiCol_CheckMark]                 = p.Text;
+			colors[ImGuiCol_CheckboxSelectedBg]        = p.Accent;
+			colors[ImGuiCol_SliderGrab]                = p.TextDisabled;
+			colors[ImGuiCol_SliderGrabActive]          = p.AccentHover;
+			colors[ImGuiCol_Button]                    = p.Raised;
+			colors[ImGuiCol_ButtonHovered]             = p.RaisedHover;
+			colors[ImGuiCol_ButtonActive]              = p.Accent;
+			colors[ImGuiCol_Header]                    = p.Raised;
+			colors[ImGuiCol_HeaderHovered]             = p.RaisedHover;
+			colors[ImGuiCol_HeaderActive]              = p.RaisedActive;
+			colors[ImGuiCol_Separator]                 = p.Border;
+			colors[ImGuiCol_SeparatorHovered]          = p.Accent;
+			colors[ImGuiCol_SeparatorActive]           = p.AccentHover;
+			colors[ImGuiCol_ResizeGrip]                = WithAlpha(p.Selection, 0.20f);
+			colors[ImGuiCol_ResizeGripHovered]         = p.Accent;
+			colors[ImGuiCol_ResizeGripActive]          = p.AccentHover;
+			colors[ImGuiCol_InputTextCursor]           = p.Text;
 			colors[ImGuiCol_TabHovered]                = HexColor(0x808080, 0.20f); // ToolWindowTabMouseOverBackground
-			colors[ImGuiCol_Tab]                       = kEnvironment;
-			colors[ImGuiCol_TabSelected]               = kSurface;
-			colors[ImGuiCol_TabSelectedOverline]       = kAccentHi;
-			colors[ImGuiCol_TabDimmed]                 = kEnvironment;
-			colors[ImGuiCol_TabDimmedSelected]         = kSurface;
+			colors[ImGuiCol_Tab]                       = p.Base;
+			colors[ImGuiCol_TabSelected]               = p.Surface;
+			colors[ImGuiCol_TabSelectedOverline]       = p.AccentHover;
+			colors[ImGuiCol_TabDimmed]                 = p.Base;
+			colors[ImGuiCol_TabDimmedSelected]         = p.Surface;
 			colors[ImGuiCol_TabDimmedSelectedOverline] = kNone;
-			colors[ImGuiCol_DockingPreview]            = HexColor(0x2A7195, 0.70f);
-			colors[ImGuiCol_DockingEmptyBg]            = kEnvironment;
-			colors[ImGuiCol_PlotLines]                 = kSecondary;
-			colors[ImGuiCol_PlotLinesHovered]          = kAccentHi;
-			colors[ImGuiCol_PlotHistogram]             = kAccent;
-			colors[ImGuiCol_PlotHistogramHovered]      = kAccentHi;
-			colors[ImGuiCol_TableHeaderBg]             = kSurface;
-			colors[ImGuiCol_TableBorderStrong]         = kRaised;
-			colors[ImGuiCol_TableBorderLight]          = kBorder;
+			colors[ImGuiCol_DockingPreview]            = WithAlpha(p.Accent, 0.70f);
+			colors[ImGuiCol_DockingEmptyBg]            = p.Base;
+			colors[ImGuiCol_PlotLines]                 = p.TextSecondary;
+			colors[ImGuiCol_PlotLinesHovered]          = p.AccentHover;
+			colors[ImGuiCol_PlotHistogram]             = p.Accent;
+			colors[ImGuiCol_PlotHistogramHovered]      = p.AccentHover;
+			colors[ImGuiCol_TableHeaderBg]             = p.Elevated;
+			colors[ImGuiCol_TableBorderStrong]         = p.BorderStrong;
+			colors[ImGuiCol_TableBorderLight]          = p.Border;
 			colors[ImGuiCol_TableRowBg]                = kNone;
 			colors[ImGuiCol_TableRowBgAlt]             = HexColor(0xFFFFFF, 0.02f);
-			colors[ImGuiCol_TextLink]                  = kLink;
-			colors[ImGuiCol_TextSelectedBg]            = kSelection;
-			colors[ImGuiCol_TreeLines]                 = kRaised;
-			colors[ImGuiCol_DragDropTarget]            = kAccentHi;
+			colors[ImGuiCol_TextLink]                  = p.Link;
+			colors[ImGuiCol_TextSelectedBg]            = p.Selection;
+			colors[ImGuiCol_TreeLines]                 = p.Raised;
+			colors[ImGuiCol_DragDropTarget]            = p.AccentHover;
 			colors[ImGuiCol_DragDropTargetBg]          = HexColor(0x062F4A, 0.60f); // TreeView DragOverItem
-			colors[ImGuiCol_UnsavedMarker]             = kText;
-			colors[ImGuiCol_NavCursor]                 = kSecondary;
-			colors[ImGuiCol_NavWindowingHighlight]     = HexColor(0xC2CCE0, 0.70f);
-			colors[ImGuiCol_NavWindowingDimBg]         = HexColor(0x0F1116, 0.60f);
-			colors[ImGuiCol_ModalWindowDimBg]          = HexColor(0x0F1116, 0.60f);
+			colors[ImGuiCol_UnsavedMarker]             = p.Text;
+			colors[ImGuiCol_NavCursor]                 = p.TextSecondary;
+			colors[ImGuiCol_NavWindowingHighlight]     = WithAlpha(p.Text, 0.70f);
+			colors[ImGuiCol_NavWindowingDimBg]         = WithAlpha(p.Base, 0.60f);
+			colors[ImGuiCol_ModalWindowDimBg]          = WithAlpha(p.Base, 0.60f);
 		}
 
 		// Near-black neutrals with a single teal-blue accent
-		inline void ApplyObsidianColors(ImVec4* colors)
+		inline constexpr EditorPalette kObsidianPalette
 		{
-			constexpr ImVec4 kBase       = HexColor(0x09090B);
-			constexpr ImVec4 kWindow     = HexColor(0x0E0E11);
-			constexpr ImVec4 kElevated   = HexColor(0x141418);
-			constexpr ImVec4 kControl    = HexColor(0x18181C);
-			constexpr ImVec4 kControlHi  = HexColor(0x212126);
-			constexpr ImVec4 kControlAct = HexColor(0x2A2A31);
-			constexpr ImVec4 kBorder     = HexColor(0x232328);
-			constexpr ImVec4 kBorderHi   = HexColor(0x313138);
-			constexpr ImVec4 kText       = HexColor(0xEDEDEF);
-			constexpr ImVec4 kSecondary  = HexColor(0xA1A1AA);
-			constexpr ImVec4 kMuted      = HexColor(0x63636E);
-			constexpr ImVec4 kAccent     = HexColor(0x26A3C2);
-			constexpr ImVec4 kAccentHi   = HexColor(0x4CC0DC);
-			constexpr ImVec4 kAccentLo   = HexColor(0x1B7891);
-			constexpr ImVec4 kNone       = HexColor(0x000000, 0.0f);
+			.Base          = HexColor(0x09090B),
+			.Surface       = HexColor(0x0E0E11),
+			.Elevated      = HexColor(0x141418),
+			.Raised        = HexColor(0x18181C),
+			.RaisedHover   = HexColor(0x212126),
+			.RaisedActive  = HexColor(0x2A2A31),
+			.Border        = HexColor(0x232328),
+			.BorderStrong  = HexColor(0x313138),
+			.Selection     = HexColor(0x26A3C2, 0.30f),
+			.Text          = HexColor(0xEDEDEF),
+			.TextSecondary = HexColor(0xA1A1AA),
+			.TextDisabled  = HexColor(0x63636E),
+			.Accent        = HexColor(0x26A3C2),
+			.AccentHover   = HexColor(0x4CC0DC),
+			.AccentMuted   = HexColor(0x1B7891),
+			.Link          = HexColor(0x4CC0DC),
+			.Info          = HexColor(0x5BA4F5),
+			.Success       = HexColor(0x5BC88A),
+			.Warning       = HexColor(0xE8B04A),
+			.Error         = HexColor(0xEF6461),
+			.Playing       = HexColor(0xF5A524),
+			.Paused        = HexColor(0xB07E2E),
+		};
 
-			colors[ImGuiCol_Text]                      = kText;
-			colors[ImGuiCol_TextDisabled]              = kMuted;
-			colors[ImGuiCol_WindowBg]                  = kWindow;
+		inline void ApplyObsidianColors(const EditorPalette& p, ImVec4* colors)
+		{
+			constexpr ImVec4 kNone = HexColor(0x000000, 0.0f);
+
+			colors[ImGuiCol_Text]                      = p.Text;
+			colors[ImGuiCol_TextDisabled]              = p.TextDisabled;
+			colors[ImGuiCol_WindowBg]                  = p.Surface;
 			colors[ImGuiCol_ChildBg]                   = kNone;
-			colors[ImGuiCol_PopupBg]                   = kElevated;
-			colors[ImGuiCol_Border]                    = kBorder;
+			colors[ImGuiCol_PopupBg]                   = p.Elevated;
+			colors[ImGuiCol_Border]                    = p.Border;
 			colors[ImGuiCol_BorderShadow]              = kNone;
-			colors[ImGuiCol_FrameBg]                   = kControl;
-			colors[ImGuiCol_FrameBgHovered]            = kControlHi;
-			colors[ImGuiCol_FrameBgActive]             = kControlAct;
-			colors[ImGuiCol_TitleBg]                   = kBase;
-			colors[ImGuiCol_TitleBgActive]             = kBase;
-			colors[ImGuiCol_TitleBgCollapsed]          = kBase;
-			colors[ImGuiCol_MenuBarBg]                 = kBase;
+			colors[ImGuiCol_FrameBg]                   = p.Raised;
+			colors[ImGuiCol_FrameBgHovered]            = p.RaisedHover;
+			colors[ImGuiCol_FrameBgActive]             = p.RaisedActive;
+			colors[ImGuiCol_TitleBg]                   = p.Base;
+			colors[ImGuiCol_TitleBgActive]             = p.Base;
+			colors[ImGuiCol_TitleBgCollapsed]          = p.Base;
+			colors[ImGuiCol_MenuBarBg]                 = p.Base;
 			colors[ImGuiCol_ScrollbarBg]               = kNone;
-			colors[ImGuiCol_ScrollbarGrab]             = kBorderHi;
+			colors[ImGuiCol_ScrollbarGrab]             = p.BorderStrong;
 			colors[ImGuiCol_ScrollbarGrabHovered]      = HexColor(0x45454E);
-			colors[ImGuiCol_ScrollbarGrabActive]       = kMuted;
-			colors[ImGuiCol_CheckMark]                 = kAccent;
-			colors[ImGuiCol_CheckboxSelectedBg]        = HexColor(0x26A3C2, 0.15f);
-			colors[ImGuiCol_SliderGrab]                = kAccentLo;
-			colors[ImGuiCol_SliderGrabActive]          = kAccentHi;
-			colors[ImGuiCol_Button]                    = kControl;
-			colors[ImGuiCol_ButtonHovered]             = kControlHi;
-			colors[ImGuiCol_ButtonActive]              = kControlAct;
-			colors[ImGuiCol_Header]                    = kControl;
-			colors[ImGuiCol_HeaderHovered]             = kControlHi;
-			colors[ImGuiCol_HeaderActive]              = kControlAct;
-			colors[ImGuiCol_Separator]                 = kBorder;
-			colors[ImGuiCol_SeparatorHovered]          = kAccentLo;
-			colors[ImGuiCol_SeparatorActive]           = kAccent;
+			colors[ImGuiCol_ScrollbarGrabActive]       = p.TextDisabled;
+			colors[ImGuiCol_CheckMark]                 = p.Accent;
+			colors[ImGuiCol_CheckboxSelectedBg]        = WithAlpha(p.Accent, 0.15f);
+			colors[ImGuiCol_SliderGrab]                = p.AccentMuted;
+			colors[ImGuiCol_SliderGrabActive]          = p.AccentHover;
+			colors[ImGuiCol_Button]                    = p.Raised;
+			colors[ImGuiCol_ButtonHovered]             = p.RaisedHover;
+			colors[ImGuiCol_ButtonActive]              = p.RaisedActive;
+			colors[ImGuiCol_Header]                    = p.Raised;
+			colors[ImGuiCol_HeaderHovered]             = p.RaisedHover;
+			colors[ImGuiCol_HeaderActive]              = p.RaisedActive;
+			colors[ImGuiCol_Separator]                 = p.Border;
+			colors[ImGuiCol_SeparatorHovered]          = p.AccentMuted;
+			colors[ImGuiCol_SeparatorActive]           = p.Accent;
 			colors[ImGuiCol_ResizeGrip]                = kNone;
-			colors[ImGuiCol_ResizeGripHovered]         = HexColor(0x26A3C2, 0.60f);
-			colors[ImGuiCol_ResizeGripActive]          = kAccent;
-			colors[ImGuiCol_InputTextCursor]           = kAccent;
-			colors[ImGuiCol_TabHovered]                = kControlHi;
-			colors[ImGuiCol_Tab]                       = kBase;
-			colors[ImGuiCol_TabSelected]               = kWindow;
-			colors[ImGuiCol_TabSelectedOverline]       = kAccent;
-			colors[ImGuiCol_TabDimmed]                 = kBase;
-			colors[ImGuiCol_TabDimmedSelected]         = kWindow;
-			colors[ImGuiCol_TabDimmedSelectedOverline] = kBorderHi;
-			colors[ImGuiCol_DockingPreview]            = HexColor(0x26A3C2, 0.45f);
-			colors[ImGuiCol_DockingEmptyBg]            = kBase;
-			colors[ImGuiCol_PlotLines]                 = kSecondary;
-			colors[ImGuiCol_PlotLinesHovered]          = kAccentHi;
-			colors[ImGuiCol_PlotHistogram]             = kAccent;
-			colors[ImGuiCol_PlotHistogramHovered]      = kAccentHi;
-			colors[ImGuiCol_TableHeaderBg]             = kElevated;
-			colors[ImGuiCol_TableBorderStrong]         = kBorderHi;
-			colors[ImGuiCol_TableBorderLight]          = kBorder;
+			colors[ImGuiCol_ResizeGripHovered]         = WithAlpha(p.Accent, 0.60f);
+			colors[ImGuiCol_ResizeGripActive]          = p.Accent;
+			colors[ImGuiCol_InputTextCursor]           = p.Accent;
+			colors[ImGuiCol_TabHovered]                = p.RaisedHover;
+			colors[ImGuiCol_Tab]                       = p.Base;
+			colors[ImGuiCol_TabSelected]               = p.Surface;
+			colors[ImGuiCol_TabSelectedOverline]       = p.Accent;
+			colors[ImGuiCol_TabDimmed]                 = p.Base;
+			colors[ImGuiCol_TabDimmedSelected]         = p.Surface;
+			colors[ImGuiCol_TabDimmedSelectedOverline] = p.BorderStrong;
+			colors[ImGuiCol_DockingPreview]            = WithAlpha(p.Accent, 0.45f);
+			colors[ImGuiCol_DockingEmptyBg]            = p.Base;
+			colors[ImGuiCol_PlotLines]                 = p.TextSecondary;
+			colors[ImGuiCol_PlotLinesHovered]          = p.AccentHover;
+			colors[ImGuiCol_PlotHistogram]             = p.Accent;
+			colors[ImGuiCol_PlotHistogramHovered]      = p.AccentHover;
+			colors[ImGuiCol_TableHeaderBg]             = p.Elevated;
+			colors[ImGuiCol_TableBorderStrong]         = p.BorderStrong;
+			colors[ImGuiCol_TableBorderLight]          = p.Border;
 			colors[ImGuiCol_TableRowBg]                = kNone;
 			colors[ImGuiCol_TableRowBgAlt]             = HexColor(0xFFFFFF, 0.025f);
-			colors[ImGuiCol_TextLink]                  = kAccentHi;
-			colors[ImGuiCol_TextSelectedBg]            = HexColor(0x26A3C2, 0.30f);
-			colors[ImGuiCol_TreeLines]                 = kBorderHi;
-			colors[ImGuiCol_DragDropTarget]            = kAccent;
-			colors[ImGuiCol_DragDropTargetBg]          = HexColor(0x26A3C2, 0.10f);
-			colors[ImGuiCol_UnsavedMarker]             = kAccent;
-			colors[ImGuiCol_NavCursor]                 = kAccent;
-			colors[ImGuiCol_NavWindowingHighlight]     = HexColor(0xEDEDEF, 0.70f);
+			colors[ImGuiCol_TextLink]                  = p.Link;
+			colors[ImGuiCol_TextSelectedBg]            = p.Selection;
+			colors[ImGuiCol_TreeLines]                 = p.BorderStrong;
+			colors[ImGuiCol_DragDropTarget]            = p.Accent;
+			colors[ImGuiCol_DragDropTargetBg]          = WithAlpha(p.Accent, 0.10f);
+			colors[ImGuiCol_UnsavedMarker]             = p.Accent;
+			colors[ImGuiCol_NavCursor]                 = p.Accent;
+			colors[ImGuiCol_NavWindowingHighlight]     = WithAlpha(p.Text, 0.70f);
 			colors[ImGuiCol_NavWindowingDimBg]         = HexColor(0x000000, 0.60f);
 			colors[ImGuiCol_ModalWindowDimBg]          = HexColor(0x000000, 0.60f);
 		}
@@ -235,8 +269,8 @@ namespace koi::editor
 		// Profiler task colors: Zero stays muted to match its low-contrast palette, Obsidian is crisper
 		inline constexpr std::array kThemes
 		{
-			ThemeEntry{ "Zero",     &ApplyZeroColors,     { .HueStart = 0.55f, .Saturation = 0.45f, .SaturationAlt = 0.32f, .Value = 0.78f, .ValueAlt = 0.62f } },
-			ThemeEntry{ "Obsidian", &ApplyObsidianColors, { .HueStart = 0.52f, .Saturation = 0.62f, .SaturationAlt = 0.45f, .Value = 0.90f, .ValueAlt = 0.74f } },
+			ThemeEntry{ "Zero",     kZeroPalette,     &ApplyZeroColors,     { .HueStart = 0.55f, .Saturation = 0.45f, .SaturationAlt = 0.32f, .Value = 0.78f, .ValueAlt = 0.62f } },
+			ThemeEntry{ "Obsidian", kObsidianPalette, &ApplyObsidianColors, { .HueStart = 0.52f, .Saturation = 0.62f, .SaturationAlt = 0.45f, .Value = 0.90f, .ValueAlt = 0.74f } },
 		};
 		static_assert(kThemes.size() == static_cast<size_t>(Theme::MAX_COUNT), "Theme enum and array size mismatch!");
 
@@ -254,8 +288,9 @@ namespace koi::editor
 			style.FontScaleDpi  = fontScaleDpi;
 
 			const ThemeEntry& entry = kThemes[static_cast<size_t>(theme)];
+			EditorPalette::SetActive(entry.Palette);
 			ApplyEditorStyle(style);
-			entry.ApplyColors(style.Colors);
+			entry.ApplyColors(entry.Palette, style.Colors);
 			style.ScaleAllSizes(sizeScale);
 
 			static prof::GoldenRatioParams s_profilerPalette;

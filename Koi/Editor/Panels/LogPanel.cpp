@@ -1,4 +1,5 @@
 #include "Koi/Editor/Panels/LogPanel.h"
+#include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
 #include <cstdio>
@@ -9,15 +10,15 @@ namespace koi::editor
 	{
 		ImVec4 LevelColor(LogLevel level)
 		{
+			const EditorPalette& palette = EditorPalette::Get();
 			switch (level)
 			{
-			case LogLevel::Trace:    return { 0.55f, 0.55f, 0.55f, 1.0f };
-			case LogLevel::Debug:    return { 0.45f, 0.70f, 0.95f, 1.0f };
-			case LogLevel::Info:     return { 0.85f, 0.85f, 0.85f, 1.0f };
-			case LogLevel::Warn:     return { 0.95f, 0.75f, 0.25f, 1.0f };
-			case LogLevel::Error:    return { 0.95f, 0.35f, 0.30f, 1.0f };
-			case LogLevel::Critical: return { 1.00f, 0.25f, 0.65f, 1.0f };
-			default:                 return { 1.00f, 1.00f, 1.00f, 1.0f };
+			case LogLevel::Trace:    return palette.TextDisabled;
+			case LogLevel::Debug:    return palette.Info;
+			case LogLevel::Warn:     return palette.Warning;
+			case LogLevel::Error:
+			case LogLevel::Critical: return palette.Error;
+			default:                 return palette.Text;
 			}
 		}
 

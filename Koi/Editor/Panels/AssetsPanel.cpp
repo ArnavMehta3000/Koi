@@ -1,6 +1,7 @@
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
+#include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -62,8 +63,8 @@ namespace koi::editor
 		{
 			switch (state)
 			{
-			case AssetState::Loaded:  return ImVec4(0.55f, 0.85f, 0.55f, 1.0f);
-			default:                  return ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled);
+			case AssetState::Loaded:  return EditorPalette::Get().Success;
+			default:                  return EditorPalette::Get().TextDisabled;
 			}
 		}
 	}
@@ -314,7 +315,7 @@ namespace koi::editor
 		}
 		else
 		{
-			ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.40f, 1.0f), "Referenced by %zu file(s):", referencers.size());
+			ImGui::TextColored(EditorPalette::Get().Warning, "Referenced by %zu file(s):", referencers.size());
 
 			if (ImGui::BeginChild("Referencers", ImVec2(0.0f, 96.0f), ImGuiChildFlags_Borders))
 			{
