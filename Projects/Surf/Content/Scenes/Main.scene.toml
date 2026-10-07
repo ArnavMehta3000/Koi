@@ -39,7 +39,7 @@ name = 'Floor'
     id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
 
     [entity.transform]
-    position = [ 0.0, 0.0, -13.8 ]
+    position = [ 0.0, 0.05, -13.5 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 40.0, 1.0, 40.0 ]
 
