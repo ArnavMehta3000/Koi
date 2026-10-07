@@ -181,7 +181,6 @@ namespace koi
 
 			Entity e = m_ecs.entity(name.c_str());
 			e.set<SceneOrder>({ i });
-			KOI_LOG_TRACE("Scene entity [{}] '{}'", i, name);
 
 			// Load components (use registry for this)
 			for (const std::unique_ptr<IComponentType>& component : components)

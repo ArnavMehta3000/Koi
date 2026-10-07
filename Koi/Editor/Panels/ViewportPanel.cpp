@@ -83,8 +83,7 @@ namespace koi::editor
 		m_valid = true;
 
 		m_camera.SetAspect(static_cast<f32>(width) / static_cast<f32>(height));
-
-		KOI_LOG_TRACE("Viewport render targets resized to {}x{}", width, height);
+		m_resizeSettle = 0.25f;
 	}
 
 	const ViewportTarget* ViewportPanel::PrepareFrame(CommandList& cmd)
@@ -378,6 +377,12 @@ namespace koi::editor
 
 	void ViewportPanel::Update(f32 dt, InputManager& input)
 	{
+		// A drag resizes every frame; report only where it ended up
+		if (m_resizeSettle > 0.0f && (m_resizeSettle -= dt) <= 0.0f)
+		{
+			KOI_LOG_DEBUG("Viewport resized to {}x{}", m_target.Width, m_target.Height);
+		}
+
 		const bool anyMouseDown = input.IsMouseButtonDown(MouseButton::Left)
 			|| input.IsMouseButtonDown(MouseButton::Right)
 			|| input.IsMouseButtonDown(MouseButton::Middle);

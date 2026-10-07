@@ -90,6 +90,7 @@ namespace koi::editor
 		bool              m_valid           = false;
 		u32               m_desiredWidth    = 1280;
 		u32               m_desiredHeight   = 720;
+		f32               m_resizeSettle    = 0.0f;  // counts down after a resize (to prevent log spam)
 
 		ViewportCamera     m_cameraMode = ViewportCamera::Scene;
 		ViewportResolution m_resolution = ViewportResolution::FreeAspect;

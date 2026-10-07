@@ -137,7 +137,6 @@ namespace koi
 	void GBufferPass::CreateRenderTargets()
 	{
 		ZoneScoped;
-		KOI_LOG_TRACE("GBufferPass: creating render targets at {}x{}", m_width, m_height);
 
 		TextureDesc baseTexDesc
 		{

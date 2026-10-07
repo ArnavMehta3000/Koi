@@ -99,7 +99,6 @@ namespace koi
 
 		if (auto it = m_entries.find(key); it != m_entries.end())
 		{
-			KOI_LOG_TRACE("Shader cache hit: '{}'", virtualPathNoExt);
 			return it->second.Bytecode;
 		}
 

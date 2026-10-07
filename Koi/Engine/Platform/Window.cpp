@@ -398,8 +398,6 @@ namespace koi
 			self->m_width = static_cast<u32>(width);
 			self->m_height = static_cast<u32>(height);
 
-			KOI_LOG_TRACE("Window resized to {}x{}", self->m_width, self->m_height);
-
 			if (self->m_onResize)
 				self->m_onResize(self->m_width, self->m_height);
 		}

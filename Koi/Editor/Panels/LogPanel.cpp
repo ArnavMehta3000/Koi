@@ -68,7 +68,7 @@ namespace koi::editor
 		{
 			switch (level)
 			{
-			case LogLevel::Trace:    return ICON_FA_ELLIPSIS;
+			case LogLevel::Trace:    return ICON_FA_SHOE_PRINTS;
 			case LogLevel::Debug:    return ICON_FA_BUG;
 			case LogLevel::Info:     return ICON_FA_CIRCLE_INFO;
 			case LogLevel::Warn:     return ICON_FA_TRIANGLE_EXCLAMATION;

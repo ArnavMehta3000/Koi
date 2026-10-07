@@ -7,13 +7,6 @@
 #include <cassert>
 #include <spdlog/fmt/xchar.h>
 
-#define KOI_LOG_RESIZE_INFO 0
-#if KOI_LOG_RESIZE_INFO
-	#define KOI_LOG_RESIZE(...) KOI_LOG_DEBUG(__VA_ARGS__)
-#else
-	#define KOI_LOG_RESIZE(...) void(0)
-#endif
-
 namespace koi
 {
 	namespace
@@ -148,8 +141,7 @@ namespace koi
 		if (width == m_width && height == m_height) return;
 		assert(m_device && "Render Window has been moved-from");
 
-		KOI_LOG_RESIZE("Resizing RenderWindow ({}x{}) -> ({}x{})",
-			m_width, m_height, width, height);
+		KOI_LOG_DEBUG("Swapchain resized {}x{} -> {}x{}", m_width, m_height, width, height);
 
 		m_device->WaitForIdle();
 		ReleaseHDRBuffer();
@@ -166,8 +158,6 @@ namespace koi
 
 		AcquireBackBuffers();
 		CreateHDRBuffer();
-
-		KOI_LOG_TRACE("RenderWindow resize complete");
 	}
 
 	void RenderWindow::Present()
@@ -319,8 +309,6 @@ namespace koi
 			.Usage     = TextureUsage::RenderTarget | TextureUsage::ShaderRead,
 			.DebugName = "HDR Color Buffer",
 		});
-
-		KOI_LOG_TRACE("HDR color buffer created ({}x{})", m_width, m_height);
 	}
 
 	void RenderWindow::ReleaseHDRBuffer()
