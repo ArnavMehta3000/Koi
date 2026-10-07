@@ -21,7 +21,6 @@ namespace koi
 		{
 			if (const AssetHandle<T> existing = AddRef(key))
 			{
-				KOI_LOG_TRACE("Reusing {} asset: {}", AssetTraits<T>::Name, key.ToString());
 				return existing;
 			}
 
@@ -49,7 +48,6 @@ namespace koi
 		{
 			if (const AssetHandle<T> existing = AddRef(key))
 			{
-				KOI_LOG_TRACE("Reusing generated {} asset: {}", AssetTraits<T>::Name, key.ToString());
 				return existing;
 			}
 
@@ -102,7 +100,6 @@ namespace koi
 			assert(entry->RefCount > 0 && "Released an asset more times than it was acquired");
 			if (--entry->RefCount > 0)
 			{
-				KOI_LOG_TRACE("Released {} asset: {} ({} ref(s) left)", AssetTraits<T>::Name, entry->Key.ToString(), entry->RefCount);
 				return;
 			}
 
