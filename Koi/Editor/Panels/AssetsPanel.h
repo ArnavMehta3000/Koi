@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <string>
 #include <string_view>
+#include <IconsFontAwesome6.h>
 
 namespace koi::editor
 {
@@ -18,6 +19,7 @@ namespace koi::editor
 		AssetsPanel(AssetDatabase& database, Selection& selection, ImportQueue& imports);
 
 		[[nodiscard]] std::string_view GetName() const override { return "Assets"; }
+		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_FOLDER_OPEN; }
 		[[nodiscard]] ImGuiWindowFlags GetWindowFlags() const override { return ImGuiWindowFlags_MenuBar; }
 		void OnDraw() override;
 

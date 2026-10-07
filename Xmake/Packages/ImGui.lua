@@ -4,6 +4,7 @@ target("ImGui")  -- Custom ImGui package
 
 	add_includedirs("$(projectdir)/External/ImGui", { public = true })
 	add_includedirs("$(projectdir)/External/ImGui/misc/cpp", { public = true })
+	add_includedirs("$(projectdir)/External/IconFontCppHeaders", { public = true })  -- Font Awesome 6 ICON_FA_* names
 	add_files("$(projectdir)/External/ImGui/**.cpp", { public = true })
 	add_headerfiles("$(projectdir)/External/ImGui/**.h", { public = true })
 

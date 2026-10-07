@@ -9,6 +9,7 @@
 #include "Koi/Editor/Panels/PanelHost.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/StatusBar.h"
+#include "Koi/Editor/Toasts.h"
 #include <toml++/toml.hpp>
 #include <filesystem>
 #include <optional>
@@ -111,12 +112,12 @@ namespace koi::editor
 		ImGuiLayer                      m_imgui;
 		PanelHost                       m_panels;
 		StatusBar                       m_statusBar;
+		Toasts                          m_toasts;
 		InspectorRegistry               m_inspectors;
 		std::vector<IReloadable*>       m_reloadables;
 		ViewportPanel*                  m_viewportPanel     = nullptr;
 		Selection                       m_selection{};
 		GizmoOptions                    m_gizmos{};
-		std::string                     m_lastCookStatus;  // last Save/Cook result, shown in the status bar
 		std::optional<ReloadRequest>    m_pendingReload;
 
 		toml::table                     m_snapshot;            // the world as it was when Play was pressed

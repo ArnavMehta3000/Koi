@@ -1,6 +1,8 @@
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Engine/ECS/Components.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Runtime/AppBase.h"
+#include <IconsFontAwesome6.h>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <algorithm>
@@ -12,6 +14,14 @@ namespace koi::editor
 	namespace
 	{
 		constexpr const char* kDragDropPayloadType = "KOI_SCENE_ENTITY";
+
+		const char* EntityIcon(Entity e)
+		{
+			if (e.has<CameraComponent>()) return ICON_FA_VIDEO;
+			if (e.has<Light>())           return ICON_FA_LIGHTBULB;
+			if (e.has<MeshRef>())         return ICON_FA_SHAPES;
+			return ICON_FA_CUBE;
+		}
 
 		// Children of `parent` (roots when invalid) in outliner order
 		std::vector<Entity> SortedChildren(ECS& ecs, Entity parent)
@@ -64,7 +74,8 @@ namespace koi::editor
 
 			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow
 										| ImGuiTreeNodeFlags_SpanAvailWidth
-										| ImGuiTreeNodeFlags_DefaultOpen;
+										| ImGuiTreeNodeFlags_DefaultOpen
+										| ImGuiTreeNodeFlags_DrawLinesToNodes;
 
 			if (!hasChildren)
 				flags |= ImGuiTreeNodeFlags_Leaf;
@@ -110,7 +121,7 @@ namespace koi::editor
 			}
 			else
 			{
-				open = ImGui::TreeNodeEx(nodeId, flags, "%s", label);
+				open = ImGui::TreeNodeEx(nodeId, flags, "%s  %s", EntityIcon(entity), label);
 
 				if (ImGui::IsItemClicked())
 					m_selection->Select(entity);
@@ -169,7 +180,7 @@ namespace koi::editor
 			m_focusRename  = true;
 		}
 
-		if (ImGui::Button("Add"))
+		if (koi::utils::IconButton(ICON_FA_PLUS, "Add entity (as a child of the selection)"))
 		{
 			Entity e = ecs.entity();
 			e.set_name(("Entity_" + std::to_string(static_cast<u64>(e.id()))).c_str());
@@ -183,7 +194,7 @@ namespace koi::editor
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!selected.is_alive());
 
-		if (ImGui::Button("Remove"))
+		if (koi::utils::IconButton(ICON_FA_TRASH, "Remove selected entity"))
 		{
 			m_selection->Clear();
 			selected.destruct();

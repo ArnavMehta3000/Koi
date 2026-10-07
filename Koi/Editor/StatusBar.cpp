@@ -70,12 +70,6 @@ namespace koi::editor
 				ImGui::SetItemTooltip("%.*s", static_cast<int>(info.ScenePath.size()), info.ScenePath.data());
 			}
 
-			if (!info.Message.empty())
-			{
-				ImGui::Separator();
-				ImGui::TextColored(text, "%.*s", static_cast<int>(info.Message.size()), info.Message.data());
-			}
-
 			// Right-aligned group, measured first so it hugs the edge
 			std::vector<Item> right;
 			if (info.Importing)

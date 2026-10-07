@@ -1,5 +1,6 @@
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
 #include <cstdio>
@@ -114,9 +115,11 @@ namespace koi::editor
 		DrawCategoryFilter();
 
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(-1.0f);
-		if (m_textFilter.Draw("##search"))
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		if (koi::utils::SearchBar("##search", m_search, "Filter messages..."))
 		{
+			ImStrncpy(m_textFilter.InputBuf, m_search.c_str(), IM_COUNTOF(m_textFilter.InputBuf));
+			m_textFilter.Build();
 			m_filterDirty = true;
 		}
 	}

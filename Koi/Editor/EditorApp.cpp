@@ -335,10 +335,10 @@ namespace koi::editor
 			m_statusBar.Draw({
 				.State     = engine.GetPlayState(),
 				.ScenePath = m_game->GetWorld().GetSourcePath(),
-				.Message   = m_lastCookStatus,
 				.Importing = m_importQueue->IsBusy(),
 			});
 			m_panels.DrawAll();
+			m_toasts.Draw();
 			PollShortcuts();
 		}
 
@@ -473,24 +473,26 @@ namespace koi::editor
 		World& world = m_game->GetWorld();
 		if (world.GetSourcePath().empty())
 		{
-			m_lastCookStatus = "Save: world was not loaded from a scene";
+			m_toasts.Push(ToastKind::Warning, "Nothing to save: the world was not loaded from a scene");
 			return;
 		}
 
-		const bool saved = world.Save();
-		m_lastCookStatus = saved ? "Scene saved" : "Scene save FAILED";
+		if (world.Save())
+			m_toasts.Push(ToastKind::Success, "Scene saved");
+		else
+			m_toasts.Push(ToastKind::Error, "Scene save failed, see the Log");
 	}
 
 	void EditorApp::Cook()
 	{
-		m_lastCookStatus = editor::Cook(CookRequest
+		m_toasts.Push(ToastKind::Info, editor::Cook(CookRequest
 		{
 			.EngineSource  = m_config.EngineSource,
 			.ProjectSource = m_config.ProjectSource,
 			.ProjectFile   = m_config.ProjectFile,
 			.OutputRoot    = m_config.CookedOutput,
 			.Scenes        = m_game->GetDesc().Scenes,
-		});
+		}));
 	}
 
 	void EditorApp::Play()

@@ -3,6 +3,7 @@
 #include "Koi/Engine/Interop/ViewportTarget.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Editor/EditorCameraController.h"
+#include <IconsFontAwesome6.h>
 
 namespace toml { inline namespace v3 { class table; } }
 
@@ -52,6 +53,7 @@ namespace koi::editor
 		~ViewportPanel() override;
 
 		[[nodiscard]] std::string_view GetName() const override { return "Viewport"; }
+		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_DISPLAY; }
 		void OnUpdate() override;
 		void OnDraw() override;
 		[[nodiscard]] bool HasWindowPadding() const override { return false; }

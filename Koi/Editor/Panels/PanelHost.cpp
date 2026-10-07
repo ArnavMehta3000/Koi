@@ -22,6 +22,22 @@ namespace koi::editor
 		return nullptr;
 	}
 
+	const char* PanelHost::Title(const IEditorPanel& panel, bool withId)
+	{
+		const std::string_view name = panel.GetName();
+		m_title.clear();
+		if (const char* icon = panel.GetIcon())
+		{
+			m_title.append(icon).append("  ");
+		}
+		m_title.append(name);
+		if (withId)
+		{
+			m_title.append("###").append(name);
+		}
+		return m_title.c_str();
+	}
+
 	// [KoiPanels][Open] in imgui.ini, one "Name=0|1" line per closable panel
 	void PanelHost::RegisterSettingsHandler()
 	{
@@ -77,7 +93,7 @@ namespace koi::editor
 			}
 
 			bool open = true;
-			const bool visible = ImGui::Begin(panel->GetName().data(), panel->IsClosable() ? &open : nullptr, panel->GetWindowFlags());
+			const bool visible = ImGui::Begin(Title(*panel, true), panel->IsClosable() ? &open : nullptr, panel->GetWindowFlags());
 			if (!padded)
 			{
 				ImGui::PopStyleVar();
@@ -104,7 +120,7 @@ namespace koi::editor
 			if (!panel->IsClosable()) continue;
 
 			const bool open = panel->IsOpen();
-			if (ImGui::MenuItem(panel->GetName().data(), nullptr, open))
+			if (ImGui::MenuItem(Title(*panel, false), nullptr, open))
 			{
 				panel->SetOpen(!open);
 				ImGui::MarkIniSettingsDirty();

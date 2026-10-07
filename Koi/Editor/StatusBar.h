@@ -16,7 +16,6 @@ namespace koi::editor
 	{
 		PlayState        State;
 		std::string_view ScenePath;
-		std::string_view Message;    // last Save/Cook result
 		bool             Importing = false;
 	};
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include <string>
+#include <IconsFontAwesome6.h>
 
 namespace koi { class Renderer; }
 
@@ -13,6 +14,7 @@ namespace koi::editor
 		explicit RenderTargetsPanel(Renderer& renderer) : m_renderer(&renderer) {}
 
 		[[nodiscard]] std::string_view GetName() const override { return "Render Targets"; }
+		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_LAYER_GROUP; }
 		void OnDraw() override;
 
 	private:

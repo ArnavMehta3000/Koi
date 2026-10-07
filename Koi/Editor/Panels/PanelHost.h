@@ -2,6 +2,7 @@
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -30,7 +31,11 @@ namespace koi::editor
 	private:
 		[[nodiscard]] IEditorPanel* Find(std::string_view name) const;
 
+		// "<icon>  Name###Name": the ### keeps the window ID (and saved layouts) independent of the icon
+		[[nodiscard]] const char* Title(const IEditorPanel& panel, bool withId);
+
 	private:
 		std::vector<std::unique_ptr<IEditorPanel>> m_panels;
+		std::string                                m_title;
 	};
 }

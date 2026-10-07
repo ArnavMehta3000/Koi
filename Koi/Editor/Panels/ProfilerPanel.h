@@ -3,6 +3,7 @@
 #include "Koi/Engine/Interop/EditorPanel.h"
 #include <KoiProfiler.h>
 #include <vector>
+#include <IconsFontAwesome6.h>
 
 template <>
 struct koi::prof::TaskTraits<koi::FrameStatSample>
@@ -16,6 +17,7 @@ namespace koi::editor
 	{
 	public:
 		[[nodiscard]] inline std::string_view GetName() const override { return "Profiler"; }
+		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_GAUGE_HIGH; }
 		[[nodiscard]] ImGuiWindowFlags GetWindowFlags() const override { return ImGuiWindowFlags_NoScrollbar; }
 		void OnUpdate() override;
 		void OnDraw() override;

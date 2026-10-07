@@ -45,17 +45,11 @@ namespace koi
 			return changed;
 		}
 
+		// One property-grid row per leaf; Skip<> and arrays recurse into rows of their own
 		template <typename T>
 		bool DrawReflectedField(const char* label, T& value)
 		{
-			if constexpr (std::is_same_v<T, bool>)             return ImGui::Checkbox(label, &value);
-			else if constexpr (std::is_same_v<T, f32>)         return ImGui::DragFloat(label, &value, 0.01f);
-			else if constexpr (std::is_same_v<T, i32>)         return ImGui::DragInt(label, &value);
-			else if constexpr (std::is_same_v<T, u64>)         return ImGui::InputScalar(label, ImGuiDataType_U64, &value);
-			else if constexpr (std::is_same_v<T, std::string>) return ImGui::InputText(label, &value);
-			else if constexpr (std::is_same_v<T, Vector3>)     return DragAxes(label, &value.x, 3);
-			else if constexpr (std::is_enum_v<T>)              return DrawReflectedEnum(label, value);
-			else if constexpr (requires { typename T::Type; value.get(); })  // rfl::Skip<> runtime state
+			if constexpr (requires { typename T::Type; value.get(); })  // rfl::Skip<> runtime state
 			{
 				ImGui::BeginDisabled();
 				DrawReflectedField(label, value.get());
@@ -74,19 +68,36 @@ namespace koi
 			}
 			else
 			{
-				ImGui::TextDisabled("%s: (no widget)", label);
-				return false;
+				PropertyLabel(label);
+				const std::string id = std::string("##") + label;
+
+				if constexpr (std::is_same_v<T, bool>)             return ImGui::Checkbox(id.c_str(), &value);
+				else if constexpr (std::is_same_v<T, f32>)         return ImGui::DragFloat(id.c_str(), &value, 0.01f);
+				else if constexpr (std::is_same_v<T, i32>)         return ImGui::DragInt(id.c_str(), &value);
+				else if constexpr (std::is_same_v<T, u64>)         return ImGui::InputScalar(id.c_str(), ImGuiDataType_U64, &value);
+				else if constexpr (std::is_same_v<T, std::string>) return ImGui::InputText(id.c_str(), &value);
+				else if constexpr (std::is_same_v<T, Vector3>)     return DragAxes(id.c_str(), &value.x, 3);
+				else if constexpr (std::is_enum_v<T>)              return DrawReflectedEnum(id.c_str(), value);
+				else
+				{
+					ImGui::TextDisabled("(no widget)");
+					return false;
+				}
 			}
 		}
 
+		// Every field as a row of its own property grid, so custom inspectors can call it anywhere
 		template <typename T>
 		bool DrawReflected(T& value)
 		{
+			if (!BeginPropertyGrid("##reflected")) return false;
+
 			bool changed = false;
 			rfl::to_view(value).apply([&](const auto& field)
 			{
 				changed |= DrawReflectedField(FieldLabel(field.name()).c_str(), *field.value());
 			});
+			EndPropertyGrid();
 			return changed;
 		}
 	}

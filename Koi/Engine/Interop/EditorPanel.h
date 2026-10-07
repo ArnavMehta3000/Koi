@@ -15,6 +15,9 @@ namespace koi
 		[[nodiscard]] virtual std::string_view GetName() const = 0;
 		virtual void OnDraw() = 0;
 
+		// Font Awesome glyph shown before the name in the title and the View menu
+		[[nodiscard]] virtual const char* GetIcon() const { return nullptr; }
+
 		// Every frame while open, just before the window begins (even when docked out of sight)
 		virtual void OnUpdate() {}
 

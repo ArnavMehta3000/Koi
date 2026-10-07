@@ -3,6 +3,8 @@
 #include "Koi/Engine/Logging/LogHistory.h"
 #include <imgui.h>
 #include <deque>
+#include <string>
+#include <IconsFontAwesome6.h>
 
 namespace koi::editor
 {
@@ -10,6 +12,7 @@ namespace koi::editor
 	{
 	public:
 		[[nodiscard]] inline std::string_view GetName() const override { return "Log"; }
+		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_TERMINAL; }
 		void OnDraw() override;
 
 	private:
@@ -28,6 +31,7 @@ namespace koi::editor
 		std::vector<bool> m_categoryMask;   // Indexed by category id, grown as new categories intern
 
 		ImGuiTextFilter m_textFilter;
+		std::string     m_search;  // SearchBar text, copied into m_textFilter
 		u64             m_cursor      = 0;
 		LogLevel        m_minLevel    = LogLevel::Info;
 		bool            m_filterDirty = true;

@@ -4,6 +4,7 @@
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -117,12 +118,10 @@ namespace koi::editor
 	{
 		if (!ImGui::BeginMenuBar()) return;
 
-		if (ImGui::SmallButton("Refresh")) m_database.Refresh();
+		if (koi::utils::IconButton(ICON_FA_ARROWS_ROTATE, "Refresh")) m_database.Refresh();
 
-		ImGui::Separator();
-		ImGui::SetNextItemWidth(220.0f);
-
-		ImGui::InputTextWithHint("##Search", "Search all folders...", &m_search);
+		ImGui::SetNextItemWidth(240.0f);
+		koi::utils::SearchBar("##Search", m_search, "Search all folders...");
 
 		ImGui::EndMenuBar();
 	}
@@ -139,7 +138,8 @@ namespace koi::editor
 			ImGui::Indent(depth * 12.0f);
 
 			const bool selected = (folder == m_selectedFolder);
-			if (ImGui::Selectable(std::string(LeafName(folder)).c_str(), selected)) m_selectedFolder = folder;
+			const std::string label = std::string(selected ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER) + "  " + std::string(LeafName(folder));
+			if (ImGui::Selectable(label.c_str(), selected)) m_selectedFolder = folder;
 
 			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", folder.c_str());
 
@@ -242,7 +242,8 @@ namespace koi::editor
 
 		const bool selected = (entry.VirtualPath == m_selection.GetAsset());
 
-		if (ImGui::Selectable(entry.Name.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
+		const std::string label = std::string(koi::utils::AssetKindIcon(entry.Kind)) + "  " + entry.Name;
+		if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 			SelectAsset(entry.VirtualPath);
 
 		// Payload is the virtual path; the receiving side resolves it back through the database

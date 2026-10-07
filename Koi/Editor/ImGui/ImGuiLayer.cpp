@@ -5,6 +5,7 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -27,6 +28,8 @@ extern "C" const char _binary_DefaultLayout_ini_start[];
 extern "C" const char _binary_DefaultLayout_ini_end[];
 extern "C" const char _binary_MapleMonoRegular_ttf_start[];
 extern "C" const char _binary_MapleMonoRegular_ttf_end[];
+extern "C" const char _binary_MapleMonoBold_ttf_start[];
+extern "C" const char _binary_MapleMonoBold_ttf_end[];
 extern "C" const char _binary_FontAwesomeSolid_ttf_start[];
 extern "C" const char _binary_FontAwesomeSolid_ttf_end[];
 
@@ -41,20 +44,28 @@ namespace koi::editor
 		}
 
 		// The atlas reads the embedded data for its whole lifetime, so it must not take ownership
-		static void AddEmbeddedFont(const char* start, const char* end, f32 sizePixels, ImFontConfig config)
+		static ImFont* AddEmbeddedFont(const char* start, const char* end, f32 sizePixels, ImFontConfig config)
 		{
 			config.FontDataOwnedByAtlas = false;
-			ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<char*>(start), static_cast<int>(end - start), sizePixels, &config);
+			return ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<char*>(start), static_cast<int>(end - start), sizePixels, &config);
 		}
 
-		static void LoadFonts(f32 sizePixels)
+		// Text face with Font Awesome merged in, so icons work in any string drawn with it
+		static ImFont* AddFontWithIcons(const char* start, const char* end, f32 sizePixels)
 		{
-			AddEmbeddedFont(_binary_MapleMonoRegular_ttf_start, _binary_MapleMonoRegular_ttf_end, sizePixels, {});
+			ImFont* font = AddEmbeddedFont(start, end, sizePixels, {});
 
 			ImFontConfig icons;
 			icons.MergeMode        = true;
 			icons.GlyphMinAdvanceX = sizePixels;  // fixed-width icons line up in lists
 			AddEmbeddedFont(_binary_FontAwesomeSolid_ttf_start, _binary_FontAwesomeSolid_ttf_end, sizePixels * 0.85f, icons);
+			return font;
+		}
+
+		static void LoadFonts(f32 sizePixels)
+		{
+			AddFontWithIcons(_binary_MapleMonoRegular_ttf_start, _binary_MapleMonoRegular_ttf_end, sizePixels);
+			koi::utils::s_headingFont = AddFontWithIcons(_binary_MapleMonoBold_ttf_start, _binary_MapleMonoBold_ttf_end, sizePixels);
 		}
 
 		static void SrvAlloc(ImGui_ImplDX12_InitInfo* /*info*/,

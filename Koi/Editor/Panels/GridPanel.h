@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Interop/EditorPanel.h"
+#include <IconsFontAwesome6.h>
 
 namespace koi
 {
@@ -17,6 +18,7 @@ namespace koi::editor
 		explicit GridPanel(Renderer& renderer) : m_renderer(&renderer) {}
 
 		[[nodiscard]] std::string_view GetName() const override { return "Grid"; }
+		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_BORDER_ALL; }
 		void OnDraw() override;
 
 	private:

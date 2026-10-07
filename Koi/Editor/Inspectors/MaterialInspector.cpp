@@ -3,8 +3,11 @@
 #include "Koi/Editor/Assets/MaterialWriter.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <IconsFontAwesome6.h>
 #include <imgui.h>
+#include <cctype>
 
 namespace koi::editor
 {
@@ -24,17 +27,37 @@ namespace koi::editor
 			return nullptr;
 		}
 
+		// "base_color" -> "Base Color"
+		std::string DisplayName(std::string_view name)
+		{
+			std::string out;
+			bool upper = true;
+			for (const char c : name)
+			{
+				if (c == '_')
+				{
+					out += ' ';
+					upper = true;
+					continue;
+				}
+				out += upper ? static_cast<char>(std::toupper(static_cast<unsigned char>(c))) : c;
+				upper = false;
+			}
+			return out;
+		}
+
 		bool DrawFloats(const MaterialParam& param, ImportMaterial::Constants& constants)
 		{
 			f32* field = FloatFieldFor(param.Name, constants);
 			if (!field) return false;
 
-			const std::string label(param.Name);
+			koi::utils::PropertyLabel(DisplayName(param.Name).c_str());
+			const std::string id = "##" + std::string(param.Name);
 			switch (param.Type)
 			{
-			case MaterialParamType::Float:  return ImGui::DragFloat (label.c_str(), field, 0.01f, 0.0f, 1.0f);
-			case MaterialParamType::Float3: return ImGui::ColorEdit3(label.c_str(), field);
-			case MaterialParamType::Float4: return ImGui::ColorEdit4(label.c_str(), field);
+			case MaterialParamType::Float:  return ImGui::DragFloat (id.c_str(), field, 0.01f, 0.0f, 1.0f);
+			case MaterialParamType::Float3: return ImGui::ColorEdit3(id.c_str(), field);
+			case MaterialParamType::Float4: return ImGui::ColorEdit4(id.c_str(), field);
 			default:                        return false;
 			}
 		}
@@ -56,23 +79,27 @@ namespace koi::editor
 			return;
 		}
 
-		ImGui::LabelText("template", "%s", target->Name.c_str());
-
-		if (ImGui::Checkbox("double_sided", &m_source.DoubleSided)) m_dirty = true;
-
-		ImGui::Spacing();
-
-		for (const MaterialParam& param : target->Parameters)
+		if (koi::utils::BeginPropertyGrid("##material"))
 		{
-			if (param.Type == MaterialParamType::Texture) DrawTextureSlot(database, param);
-			else if (DrawFloats(param, m_source.Constants)) m_dirty = true;
+			koi::utils::PropertyLabel("Template");
+			ImGui::TextDisabled("%s", target->Name.c_str());
+
+			koi::utils::PropertyLabel("Double Sided");
+			if (ImGui::Checkbox("##double_sided", &m_source.DoubleSided)) m_dirty = true;
+
+			for (const MaterialParam& param : target->Parameters)
+			{
+				if (param.Type == MaterialParamType::Texture) DrawTextureSlot(database, param);
+				else if (DrawFloats(param, m_source.Constants)) m_dirty = true;
+			}
+			koi::utils::EndPropertyGrid();
 		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 
 		ImGui::BeginDisabled(!m_dirty);
-		if (ImGui::Button("Save", ImVec2(120.0f, 0.0f))) Save(database, entry);
+		if (ImGui::Button(ICON_FA_FLOPPY_DISK "  Save", ImVec2(120.0f, 0.0f))) Save(database, entry);
 		ImGui::EndDisabled();
 
 		if (m_dirty)
@@ -95,35 +122,23 @@ namespace koi::editor
 		AssetKey& key = m_source.Textures[slot];
 
 		const AssetEntry* bound = key.IsValid() ? database.Find(key.Path()) : nullptr;
-		const std::string label = bound ? bound->Name : (key.IsValid() ? key.Path() : std::string("(none)"));
+		const std::string name  = bound ? bound->Name : (key.IsValid() ? key.Path() : std::string());
+		const std::string id(param.Name);
 
-		ImGui::PushID(static_cast<int>(slot));
-		ImGui::Button(label.c_str(), ImVec2(-70.0f, 0.0f));
+		koi::utils::PropertyLabel(DisplayName(param.Name).c_str());
+		std::string dropped;
+		if (!koi::utils::AssetField(id.c_str(), koi::utils::AssetKindIcon(AssetKind::Texture), name, key.IsValid() ? key.Path() : std::string_view(), dropped, true)) return;
 
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType))
-			{
-				const std::string dropped(static_cast<const char*>(payload->Data));
-				if (const AssetEntry* dropEntry = database.Find(dropped); dropEntry && dropEntry->Kind == AssetKind::Texture)
-				{
-					key     = dropEntry->Key();
-					m_dirty = true;
-				}
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		ImGui::SameLine();
-		if (ImGui::SmallButton("x"))
+		if (dropped.empty())
 		{
 			key     = AssetKey();
 			m_dirty = true;
 		}
-
-		ImGui::SameLine();
-		ImGui::TextUnformatted(param.Name.data(), param.Name.data() + param.Name.size());
-		ImGui::PopID();
+		else if (const AssetEntry* dropEntry = database.Find(dropped); dropEntry && dropEntry->Kind == AssetKind::Texture)
+		{
+			key     = dropEntry->Key();
+			m_dirty = true;
+		}
 	}
 
 	void MaterialInspector::Load(const AssetEntry& entry)

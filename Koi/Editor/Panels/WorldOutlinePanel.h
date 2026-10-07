@@ -3,6 +3,7 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Editor/Selection.h"
 #include <string>
+#include <IconsFontAwesome6.h>
 
 namespace koi { class AppBase; }
 
@@ -16,6 +17,7 @@ namespace koi::editor
 		WorldOutlinePanel(AppBase& game, Selection& selection) : m_game(&game), m_selection(&selection) {}
 
 		[[nodiscard]] std::string_view GetName() const override { return "World Outline"; }
+		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_SITEMAP; }
 		[[nodiscard]] bool IsClosable() const override { return false; }
 		void OnDraw() override;
 
