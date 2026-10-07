@@ -11,7 +11,7 @@ namespace koi
 		}
 		catch (const std::exception& e)
 		{
-			KOI_LOG_ERROR("Command line: {}", e.what());
+			KOI_LOG(Engine, Error, "Command line: {}", e.what());
 			return 1;
 		}
 		return 0;

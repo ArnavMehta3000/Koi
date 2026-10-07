@@ -197,7 +197,7 @@ namespace koi::editor
 			{
 				if (progress.IsCancelled()) return fail("cancelled");
 				++failedTextures;
-				KOI_LOG_WARN("{}: texture {} didn't import ({}), so its material goes without it", request.Name, job.Name, error);
+				KOI_LOG(Import, Warn, "{}: texture {} didn't import ({}), so its material goes without it", request.Name, job.Name, error);
 			}
 		}
 
@@ -328,7 +328,7 @@ namespace koi::editor
 
 		if (failedTextures > 0)
 		{
-			KOI_LOG_WARN("{} imported, but {} of its {} texture(s) didn't. The log above says why", request.Name, failedTextures, textures.size());
+			KOI_LOG(Import, Warn, "{} imported, but {} of its {} texture(s) didn't. The log above says why", request.Name, failedTextures, textures.size());
 		}
 		return true;
 	}

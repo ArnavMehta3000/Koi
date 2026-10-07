@@ -380,7 +380,7 @@ namespace koi::editor
 		// A drag resizes every frame; report only where it ended up
 		if (m_resizeSettle > 0.0f && (m_resizeSettle -= dt) <= 0.0f)
 		{
-			KOI_LOG_DEBUG("Viewport resized to {}x{}", m_target.Width, m_target.Height);
+			KOI_LOG(Editor, Debug, "Viewport resized to {}x{}", m_target.Width, m_target.Height);
 		}
 
 		const bool anyMouseDown = input.IsMouseButtonDown(MouseButton::Left)

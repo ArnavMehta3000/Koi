@@ -44,7 +44,7 @@ namespace koi
 				}
 				else
 				{
-					KOI_LOG_WARN("Input: action '{}' has unknown binding '{}'", action.Name, *text);
+					KOI_LOG(Input, Warn, "Input: action '{}' has unknown binding '{}'", action.Name, *text);
 				}
 			}
 		}
@@ -73,7 +73,7 @@ namespace koi
 			config.Actions.push_back(std::move(action));
 		}
 
-		KOI_LOG_DEBUG("Input: {} action(s) loaded", config.Actions.size());
+		KOI_LOG(Input, Debug, "Input: {} action(s) loaded", config.Actions.size());
 		return config;
 	}
 }

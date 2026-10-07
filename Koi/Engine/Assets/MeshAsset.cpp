@@ -14,7 +14,7 @@ namespace koi
 	{
 		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Mesh)
 		{
-			KOI_LOG_ERROR("{} isn't a .kmesh. Import the model in the editor and use what it writes", vfsPath);
+			KOI_LOG(Assets, Error, "{} isn't a .kmesh. Import the model in the editor and use what it writes", vfsPath);
 			return nullptr;
 		}
 
@@ -39,7 +39,7 @@ namespace koi
 			const AssetIndexEntry* entry = id.is_nil() ? nullptr : index.Find(id);
 			if (!id.is_nil() && !entry)
 			{
-				KOI_LOG_WARN("{}: slot '{}' wants material {}, which isn't in the project anymore", vfsPath, mesh.SlotName(slot), utils::ToString(id));
+				KOI_LOG(Assets, Warn, "{}: slot '{}' wants material {}, which isn't in the project anymore", vfsPath, mesh.SlotName(slot), utils::ToString(id));
 			}
 
 			model->MaterialBindings.push_back(entry ? AssetKey(entry->VirtualPath) : AssetKey());

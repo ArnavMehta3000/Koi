@@ -76,7 +76,7 @@ namespace koi
 	{
 		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Material)
 		{
-			KOI_LOG_ERROR("{} isn't a .kmat, and materials can only be loaded from those", vfsPath);
+			KOI_LOG(Assets, Error, "{} isn't a .kmat, and materials can only be loaded from those", vfsPath);
 			return nullptr;
 		}
 
@@ -92,7 +92,7 @@ namespace koi
 			if (id.is_nil()) return AssetKey();
 			if (const AssetIndexEntry* entry = index.Find(id)) return AssetKey(entry->VirtualPath);
 
-			KOI_LOG_WARN("{} uses texture {}, which isn't in the project anymore", vfsPath, utils::ToString(id));
+			KOI_LOG(Assets, Warn, "{} uses texture {}, which isn't in the project anymore", vfsPath, utils::ToString(id));
 			return AssetKey();
 		}));
 	}
@@ -121,7 +121,7 @@ namespace koi
 		{
 			if (!source.Template.empty())
 			{
-				KOI_LOG_WARN("Material '{}' names unknown template '{}'", source.Name, source.Template);
+				KOI_LOG(Assets, Warn, "Material '{}' names unknown template '{}'", source.Name, source.Template);
 			}
 
 			material.Template = templates.Default();

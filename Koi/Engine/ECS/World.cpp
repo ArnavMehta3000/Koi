@@ -88,7 +88,7 @@ namespace koi
 		for (const std::unique_ptr<ISystem>& system : m_systems)
 		{
 			system->Build(*this);
-			KOI_LOG_TRACE("Built system '{}'", system->Name());
+			KOI_LOG(ECS, Trace, "Built system '{}'", system->Name());
 		}
 	}
 
@@ -118,12 +118,12 @@ namespace koi
 	std::optional<World> World::Load(std::string_view virtualPath)
 	{
 		ZoneScoped;
-		KOI_LOG_DEBUG("Loading scene '{}'", virtualPath);
+		KOI_LOG(Scene, Debug, "Loading scene '{}'", virtualPath);
 
 		const std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
 		if (!bytes)
 		{
-			KOI_LOG_ERROR("Failed to read scene file: {}", virtualPath);
+			KOI_LOG(Scene, Error, "Failed to read scene file: {}", virtualPath);
 			return std::nullopt;
 		}
 
@@ -137,12 +137,12 @@ namespace koi
 			world.m_sourcePath = virtualPath;
 			world.LoadFromTable(scene);
 
-			KOI_LOG_INFO("Loaded scene '{}'", virtualPath);
+			KOI_LOG(Scene, Info, "Loaded scene '{}'", virtualPath);
 			return world;
 		}
 		catch (const toml::parse_error& e)
 		{
-			KOI_LOG_ERROR("Failed to parse scene '{}': {}", virtualPath, e.description());
+			KOI_LOG(Scene, Error, "Failed to parse scene '{}': {}", virtualPath, e.description());
 			return std::nullopt;
 		}
 	}
@@ -154,7 +154,7 @@ namespace koi
 		const toml::array* entities = scene["entity"].as_array();
 		if (!entities)
 		{
-			KOI_LOG_WARN("Scene has no [[entity]] array; loading empty world");
+			KOI_LOG(Scene, Warn, "Scene has no [[entity]] array; loading empty world");
 			return false;
 		}
 
@@ -176,7 +176,7 @@ namespace koi
 			const std::string name = (*entityTable)["name"].value_or<std::string>("Entity_" + std::to_string(i));
 			if (m_ecs.lookup(name.c_str()))
 			{
-				KOI_LOG_WARN("Scene entity [{}] '{}' duplicates an earlier name. Flecs will merge them into one entity", i, name);
+				KOI_LOG(Scene, Warn, "Scene entity [{}] '{}' duplicates an earlier name. Flecs will merge them into one entity", i, name);
 			}
 
 			Entity e = m_ecs.entity(name.c_str());
@@ -192,7 +192,7 @@ namespace koi
 			for (const auto& [key, value] : *entityTable)
 			{
 				if (!value.is_table() || ComponentRegistry::Get().Find(key.str())) continue;
-				KOI_LOG_WARN("Scene entity '{}' has unknown component table '{}'; it will not be loaded or saved", name, key.str());
+				KOI_LOG(Scene, Warn, "Scene entity '{}' has unknown component table '{}'; it will not be loaded or saved", name, key.str());
 			}
 
 			// Configure parents if they exist
@@ -209,7 +209,7 @@ namespace koi
 			}
 			else
 			{
-				KOI_LOG_WARN("Scene entity parent '{}' not found", link.ParentName);
+				KOI_LOG(Scene, Warn, "Scene entity parent '{}' not found", link.ParentName);
 			}
 		}
 
@@ -244,10 +244,10 @@ namespace koi
 				.set<Transform>(camXform)
 				.set<CameraComponent>({});
 
-			KOI_LOG_DEBUG("Scene has no camera; spawned a default one");
+			KOI_LOG(Scene, Debug, "Scene has no camera; spawned a default one");
 		}
 
-		KOI_LOG_DEBUG("Built world from scene table ({} entities)", entities->size());
+		KOI_LOG(Scene, Debug, "Built world from scene table ({} entities)", entities->size());
 		return true;
 	}
 
@@ -257,7 +257,7 @@ namespace koi
 
 		if (m_sourcePath.empty())
 		{
-			KOI_LOG_ERROR("World was not loaded from a scene; nothing to save to");
+			KOI_LOG(Scene, Error, "World was not loaded from a scene; nothing to save to");
 			return false;
 		}
 
@@ -266,19 +266,19 @@ namespace koi
 		const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(m_sourcePath);
 		if (!diskPath)
 		{
-			KOI_LOG_ERROR("Cannot resolve scene path to disk for saving: {}", m_sourcePath);
+			KOI_LOG(Scene, Error, "Cannot resolve scene path to disk for saving: {}", m_sourcePath);
 			return false;
 		}
 
 		std::ofstream out(*diskPath, std::ios::trunc);
 		if (!out)
 		{
-			KOI_LOG_ERROR("Failed to open scene file for writing: {}", diskPath->string());
+			KOI_LOG(Scene, Error, "Failed to open scene file for writing: {}", diskPath->string());
 			return false;
 		}
 
 		out << utils::TomlDocument(root);
-		KOI_LOG_INFO("Saved scene '{}'", diskPath->string());
+		KOI_LOG(Scene, Info, "Saved scene '{}'", diskPath->string());
 		return true;
 	}
 
@@ -320,7 +320,7 @@ namespace koi
 		}
 
 		root.insert("entity", std::move(entities));
-		KOI_LOG_TRACE("Serialized world to scene table ({} entities)", root["entity"].as_array()->size());
+		KOI_LOG(Scene, Trace, "Serialized world to scene table ({} entities)", root["entity"].as_array()->size());
 		return root;
 	}
 
@@ -345,7 +345,7 @@ namespace koi
 			}
 		}
 
-		KOI_LOG_DEBUG("Cleared world ({} entities destroyed)", doomed.size());
+		KOI_LOG(Scene, Debug, "Cleared world ({} entities destroyed)", doomed.size());
 
 		m_bounds = BoundingBox{ {}, {} };
 	}

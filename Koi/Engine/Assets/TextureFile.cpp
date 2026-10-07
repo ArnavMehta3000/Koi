@@ -99,7 +99,7 @@ namespace koi
 
 		if (file.Type() != AssetFileType::Texture)
 		{
-			KOI_LOG_ERROR("{} isn't a texture, it holds a {}", debugName, AssetFile::ToString(file.Type()));
+			KOI_LOG(Assets, Error, "{} isn't a texture, it holds a {}", debugName, AssetFile::ToString(file.Type()));
 			return nullptr;
 		}
 
@@ -113,14 +113,14 @@ namespace koi
 		const TextureHeader* header = prepared->Header;
 		if (!header || prepared->Subresources.empty() || prepared->Data.empty())
 		{
-			KOI_LOG_ERROR("{} is missing part of its texture data. Reimport it", debugName);
+			KOI_LOG(Assets, Error, "{} is missing part of its texture data. Reimport it", debugName);
 			return nullptr;
 		}
 
 		if (header->Width == 0 || header->Height == 0 || header->MipLevels == 0 || header->ArraySize == 0 ||
 			prepared->Subresources.size() != static_cast<size_t>(header->MipLevels) * header->ArraySize)
 		{
-			KOI_LOG_ERROR("{} describes a {}x{} texture with {} mip(s) but carries {} subresource(s). Reimport it",
+			KOI_LOG(Assets, Error, "{} describes a {}x{} texture with {} mip(s) but carries {} subresource(s). Reimport it",
 				debugName, header->Width, header->Height, header->MipLevels, prepared->Subresources.size());
 			return nullptr;
 		}
@@ -130,7 +130,7 @@ namespace koi
 			const u64 end = sub.Offset + static_cast<u64>(sub.RowPitch) * (sub.NumRows - 1) + sub.RowBytes;
 			if (sub.NumRows == 0 || sub.RowBytes > sub.RowPitch || end > prepared->Data.size())
 			{
-				KOI_LOG_ERROR("{} has mip data that doesn't fit inside the file. Reimport it", debugName);
+				KOI_LOG(Assets, Error, "{} has mip data that doesn't fit inside the file. Reimport it", debugName);
 				return nullptr;
 			}
 		}

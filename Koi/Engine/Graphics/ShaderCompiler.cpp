@@ -84,7 +84,7 @@ namespace koi
 
 				if (!resolved)
 				{
-					KOI_LOG_ERROR("Shader include not found: {}", utils::FromWide(fileName));
+					KOI_LOG(Shaders, Error, "Shader include not found: {}", utils::FromWide(fileName));
 					return HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND);
 				}
 
@@ -92,7 +92,7 @@ namespace koi
 				HRESULT hr = m_utils->LoadFile(resolved->wstring().c_str(), nullptr, &blob);
 				if (FAILED(hr)) return hr;
 
-				KOI_LOG_TRACE("Shader include '{}' -> '{}'", utils::FromWide(fileName), resolved->string());
+				KOI_LOG(Shaders, Trace, "Shader include '{}' -> '{}'", utils::FromWide(fileName), resolved->string());
 
 				m_searchDirs.push_back(resolved->parent_path());
 
@@ -137,7 +137,7 @@ namespace koi
 	ComPtr<IDxcBlob> ShaderCompiler::CompileFromFile(const fs::path& filePath, const Args& args, std::vector<fs::path>* outIncludes)
 	{
 		ZoneScoped;
-		KOI_LOG_DEBUG("Compiling shader: {}", filePath.string());
+		KOI_LOG(Shaders, Debug, "Compiling shader: {}", filePath.string());
 
 		assert(args.Type != ShaderType::Unknown && "Unknown shader type");
 		if (args.Type == ShaderType::Unknown) return nullptr;
@@ -206,7 +206,7 @@ namespace koi
 		if (errors && errors->GetStringLength() != 0)
 		{
 			const std::string msg(static_cast<const char*>(errors->GetBufferPointer()), errors->GetStringLength());
-			KOI_LOG_ERROR("Failed to compile shader from file: {}\n\tError: {}", filePath.string(), msg);
+			KOI_LOG(Shaders, Error, "Failed to compile shader from file: {}\n\tError: {}", filePath.string(), msg);
 			return nullptr;
 		}
 
@@ -239,7 +239,7 @@ namespace koi
 				outPath = outPath.lexically_normal();
 				if (!writeFile(outPath, shader))
 				{
-					KOI_LOG_ERROR("Failed to write shader CSO file: {}", outPath.string());
+					KOI_LOG(Shaders, Error, "Failed to write shader CSO file: {}", outPath.string());
 				}
 			}
 
@@ -259,7 +259,7 @@ namespace koi
 					fs::path outPath = (args.OutDir.value() / pdbFileName).lexically_normal();
 					if (!writeFile(outPath, pdbBlob))
 					{
-						KOI_LOG_ERROR("Failed to write shader PDB file: {}", outPath.string());
+						KOI_LOG(Shaders, Error, "Failed to write shader PDB file: {}", outPath.string());
 					}
 				}
 			}
@@ -279,7 +279,7 @@ namespace koi
 						hashStr += fmt::format(L"{:02x}", hashDigest[i]);
 					}
 
-					KOI_LOG_TRACE("Compiled shader ({}) hash: {}", utils::FromWide(shaderName), utils::FromWide(hashStr));
+					KOI_LOG(Shaders, Trace, "Compiled shader ({}) hash: {}", utils::FromWide(shaderName), utils::FromWide(hashStr));
 				}
 			}
 		}
@@ -298,6 +298,6 @@ namespace koi
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils)));
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler)));
 
-		KOI_LOG_DEBUG("Shader compiler (DXC) initialized");
+		KOI_LOG(Shaders, Debug, "Shader compiler (DXC) initialized");
 	}
 }

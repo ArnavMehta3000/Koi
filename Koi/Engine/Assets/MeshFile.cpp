@@ -16,7 +16,7 @@ namespace koi
 
 		if (file.Type() != AssetFileType::Mesh)
 		{
-			KOI_LOG_ERROR("{} isn't a mesh, it holds a {}", debugName, AssetFile::ToString(file.Type()));
+			KOI_LOG(Assets, Error, "{} isn't a mesh, it holds a {}", debugName, AssetFile::ToString(file.Type()));
 			return nullptr;
 		}
 
@@ -35,7 +35,7 @@ namespace koi
 		const MeshHeader* header = prepared->Header;
 		if (!header || header->Layout != VertexLayout::Interleaved)
 		{
-			KOI_LOG_ERROR("{} has no mesh header, or a vertex layout this build can't read. Reimport it", debugName);
+			KOI_LOG(Assets, Error, "{} has no mesh header, or a vertex layout this build can't read. Reimport it", debugName);
 			return nullptr;
 		}
 
@@ -47,7 +47,7 @@ namespace koi
 			|| prepared->Indices.empty()
 			|| prepared->Submeshes.empty())
 		{
-			KOI_LOG_ERROR("{} says it has {} vertices, {} indices and {} submesh(es), but the data doesn't match. Reimport it",
+			KOI_LOG(Assets, Error, "{} says it has {} vertices, {} indices and {} submesh(es), but the data doesn't match. Reimport it",
 				debugName, header->VertexCount, header->IndexCount, header->SubmeshCount);
 			return nullptr;
 		}
@@ -59,7 +59,7 @@ namespace koi
 				|| static_cast<u32>(sub.VertexOffset) >= header->VertexCount
 				|| sub.MaterialSlot > header->MaterialSlotCount)
 			{
-				KOI_LOG_ERROR("{} has a submesh pointing outside its own data. Reimport it", debugName);
+				KOI_LOG(Assets, Error, "{} has a submesh pointing outside its own data. Reimport it", debugName);
 				return nullptr;
 			}
 		}

@@ -96,17 +96,17 @@ namespace koi::editor
 
 				if (ok)
 				{
-					KOI_LOG_INFO("Imported {} as {} in {:.1f} s ({})", item->Source.filename().string(), item->OutputPath, item->Seconds, item->Progress.Breakdown());
+					KOI_LOG(Import, Info, "Imported {} as {} in {:.1f} s ({})", item->Source.filename().string(), item->OutputPath, item->Seconds, item->Progress.Breakdown());
 					item->Status.store(ImportStatus::Done, std::memory_order_release);
 				}
 				else if (item->Progress.IsCancelled())
 				{
-					KOI_LOG_INFO("Stopped importing {}", item->Source.filename().string());
+					KOI_LOG(Import, Info, "Stopped importing {}", item->Source.filename().string());
 					item->Status.store(ImportStatus::Cancelled, std::memory_order_release);
 				}
 				else
 				{
-					KOI_LOG_ERROR("Couldn't import {}: {}", item->Source.filename().string(), item->Error);
+					KOI_LOG(Import, Error, "Couldn't import {}: {}", item->Source.filename().string(), item->Error);
 					item->Status.store(ImportStatus::Failed, std::memory_order_release);
 				}
 			}
@@ -137,7 +137,7 @@ namespace koi::editor
 			const bool model = IsModelSource(file);
 			if (!model && !IsTextureSource(file))
 			{
-				KOI_LOG_INFO("Skipping {}: only images and glTF models can be imported for now", file.filename().string());
+				KOI_LOG(Import, Info, "Skipping {}: only images and glTF models can be imported for now", file.filename().string());
 				return;
 			}
 
@@ -172,7 +172,7 @@ namespace koi::editor
 		if (added > 0)
 		{
 			m_wantsAttention = true;
-			KOI_LOG_INFO("{} file(s) ready to import. Check their settings in the Import panel", added);
+			KOI_LOG(Import, Info, "{} file(s) ready to import. Check their settings in the Import panel", added);
 		}
 	}
 
@@ -188,7 +188,7 @@ namespace koi::editor
 		const size_t settingsSize = isModel ? sizeof(ModelImportSettings) : sizeof(TextureImportSettings);
 		if ((file->Type() != AssetFileType::Texture && !isModel) || settingsBytes.size() < settingsSize || refBytes.empty())
 		{
-			KOI_LOG_WARN("Can't reimport {}: it doesn't remember where it came from (a cooked copy, maybe?)", assetPath);
+			KOI_LOG(Import, Warn, "Can't reimport {}: it doesn't remember where it came from (a cooked copy, maybe?)", assetPath);
 			return false;
 		}
 
@@ -197,7 +197,7 @@ namespace koi::editor
 		std::error_code ec;
 		if (source.empty() || !fs::exists(source, ec))
 		{
-			KOI_LOG_WARN("Can't reimport {}: its source {} isn't there anymore", assetPath, ref);
+			KOI_LOG(Import, Warn, "Can't reimport {}: its source {} isn't there anymore", assetPath, ref);
 			return false;
 		}
 
@@ -214,7 +214,7 @@ namespace koi::editor
 		item->OutputDisk = VirtualFileSystem::Get().TryResolveToDisk(assetPath).value_or(fs::path());
 		item->Id         = file->Id();  // same id, so everything pointing at it keeps working
 
-		KOI_LOG_INFO("Reimporting {} from {}", assetPath, ref);
+		KOI_LOG(Import, Info, "Reimporting {} from {}", assetPath, ref);
 		Start({ std::move(item) });
 		return true;
 	}
@@ -231,14 +231,14 @@ namespace koi::editor
 			while (folder.ends_with('/')) folder.pop_back();
 			if (!folder.starts_with(kProjectScheme))
 			{
-				KOI_LOG_ERROR("Imports have to land in a project folder, and '{}' isn't one", folder);
+				KOI_LOG(Import, Error, "Imports have to land in a project folder, and '{}' isn't one", folder);
 				return std::nullopt;
 			}
 
 			const fs::path disk = VirtualFileSystem::Get().TryResolveToDisk(folder).value_or(fs::path());
 			if (disk.empty())
 			{
-				KOI_LOG_ERROR("Couldn't work out where {} is on disk", folder);
+				KOI_LOG(Import, Error, "Couldn't work out where {} is on disk", folder);
 				return std::nullopt;
 			}
 			return Destination{ std::move(folder), disk };
@@ -321,7 +321,7 @@ namespace koi::editor
 				const bool resident = item->Type == AssetFileType::Mesh ? assets.Cache<GPUMesh>().IsResident(key) : assets.Cache<GPUTexture>().IsResident(key);
 				if (item->Status == ImportStatus::Done && resident)
 				{
-					KOI_LOG_INFO("{} is already loaded, so the new version shows up the next time the scene loads", item->OutputPath);
+					KOI_LOG(Import, Info, "{} is already loaded, so the new version shows up the next time the scene loads", item->OutputPath);
 				}
 			}
 

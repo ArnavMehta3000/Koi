@@ -32,7 +32,6 @@ namespace koi
 		{
 			std::string Path;
 			u32         NameOffset = 0;  // start of the basename within Path
-			u16         Category   = 0;  // catch-all for the legacy macros
 		};
 
 		struct SourceTable
@@ -74,16 +73,6 @@ namespace koi
 		{
 			static CategoryTable table;
 			return table;
-		}
-
-		u16 CatchAllFor(std::string path)
-		{
-			std::ranges::replace(path, '\\', '/');
-			if (path.find("Koi/Editor/") != std::string::npos)
-				return logs::Editor.Id;
-			if (path.find("Koi/Engine/") != std::string::npos || path.find("Launcher/") != std::string::npos)
-				return logs::Engine.Id;
-			return logs::Game.Id;
 		}
 
 		std::shared_ptr<spdlog::logger>            g_logger;
@@ -261,7 +250,7 @@ namespace koi
 		return static_cast<u16>(Categories().Count.load(std::memory_order_acquire));
 	}
 
-	LogSite Logger::InternSource(std::string_view path)
+	u16 Logger::InternSource(std::string_view path)
 	{
 		SourceTable& table = Sources();
 		std::string key(path);
@@ -269,19 +258,19 @@ namespace koi
 		std::lock_guard lock(table.Mutex);
 
 		if (auto it = table.Ids.find(key); it != table.Ids.end())
-			return { it->second, table.Entries[it->second].Category };
+			return it->second;
 
 		if (table.Entries.size() >= 0xFFFF)
-			return { 0, logs::Engine.Id };  // absurd; keep ids in range rather than wrap
+			return 0;  // absurd; keep ids in range rather than wrap
 
 		const size_t slash  = path.find_last_of("/\\");
 		const u32    offset = (slash == std::string_view::npos) ? 0u : static_cast<u32>(slash + 1);
 		const u16    id     = static_cast<u16>(table.Entries.size());
 
-		table.Entries.push_back(SourceEntry{ .Path = key, .NameOffset = offset, .Category = CatchAllFor(key) });
+		table.Entries.push_back(SourceEntry{ .Path = key, .NameOffset = offset });
 		table.Ids.emplace(std::move(key), id);
 		table.Count.store(id + 1u, std::memory_order_release);
-		return { id, table.Entries.back().Category };
+		return id;
 	}
 
 	LogSourceInfo Logger::GetSource(u16 id)

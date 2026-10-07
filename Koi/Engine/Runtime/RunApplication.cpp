@@ -127,9 +127,9 @@ namespace koi::internal
 		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoots));
 		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoots));
 
-		KOI_LOG_DEBUG("Source VFS mounts:");
-		KOI_LOG_DEBUG("\tengine  <- {} (+ {})", desc.EngineDir.string(),  desc.EngineBuildDir.string());
-		KOI_LOG_DEBUG("\tproject <- {} (+ {})", desc.ProjectDir.string(), desc.ProjectBuildDir.string());
+		KOI_LOG(Engine, Debug, "Source VFS mounts:");
+		KOI_LOG(Engine, Debug, "\tengine  <- {} (+ {})", desc.EngineDir.string(),  desc.EngineBuildDir.string());
+		KOI_LOG(Engine, Debug, "\tproject <- {} (+ {})", desc.ProjectDir.string(), desc.ProjectBuildDir.string());
 	}
 
 	// Runtime: cooked content is laid out as <root>/Engine + <root>/Project, where root is
@@ -158,10 +158,10 @@ namespace koi::internal
 		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoot));
 		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
 
-		KOI_LOG_DEBUG("Cooked VFS mounts:");
-		KOI_LOG_DEBUG("\tProject file : {}", cmd.GetProjectFile().string());
-		KOI_LOG_DEBUG("\tengine  <- {}", engineRoot.string());
-		KOI_LOG_DEBUG("\tproject <- {}", projectRoot.string());
+		KOI_LOG(Engine, Debug, "Cooked VFS mounts:");
+		KOI_LOG(Engine, Debug, "\tProject file : {}", cmd.GetProjectFile().string());
+		KOI_LOG(Engine, Debug, "\tengine  <- {}", engineRoot.string());
+		KOI_LOG(Engine, Debug, "\tproject <- {}", projectRoot.string());
 	}
 
 	// Owns the logger for the whole of RunApplication so it outlives the Engine and
@@ -191,7 +191,7 @@ namespace koi::internal
 			auto cmd = internal::InvokeCommandLineFactory();
 			if (cmd->ParseArgs(argc, argv) != 0)
 			{
-				KOI_LOG_CRITICAL("Failed to parse command line arguments");
+				KOI_LOG(Engine, Critical, "Failed to parse command line arguments");
 				return -1;
 			}
 
@@ -219,11 +219,11 @@ namespace koi::internal
 				.GpuValidation = cmd->IsGpuValidationEnabled()
 			});
 
-			KOI_LOG_DEBUG("Creating application instance");
+			KOI_LOG(Engine, Debug, "Creating application instance");
 			std::unique_ptr<AppBase> app = CreateApplicationInstance(*cmd);
 			if (!app)
 			{
-				KOI_LOG_CRITICAL("Failed to create application");
+				KOI_LOG(Engine, Critical, "Failed to create application");
 				return -1;
 			}
 
@@ -238,14 +238,14 @@ namespace koi::internal
 			if (desc.Adapter)
 			{
 				// Editor build: wrap the game in an EditorApp supplied by the launcher
-				KOI_LOG_DEBUG("Host adapter present; wrapping application for the editor");
+				KOI_LOG(Engine, Debug, "Host adapter present; wrapping application for the editor");
 				LaunchDesc resolved = desc;
 				resolved.ProjectFile = cmd->GetProjectFile();
 
 				std::unique_ptr<IAppHost> host = desc.Adapter(std::move(app), resolved);
 				if (!host)
 				{
-					KOI_LOG_CRITICAL("Host adapter returned null");
+					KOI_LOG(Engine, Critical, "Host adapter returned null");
 					return -1;
 				}
 				engine.RunApp(*host);
@@ -259,12 +259,12 @@ namespace koi::internal
 		}
 		catch (const std::exception& e)
 		{
-			KOI_LOG_CRITICAL("Unhandled exception: {}", e.what());
+			KOI_LOG(Engine, Critical, "Unhandled exception: {}", e.what());
 			return 1;
 		}
 		catch (...)
 		{
-			KOI_LOG_CRITICAL("Unhandled unknown exception");
+			KOI_LOG(Engine, Critical, "Unhandled unknown exception");
 			return 2;
 		}
 	}

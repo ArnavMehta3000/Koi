@@ -17,7 +17,7 @@ namespace koi
 			.DoubleSided = library.Register(device, std::move(doubleSided)),
 		}));
 
-		KOI_LOG_DEBUG("Material template '{}' registered with {} parameter(s)", entry.Name, entry.Parameters.size());
+		KOI_LOG(Render, Debug, "Material template '{}' registered with {} parameter(s)", entry.Name, entry.Parameters.size());
 		return entry;
 	}
 

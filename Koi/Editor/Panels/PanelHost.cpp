@@ -9,7 +9,7 @@ namespace koi::editor
 {
 	void PanelHost::Add(std::unique_ptr<IEditorPanel> panel)
 	{
-		KOI_LOG_DEBUG("Registered editor panel '{}'", panel->GetName());
+		KOI_LOG(Editor, Debug, "Registered editor panel '{}'", panel->GetName());
 		m_panels.push_back(std::move(panel));
 	}
 

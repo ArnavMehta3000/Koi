@@ -38,7 +38,7 @@ namespace koi
 		m_fenceEvent = ::CreateEventW(nullptr, FALSE, FALSE, nullptr);
 		assert(m_fenceEvent && "UploadContext: failed to create fence event");
 
-		KOI_LOG_DEBUG("UploadContext initialized");
+		KOI_LOG(RHI, Debug, "UploadContext initialized");
 	}
 
 	void GfxDevice::UploadContext::Shutdown()
@@ -77,7 +77,7 @@ namespace koi
 		m_copyFence = nullptr;
 		m_copyQueue = nullptr;
 
-		KOI_LOG_DEBUG("UploadContext shut down");
+		KOI_LOG(RHI, Debug, "UploadContext shut down");
 	}
 
 	void GfxDevice::UploadContext::Begin()
@@ -357,7 +357,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG_DEBUG("Texture layout differs from this GPU's footprints, copying it row by row");
+			KOI_LOG(RHI, Debug, "Texture layout differs from this GPU's footprints, copying it row by row");
 			for (u32 i = 0; i < count; ++i)
 			{
 				const u32 rows  = std::min(numRows[i], layout[i].NumRows);

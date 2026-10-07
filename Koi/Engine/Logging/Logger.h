@@ -35,13 +35,6 @@ namespace koi
 		std::string_view Name;  // basename, for display
 	};
 
-	// What a call site interns once: its file, and the catch-all category the legacy macros log under
-	struct LogSite
-	{
-		u16 Source   = 0;
-		u16 Category = 0;
-	};
-
 	class Logger
 	{
 	public:
@@ -63,7 +56,7 @@ namespace koi
 		[[nodiscard]] static u16 CategoryCount();
 		[[nodiscard]] static LogLevel GetCategoryLevel(u16 id) { return static_cast<LogLevel>(s_levels[id].load(std::memory_order_relaxed)); }
 
-		[[nodiscard]] static LogSite InternSource(std::string_view path);
+		[[nodiscard]] static u16 InternSource(std::string_view path);
 		[[nodiscard]] static LogSourceInfo GetSource(u16 id);
 
 		static void Log(u16 category, LogLevel level, u16 source, u32 line, std::string_view message);
@@ -94,39 +87,19 @@ namespace koi
 
 #define KOI_LOG_CATEGORY(name) KOI_LOG_CATEGORY_IN(name, Game)
 
-#define KOI_LOG_SITE_IMPL(categoryId, lvl, site, ...)                                                     \
-	do                                                                                                     \
-	{                                                                                                      \
-		if (::koi::Logger::ShouldLog(categoryId, lvl))                                                     \
-		{                                                                                                  \
-			::koi::Logger::Log(categoryId, lvl, site.Source, static_cast<::koi::u32>(__LINE__), __VA_ARGS__); \
-		}                                                                                                  \
-	} while (0)
-
 // KOI_LOG(Render, Info, "Created {} targets", count)
-#define KOI_LOG(cat, lvl, ...)                                                                           \
-	do                                                                                                    \
-	{                                                                                                     \
-		if constexpr (KOI_LOG_LEVEL <= static_cast<int>(::koi::LogLevel::lvl))                            \
-		{                                                                                                 \
-			static const ::koi::LogSite _koiLogSite = ::koi::Logger::InternSource(__FILE__);              \
-			KOI_LOG_SITE_IMPL(::koi::logs::cat.Id, ::koi::LogLevel::lvl, _koiLogSite, __VA_ARGS__);       \
-		}                                                                                                 \
+#define KOI_LOG(cat, lvl, ...)                                                                   \
+	do                                                                                            \
+	{                                                                                             \
+		if constexpr (KOI_LOG_LEVEL <= static_cast<int>(::koi::LogLevel::lvl))                    \
+		{                                                                                         \
+			if (::koi::Logger::ShouldLog(::koi::logs::cat.Id, ::koi::LogLevel::lvl))              \
+			{                                                                                     \
+				static const ::koi::u16 _koiLogSource = ::koi::Logger::InternSource(__FILE__);    \
+				::koi::Logger::Log(::koi::logs::cat.Id, ::koi::LogLevel::lvl, _koiLogSource,      \
+				                   static_cast<::koi::u32>(__LINE__), __VA_ARGS__);               \
+			}                                                                                     \
+		}                                                                                         \
 	} while (0)
-
-// Legacy: logs under the Engine/Editor/Game catch-all picked from the file's path
-#define KOI_LOG_IMPL(lvl, ...)                                                                \
-	do                                                                                        \
-	{                                                                                         \
-		static const ::koi::LogSite _koiLogSite = ::koi::Logger::InternSource(__FILE__);      \
-		KOI_LOG_SITE_IMPL(_koiLogSite.Category, lvl, _koiLogSite, __VA_ARGS__);               \
-	} while (0)
-
-#define KOI_LOG_TRACE(...)    do { if constexpr (KOI_LOG_LEVEL <= 0) KOI_LOG_IMPL(::koi::LogLevel::Trace,    __VA_ARGS__); } while(0)
-#define KOI_LOG_DEBUG(...)    do { if constexpr (KOI_LOG_LEVEL <= 1) KOI_LOG_IMPL(::koi::LogLevel::Debug,    __VA_ARGS__); } while(0)
-#define KOI_LOG_INFO(...)     do { if constexpr (KOI_LOG_LEVEL <= 2) KOI_LOG_IMPL(::koi::LogLevel::Info,     __VA_ARGS__); } while(0)
-#define KOI_LOG_WARN(...)     do { if constexpr (KOI_LOG_LEVEL <= 3) KOI_LOG_IMPL(::koi::LogLevel::Warn,     __VA_ARGS__); } while(0)
-#define KOI_LOG_ERROR(...)    do { if constexpr (KOI_LOG_LEVEL <= 4) KOI_LOG_IMPL(::koi::LogLevel::Error,    __VA_ARGS__); } while(0)
-#define KOI_LOG_CRITICAL(...) do { if constexpr (KOI_LOG_LEVEL <= 5) KOI_LOG_IMPL(::koi::LogLevel::Critical, __VA_ARGS__); } while(0)
 
 #include "Koi/Engine/Logging/LogCategories.h"

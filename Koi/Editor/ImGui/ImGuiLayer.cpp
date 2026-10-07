@@ -149,7 +149,7 @@ namespace koi::editor
 		ImGui_ImplDX12_Init(&initInfo);
 
 		m_initialized = true;
-		KOI_LOG_DEBUG("ImGui (DX12 + GLFW) initialized");
+		KOI_LOG(Editor, Debug, "ImGui (DX12 + GLFW) initialized");
 	}
 
 	void ImGuiLayer::Shutdown()
@@ -162,7 +162,7 @@ namespace koi::editor
 		ImGui::DestroyContext();
 		m_initialized = false;
 
-		KOI_LOG_DEBUG("ImGui shut down");
+		KOI_LOG(Editor, Debug, "ImGui shut down");
 	}
 
 	void ImGuiLayer::BeginFrame(bool gameOwnsKeyboard)

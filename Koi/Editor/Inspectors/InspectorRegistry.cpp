@@ -11,11 +11,11 @@ namespace koi::editor
 
 		if (Find(inspector->Key()))
 		{
-			KOI_LOG_ERROR("Component '{}' already has an inspector; ignoring the second one", inspector->Key());
+			KOI_LOG(Editor, Error, "Component '{}' already has an inspector; ignoring the second one", inspector->Key());
 			return;
 		}
 
-		KOI_LOG_DEBUG("Registered inspector for component '{}'", inspector->Key());
+		KOI_LOG(Editor, Debug, "Registered inspector for component '{}'", inspector->Key());
 		m_inspectors.push_back(std::move(inspector));
 	}
 

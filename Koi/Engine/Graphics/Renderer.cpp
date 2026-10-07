@@ -51,7 +51,7 @@ namespace koi
 		m_defaultResources.Init(*m_device, m_pipelineLibrary);
 		RegisterMaterialTemplates();
 
-		KOI_LOG_INFO("Renderer initialized");
+		KOI_LOG(Render, Info, "Renderer initialized");
 	}
 
 	void Renderer::RegisterMaterialTemplates()
@@ -97,7 +97,7 @@ namespace koi
 		m_defaultResources.Shutdown();
 		m_device = nullptr;
 
-		KOI_LOG_INFO("Renderer shut down");
+		KOI_LOG(Render, Info, "Renderer shut down");
 	}
 
 	void Renderer::Init(const SubsystemInitContext& ctx)
@@ -124,7 +124,7 @@ namespace koi
 
 		SetPipeline(std::make_unique<DeferredPipeline>());
 
-		KOI_LOG_DEBUG("Renderer: main render window initialized ({}x{}, vsync {})", window.GetWidth(), window.GetHeight(), ctx.VSync);
+		KOI_LOG(Render, Debug, "Renderer: main render window initialized ({}x{}, vsync {})", window.GetWidth(), window.GetHeight(), ctx.VSync);
 	}
 
 	void Renderer::BeginFrame()
@@ -222,12 +222,12 @@ namespace koi
 
 	void Renderer::OnDeviceLost()
 	{
-		KOI_LOG_CRITICAL("Graphics device lost");
+		KOI_LOG(Render, Critical, "Graphics device lost");
 	}
 
 	void Renderer::OnDeviceRestored()
 	{
-		KOI_LOG_INFO("Graphics device restored");
+		KOI_LOG(Render, Info, "Graphics device restored");
 	}
 
 	void Renderer::Reload(const ReloadRequest& request)

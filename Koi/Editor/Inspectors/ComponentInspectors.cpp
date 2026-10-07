@@ -48,7 +48,7 @@ namespace koi::editor
 			if (const AssetTypeInfo* type = utils::FindAssetTypeForFile(dropped); type && type->Kind == kind)
 				return dropped;
 
-			KOI_LOG_WARN("Dropped asset is not a {}: {}", utils::FindAssetTypeByKind(kind)->Name, dropped);
+			KOI_LOG(Editor, Warn, "Dropped asset is not a {}: {}", utils::FindAssetTypeByKind(kind)->Name, dropped);
 			return std::nullopt;
 		}
 	}

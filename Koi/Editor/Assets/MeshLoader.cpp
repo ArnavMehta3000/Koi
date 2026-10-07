@@ -61,11 +61,11 @@ namespace koi::editor
 		}
 		else
 		{
-			KOI_LOG_ERROR("Failed to resolve path: {}", modelPath.string().c_str());
+			KOI_LOG(Import, Error, "Failed to resolve path: {}", modelPath.string().c_str());
 			return nullptr;
 		}
 
-		KOI_LOG_DEBUG("Loading mesh: {}", path.string().c_str());
+		KOI_LOG(Import, Debug, "Loading mesh: {}", path.string().c_str());
 
 		fastgltf::Parser parser(fastgltf::Extensions::KHR_materials_variants
 			| fastgltf::Extensions::KHR_texture_transform
@@ -74,7 +74,7 @@ namespace koi::editor
 		auto data = fastgltf::GltfDataBuffer::FromPath(path);
 		if (data.error() != fastgltf::Error::None)
 		{
-			KOI_LOG_ERROR("fastgltf: failed to read file: {}", fastgltf::getErrorMessage(data.error()));
+			KOI_LOG(Import, Error, "fastgltf: failed to read file: {}", fastgltf::getErrorMessage(data.error()));
 			return nullptr;
 		}
 
@@ -99,7 +99,7 @@ namespace koi::editor
 		auto loadResult = parser.loadGltf(data.get(), loader.BasePath, options);
 		if (!loadResult)
 		{
-			KOI_LOG_ERROR("fastgltf: failed to load file: {}", fastgltf::getErrorMessage(loadResult.error()).data());
+			KOI_LOG(Import, Error, "fastgltf: failed to load file: {}", fastgltf::getErrorMessage(loadResult.error()).data());
 			return nullptr;
 		}
 
@@ -108,7 +108,7 @@ namespace koi::editor
 
 		model->SourcePath = path.string();
 
-		KOI_LOG_DEBUG("Loaded mesh '{}': {} mesh(es), {} material(s), {} image(s)",
+		KOI_LOG(Import, Debug, "Loaded mesh '{}': {} mesh(es), {} material(s), {} image(s)",
 			path.filename().string(), model->Meshes.size(), model->Materials.size(), model->Images.size());
 
 		return model;
@@ -142,7 +142,7 @@ namespace koi::editor
 		}
 		else
 		{
-			KOI_LOG_WARN("glTF has no scenes, emitting all meshes without node transforms");
+			KOI_LOG(Import, Warn, "glTF has no scenes, emitting all meshes without node transforms");
 			for (fastgltf::Mesh& gltfMesh : Asset->meshes)
 			{
 				AppendMesh(model, gltfMesh, Matrix::Identity);
@@ -175,7 +175,7 @@ namespace koi::editor
 			fastgltf::Attribute* posAccessor = primitive.findAttribute("POSITION");
 			if (!posAccessor || posAccessor == primitive.attributes.end())
 			{
-				KOI_LOG_WARN("Primitive in mesh '{}' has no POSITION attribute, skipping", mesh.Name);
+				KOI_LOG(Import, Warn, "Primitive in mesh '{}' has no POSITION attribute, skipping", mesh.Name);
 				continue;
 			}
 
@@ -204,7 +204,7 @@ namespace koi::editor
 			}
 			else
 			{
-				KOI_LOG_DEBUG("Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
+				KOI_LOG(Import, Debug, "Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
 			}
 
 			// UV
@@ -219,7 +219,7 @@ namespace koi::editor
 			}
 			else
 			{
-				KOI_LOG_DEBUG("Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
+				KOI_LOG(Import, Debug, "Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
 			}
 
 			// Tangent
@@ -236,7 +236,7 @@ namespace koi::editor
 			}
 			else
 			{
-				KOI_LOG_DEBUG("Primitive in mesh '{}' has no TANGENT attribute; generating placeholders", mesh.Name);
+				KOI_LOG(Import, Debug, "Primitive in mesh '{}' has no TANGENT attribute; generating placeholders", mesh.Name);
 			}
 
 			// Indices
@@ -303,7 +303,7 @@ namespace koi::editor
 		mesh.Vertices    = std::move(allVertices);
 		mesh.Indices     = std::move(allIndices);
 
-		KOI_LOG_TRACE("Mesh '{}': {} submesh(es), {} verts, {} indices",
+		KOI_LOG(Import, Trace, "Mesh '{}': {} submesh(es), {} verts, {} indices",
 			mesh.Name, mesh.SubMeshes.size(), mesh.VertexCount, mesh.IndexCount);
 
 		math::MergeBounds(model.Bounds, mesh.Bounds);
@@ -443,7 +443,7 @@ namespace koi::editor
 
 			if (!encoded || encodedSize == 0)
 			{
-				KOI_LOG_WARN("Texture image index {} has no readable data", imageIndex);
+				KOI_LOG(Import, Warn, "Texture image index {} has no readable data", imageIndex);
 				return u32(-1);
 			}
 
@@ -453,7 +453,7 @@ namespace koi::editor
 
 			if (!pixels)
 			{
-				KOI_LOG_WARN("Failed to decode embedded texture image index {}", imageIndex);
+				KOI_LOG(Import, Warn, "Failed to decode embedded texture image index {}", imageIndex);
 				return u32(-1);
 			}
 

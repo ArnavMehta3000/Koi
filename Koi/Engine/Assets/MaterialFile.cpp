@@ -64,7 +64,7 @@ namespace koi
 
 		if (file.Type() != AssetFileType::Material)
 		{
-			KOI_LOG_ERROR("{} isn't a material, it holds a {}", debugName, AssetFile::ToString(file.Type()));
+			KOI_LOG(Assets, Error, "{} isn't a material, it holds a {}", debugName, AssetFile::ToString(file.Type()));
 			return std::nullopt;
 		}
 
@@ -75,7 +75,7 @@ namespace koi
 
 		if (!header || params.size() != header->ParamCount)
 		{
-			KOI_LOG_ERROR("{} is missing its material header or some of its parameters. Reimport it", debugName);
+			KOI_LOG(Assets, Error, "{} is missing its material header or some of its parameters. Reimport it", debugName);
 			return std::nullopt;
 		}
 
@@ -83,7 +83,7 @@ namespace koi
 		const std::optional<std::string_view> templ   = Slice(strings, header->TemplateOffset, header->TemplateLength);
 		if (!name || !templ)
 		{
-			KOI_LOG_ERROR("{} has names pointing outside its string table. Reimport it", debugName);
+			KOI_LOG(Assets, Error, "{} has names pointing outside its string table. Reimport it", debugName);
 			return std::nullopt;
 		}
 

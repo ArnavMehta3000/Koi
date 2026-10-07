@@ -66,11 +66,11 @@ namespace koi
 		{
 			switch (severity)
 			{
-			case D3D12_MESSAGE_SEVERITY_CORRUPTION: { KOI_LOG_CRITICAL("[D3D12] {} (id {})", description, static_cast<i32>(id)); break; }
-			case D3D12_MESSAGE_SEVERITY_ERROR:      { KOI_LOG_ERROR("[D3D12] {} (id {})",    description, static_cast<i32>(id)); break; }
-			case D3D12_MESSAGE_SEVERITY_WARNING:    { KOI_LOG_WARN("[D3D12] {} (id {})",     description, static_cast<i32>(id)); break; }
-			case D3D12_MESSAGE_SEVERITY_INFO:       { KOI_LOG_INFO("[D3D12] {}",             description); break; }
-			default:                                { KOI_LOG_DEBUG("[D3D12] {}",            description); break; }
+			case D3D12_MESSAGE_SEVERITY_CORRUPTION: { KOI_LOG(RHI, Critical, "[D3D12] {} (id {})", description, static_cast<i32>(id)); break; }
+			case D3D12_MESSAGE_SEVERITY_ERROR:      { KOI_LOG(RHI, Error, "[D3D12] {} (id {})",    description, static_cast<i32>(id)); break; }
+			case D3D12_MESSAGE_SEVERITY_WARNING:    { KOI_LOG(RHI, Warn, "[D3D12] {} (id {})",     description, static_cast<i32>(id)); break; }
+			case D3D12_MESSAGE_SEVERITY_INFO:       { KOI_LOG(RHI, Info, "[D3D12] {}",             description); break; }
+			default:                                { KOI_LOG(RHI, Debug, "[D3D12] {}",            description); break; }
 			}
 		}
 	}
@@ -82,7 +82,7 @@ namespace koi
 		{
 			_com_error err(hr);
 
-			KOI_LOG_ERROR("DX_CHECK failed (0x{:08X} - {}): {} at {}:{}",
+			KOI_LOG(RHI, Error, "DX_CHECK failed (0x{:08X} - {}): {} at {}:{}",
 				static_cast<u32>(hr), utils::FromWide(err.ErrorMessage()), expr, file, line);
 
 			assert(false && "D3D12/DXC/DXGI call failed");
@@ -113,7 +113,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_DEBUG("Destroying D3D12 device");
+		KOI_LOG(RHI, Debug, "Destroying D3D12 device");
 
 		m_uploadContext.Shutdown();
 		WaitForIdle();
@@ -154,7 +154,7 @@ namespace koi
 		}
 
 		// [NOTE]: Not clearing resource pool here
-		KOI_LOG_DEBUG("Finished destroying D3D12 device");
+		KOI_LOG(RHI, Debug, "Finished destroying D3D12 device");
 	}
 
 	// Anything still here outlived its owner's Destroy() call, or was never destroyed at all.
@@ -178,10 +178,10 @@ namespace koi
 		if (live.empty())
 			return;
 
-		KOI_LOG_WARN("{} GPU resource(s) still live at device destruction:", live.size());
+		KOI_LOG(RHI, Warn, "{} GPU resource(s) still live at device destruction:", live.size());
 		for (const std::string_view name : live)
 		{
-			KOI_LOG_WARN("\t{}", name);
+			KOI_LOG(RHI, Warn, "\t{}", name);
 		}
 	}
 
@@ -417,7 +417,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG_WARN("Trying to mark invalid texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+			KOI_LOG(RHI, Warn, "Trying to mark invalid texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 	}
 
@@ -432,7 +432,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG_WARN("Trying to mark invalid buffer for deletion (Handle: {})", h.GetId());
+			KOI_LOG(RHI, Warn, "Trying to mark invalid buffer for deletion (Handle: {})", h.GetId());
 		}
 	}
 
@@ -519,7 +519,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG_WARN("Trying to mark invalid pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+			KOI_LOG(RHI, Warn, "Trying to mark invalid pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 	}
 
@@ -663,7 +663,7 @@ namespace koi
 		if (!pso)
 			return {};
 
-		KOI_LOG_DEBUG("Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG(RHI, Debug, "Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(pso), .Topology = desc.Topology });
 	}
 
@@ -682,7 +682,7 @@ namespace koi
 		pipeline->Pso      = std::move(pso);
 		pipeline->Topology = desc.Topology;
 
-		KOI_LOG_DEBUG("Recreated pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG(RHI, Debug, "Recreated pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return true;
 	}
 
@@ -699,7 +699,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_DEBUG("Creating bindless root signature");
+		KOI_LOG(RHI, Debug, "Creating bindless root signature");
 
 		const D3D_ROOT_SIGNATURE_VERSION rootSignatureVersion = g_featureSupport.HighestRootSignatureVersion();
 		assert(rootSignatureVersion >= D3D_ROOT_SIGNATURE_VERSION_1_1 && "Bindless requires root signature version 1.1 or higher");
@@ -720,7 +720,7 @@ namespace koi
 		HRESULT hr = ::D3DX12SerializeVersionedRootSignature(&desc, rootSignatureVersion, &blob, &error);
 		if (FAILED(hr) && error)
 		{
-			KOI_LOG_ERROR("Failed to serialize bindless root signature: {}",
+			KOI_LOG(RHI, Error, "Failed to serialize bindless root signature: {}",
 				static_cast<const char*>(error->GetBufferPointer()));
 		}
 		DX_CHECK(hr);
@@ -736,7 +736,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_CRITICAL("D3D12 device lost. Attempting recovery...");
+		KOI_LOG(RHI, Critical, "D3D12 device lost. Attempting recovery...");
 
 		if (m_notify) m_notify->OnDeviceLost();
 
@@ -761,7 +761,7 @@ namespace koi
 		CreateHeaps();
 		CreateRootSignature();
 
-		KOI_LOG_INFO("D3D12 device recreated after device loss");
+		KOI_LOG(RHI, Info, "D3D12 device recreated after device loss");
 		if (m_notify) m_notify->OnDeviceRestored();
 	}
 
@@ -769,7 +769,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_DEBUG("Creating D3D12 factory");
+		KOI_LOG(RHI, Debug, "Creating D3D12 factory");
 		u32 flags = 0;
 
 		if (enableDebug)
@@ -778,7 +778,7 @@ namespace koi
 			if (SUCCEEDED(::D3D12GetDebugInterface(IID_PPV_ARGS(&debugCtl))))
 			{
 				debugCtl->EnableDebugLayer();
-				KOI_LOG_INFO("D3D12 debug layer enabled");
+				KOI_LOG(RHI, Info, "D3D12 debug layer enabled");
 
 				if (m_desc.EnableGPUValidation)
 				{
@@ -786,13 +786,13 @@ namespace koi
 					if (SUCCEEDED(debugCtl.As(&debug1)))
 					{
 						debug1->SetEnableGPUBasedValidation(TRUE);
-						KOI_LOG_INFO("D3D12 GPU-based validation enabled");
+						KOI_LOG(RHI, Info, "D3D12 GPU-based validation enabled");
 					}
 				}
 			}
 			else
 			{
-				KOI_LOG_WARN("D3D12 debug layer not available (install the Graphics Tools optional feature)");
+				KOI_LOG(RHI, Warn, "D3D12 debug layer not available (install the Graphics Tools optional feature)");
 			}
 
 			ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
@@ -827,7 +827,7 @@ namespace koi
 		m_supportsTearing = (allowTearing == TRUE);
 		if (!m_supportsTearing)
 		{
-			KOI_LOG_WARN("Variable refresh rate / tearing not supported");
+			KOI_LOG(RHI, Warn, "Variable refresh rate / tearing not supported");
 		}
 	}
 
@@ -835,7 +835,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_DEBUG("Selecting D3D12 adapter");
+		KOI_LOG(RHI, Debug, "Selecting D3D12 adapter");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 
 		ComPtr<IDXGIAdapter1> adapter;
@@ -854,7 +854,7 @@ namespace koi
 				__uuidof(ID3D12Device), nullptr)))
 			{
 				const std::string name = utils::FromWide(desc.Description);
-				KOI_LOG_INFO("D3D12 Adapter selected: VID:{:04X} PID:{:04X} - {}",
+				KOI_LOG(RHI, Info, "D3D12 Adapter selected: VID:{:04X} PID:{:04X} - {}",
 					desc.VendorId, desc.DeviceId, name);
 				break;
 			}
@@ -874,7 +874,7 @@ namespace koi
 		dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 		dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
 
-		KOI_LOG_DEBUG("Creating D3D12 device");
+		KOI_LOG(RHI, Debug, "Creating D3D12 device");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 		DX_CHECK(::D3D12CreateDevice(m_adapter.Get(), MIN_FEATURE_LEVEL, IID_PPV_ARGS(&m_device)));
 		m_device->SetName(L"Koi GfxDevice");
@@ -908,7 +908,7 @@ namespace koi
 			}
 			else
 			{
-				KOI_LOG_WARN("ID3D12InfoQueue1 unavailable; D3D12 messages go to the debugger output only");
+				KOI_LOG(RHI, Warn, "ID3D12InfoQueue1 unavailable; D3D12 messages go to the debugger output only");
 			}
 		}
 
@@ -919,7 +919,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_DEBUG("Creating D3D12 queues");
+		KOI_LOG(RHI, Debug, "Creating D3D12 queues");
 		D3D12_COMMAND_QUEUE_DESC desc
 		{
 			.Type = D3D12_COMMAND_LIST_TYPE_DIRECT,
@@ -940,7 +940,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_DEBUG("Creating D3D12 fences");
+		KOI_LOG(RHI, Debug, "Creating D3D12 fences");
 		DX_CHECK(m_device->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_frameFence)));
 		m_frameFence->SetName(L"Koi Frame Fence");
 
@@ -952,7 +952,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		KOI_LOG_DEBUG("Creating D3D12 heaps");
+		KOI_LOG(RHI, Debug, "Creating D3D12 heaps");
 
 		constexpr u32 rtvHeapSize      = 256;
 		constexpr u32 dsvHeapSize      = 64;
@@ -966,7 +966,7 @@ namespace koi
 		m_resourceHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, resourceHeapSize, true);
 		m_samplerHeap.Init(dev, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, samplerHeapSize, true);
 
-		KOI_LOG_DEBUG("Descriptor heaps: RTV={} DSV={} CBV/SRV/UAV={} Sampler={}",
+		KOI_LOG(RHI, Debug, "Descriptor heaps: RTV={} DSV={} CBV/SRV/UAV={} Sampler={}",
 			rtvHeapSize, dsvHeapSize, resourceHeapSize, samplerHeapSize);
 	}
 

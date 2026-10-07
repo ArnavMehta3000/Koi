@@ -141,7 +141,7 @@ namespace koi
 		if (width == m_width && height == m_height) return;
 		assert(m_device && "Render Window has been moved-from");
 
-		KOI_LOG_DEBUG("Swapchain resized {}x{} -> {}x{}", m_width, m_height, width, height);
+		KOI_LOG(Render, Debug, "Swapchain resized {}x{} -> {}x{}", m_width, m_height, width, height);
 
 		m_device->WaitForIdle();
 		ReleaseHDRBuffer();
@@ -171,7 +171,7 @@ namespace koi
 
 		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
 		{
-			KOI_LOG_ERROR("Present returned device-removed (0x{:08X})", static_cast<u32>(hr));
+			KOI_LOG(Render, Error, "Present returned device-removed (0x{:08X})", static_cast<u32>(hr));
 			m_device->HandleDeviceLost();
 			return;
 		}
@@ -221,7 +221,7 @@ namespace koi
 		DX_CHECK(sc1.As(&m_swapChain));
 		m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 
-		KOI_LOG_DEBUG("Swapchain created: {}x{}, {} buffers, tearing {}",
+		KOI_LOG(Render, Debug, "Swapchain created: {}x{}, {} buffers, tearing {}",
 			m_width, m_height, BACK_BUFFER_COUNT, m_tearingAllowed ? "allowed" : "unavailable");
 	}
 

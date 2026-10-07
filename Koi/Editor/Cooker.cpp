@@ -62,7 +62,7 @@ namespace koi::editor
 					const std::optional<AssetFile> asset = AssetFile::FromBytes(std::move(bytes), file.path().string());
 					if (!asset)
 					{
-						KOI_LOG_WARN("Cook: left out {}, it didn't read back cleanly", file.path().string());
+						KOI_LOG(Cook, Warn, "Cook: left out {}, it didn't read back cleanly", file.path().string());
 						continue;
 					}
 
@@ -70,7 +70,7 @@ namespace koi::editor
 					std::ofstream out(target, std::ios::binary | std::ios::trunc);
 					if (!out.write(reinterpret_cast<const char*>(stripped.data()), static_cast<std::streamsize>(stripped.size())))
 					{
-						KOI_LOG_WARN("Cook: couldn't write {}", target.string());
+						KOI_LOG(Cook, Warn, "Cook: couldn't write {}", target.string());
 						continue;
 					}
 					++cooked;
@@ -79,13 +79,13 @@ namespace koi::editor
 
 				if (!fs::copy_file(file.path(), target, fs::copy_options::overwrite_existing, ec))
 				{
-					KOI_LOG_WARN("Cook: couldn't copy {}: {}", file.path().string(), ec.message());
+					KOI_LOG(Cook, Warn, "Cook: couldn't copy {}: {}", file.path().string(), ec.message());
 					continue;
 				}
 				++copied;
 			}
 
-			KOI_LOG_DEBUG("Cook: {} asset(s) cooked and {} file(s) copied from {}", cooked, copied, src.string());
+			KOI_LOG(Cook, Debug, "Cook: {} asset(s) cooked and {} file(s) copied from {}", cooked, copied, src.string());
 		}
 
 		// xmake already compiled the shaders, the cook just checks they're current and ships them
@@ -102,10 +102,10 @@ namespace koi::editor
 				switch (cache.GetBuildState(virtualPath))
 				{
 					case ShaderBuildState::Missing:
-						KOI_LOG_ERROR("Cook: {} isn't in any Shaders.json, so the cooked game won't have it", virtualPath);
+						KOI_LOG(Cook, Error, "Cook: {} isn't in any Shaders.json, so the cooked game won't have it", virtualPath);
 						break;
 					case ShaderBuildState::Stale:
-						KOI_LOG_WARN("Cook: {} changed since the last build. Run xmake before cooking or the game ships the old version", virtualPath);
+						KOI_LOG(Cook, Warn, "Cook: {} changed since the last build. Run xmake before cooking or the game ships the old version", virtualPath);
 						tally.Ok++;
 						break;
 					case ShaderBuildState::UpToDate:
@@ -133,7 +133,7 @@ namespace koi::editor
 	{
 		const fs::path outRoot = request.OutputRoot;
 
-		KOI_LOG_INFO("Cook: output = {}", outRoot.string());
+		KOI_LOG(Cook, Info, "Cook: output = {}", outRoot.string());
 
 		std::error_code ec;
 		fs::create_directories(outRoot, ec);
@@ -147,7 +147,7 @@ namespace koi::editor
 		{
 			if (!VirtualFileSystem::Get().TryResolveToDisk(virtualPath))
 			{
-				KOI_LOG_WARN("Cook: scene '{}' -> '{}' does not exist", name, virtualPath);
+				KOI_LOG(Cook, Warn, "Cook: scene '{}' -> '{}' does not exist", name, virtualPath);
 			}
 		}
 
@@ -166,12 +166,12 @@ namespace koi::editor
 			fs::copy_file(request.ProjectFile, projRoot / "Project.koi.toml", fs::copy_options::overwrite_existing, cec);
 			if (cec)
 			{
-				KOI_LOG_WARN("Cook: copy project TOML failed: {}", cec.message());
+				KOI_LOG(Cook, Warn, "Cook: copy project TOML failed: {}", cec.message());
 			}
 		}
 
 		std::string status = "Cook: " + std::to_string(shaders.Ok) + "/" + std::to_string(shaders.Total) + " shaders ok";
-		KOI_LOG_INFO("{}", status);
+		KOI_LOG(Cook, Info, "{}", status);
 		return status;
 	}
 }

@@ -30,7 +30,7 @@ namespace koi
 				if (const AssetIndexEntry* entry = Engine::Get().GetSubsystem<AssetRegistry>().Index().Find(utils::UUIDFromString(*id)))
 					return AssetKey(entry->VirtualPath);
 
-				KOI_LOG_WARN("The scene wants {} {}, which isn't in the project anymore. Showing the fallback", what, *id);
+				KOI_LOG(Scene, Warn, "The scene wants {} {}, which isn't in the project anymore. Showing the fallback", what, *id);
 				return AssetKey();
 			}
 
@@ -135,11 +135,11 @@ namespace koi
 
 		if (Find(type->Key()))
 		{
-			KOI_LOG_ERROR("Component '{}' is already registered; ignoring the second registration", type->Key());
+			KOI_LOG(ECS, Error, "Component '{}' is already registered; ignoring the second registration", type->Key());
 			return;
 		}
 
-		KOI_LOG_DEBUG("Registered component '{}' (draw order {})", type->Key(), type->DrawOrder());
+		KOI_LOG(ECS, Debug, "Registered component '{}' (draw order {})", type->Key(), type->DrawOrder());
 
 		const auto at = std::ranges::upper_bound(m_types, type->DrawOrder(), {},
 			[](const std::unique_ptr<IComponentType>& t) { return t->DrawOrder(); });

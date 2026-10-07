@@ -28,18 +28,18 @@ namespace koi
 
 			if (!key.IsValid())
 			{
-				KOI_LOG_ERROR("Empty {} asset key", Traits::Name);
+				KOI_LOG(Assets, Error, "Empty {} asset key", Traits::Name);
 				return AcquireFallback();
 			}
 
 			const std::unique_ptr<Traits::Source> source = Traits::Load(key.Path());
 			if (!source)
 			{
-				KOI_LOG_ERROR("Failed to load {} asset: {}", Traits::Name, key.Path());
+				KOI_LOG(Assets, Error, "Failed to load {} asset: {}", Traits::Name, key.Path());
 				return AcquireFallback();
 			}
 
-			KOI_LOG_DEBUG("Loaded {} asset: {}", Traits::Name, key.Path());
+			KOI_LOG(Assets, Debug, "Loaded {} asset: {}", Traits::Name, key.Path());
 			return Insert(device, key, *source);
 		}
 
@@ -51,7 +51,7 @@ namespace koi
 				return existing;
 			}
 
-			KOI_LOG_DEBUG("Registered generated {} asset: {}", AssetTraits<T>::Name, key.ToString());
+			KOI_LOG(Assets, Debug, "Registered generated {} asset: {}", AssetTraits<T>::Name, key.ToString());
 			return Insert(device, key, source);
 		}
 
@@ -103,7 +103,7 @@ namespace koi
 				return;
 			}
 
-			KOI_LOG_DEBUG("Unloaded {} asset: {}", AssetTraits<T>::Name, entry->Key.ToString());
+			KOI_LOG(Assets, Debug, "Unloaded {} asset: {}", AssetTraits<T>::Name, entry->Key.ToString());
 
 			m_handleByKey.erase(entry->Key);
 			AssetTraits<T>::Destroy(device, entry->Resource);
@@ -123,7 +123,7 @@ namespace koi
 			// Expected until scene teardown releases what it acquired; useful once it does.
 			if (stillReferenced > 0)
 			{
-				KOI_LOG_DEBUG("{} {} asset(s) still referenced at shutdown", stillReferenced, AssetTraits<T>::Name);
+				KOI_LOG(Assets, Debug, "{} {} asset(s) still referenced at shutdown", stillReferenced, AssetTraits<T>::Name);
 			}
 
 			m_pool.Clear();  // bumps generations, so any outstanding handle now fails validation

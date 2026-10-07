@@ -67,7 +67,7 @@ namespace koi::editor
 		std::ranges::sort(m_folders);
 		m_folders.erase(std::ranges::unique(m_folders).begin(), m_folders.end());
 
-		KOI_LOG_INFO("Asset browser found {} file(s) across {} folder(s)", m_entries.size(), m_folders.size());
+		KOI_LOG(AssetDB, Info, "Asset browser found {} file(s) across {} folder(s)", m_entries.size(), m_folders.size());
 
 		// Files may have moved or been deleted, so ids need to point at their new homes
 		Engine::Get().GetSubsystem<AssetRegistry>().Index().Rebuild();
@@ -148,7 +148,7 @@ namespace koi::editor
 
 			std::ofstream out(file, std::ios::binary | std::ios::trunc);
 			out << *text;
-			KOI_LOG_DEBUG("Updated references in {}", file.string());
+			KOI_LOG(AssetDB, Debug, "Updated references in {}", file.string());
 		}
 	}
 
@@ -156,13 +156,13 @@ namespace koi::editor
 	{
 		if (!entry.Writable)
 		{
-			KOI_LOG_WARN("Cannot move {}: engine content is read-only", entry.VirtualPath);
+			KOI_LOG(AssetDB, Warn, "Cannot move {}: engine content is read-only", entry.VirtualPath);
 			return false;
 		}
 
 		if (fs::exists(newDiskPath))
 		{
-			KOI_LOG_ERROR("Cannot move to {}: a file is already there", newDiskPath.string());
+			KOI_LOG(AssetDB, Error, "Cannot move to {}: a file is already there", newDiskPath.string());
 			return false;
 		}
 
@@ -170,7 +170,7 @@ namespace koi::editor
 		const std::string newVirtualPath = VirtualPathFor(newDiskPath);
 		if (newVirtualPath.empty())
 		{
-			KOI_LOG_ERROR("Cannot move {}: outside the project source tree", oldVirtualPath);
+			KOI_LOG(AssetDB, Error, "Cannot move {}: outside the project source tree", oldVirtualPath);
 			return false;
 		}
 
@@ -179,12 +179,12 @@ namespace koi::editor
 		fs::rename(entry.DiskPath, newDiskPath, ec);
 		if (ec)
 		{
-			KOI_LOG_ERROR("Failed to move {} -> {}: {}", oldVirtualPath, newVirtualPath, ec.message());
+			KOI_LOG(AssetDB, Error, "Failed to move {} -> {}: {}", oldVirtualPath, newVirtualPath, ec.message());
 			return false;
 		}
 
 		RewriteReferences(oldVirtualPath, newVirtualPath);
-		KOI_LOG_INFO("Moved asset {} -> {}", oldVirtualPath, newVirtualPath);
+		KOI_LOG(AssetDB, Info, "Moved asset {} -> {}", oldVirtualPath, newVirtualPath);
 
 		Refresh();
 		return true;
@@ -197,7 +197,7 @@ namespace koi::editor
 
 		if (newBaseName.empty() || newBaseName.find_first_of("/\\:*?\"<>|") != std::string_view::npos)
 		{
-			KOI_LOG_ERROR("'{}' is not a usable file name", newBaseName);
+			KOI_LOG(AssetDB, Error, "'{}' is not a usable file name", newBaseName);
 			return false;
 		}
 
@@ -215,7 +215,7 @@ namespace koi::editor
 
 		if (!newFolder.starts_with(kProjectScheme))
 		{
-			KOI_LOG_ERROR("Cannot move an asset into '{}': only project folders can be written to", newFolder);
+			KOI_LOG(AssetDB, Error, "Cannot move an asset into '{}': only project folders can be written to", newFolder);
 			return false;
 		}
 
@@ -232,18 +232,18 @@ namespace koi::editor
 
 		if (!entry->Writable)
 		{
-			KOI_LOG_WARN("Cannot delete {}: engine content is read-only", entry->VirtualPath);
+			KOI_LOG(AssetDB, Warn, "Cannot delete {}: engine content is read-only", entry->VirtualPath);
 			return false;
 		}
 
 		std::error_code ec;
 		if (!fs::remove(entry->DiskPath, ec))
 		{
-			KOI_LOG_ERROR("Failed to delete {}: {}", entry->DiskPath.string(), ec.message());
+			KOI_LOG(AssetDB, Error, "Failed to delete {}: {}", entry->DiskPath.string(), ec.message());
 			return false;
 		}
 
-		KOI_LOG_INFO("Deleted asset {}", entry->VirtualPath);
+		KOI_LOG(AssetDB, Info, "Deleted asset {}", entry->VirtualPath);
 		Refresh();
 		return true;
 	}

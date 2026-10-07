@@ -15,7 +15,7 @@ namespace koi
 
 		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Texture)
 		{
-			KOI_LOG_ERROR("{} isn't a .ktex. Import the image in the editor and use what it writes", vfsPath);
+			KOI_LOG(Assets, Error, "{} isn't a .ktex. Import the image in the editor and use what it writes", vfsPath);
 			return nullptr;
 		}
 

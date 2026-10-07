@@ -68,8 +68,8 @@ namespace koi
 			::glfwSetErrorCallback([](int code, const char* desc)
 			{
 				// 65537 (not initialized) fires from the ImGui GLFW backend during shutdown and is harmless
-				if (code == 65537) { KOI_LOG_TRACE("GLFW Error {}: {}", code, desc); return; }
-				KOI_LOG_ERROR("GLFW Error {}: {}", code, desc);
+				if (code == 65537) { KOI_LOG(Platform, Trace, "GLFW Error {}: {}", code, desc); return; }
+				KOI_LOG(Platform, Error, "GLFW Error {}: {}", code, desc);
 			});
 
 			::SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -207,7 +207,7 @@ namespace koi
 		}
 
 		m_mode = newMode;
-		KOI_LOG_DEBUG("Window mode changed to {}", static_cast<i32>(newMode));
+		KOI_LOG(Platform, Debug, "Window mode changed to {}", static_cast<i32>(newMode));
 	}
 
 	void Window::SetTitle(std::string_view title)
@@ -374,7 +374,7 @@ namespace koi
 			SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 		::glfwShowWindow(m_window);
 
-		KOI_LOG_INFO("Window created: '{}' ({}x{}, {:.0f}% scale)", m_title, m_width, m_height, GetContentScale() * 100.0f);
+		KOI_LOG(Platform, Info, "Window created: '{}' ({}x{}, {:.0f}% scale)", m_title, m_width, m_height, GetContentScale() * 100.0f);
 	}
 
 	void Window::Destroy()
@@ -386,7 +386,7 @@ namespace koi
 			m_window = nullptr;
 			m_nativeHandle = nullptr;
 
-			KOI_LOG_DEBUG("Window destroyed: '{}'", m_title);
+			KOI_LOG(Platform, Debug, "Window destroyed: '{}'", m_title);
 		}
 	}
 
@@ -408,7 +408,7 @@ namespace koi
 		ZoneScoped;
 		if (Window* self = static_cast<Window*>(::glfwGetWindowUserPointer(w)))
 		{
-			KOI_LOG_DEBUG("Window close requested: '{}'", self->m_title);
+			KOI_LOG(Platform, Debug, "Window close requested: '{}'", self->m_title);
 			if (self->m_onClose)
 				self->m_onClose();
 		}

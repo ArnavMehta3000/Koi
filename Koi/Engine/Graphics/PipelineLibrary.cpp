@@ -137,7 +137,7 @@ namespace koi
 		Entry& entry = m_entries.emplace_back(Entry{ .Recipe = std::move(recipe) });
 		if (!Build(device, entry))
 		{
-			KOI_LOG_ERROR("PipelineLibrary: failed to build '{}'", entry.Recipe.Name);
+			KOI_LOG(Render, Error, "PipelineLibrary: failed to build '{}'", entry.Recipe.Name);
 		}
 
 		return entry.Handle;
@@ -154,11 +154,11 @@ namespace koi
 			}
 			else
 			{
-				KOI_LOG_ERROR("PipelineLibrary: failed to rebuild '{}'", entry.Recipe.Name);
+				KOI_LOG(Render, Error, "PipelineLibrary: failed to rebuild '{}'", entry.Recipe.Name);
 			}
 		}
 
-		KOI_LOG_DEBUG("PipelineLibrary: rebuilt {}/{} pipeline(s)", rebuilt, m_entries.size());
+		KOI_LOG(Render, Debug, "PipelineLibrary: rebuilt {}/{} pipeline(s)", rebuilt, m_entries.size());
 		return rebuilt;
 	}
 
@@ -177,16 +177,16 @@ namespace koi
 
 			if (Build(device, entry))
 			{
-				KOI_LOG_DEBUG("PipelineLibrary: rebuilt '{}'", entry.Recipe.Name);
+				KOI_LOG(Render, Debug, "PipelineLibrary: rebuilt '{}'", entry.Recipe.Name);
 				++rebuilt;
 			}
 			else
 			{
-				KOI_LOG_ERROR("PipelineLibrary: failed to rebuild '{}'", entry.Recipe.Name);
+				KOI_LOG(Render, Error, "PipelineLibrary: failed to rebuild '{}'", entry.Recipe.Name);
 			}
 		}
 
-		KOI_LOG_INFO("PipelineLibrary: rebuilt {} of {} pipeline(s)", rebuilt, m_entries.size());
+		KOI_LOG(Render, Info, "PipelineLibrary: rebuilt {} of {} pipeline(s)", rebuilt, m_entries.size());
 		return rebuilt;
 	}
 

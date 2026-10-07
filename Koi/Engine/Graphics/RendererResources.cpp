@@ -61,7 +61,7 @@ namespace koi
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
 		ShadowSampler      = device.CreateSampler(MakeShadowCompareDesc());
 
-		KOI_LOG_DEBUG("Default samplers created");
+		KOI_LOG(Render, Debug, "Default samplers created");
 		RegisterPipelines(device, library);
 	}
 
@@ -119,7 +119,7 @@ namespace koi
 		FallbackMesh = meshes.Acquire(device, AssetKey(std::string(kFallbackMeshPath)));
 		meshes.SetFallback(FallbackMesh);
 
-		KOI_LOG_DEBUG("Fallback mesh and texture registered");
+		KOI_LOG(Render, Debug, "Fallback mesh and texture registered");
 	}
 
 	void RendererResources::Shutdown()
@@ -142,7 +142,7 @@ namespace koi
 
 	void RendererResources::RegisterPipelines(GfxDevice& device, PipelineLibrary& library)
 	{
-		KOI_LOG_DEBUG("Registering default pipelines");
+		KOI_LOG(Render, Debug, "Registering default pipelines");
 
 		// --- Tonemap ---
 		TonemapPipeline = library.Register(device, PipelineRecipe::FullScreen(

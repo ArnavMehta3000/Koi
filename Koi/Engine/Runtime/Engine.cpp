@@ -34,11 +34,11 @@ namespace koi
 		assert(s_instance == nullptr && "Engine already initialized");
 		s_instance = this;
 
-		KOI_LOG_INFO("Engine initializing");
+		KOI_LOG(Engine, Info, "Engine initializing");
 
 		m_systems = std::make_unique<Subsystems>();
 		m_systems->ConstructAll();
-		KOI_LOG_DEBUG("Engine subsystems constructed");
+		KOI_LOG(Engine, Debug, "Engine subsystems constructed");
 
 		ComponentRegistry::Get().RegisterEngineComponents();
 	}
@@ -51,10 +51,10 @@ namespace koi
 		// resources in its own destructor, so the device has to still be alive for it
 		GfxDevice& device = GetSubsystem<Renderer>().GetDevice();
 		m_systems->ShutdownAll(device);
-		KOI_LOG_DEBUG("Engine subsystems shut down");
+		KOI_LOG(Engine, Debug, "Engine subsystems shut down");
 
 		m_window.reset();
-		KOI_LOG_INFO("Engine shut down after {:.4f}s ({} frames)", GetStats().TotalTime, GetStats().FrameCount);
+		KOI_LOG(Engine, Info, "Engine shut down after {:.4f}s ({} frames)", GetStats().TotalTime, GetStats().FrameCount);
 
 		s_instance = nullptr;
 	}
@@ -76,7 +76,7 @@ namespace koi
 			.Input          = desc.Input,
 		};
 		m_systems->InitAll(initCtx);
-		KOI_LOG_DEBUG("Engine subsystems initialized");
+		KOI_LOG(Engine, Debug, "Engine subsystems initialized");
 
 		window.SetCloseCallback([this]() { RequestExit(); });
 
@@ -84,7 +84,7 @@ namespace koi
 		m_host = &host;
 		host.HostInit();
 
-		KOI_LOG_INFO("Entering main loop");
+		KOI_LOG(Engine, Info, "Entering main loop");
 
 		if (host.StartsInPlayMode())
 		{
@@ -92,7 +92,7 @@ namespace koi
 		}
 
 		MainLoop(host);
-		KOI_LOG_INFO("Exited main loop");
+		KOI_LOG(Engine, Info, "Exited main loop");
 
 		SetPlayState(PlayState::Edit);  // fires HostEndPlay when we exit mid-play
 		host.HostShutdown();
@@ -108,7 +108,7 @@ namespace koi
 		const bool wasInPlay = m_playState != PlayState::Edit;
 		const bool nowInPlay = state != PlayState::Edit;
 
-		KOI_LOG_INFO("Play state: {} -> {}", ToString(m_playState), ToString(state));
+		KOI_LOG(Engine, Info, "Play state: {} -> {}", ToString(m_playState), ToString(state));
 		m_playState = state;
 
 		if (!m_host) return;

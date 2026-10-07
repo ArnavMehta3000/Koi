@@ -148,11 +148,11 @@ namespace koi::editor
 
 					char name[128];
 					std::snprintf(name, sizeof(name), "%ls", desc.Description);
-					KOI_LOG_INFO("Texture importer: BC6H/BC7 compress on the GPU ({})", name);
+					KOI_LOG(Import, Info, "Texture importer: BC6H/BC7 compress on the GPU ({})", name);
 					return new GpuCompressor{ .Device = std::move(device) };
 				}
 
-				KOI_LOG_WARN("Texture importer: no D3D11 GPU found, BC6H/BC7 compress on the CPU");
+				KOI_LOG(Import, Warn, "Texture importer: no D3D11 GPU found, BC6H/BC7 compress on the CPU");
 				return nullptr;
 			}();
 			return compressor;
@@ -170,7 +170,7 @@ namespace koi::editor
 				std::scoped_lock lock(gpu->Mutex);
 				const HRESULT hr = Compress(gpu->Device.Get(), src, format, TEX_COMPRESS_DEFAULT, 1.0f, out);
 				if (SUCCEEDED(hr)) return hr;
-				KOI_LOG_WARN("Texture importer: GPU compression failed ({}), retrying on the CPU", HResultText(hr));
+				KOI_LOG(Import, Warn, "Texture importer: GPU compression failed ({}), retrying on the CPU", HResultText(hr));
 			}
 
 			// BC7 stays in quick mode on the CPU

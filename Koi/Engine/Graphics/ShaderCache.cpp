@@ -86,7 +86,7 @@ namespace koi
 		const ShaderType type = InferType(virtualPathNoExt);
 		if (type == ShaderType::Unknown)
 		{
-			KOI_LOG_ERROR("ShaderCache: cannot infer type from '{}' (expected *VS/*PS/*CS/*HS/*DS/*GS)", virtualPathNoExt);
+			KOI_LOG(Shaders, Error, "ShaderCache: cannot infer type from '{}' (expected *VS/*PS/*CS/*HS/*DS/*GS)", virtualPathNoExt);
 			return {};
 		}
 
@@ -106,7 +106,7 @@ namespace koi
 		if (!LoadBytecode(key, defines, entry))
 			return {};  // failures aren't cached, so a fixed shader loads on the next attempt
 
-		KOI_LOG_DEBUG("Shader cached: '{}' ({} bytes, {} dependencies)",
+		KOI_LOG(Shaders, Debug, "Shader cached: '{}' ({} bytes, {} dependencies)",
 			virtualPathNoExt, entry.Bytecode.size(), entry.Dependencies.size());
 
 		return m_entries.emplace(key, std::move(entry)).first->second.Bytecode;
@@ -128,7 +128,7 @@ namespace koi
 				continue;
 			}
 
-			KOI_LOG_INFO("Shader stale: '{}' (changed: {})", it->first.Path, changed->filename().string());
+			KOI_LOG(Shaders, Info, "Shader stale: '{}' (changed: {})", it->first.Path, changed->filename().string());
 
 			// One path can have several variants cached, and the caller only wants the path
 			if (std::ranges::find(dropped, it->first.Path) == dropped.end())
@@ -139,7 +139,7 @@ namespace koi
 
 		if (dropped.empty())
 		{
-			KOI_LOG_INFO("Shader cache: nothing changed on disk");
+			KOI_LOG(Shaders, Info, "Shader cache: nothing changed on disk");
 		}
 
 		return dropped;
@@ -155,7 +155,7 @@ namespace koi
 
 	void ShaderCache::InvalidateAll()
 	{
-		KOI_LOG_INFO("Shader cache invalidated ({} entries dropped)", m_entries.size());
+		KOI_LOG(Shaders, Info, "Shader cache invalidated ({} entries dropped)", m_entries.size());
 		m_entries.clear();
 		m_built.clear();
 		m_manifestsLoaded = false;
@@ -191,7 +191,7 @@ namespace koi
 				// Projects without a Shaders.json simply have nothing here
 				if (scheme == "engine")
 				{
-					KOI_LOG_WARN("No prebuilt engine shaders ({} is missing). Build with xmake, until then they compile on first use", manifestPath);
+					KOI_LOG(Shaders, Warn, "No prebuilt engine shaders ({} is missing). Build with xmake, until then they compile on first use", manifestPath);
 				}
 				continue;
 			}
@@ -203,7 +203,7 @@ namespace koi
 			}
 			catch (const toml::parse_error& e)
 			{
-				KOI_LOG_ERROR("Couldn't make sense of {}: {}", manifestPath, e.description());
+				KOI_LOG(Shaders, Error, "Couldn't make sense of {}: {}", manifestPath, e.description());
 				continue;
 			}
 
@@ -252,7 +252,7 @@ namespace koi
 				++count;
 			}
 
-			KOI_LOG_DEBUG("Found {} prebuilt shader(s) for {}://", count, scheme);
+			KOI_LOG(Shaders, Debug, "Found {} prebuilt shader(s) for {}://", count, scheme);
 		}
 	}
 
@@ -287,16 +287,16 @@ namespace koi
 			if (!hasSource || !IsStale(it->second))
 				return LoadBuilt(it->second, hasSource, outEntry);
 
-			KOI_LOG_INFO("{} changed since the last build, compiling it fresh", key.Path);
+			KOI_LOG(Shaders, Info, "{} changed since the last build, compiling it fresh", key.Path);
 		}
 		else if (hasSource)
 		{
-			KOI_LOG_INFO("{} isn't built by any Shaders.json, compiling it now. List it there so the build catches its errors", key.Path);
+			KOI_LOG(Shaders, Info, "{} isn't built by any Shaders.json, compiling it now. List it there so the build catches its errors", key.Path);
 		}
 
 		if (!hasSource)
 		{
-			KOI_LOG_ERROR("{} wasn't built and there's no source to compile it from. Is it missing from Shaders.json?", key.Path);
+			KOI_LOG(Shaders, Error, "{} wasn't built and there's no source to compile it from. Is it missing from Shaders.json?", key.Path);
 			return false;
 		}
 
@@ -328,7 +328,7 @@ namespace koi
 		auto blob = ShaderCompiler::Get().CompileFromFile(source, args, &includes);
 		if (!blob || blob->GetBufferSize() == 0)
 		{
-			KOI_LOG_ERROR("{} didn't compile, the errors are just above", key.Path);
+			KOI_LOG(Shaders, Error, "{} didn't compile, the errors are just above", key.Path);
 			return false;
 		}
 
@@ -352,7 +352,7 @@ namespace koi
 		std::optional<std::vector<byte>> data = VirtualFileSystem::Get().Read(built.Bytecode);
 		if (!data)
 		{
-			KOI_LOG_ERROR("Couldn't read {}. The shader build looks incomplete, try rebuilding with xmake", built.Bytecode);
+			KOI_LOG(Shaders, Error, "Couldn't read {}. The shader build looks incomplete, try rebuilding with xmake", built.Bytecode);
 			return false;
 		}
 
@@ -368,7 +368,7 @@ namespace koi
 			}
 		}
 
-		KOI_LOG_TRACE("Loaded prebuilt shader {} ({} bytes)", built.Bytecode, outEntry.Bytecode.size());
+		KOI_LOG(Shaders, Trace, "Loaded prebuilt shader {} ({} bytes)", built.Bytecode, outEntry.Bytecode.size());
 		return true;
 	}
 

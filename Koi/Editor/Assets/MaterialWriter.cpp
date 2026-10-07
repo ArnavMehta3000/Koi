@@ -15,7 +15,7 @@ namespace koi::editor
 			{
 				return entry->Id;
 			}
-			KOI_LOG_WARN("{} can't reference {} until it's imported as a .ktex, so that slot stays empty", file.filename().string(), key.Path());
+			KOI_LOG(Import, Warn, "{} can't reference {} until it's imported as a .ktex, so that slot stays empty", file.filename().string(), key.Path());
 			return UUID();
 		});
 
@@ -28,7 +28,7 @@ namespace koi::editor
 	{
 		if (AssetFile::TypeForPath(file) != AssetFileType::Material)
 		{
-			KOI_LOG_ERROR("Materials are saved as .kmat, so {} can't be written", file.filename().string());
+			KOI_LOG(Import, Error, "Materials are saved as .kmat, so {} can't be written", file.filename().string());
 			return false;
 		}
 

@@ -76,7 +76,7 @@ namespace koi
 			{
 				if (!std::ranges::contains(known, key.str()))
 				{
-					KOI_LOG_WARN("Component '{}' has unknown key '{}'; it will be dropped on save", T::kKey, key.str());
+					KOI_LOG(Scene, Warn, "Component '{}' has unknown key '{}'; it will be dropped on save", T::kKey, key.str());
 				}
 			}
 		}
@@ -100,7 +100,7 @@ namespace koi
 			auto result = rfl::toml::read<T, rfl::CamelCaseToSnakeCase, rfl::DefaultIfMissing>(const_cast<toml::node*>(&node));
 			if (!result)
 			{
-				KOI_LOG_ERROR("Component '{}' failed to load: {}", T::kKey, result.error().what());
+				KOI_LOG(Scene, Error, "Component '{}' failed to load: {}", T::kKey, result.error().what());
 				return std::nullopt;
 			}
 			return std::move(*result);

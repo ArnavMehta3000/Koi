@@ -66,7 +66,7 @@ namespace koi
 			[](GLFWwindow*, f64 dx, f64 dy) noexcept
 			{ s_instance->OnScroll(dx, dy); });
 
-		KOI_LOG_DEBUG("InputManager initialized");
+		KOI_LOG(Input, Debug, "InputManager initialized");
 	}
 
 	void InputManager::BeginFrame()

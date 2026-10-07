@@ -42,27 +42,27 @@ namespace koi
 		{
 			if (header.Magic != kAssetFileMagic)
 			{
-				KOI_LOG_ERROR("{} isn't a Koi asset file (bad magic)", debugName);
+				KOI_LOG(Assets, Error, "{} isn't a Koi asset file (bad magic)", debugName);
 				return false;
 			}
 
 			if (header.FormatVersion > kAssetFormatVersion)
 			{
-				KOI_LOG_ERROR("{} was written by a newer Koi (format v{}), this build only understands up to v{}",
+				KOI_LOG(Assets, Error, "{} was written by a newer Koi (format v{}), this build only understands up to v{}",
 					debugName, header.FormatVersion, kAssetFormatVersion);
 				return false;
 			}
 
 			if (header.FormatVersion < kAssetFormatVersion)
 			{
-				KOI_LOG_ERROR("{} uses an old asset format (v{}, current is v{}). Reimport it from its source",
+				KOI_LOG(Assets, Error, "{} uses an old asset format (v{}, current is v{}). Reimport it from its source",
 					debugName, header.FormatVersion, kAssetFormatVersion);
 				return false;
 			}
 
 			if (!FindFileType(header.Type))
 			{
-				KOI_LOG_ERROR("{} claims to be asset type {}, which Koi doesn't know about", debugName, static_cast<u16>(header.Type));
+				KOI_LOG(Assets, Error, "{} claims to be asset type {}, which Koi doesn't know about", debugName, static_cast<u16>(header.Type));
 				return false;
 			}
 
@@ -110,7 +110,7 @@ namespace koi
 		AssetFileHeader header;
 		if (!file.read(reinterpret_cast<char*>(&header), sizeof(header)))
 		{
-			KOI_LOG_WARN("{} is too short to be a Koi asset", diskPath.string());
+			KOI_LOG(Assets, Warn, "{} is too short to be a Koi asset", diskPath.string());
 			return std::nullopt;
 		}
 
@@ -124,7 +124,7 @@ namespace koi
 
 		if (bytes.size() < sizeof(AssetFileHeader))
 		{
-			KOI_LOG_ERROR("{} is only {} bytes, too short to be a Koi asset", debugName, bytes.size());
+			KOI_LOG(Assets, Error, "{} is only {} bytes, too short to be a Koi asset", debugName, bytes.size());
 			return std::nullopt;
 		}
 
@@ -136,7 +136,7 @@ namespace koi
 		const u64 tableBytes = static_cast<u64>(header.ChunkCount) * sizeof(ChunkEntry);
 		if (header.ChunkTableOffset % alignof(ChunkEntry) != 0 || header.ChunkTableOffset > fileSize || tableBytes > fileSize - header.ChunkTableOffset)
 		{
-			KOI_LOG_ERROR("{} has a chunk table that runs off the end of the file. It's probably truncated or corrupt", debugName);
+			KOI_LOG(Assets, Error, "{} has a chunk table that runs off the end of the file. It's probably truncated or corrupt", debugName);
 			return std::nullopt;
 		}
 
@@ -144,7 +144,7 @@ namespace koi
 		{
 			if (chunk.Offset % kAssetChunkAlignment != 0 || chunk.Offset > fileSize || chunk.Size > fileSize - chunk.Offset)
 			{
-				KOI_LOG_ERROR("{} has a broken '{}' chunk (offset {}, size {}, file is {} bytes)",
+				KOI_LOG(Assets, Error, "{} has a broken '{}' chunk (offset {}, size {}, file is {} bytes)",
 					debugName, utils::FourCCToString(chunk.Type), chunk.Offset, chunk.Size, fileSize);
 				return std::nullopt;
 			}
@@ -162,7 +162,7 @@ namespace koi
 		std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
 		if (!bytes)
 		{
-			KOI_LOG_ERROR("Couldn't read {}", virtualPath);
+			KOI_LOG(Assets, Error, "Couldn't read {}", virtualPath);
 			return std::nullopt;
 		}
 
@@ -220,7 +220,7 @@ namespace koi
 		const bool duplicate = std::ranges::any_of(m_chunks, [type](const PendingChunk& c) { return c.Entry.Type == type; });
 		if (duplicate)
 		{
-			KOI_LOG_WARN("Asset already has a '{}' chunk, adding another one anyway. Readers will only ever see the first", utils::FourCCToString(type));
+			KOI_LOG(Assets, Warn, "Asset already has a '{}' chunk, adding another one anyway. Readers will only ever see the first", utils::FourCCToString(type));
 		}
 
 		m_chunks.push_back(PendingChunk
@@ -289,7 +289,7 @@ namespace koi
 			std::ofstream out(tempPath, std::ios::binary | std::ios::trunc);
 			if (!out || !out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size())))
 			{
-				KOI_LOG_ERROR("Couldn't write {}. Is the folder read-only, or the file open somewhere else?", tempPath.string());
+				KOI_LOG(Assets, Error, "Couldn't write {}. Is the folder read-only, or the file open somewhere else?", tempPath.string());
 				fs::remove(tempPath, ec);
 				return false;
 			}
@@ -298,12 +298,12 @@ namespace koi
 		fs::rename(tempPath, diskPath, ec);
 		if (ec)
 		{
-			KOI_LOG_ERROR("Wrote {} but couldn't move it into place: {}", tempPath.string(), ec.message());
+			KOI_LOG(Assets, Error, "Wrote {} but couldn't move it into place: {}", tempPath.string(), ec.message());
 			fs::remove(tempPath, ec);
 			return false;
 		}
 
-		KOI_LOG_INFO("Saved {} {} ({} chunk(s), {:.1f} KB)",
+		KOI_LOG(Assets, Info, "Saved {} {} ({} chunk(s), {:.1f} KB)",
 			AssetFile::ToString(m_header.Type), diskPath.filename().string(), m_chunks.size(), static_cast<f64>(bytes.size()) / 1024.0);
 		return true;
 	}

@@ -24,7 +24,7 @@ namespace koi
 
 	void AppBase::HostInit()
 	{
-		KOI_LOG_INFO("Initializing application: {}", m_desc.AppName);
+		KOI_LOG(Engine, Info, "Initializing application: {}", m_desc.AppName);
 
 		m_world = std::make_unique<World>();
 
@@ -57,7 +57,7 @@ namespace koi
 
 		// Hands back the asset references the scene's entities took when they loaded
 		m_world->Clear();
-		KOI_LOG_INFO("Shutting down application: {}", m_desc.AppName);
+		KOI_LOG(Engine, Info, "Shutting down application: {}", m_desc.AppName);
 	}
 
 	void AppBase::HostBeginPlay()
@@ -75,7 +75,7 @@ namespace koi
 		ZoneScoped;
 		if (m_desc.StartupScene.empty())
 		{
-			KOI_LOG_WARN("No [scenes] startup set in the project TOML");
+			KOI_LOG(Scene, Warn, "No [scenes] startup set in the project TOML");
 			return;
 		}
 
@@ -89,7 +89,7 @@ namespace koi
 		const auto it = m_desc.Scenes.find(std::string(name));
 		if (it == m_desc.Scenes.end())
 		{
-			KOI_LOG_ERROR("Scene '{}' is not listed in [scenes.list]", name);
+			KOI_LOG(Scene, Error, "Scene '{}' is not listed in [scenes.list]", name);
 			return false;
 		}
 

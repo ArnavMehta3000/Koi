@@ -18,7 +18,7 @@ namespace koi
 		});
 
 		const f64 ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - start).count();
-		KOI_LOG_INFO("Indexed {} asset(s) in {:.1f} ms", Count(), ms);
+		KOI_LOG(Assets, Info, "Indexed {} asset(s) in {:.1f} ms", Count(), ms);
 	}
 
 	void AssetIndex::Clear()
@@ -51,7 +51,7 @@ namespace koi
 			std::string virtualPath = std::string(scheme) + "://" + relative.generic_string();
 			if (header->Type != expected)
 			{
-				KOI_LOG_WARN("{} is named like a {} but holds a {}. Going by what's inside",
+				KOI_LOG(Assets, Warn, "{} is named like a {} but holds a {}. Going by what's inside",
 					virtualPath, AssetFile::ToString(expected), AssetFile::ToString(header->Type));
 			}
 
@@ -60,7 +60,7 @@ namespace koi
 
 		if (ec)
 		{
-			KOI_LOG_WARN("Stopped scanning {} early: {}", contentRoot.string(), ec.message());
+			KOI_LOG(Assets, Warn, "Stopped scanning {} early: {}", contentRoot.string(), ec.message());
 		}
 	}
 
@@ -68,14 +68,14 @@ namespace koi
 	{
 		if (id.is_nil())
 		{
-			KOI_LOG_WARN("{} has no id, so nothing can reference it. Reimport it to give it one", virtualPath);
+			KOI_LOG(Assets, Warn, "{} has no id, so nothing can reference it. Reimport it to give it one", virtualPath);
 			return false;
 		}
 
 		if (const auto it = m_entries.find(id); it != m_entries.end() && it->second.VirtualPath != virtualPath)
 		{
 			// Usually a file copied in Explorer, which copies its id along with it
-			KOI_LOG_WARN("{} and {} share the id {}. Keeping the first, the copy needs a fresh id before it can be used",
+			KOI_LOG(Assets, Warn, "{} and {} share the id {}. Keeping the first, the copy needs a fresh id before it can be used",
 				it->second.VirtualPath, virtualPath, utils::ToString(id));
 			return false;
 		}

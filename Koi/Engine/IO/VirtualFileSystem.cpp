@@ -58,13 +58,13 @@ namespace koi
 
 	void VirtualFileSystem::Mount(const std::string& scheme, std::unique_ptr<IMountBackend> backend)
 	{
-		KOI_LOG_DEBUG("VFS mount '{}://' registered", scheme);
+		KOI_LOG(IO, Debug, "VFS mount '{}://' registered", scheme);
 		m_mounts[std::move(scheme)] = std::move(backend);
 	}
 
 	void VirtualFileSystem::Unmount(std::string_view scheme)
 	{
-		KOI_LOG_DEBUG("VFS mount '{}://' removed", scheme);
+		KOI_LOG(IO, Debug, "VFS mount '{}://' removed", scheme);
 		m_mounts.erase(std::string(scheme));
 	}
 
@@ -99,7 +99,7 @@ namespace koi
 		auto it = m_mounts.find(std::string(scheme));
 		if (it == m_mounts.end())
 		{
-			KOI_LOG_ERROR("VFS Read: scheme '{}://' not mounted (path '{}')", scheme, virtualPath);
+			KOI_LOG(IO, Error, "VFS Read: scheme '{}://' not mounted (path '{}')", scheme, virtualPath);
 			return std::nullopt;
 		}
 

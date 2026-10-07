@@ -43,11 +43,11 @@ namespace koi::editor
 		: m_game(std::move(game))
 		, m_config(std::move(config))
 	{
-		KOI_LOG_DEBUG("Initializing Editor");
-		KOI_LOG_DEBUG("\tEngine source path: {}" , m_config.EngineSource.string());
-		KOI_LOG_DEBUG("\tProject source path: {}", m_config.ProjectSource.string());
-		KOI_LOG_DEBUG("\tProject file path: {}"  , m_config.ProjectFile.string());
-		KOI_LOG_DEBUG("\tCook output path: {}"   , m_config.CookedOutput.string());
+		KOI_LOG(Editor, Debug, "Initializing Editor");
+		KOI_LOG(Editor, Debug, "\tEngine source path: {}" , m_config.EngineSource.string());
+		KOI_LOG(Editor, Debug, "\tProject source path: {}", m_config.ProjectSource.string());
+		KOI_LOG(Editor, Debug, "\tProject file path: {}"  , m_config.ProjectFile.string());
+		KOI_LOG(Editor, Debug, "\tCook output path: {}"   , m_config.CookedOutput.string());
 	}
 
 	const AppCreateDesc& EditorApp::GetDesc() const { return m_game->GetDesc(); }
@@ -106,7 +106,7 @@ namespace koi::editor
 			m_viewportPanel->FrameBounds(m_game->GetWorld().GetBounds());
 		}
 
-		KOI_LOG_INFO("Editor initialized");
+		KOI_LOG(Editor, Info, "Editor initialized");
 	}
 
 	fs::path EditorApp::EditorStatePath() const
@@ -136,7 +136,7 @@ namespace koi::editor
 		}
 		catch (const toml::parse_error& e)
 		{
-			KOI_LOG_WARN("Editor state '{}' did not parse: {}", path.string(), e.description());
+			KOI_LOG(Editor, Warn, "Editor state '{}' did not parse: {}", path.string(), e.description());
 			return false;
 		}
 	}
@@ -161,7 +161,7 @@ namespace koi::editor
 		}
 		else
 		{
-			KOI_LOG_WARN("Could not write editor state to '{}'", path.string());
+			KOI_LOG(Editor, Warn, "Could not write editor state to '{}'", path.string());
 		}
 	}
 
@@ -277,7 +277,7 @@ namespace koi::editor
 		SaveEditorState();
 		m_game->HostShutdown();
 		m_imgui.Shutdown();
-		KOI_LOG_INFO("Editor shut down");
+		KOI_LOG(Editor, Info, "Editor shut down");
 	}
 
 	void EditorApp::HostBeginPlay() { m_game->HostBeginPlay(); }
@@ -312,7 +312,7 @@ namespace koi::editor
 
 	void EditorApp::ReloadAll(const ReloadRequest& request)
 	{
-		KOI_LOG_INFO("Hot-reloading {} registered target(s)", m_reloadables.size());
+		KOI_LOG(Editor, Info, "Hot-reloading {} registered target(s)", m_reloadables.size());
 		for (IReloadable* reloadable : m_reloadables)
 		{
 			reloadable->Reload(request);
@@ -573,6 +573,6 @@ namespace koi::editor
 		m_pinnedMeshes.clear();
 		m_pinnedMaterials.clear();
 		m_snapshot = toml::table{};
-		KOI_LOG_DEBUG("Stop: world restored from snapshot, pinned assets released");
+		KOI_LOG(Editor, Debug, "Stop: world restored from snapshot, pinned assets released");
 	}
 }
