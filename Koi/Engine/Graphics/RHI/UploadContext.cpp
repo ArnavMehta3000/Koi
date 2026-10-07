@@ -212,7 +212,7 @@ namespace koi
 			return;
 		}
 
-		KOI_LOG_TRACE("UploadContext: flushing {} queued upload(s)", m_pendingUploads.size());
+		KOI_LOG(RHI, Trace, "UploadContext: flushing {} queued upload(s)", m_pendingUploads.size());
 
 		DX_CHECK(m_allocator->Reset());
 		DX_CHECK(m_cmdList->Reset(m_allocator.Get(), nullptr));

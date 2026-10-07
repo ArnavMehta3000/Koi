@@ -76,7 +76,7 @@ namespace koi
 		});
 		m_capacity[frameSlot] = newCapacity;
 
-		KOI_LOG_TRACE("GpuFrameBuffer '{}' slot {} grown to {} element(s)", m_debugName, frameSlot, newCapacity);
+		KOI_LOG(RHI, Trace, "GpuFrameBuffer '{}' slot {} grown to {} element(s)", m_debugName, frameSlot, newCapacity);
 	}
 
 	DescriptorIndex GpuFrameBufferBase::UploadBytes(u32 frameSlot, const void* data, u32 count)

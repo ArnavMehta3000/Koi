@@ -202,7 +202,7 @@ namespace koi
 
 		for (const std::string& name : unknown)
 		{
-			KOI_LOG(Engine, Warn, "[logging.categories] names '{}', but no KOI_LOG_CATEGORY declares it", name);
+			KOI_LOG(Engine, Warn, "Log level given for '{}', but no KOI_LOG_CATEGORY declares it", name);
 		}
 	}
 

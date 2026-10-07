@@ -85,6 +85,38 @@ namespace koi::internal
 		};
 	}
 
+	// --log entries win over the TOML; all=<level> resets every category before the named ones apply
+	static void ApplyLogOverrides(LoggerConfig& log, const std::vector<std::string>& entries)
+	{
+		std::vector<std::pair<std::string_view, LogLevel>> named;
+		for (std::string_view entry : entries)
+		{
+			const size_t eq = entry.find('=');
+			const std::string_view name  = entry.substr(0, eq);
+			const std::string_view level = eq == std::string_view::npos ? std::string_view() : entry.substr(eq + 1);
+			if (name.empty() || utils::ToString(utils::LogLevelFromString(level)) != level)
+			{
+				KOI_LOG(Engine, Warn, "--log {}: expected Category=Level", entry);
+				continue;
+			}
+
+			if (name == "all")
+			{
+				log.RuntimeLevel = utils::LogLevelFromString(level);
+				log.CategoryLevels.clear();
+			}
+			else
+			{
+				named.emplace_back(name, utils::LogLevelFromString(level));
+			}
+		}
+
+		for (const auto& [name, level] : named)
+		{
+			log.CategoryLevels.insert_or_assign(std::string(name), level);
+		}
+	}
+
 	// Editor: source trees are baked into the launcher, with the build output (compiled shaders) behind them
 	static void MountSourceTree(const LaunchDesc& desc)
 	{
@@ -197,6 +229,7 @@ namespace koi::internal
 
 			AppCreateDesc appDesc = LoadProjectDesc(cmd->GetProjectFile());
 			ResolveLogPath(appDesc.LogConfig, savedDir);
+			ApplyLogOverrides(appDesc.LogConfig, cmd->GetLogLevels());
 			app->SetDesc(std::move(appDesc));
 
 			// Only now is the project's [logging] table known; still single-threaded here

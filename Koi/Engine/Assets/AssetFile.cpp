@@ -150,7 +150,7 @@ namespace koi
 			}
 		}
 
-		KOI_LOG_TRACE("Opened {} {} with {} chunk(s)", ToString(header.Type), debugName, header.ChunkCount);
+		KOI_LOG(Assets, Trace, "Opened {} {} with {} chunk(s)", ToString(header.Type), debugName, header.ChunkCount);
 		return file;
 	}
 

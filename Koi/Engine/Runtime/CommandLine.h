@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace koi
 {
@@ -14,27 +16,29 @@ namespace koi
 		CommandLine(const std::string& desc = "Koi Engine", const std::string& name = "")
 			: CLI::App(desc, name)
 		{
-			add_option("-p,--project", m_projectFile, "Project file (overrides the launcher default)");
-			add_flag("--d3ddebug", m_d3dDebug, "Enable the D3D12 debug layer");
+			add_option("-p ,--project", m_projectFile  , "Project file (overrides the launcher default)");
+			add_flag("--d3ddebug"     , m_d3dDebug     , "Enable the D3D12 debug layer");
 			add_flag("--gpuvalidation", m_gpuValidation, "Enable D3D12 GPU-based validation (implies --d3ddebug)");
+			add_option("--log"        , m_logLevels    , "Category log levels, e.g. RHI=Trace,Assets=Debug; all=<level> sets every category")->delimiter(',');
 		}
 
 		virtual ~CommandLine() = default;
 
 		int ParseArgs(int argc, char* argv[]);
 
-		inline const fs::path& GetProjectFile() const { return m_projectFile; }
-
 		// Used by RunApplication when -p is absent
-		inline void OverrideProjectFile(fs::path p) { m_projectFile = std::move(p); }
+		void OverrideProjectFile(fs::path p) { m_projectFile = std::move(p); }
 
-		inline bool IsD3DDebugEnabled()      const { return m_d3dDebug || m_gpuValidation; }
-		inline bool IsGpuValidationEnabled() const { return m_gpuValidation; }
+		const fs::path& GetProjectFile()               const noexcept { return m_projectFile;                 }
+		bool IsD3DDebugEnabled()                       const noexcept { return m_d3dDebug || m_gpuValidation; }
+		bool IsGpuValidationEnabled()                  const noexcept { return m_gpuValidation;               }
+		const std::vector<std::string>& GetLogLevels() const noexcept { return m_logLevels;                   }
 
 	private:
-		fs::path m_projectFile;
-		bool     m_d3dDebug      = false;
-		bool     m_gpuValidation = false;
+		fs::path                 m_projectFile;
+		bool                     m_d3dDebug      = false;
+		bool                     m_gpuValidation = false;
+		std::vector<std::string> m_logLevels;
 	};
 
 	namespace internal

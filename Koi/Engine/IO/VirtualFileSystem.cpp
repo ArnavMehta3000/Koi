@@ -26,11 +26,11 @@ namespace koi
 			file.seekg(0, std::ios::beg);
 			file.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 
-			KOI_LOG_TRACE("VFS read '{}' -> '{}' ({} bytes)", relativePath, full.string(), buffer.size());
+			KOI_LOG(IO, Trace, "VFS read '{}' -> '{}' ({} bytes)", relativePath, full.string(), buffer.size());
 			return buffer;
 		}
 
-		KOI_LOG_TRACE("VFS read '{}' missing in all {} root(s)", relativePath, m_roots.size());
+		KOI_LOG(IO, Trace, "VFS read '{}' missing in all {} root(s)", relativePath, m_roots.size());
 		return std::nullopt;
 	}
 
@@ -113,7 +113,7 @@ namespace koi
 		auto it = m_mounts.find(std::string(scheme));
 		if (it == m_mounts.end())
 		{
-			KOI_LOG_TRACE("VFS resolve: scheme '{}://' not mounted (path '{}')", scheme, virtualPath);
+			KOI_LOG(IO, Trace, "VFS resolve: scheme '{}://' not mounted (path '{}')", scheme, virtualPath);
 			return std::nullopt;
 		}
 

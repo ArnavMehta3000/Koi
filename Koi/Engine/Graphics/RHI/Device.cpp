@@ -10,13 +10,7 @@
 #include <dxgidebug.h>
 #include <ranges>
 
-// Enable to log handle deletion logs
-#define KOI_LOG_HANDLE_INFO 0
-#if KOI_LOG_HANDLE_INFO
-	#define LOG_HANDLE_TRACE(msg, h) KOI_LOG_TRACE(msg, (h).GetIndex(), (h).GetGeneration())
-#else
-	#define LOG_HANDLE_TRACE(msg, h) do {} while (false)
-#endif
+#define LOG_HANDLE_TRACE(msg, h) KOI_LOG(RHI, Trace, msg, (h).GetIndex(), (h).GetGeneration())
 
 
 
@@ -311,7 +305,7 @@ namespace koi
 			m_device->CreateRenderTargetView(tex.Resource.Get(), &rtvDesc, m_rtvHeap.CpuHandle(tex.RTVIndex));
 		}
 
-		KOI_LOG_TRACE("Created texture '{}' ({}x{}, {} mip(s))",
+		KOI_LOG(RHI, Trace, "Created texture '{}' ({}x{}, {} mip(s))",
 			desc.DebugName.empty() ? "<unnamed>" : desc.DebugName, desc.Width, desc.Height, desc.MipLevels);
 
 		return m_textures.Emplace(std::move(tex));
@@ -406,7 +400,7 @@ namespace koi
 			buf.Resource->SetName(wname.c_str());
 		}
 
-		KOI_LOG_TRACE("Created buffer '{}' ({} bytes, stride {})",
+		KOI_LOG(RHI, Trace, "Created buffer '{}' ({} bytes, stride {})",
 			desc.DebugName.empty() ? "<unnamed>" : desc.DebugName, allocSize, desc.Stride);
 
 		return m_buffers.Emplace(std::move(buf));
@@ -505,7 +499,7 @@ namespace koi
 
 		const u64 value = m_nextFenceValue++;
 		DX_CHECK(m_graphicsQueue->Signal(m_frameFence.Get(), value));
-		KOI_LOG_TRACE("WaitForIdle: draining GPU to fence {}", value);
+		KOI_LOG(RHI, Trace, "WaitForIdle: draining GPU to fence {}", value);
 		WaitForFence(value);
 	}
 
