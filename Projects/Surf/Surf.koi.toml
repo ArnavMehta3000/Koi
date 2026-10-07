@@ -6,7 +6,7 @@ version = "0.1.0"
 title  = "Koi Surfing Game"
 width  = 1280
 height = 720
-vsync  = true
+vsync  = false
 
 [logging]
 file       = "Logs/Surf.log"  # relative to <project>/.koi (editor) or the exe (runtime); empty disables
