@@ -571,7 +571,7 @@ namespace koi::prof
 		int      FrameSpacing         = 1;
 		float    MinTaskHeight        = 1.0f;   // pixels; shorter tasks aren't drawn
 		float    LegendWidth          = 260.0f; // pixels; 0 hides the legend
-		bool     UseColoredLegendText = false;
+		bool     UseColoredLegendText = true;
 		TimeUnit Unit                 = TimeUnit::Milliseconds; // legend, grid, tooltip and table
 
 		uint32_t BackgroundColor      = 0;      // 0 draws no background
