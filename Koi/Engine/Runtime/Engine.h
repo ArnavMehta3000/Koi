@@ -30,8 +30,14 @@ namespace koi
 			f64 TotalTime  = 0.0;
 		};
 
+		struct Desc
+		{
+			bool D3DDebug      = false;
+			bool GpuValidation = false;
+		};
+
 	public:
-		Engine();
+		explicit Engine(const Desc& desc = {});
 		~Engine();
 
 		[[nodiscard]] static Engine& Get() { return *s_instance; }
@@ -49,6 +55,8 @@ namespace koi
 
 		void RunApp(IAppHost& host);
 		void RequestExit() { m_isRunning = false; }
+
+		[[nodiscard]] inline const Desc& GetDesc() const { return m_desc; }
 
 		[[nodiscard]] inline Window&       GetWindow()       { return *m_window; }
 		[[nodiscard]] inline const Window& GetWindow() const { return *m_window; }
@@ -73,6 +81,7 @@ namespace koi
 
 		struct Subsystems;
 
+		Desc                        m_desc;
 		std::unique_ptr<Window>     m_window;
 		std::unique_ptr<Subsystems> m_systems;
 

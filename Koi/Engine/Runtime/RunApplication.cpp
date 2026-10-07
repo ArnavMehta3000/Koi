@@ -163,7 +163,11 @@ namespace koi::internal
 				MountCooked(*cmd, exeDir);
 			}
 
-			Engine engine;
+			Engine engine(Engine::Desc
+			{
+				.D3DDebug      = cmd->IsD3DDebugEnabled(),
+				.GpuValidation = cmd->IsGpuValidationEnabled()
+			});
 
 			KOI_LOG_DEBUG("Creating application instance");
 			std::unique_ptr<AppBase> app = CreateApplicationInstance(*cmd);

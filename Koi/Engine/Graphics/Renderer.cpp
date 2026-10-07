@@ -6,6 +6,7 @@
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include <cassert>
 
 namespace koi
@@ -37,10 +38,11 @@ namespace koi
 	{
 		ZoneScoped;
 
+		const Engine::Desc& engineDesc = Engine::Get().GetDesc();
 		m_device = std::make_unique<GfxDevice>(GfxDevice::Desc
 		{
-			.EnableDebugLayer    = KOI_DEBUG,
-			.EnableGPUValidation = KOI_DEBUG,
+			.EnableDebugLayer    = engineDesc.D3DDebug,
+			.EnableGPUValidation = engineDesc.GpuValidation,
 		});
 
 		m_device->SetDeviceNotify(this);

@@ -15,6 +15,8 @@ namespace koi
 			: CLI::App(desc, name)
 		{
 			add_option("-p,--project", m_projectFile, "Project file (overrides the launcher default)");
+			add_flag("--d3ddebug", m_d3dDebug, "Enable the D3D12 debug layer");
+			add_flag("--gpuvalidation", m_gpuValidation, "Enable D3D12 GPU-based validation (implies --d3ddebug)");
 		}
 
 		virtual ~CommandLine() = default;
@@ -26,8 +28,13 @@ namespace koi
 		// Used by RunApplication when -p is absent
 		inline void OverrideProjectFile(fs::path p) { m_projectFile = std::move(p); }
 
+		inline bool IsD3DDebugEnabled()      const { return m_d3dDebug || m_gpuValidation; }
+		inline bool IsGpuValidationEnabled() const { return m_gpuValidation; }
+
 	private:
 		fs::path m_projectFile;
+		bool     m_d3dDebug      = false;
+		bool     m_gpuValidation = false;
 	};
 
 	namespace internal

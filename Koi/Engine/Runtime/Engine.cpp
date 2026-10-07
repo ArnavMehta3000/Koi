@@ -26,7 +26,8 @@ namespace koi
 	template Renderer&      Engine::GetSubsystem<Renderer>();
 	template AssetRegistry& Engine::GetSubsystem<AssetRegistry>();
 
-	Engine::Engine()
+	Engine::Engine(const Desc& desc)
+		: m_desc(desc)
 	{
 		ZoneScoped;
 

@@ -7,10 +7,8 @@
 #include "Koi/Engine/Text/StringUtils.h"
 #include <comdef.h>
 #include <cassert>
+#include <dxgidebug.h>
 #include <ranges>
-#if KOI_DEBUG
-	#include <dxgidebug.h>
-#endif
 
 // Enable to log handle deletion logs
 #define KOI_LOG_HANDLE_INFO 0
@@ -58,7 +56,6 @@ namespace koi
 
 		void ReportLiveObjects()
 		{
-#if KOI_DEBUG
 			ZoneScoped;
 
 			Microsoft::WRL::ComPtr<IDXGIDebug1> debug;
@@ -69,7 +66,18 @@ namespace koi
 					DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)
 				);
 			}
-#endif
+		}
+
+		void CALLBACK OnD3D12Message(D3D12_MESSAGE_CATEGORY, D3D12_MESSAGE_SEVERITY severity, D3D12_MESSAGE_ID id, LPCSTR description, void*)
+		{
+			switch (severity)
+			{
+			case D3D12_MESSAGE_SEVERITY_CORRUPTION: { KOI_LOG_CRITICAL("[D3D12] {} (id {})", description, static_cast<i32>(id)); break; }
+			case D3D12_MESSAGE_SEVERITY_ERROR:      { KOI_LOG_ERROR("[D3D12] {} (id {})",    description, static_cast<i32>(id)); break; }
+			case D3D12_MESSAGE_SEVERITY_WARNING:    { KOI_LOG_WARN("[D3D12] {} (id {})",     description, static_cast<i32>(id)); break; }
+			case D3D12_MESSAGE_SEVERITY_INFO:       { KOI_LOG_INFO("[D3D12] {}",             description); break; }
+			default:                                { KOI_LOG_DEBUG("[D3D12] {}",            description); break; }
+			}
 		}
 	}
 
@@ -146,7 +154,10 @@ namespace koi
 		m_resourceHeap.Reset();
 		m_samplerHeap.Reset();
 
-		ReportLiveObjects();
+		if (m_desc.EnableDebugLayer)
+		{
+			ReportLiveObjects();
+		}
 
 		// [NOTE]: Not clearing resource pool here
 		KOI_LOG_DEBUG("Finished destroying D3D12 device");
@@ -760,39 +771,43 @@ namespace koi
 		if (m_notify) m_notify->OnDeviceRestored();
 	}
 
-	void GfxDevice::CreateFactory([[maybe_unused]] bool enableDebug)
+	void GfxDevice::CreateFactory(bool enableDebug)
 	{
 		ZoneScoped;
 
 		KOI_LOG_DEBUG("Creating D3D12 factory");
 		u32 flags = 0;
 
-#if KOI_DEBUG
 		if (enableDebug)
 		{
 			ComPtr<ID3D12Debug> debugCtl;
 			if (SUCCEEDED(::D3D12GetDebugInterface(IID_PPV_ARGS(&debugCtl))))
 			{
 				debugCtl->EnableDebugLayer();
+				KOI_LOG_INFO("D3D12 debug layer enabled");
 
 				if (m_desc.EnableGPUValidation)
 				{
 					ComPtr<ID3D12Debug1> debug1;
 					if (SUCCEEDED(debugCtl.As(&debug1)))
+					{
 						debug1->SetEnableGPUBasedValidation(TRUE);
+						KOI_LOG_INFO("D3D12 GPU-based validation enabled");
+					}
 				}
 			}
 			else
 			{
-				KOI_LOG_WARN("D3D12 debug layer not available");
+				KOI_LOG_WARN("D3D12 debug layer not available (install the Graphics Tools optional feature)");
 			}
 
 			ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
 			if (SUCCEEDED(::DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiInfoQueue))))
 			{
 				flags = DXGI_CREATE_FACTORY_DEBUG;
-				dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, TRUE);
-				dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, TRUE);
+				const BOOL brk = ::IsDebuggerPresent();
+				dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, brk);
+				dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, brk);
 
 				DXGI_INFO_QUEUE_MESSAGE_ID hide[] = { 80 /* swapchain output not controlled */ };
 				DXGI_INFO_QUEUE_FILTER filter{};
@@ -801,7 +816,6 @@ namespace koi
 				dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
 			}
 		}
-#endif
 
 		DX_CHECK(::CreateDXGIFactory2(flags, IID_PPV_ARGS(&m_dxgiFactory)));
 
@@ -871,12 +885,12 @@ namespace koi
 		DX_CHECK(::D3D12CreateDevice(m_adapter.Get(), MIN_FEATURE_LEVEL, IID_PPV_ARGS(&m_device)));
 		m_device->SetName(L"Koi GfxDevice");
 
-#if KOI_DEBUG
 		ComPtr<ID3D12InfoQueue> infoQueue;
-		if (SUCCEEDED(m_device.As(&infoQueue)))
+		if (m_desc.EnableDebugLayer && SUCCEEDED(m_device.As(&infoQueue)))
 		{
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, TRUE);
-			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);
+			const BOOL brk = ::IsDebuggerPresent();
+			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, brk);
+			infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, brk);
 
 			D3D12_MESSAGE_ID hide[] =
 			{
@@ -889,8 +903,20 @@ namespace koi
 			filter.DenyList.NumIDs = static_cast<UINT>(std::size(hide));
 			filter.DenyList.pIDList = hide;
 			infoQueue->AddStorageFilterEntries(&filter);
+
+			// Muted so the logger's own debug sink doesn't print every message twice
+			ComPtr<dx12::InfoQueue> infoQueue1;
+			DWORD cookie = 0;
+			if (SUCCEEDED(infoQueue.As(&infoQueue1))
+				&& SUCCEEDED(infoQueue1->RegisterMessageCallback(OnD3D12Message, D3D12_MESSAGE_CALLBACK_FLAG_NONE, nullptr, &cookie)))
+			{
+				infoQueue->SetMuteDebugOutput(TRUE);
+			}
+			else
+			{
+				KOI_LOG_WARN("ID3D12InfoQueue1 unavailable; D3D12 messages go to the debugger output only");
+			}
 		}
-#endif
 
 		g_featureSupport.Init(m_device.Get());
 	}

@@ -16,7 +16,7 @@ namespace koi
 	public:
 		struct Desc
 		{
-			bool EnableDebugLayer = KOI_DEBUG;
+			bool EnableDebugLayer = false;
 			bool EnableGPUValidation = false;
 		};
 
