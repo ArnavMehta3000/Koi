@@ -30,9 +30,10 @@ namespace koi::internal
 		ZoneScoped;
 		const toml::table project = toml::parse_file(projectFile.string());
 
-		const LoggerConfig defaults{};
+		// Try load input data
 		const toml::table* input = project["input"].as_table();
 
+		// Load scene list
 		std::map<std::string, std::string> scenes;
 		if (const toml::table* list = project["scenes"]["list"].as_table())
 		{
@@ -42,7 +43,23 @@ namespace koi::internal
 			}
 		}
 
-		// Engine-defined data only
+		// Load logging categories
+		std::map<std::string, LogLevel, std::less<>> categoryLevels;
+		if (const toml::table* categories = project["logging"]["categories"].as_table())
+		{
+			for (const auto& [name, node] : *categories)
+			{
+				const std::string_view level = node.value_or(std::string_view());
+				if (utils::ToString(utils::LogLevelFromString(level)) != level)
+				{
+					KOI_LOG(Engine, Warn, "[logging.categories] {} = '{}' is not a log level", name.str(), level);
+					continue;
+				}
+				categoryLevels.emplace(std::string(name.str()), utils::LogLevelFromString(level));
+			}
+		}
+
+		const LoggerConfig defaults{};
 		return AppCreateDesc
 		{
 			.WindowDesc =
@@ -59,6 +76,7 @@ namespace koi::internal
 				.HistoryCapacity = project["logging"]["history"].value_or(defaults.HistoryCapacity),
 				.SpawnConsole    = project["logging"]["console"].value_or(defaults.SpawnConsole),
 				.UseDebugSink    = project["logging"]["debug_sink"].value_or(defaults.UseDebugSink),
+				.CategoryLevels  = std::move(categoryLevels),
 			},
 			.Input          = input ? InputConfig::Load(*input) : InputConfig{},
 			.AppName        = project["project"]["name"].value_or("Koi Application"),

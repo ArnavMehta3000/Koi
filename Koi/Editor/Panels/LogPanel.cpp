@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <utility>
 
 namespace koi::editor
 {
@@ -121,9 +122,11 @@ namespace koi::editor
 			ImGui::SetItemTooltip("%s: %s", kGroups[group].Tooltip, shown ? "shown" : "hidden");
 		}
 
+		// Game categories stand out against the engine's own
 		void CategoryPill(u16 category)
 		{
 			const EditorPalette& palette = EditorPalette::Get();
+			const bool game = Logger::GetCategory(category).Origin == LogOrigin::Game;
 			const std::string_view name = CategoryName(category);
 			const char* begin = name.data();
 			const char* end   = begin + name.size();
@@ -131,11 +134,12 @@ namespace koi::editor
 			const f32    pad  = ImGui::GetStyle().FramePadding.x * 0.75f;
 			const ImVec2 pos  = ImGui::GetCursorScreenPos();
 			const ImVec2 size = ImGui::CalcTextSize(begin, end);
-			ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x + pad * 2.0f, pos.y + size.y),
-				ImGui::GetColorU32(palette.Raised), size.y * 0.5f);
+			const f32    top  = pos.y + ImGui::GetCurrentWindow()->DC.CurrLineTextBaseOffset;
+			ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(pos.x, top), ImVec2(pos.x + size.x + pad * 2.0f, top + size.y),
+				ImGui::GetColorU32(game ? palette.AccentMuted : palette.Raised), size.y * 0.5f);
 
 			ImGui::SetCursorScreenPos(ImVec2(pos.x + pad, pos.y));
-			ImGui::PushStyleColor(ImGuiCol_Text, palette.TextSecondary);
+			ImGui::PushStyleColor(ImGuiCol_Text, game ? palette.Text : palette.TextSecondary);
 			ImGui::TextUnformatted(begin, end);
 			ImGui::PopStyleColor();
 		}
@@ -266,11 +270,11 @@ namespace koi::editor
 
 		char preview[64];
 		if (selected == 0)
-			std::snprintf(preview, sizeof(preview), ICON_FA_FILTER "  All sources");
+			std::snprintf(preview, sizeof(preview), ICON_FA_FILTER "  All categories");
 		else if (selected == 1)
 			std::snprintf(preview, sizeof(preview), ICON_FA_FILTER "  %s", CategoryName(FirstSelected(m_categoryMask)).data());
 		else
-			std::snprintf(preview, sizeof(preview), ICON_FA_FILTER "  %u sources", selected);
+			std::snprintf(preview, sizeof(preview), ICON_FA_FILTER "  %u categories", selected);
 
 		ImGui::SetNextItemWidth(170.0f);
 		if (!ImGui::BeginCombo("##category", preview, ImGuiComboFlags_HeightLarge))
@@ -287,21 +291,34 @@ namespace koi::editor
 			m_categoryMask.flip();
 			m_filterDirty = true;
 		}
-		ImGui::Separator();
 
-		for (u16 i = 0; i < count; ++i)
+		static constexpr std::array<std::pair<LogOrigin, const char*>, 3> kOrigins =
+		{{
+			{ LogOrigin::Game,   "Game" },
+			{ LogOrigin::Engine, "Engine" },
+			{ LogOrigin::Editor, "Editor" },
+		}};
+
+		for (const auto& [origin, label] : kOrigins)
 		{
-			// Copied out rather than bound: vector<bool> hands back a proxy, not a bool&
-			bool enabled = m_categoryMask[i];
-
-			ImGui::PushID(i);
-			if (ImGui::Checkbox(CategoryName(i).data(), &enabled))
+			ImGui::SeparatorText(label);
+			for (u16 i = 0; i < count; ++i)
 			{
-				m_categoryMask[i] = enabled;
-				m_filterDirty     = true;
+				if (Logger::GetCategory(i).Origin != origin)
+					continue;
+
+				// Copied out rather than bound: vector<bool> hands back a proxy, not a bool&
+				bool enabled = m_categoryMask[i];
+
+				ImGui::PushID(i);
+				if (ImGui::Checkbox(CategoryName(i).data(), &enabled))
+				{
+					m_categoryMask[i] = enabled;
+					m_filterDirty     = true;
+				}
+				ImGui::SetItemTooltip("Logs %s and above", utils::ToString(Logger::GetCategoryLevel(i)).data());
+				ImGui::PopID();
 			}
-			ImGui::SetItemTooltip("%s", Logger::GetCategory(i).Path.data());
-			ImGui::PopID();
 		}
 
 		ImGui::EndCombo();
@@ -342,7 +359,7 @@ namespace koi::editor
 		ImGui::TableSetupScrollFreeze(0, 1);
 		ImGui::TableSetupColumn("##level", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, ImGui::GetFontSize() * 1.25f);
 		ImGui::TableSetupColumn("Time",    ImGuiTableColumnFlags_WidthFixed, 64.0f);
-		ImGui::TableSetupColumn("Source",  ImGuiTableColumnFlags_WidthFixed, 160.0f);
+		ImGui::TableSetupColumn("Category", ImGuiTableColumnFlags_WidthFixed, 120.0f);
 		ImGui::TableSetupColumn("Message", ImGuiTableColumnFlags_WidthStretch);
 		ImGui::TableHeadersRow();
 
@@ -379,15 +396,15 @@ namespace koi::editor
 		}
 		ImGui::PopStyleColor();
 
-		const LogCategoryInfo category = Logger::GetCategory(record.Category);
+		const LogSourceInfo source = Logger::GetSource(record.Source);
 		if (ImGui::BeginPopupContextItem("##ctx"))
 		{
 			if (ImGui::MenuItem(ICON_FA_COPY "  Copy message"))
 				ImGui::SetClipboardText(record.Message.c_str());
 			if (ImGui::MenuItem(ICON_FA_FILE_CODE "  Copy source"))
 			{
-				const std::string source = std::string(category.Path) + ":" + std::to_string(record.Line);
-				ImGui::SetClipboardText(source.c_str());
+				const std::string location = std::string(source.Path) + ":" + std::to_string(record.Line);
+				ImGui::SetClipboardText(location.c_str());
 			}
 			ImGui::EndPopup();
 		}
@@ -397,8 +414,8 @@ namespace koi::editor
 
 		ImGui::TableSetColumnIndex(2);
 		CategoryPill(record.Category);
-		if (!category.Path.empty())
-			ImGui::SetItemTooltip("%s:%u", category.Path.data(), record.Line);
+		if (!source.Path.empty())
+			ImGui::SetItemTooltip("%s:%u", source.Path.data(), record.Line);
 
 		// First line only, rows stay one line high for the clipper; the detail strip shows the rest
 		ImGui::TableSetColumnIndex(3);
@@ -422,15 +439,17 @@ namespace koi::editor
 			return;
 
 		const LogRecord&      record   = m_records[m_selected];
-		const LogCategoryInfo category = Logger::GetCategory(record.Category);
-		const EditorPalette&  palette  = EditorPalette::Get();
+		const LogSourceInfo  source  = Logger::GetSource(record.Source);
+		const EditorPalette& palette = EditorPalette::Get();
 
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextColored(LevelColor(record.Level), "%s  %s", LevelIcon(record.Level), utils::ToString(record.Level).data());
 		ImGui::SameLine();
 		ImGui::TextDisabled("%.3fs", record.Time);
 		ImGui::SameLine();
-		ImGui::TextColored(palette.TextSecondary, "%s:%u", category.Path.data(), record.Line);
+		CategoryPill(record.Category);
+		ImGui::SameLine();
+		ImGui::TextColored(palette.TextSecondary, "%s:%u", source.Path.data(), record.Line);
 
 		const f32 buttons = ImGui::GetFrameHeight() * 3.0f + ImGui::GetStyle().ItemInnerSpacing.x * 2.0f;
 		ImGui::SameLine();
@@ -442,8 +461,8 @@ namespace koi::editor
 		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
 		if (koi::utils::IconButton(ICON_FA_FILE_CODE, "Copy source"))
 		{
-			const std::string source = std::string(category.Path) + ":" + std::to_string(record.Line);
-			ImGui::SetClipboardText(source.c_str());
+			const std::string location = std::string(source.Path) + ":" + std::to_string(record.Line);
+			ImGui::SetClipboardText(location.c_str());
 		}
 		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
 		if (koi::utils::IconButton(ICON_FA_XMARK, "Close"))

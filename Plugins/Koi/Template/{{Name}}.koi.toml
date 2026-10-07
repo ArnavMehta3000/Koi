@@ -15,6 +15,10 @@ history    = 4096
 console    = false
 debug_sink = true
 
+# Per-category levels over `level`
+# [logging.categories]
+# RHI = "Warn"
+
 [scenes]
 startup = "Main"
 

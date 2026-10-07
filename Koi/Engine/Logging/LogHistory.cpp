@@ -31,7 +31,7 @@ namespace koi
 		m_written = 0;
 	}
 
-	void LogHistory::Push(LogLevel level, u16 category, u32 line, f64 time, std::string_view message)
+	void LogHistory::Push(LogLevel level, u16 category, u16 source, u32 line, f64 time, std::string_view message)
 	{
 		std::lock_guard lock(m_mutex);
 
@@ -42,6 +42,7 @@ namespace koi
 		record.Time     = time;
 		record.Line     = line;
 		record.Category = category;
+		record.Source   = source;
 		record.Level    = level;
 		record.Message.assign(message);  // reuses the recycled slot's buffer
 

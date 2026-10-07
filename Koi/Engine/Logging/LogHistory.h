@@ -11,7 +11,8 @@ namespace koi
 	{
 		f64         Time = 0.0;  // seconds since the logger was configured
 		u32         Line = 0;
-		u16         Category = 0;  // Logger category id
+		u16         Category = 0;  // Logger::GetCategory id
+		u16         Source = 0;    // Logger::GetSource id
 		LogLevel    Level = LogLevel::Info;
 		std::string Message;
 	};
@@ -25,7 +26,7 @@ namespace koi
 		void Resize(u32 capacity);
 		void Clear();
 
-		void Push(LogLevel level, u16 category, u32 line, f64 time, std::string_view message);
+		void Push(LogLevel level, u16 category, u16 source, u32 line, f64 time, std::string_view message);
 
 		// Appends every record with sequence >= from (oldest first) and returns the new cursor
 		// Records that aged out of the ring are skipped rather than reported
