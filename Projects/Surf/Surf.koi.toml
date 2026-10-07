@@ -15,6 +15,24 @@ history    = 4096
 console    = false
 debug_sink = true
 
+# Engine and editor categories; `level` covers the game's own and anything not listed.
+# Override per run with --log, e.g. --log RHI=Trace or --log all=Trace
+[logging.categories]
+Engine   = "Info"
+Platform = "Info"
+Input    = "Info"
+IO       = "Info"
+Assets   = "Debug"
+ECS      = "Info"
+Scene    = "Debug"
+Render   = "Debug"
+RHI      = "Info"
+Shaders  = "Info"
+Editor   = "Info"
+AssetDB  = "Info"
+Import   = "Debug"
+Cook     = "Info"
+
 [scenes]
 startup = "Main"
 
