@@ -27,6 +27,7 @@ namespace koi::editor
 
 	class AssetDatabase;
 	class ImportPanel;
+	class LogPanel;
 	class ImportQueue;
 	class ViewportPanel;
 	enum class ViewportCamera : u8;
@@ -108,6 +109,7 @@ namespace koi::editor
 		std::unique_ptr<AssetDatabase>  m_assetDatabase;
 		std::unique_ptr<ImportQueue>    m_importQueue;
 		ImportPanel*                    m_importPanel = nullptr;
+		LogPanel*                       m_logPanel    = nullptr;
 		EditorConfig                    m_config{};
 		ImGuiLayer                      m_imgui;
 		PanelHost                       m_panels;

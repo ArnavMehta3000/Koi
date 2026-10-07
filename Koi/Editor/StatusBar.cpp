@@ -20,36 +20,13 @@ namespace koi::editor
 		};
 	}
 
-	void StatusBar::PullLog()
-	{
-		m_scratch.clear();
-		m_logCursor = LogHistory::Get().ReadFrom(m_logCursor, m_scratch);
-		for (LogRecord& record : m_scratch)
-		{
-			if (record.Level == LogLevel::Warn)
-			{
-				++m_warnings;
-				m_lastWarning = std::move(record.Message);
-			}
-			else if (record.Level == LogLevel::Error || record.Level == LogLevel::Critical)
-			{
-				++m_errors;
-				m_lastError = std::move(record.Message);
-			}
-		}
-	}
-
 	void StatusBar::Draw(const StatusInfo& info)
 	{
-		PullLog();
-
 		const EditorPalette& palette = EditorPalette::Get();
 		const bool running = info.State != PlayState::Edit;
 
-		// On the amber fill everything is dark text; otherwise counts take their meaning colour
+		// On the amber fill everything is dark text
 		const ImVec4 text     = running ? palette.Base : palette.TextSecondary;
-		const ImVec4 warning  = running ? palette.Base : (m_warnings > 0 ? palette.Warning : palette.TextDisabled);
-		const ImVec4 error    = running ? palette.Base : (m_errors > 0 ? palette.Error : palette.TextDisabled);
 		const ImVec4 fill     = info.State == PlayState::Playing ? palette.Playing
 		                      : info.State == PlayState::Paused  ? palette.Paused
 		                      : palette.Surface;
@@ -76,8 +53,6 @@ namespace koi::editor
 			{
 				right.push_back({ ICON_FA_SPINNER "  Importing", text });
 			}
-			right.push_back({ std::format(ICON_FA_TRIANGLE_EXCLAMATION " {}", m_warnings), warning, m_lastWarning.empty() ? nullptr : m_lastWarning.c_str() });
-			right.push_back({ std::format(ICON_FA_CIRCLE_XMARK " {}", m_errors), error, m_lastError.empty() ? nullptr : m_lastError.c_str() });
 			right.push_back({ std::format("{:.0f} fps", ImGui::GetIO().Framerate), text });
 
 			const f32 spacing = ImGui::GetStyle().ItemSpacing.x * 2.0f;

@@ -83,7 +83,7 @@ namespace koi::editor
 		m_panels.Emplace<InspectorPanel>(m_selection, m_inspectors, *m_assetDatabase);
 		m_panels.Emplace<RenderTargetsPanel>(renderer);
 		m_panels.Emplace<GridPanel>(renderer);
-		m_panels.Emplace<LogPanel>();
+		m_logPanel = &m_panels.Emplace<LogPanel>();
 		m_panels.Emplace<ProfilerPanel>();
 		m_viewportPanel     = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
 		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection, *m_importQueue);
@@ -498,6 +498,7 @@ namespace koi::editor
 	void EditorApp::Play()
 	{
 		ZoneScoped;
+		m_logPanel->OnPlay();
 
 		World& world                    = m_game->GetWorld();
 		Engine& engine                  = Engine::Get();

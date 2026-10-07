@@ -1,9 +1,6 @@
 #pragma once
 #include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Logging/LogHistory.h"
-#include <string>
 #include <string_view>
-#include <vector>
 
 namespace koi
 {
@@ -24,16 +21,5 @@ namespace koi::editor
 	{
 	public:
 		void Draw(const StatusInfo& info);
-
-	private:
-		void PullLog();
-
-	private:
-		std::vector<LogRecord> m_scratch;
-		u64                    m_logCursor = 0;
-		u32                    m_warnings  = 0;
-		u32                    m_errors    = 0;
-		std::string            m_lastWarning;
-		std::string            m_lastError;
 	};
 }
