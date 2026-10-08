@@ -2,6 +2,7 @@
 	"shaders": [
 		{ "source": "DebugLineVS.hlsl" },
 		{ "source": "DebugLinePS.hlsl" },
+		{ "source": "DebugVisualizePS.hlsl" },
 		{ "source": "GBufferVS.hlsl" },
 		{ "source": "GBufferPS.hlsl" },
 		{ "source": "GridVS.hlsl" },

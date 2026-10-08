@@ -1,9 +1,11 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Core/Config.h"
+#include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/DeferredPipeline.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
+#include "Koi/Engine/Interop/ViewportTarget.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -50,6 +52,8 @@ namespace koi
 
 		m_graph.Init(*m_device);
 		m_defaultResources.Init(*m_device, m_pipelineLibrary);
+		m_capture.Init(*m_device, m_defaultResources.CapturePipeline);
+		m_graph.SetObserver(&m_capture);
 		RegisterMaterialTemplates();
 
 		KOI_LOG(Render, Info, "Renderer initialized");
@@ -92,6 +96,7 @@ namespace koi
 		m_pipeline.reset();  // holds raw pointers into the pass list
 		m_passes.Clear();
 		m_graph.Shutdown();
+		m_capture.Shutdown();
 		m_frameContext.reset();
 		m_renderWindow.reset();
 		m_materials.Shutdown();
@@ -210,8 +215,15 @@ namespace koi
 	{
 		KOI_SCOPE("Render Setup");
 		m_graph.Reset();
+		if (view.Camera)
+		{
+			m_capture.SetDepthPlanes(view.Camera->Near, view.Camera->Far);
+		}
+
 		if (m_pipeline)
+		{
 			m_pipeline->Record(m_graph, view, world);
+		}
 	}
 
 	CommandList* Renderer::GetCommandList() noexcept

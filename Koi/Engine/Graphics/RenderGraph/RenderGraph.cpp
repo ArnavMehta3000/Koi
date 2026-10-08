@@ -219,6 +219,30 @@ namespace koi
 		Reset();
 	}
 
+	void RenderGraph::NotifyWrites(u32 passIndex)
+	{
+		// Passes the observer adds are not reported back to it
+		if (!m_observer || m_notifying) return;
+		m_notifying = true;
+
+		// Copied: the observer may add passes, which can reallocate m_passes
+		const std::vector<Use> uses = m_passes[passIndex].Uses;
+		for (const Use& use : uses)
+		{
+			if (use.Access == Access::ShaderRead) continue;
+
+			const RGTexture written
+			{
+				.Index = use.Texture.Index,
+				.Version = static_cast<u16>(use.Texture.Version + 1)
+			};
+			const std::string name = m_resources[use.Texture.Index].Name;  // the observer may grow m_resources
+
+			m_observer->OnWrite(*this, name, written);
+		}
+		m_notifying = false;
+	}
+
 	void RenderGraph::Inspect()
 	{
 		m_inspection.Passes.clear();

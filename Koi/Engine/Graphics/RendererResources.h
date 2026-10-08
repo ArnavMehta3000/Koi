@@ -30,6 +30,7 @@ namespace koi
 		PipelineHandle ShadowPipeline{};            // depth-only shadow map: no pixel shader, no render targets
 		PipelineHandle DebugLinePipeline{};         // LINELIST overlay
 		PipelineHandle GridPipeline{};              // editor ground grid: blended full-screen, depth-tested
+		PipelineHandle CapturePipeline{};           // copies a graph texture into the editor's preview, visualized
 
 		void Init(GfxDevice& device, PipelineLibrary& library);
 		void Shutdown();

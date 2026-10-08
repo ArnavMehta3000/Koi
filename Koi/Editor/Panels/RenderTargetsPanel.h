@@ -1,13 +1,12 @@
 #pragma once
 #include "Koi/Engine/Interop/EditorPanel.h"
-#include <string>
 #include <IconsFontAwesome6.h>
 
 namespace koi { class Renderer; }
 
 namespace koi::editor
 {
-	// Every output attachment of every pass in the frame graph, one at a time
+	// Every texture version the render graph wrote last frame, captured and visualized one at a time
 	class RenderTargetsPanel : public IEditorPanel
 	{
 	public:
@@ -18,10 +17,10 @@ namespace koi::editor
 		void OnDraw() override;
 
 	private:
-		Renderer* m_renderer = nullptr;
+		void DrawTargetList();
+		void DrawPreview();
 
-		// Selection is kept by label, not index: passes create their targets lazily, so the
-		// list can change size between frames
-		std::string m_selected;
+	private:
+		Renderer* m_renderer = nullptr;
 	};
 }

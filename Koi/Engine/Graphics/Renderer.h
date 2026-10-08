@@ -6,6 +6,7 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
+#include "Koi/Engine/Graphics/TargetCapture.h"
 #include "Koi/Engine/Graphics/RHI/CommandAllocator.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/CommandQueue.h"
@@ -43,6 +44,7 @@ namespace koi
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline PassList&                GetPasses() noexcept                 { return m_passes;               }
 		[[nodiscard]] inline const RenderGraph&       GetRenderGraph() const noexcept      { return m_graph;                }
+		[[nodiscard]] inline TargetCapture&           GetTargetCapture() noexcept          { return m_capture;              }
 		[[nodiscard]] inline MaterialTable&           GetMaterialTable() noexcept          { return m_materials;            }
 		[[nodiscard]] inline MaterialTemplateLibrary& GetMaterialTemplates() noexcept      { return m_materialTemplates;    }
 		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
@@ -92,6 +94,7 @@ namespace koi
 		MaterialTemplateLibrary          m_materialTemplates;
 		PassList                         m_passes;
 		RenderGraph                      m_graph;
+		TargetCapture                    m_capture;
 		std::unique_ptr<IRenderPipeline> m_pipeline;
 		u32                              m_frameSlot = 0;
 		IRendererOverlay*                m_overlay   = nullptr;

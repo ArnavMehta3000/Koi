@@ -34,6 +34,14 @@ namespace koi
 		std::vector<Pass> Passes;
 	};
 
+	// Told about every write as passes are added, and may add passes of its own in response
+	class IRGObserver
+	{
+	public:
+		virtual ~IRGObserver() = default;
+		virtual void OnWrite(RenderGraph& graph, std::string_view resource, RGTexture written) = 0;
+	};
+
 	class RenderGraph : NonCopyable
 	{
 		friend class RGBuilder;
@@ -90,6 +98,7 @@ namespace koi
 			RGBuilder builder(*this, index);                     // Prepare builder
 			std::invoke(std::forward<Setup>(setup), builder);    // Invoke setup callback
 			m_passes[index].Execute = std::forward<Exec>(exec);  // Save execute function
+			NotifyWrites(index);
 		}
 
 		void Execute(CommandList& cmd);
@@ -98,11 +107,14 @@ namespace koi
 		[[nodiscard]] inline const RGInspection& GetInspection() const noexcept { return m_inspection; }
 		[[nodiscard]] inline GfxDevice& GetDevice() const noexcept { return *m_device; }
 
+		inline void SetObserver(IRGObserver* observer) noexcept { m_observer = observer; }
+
 	private:
 		[[nodiscard]] u32 BeginPass(std::string_view name);
 		[[nodiscard]] RGTexture Declare(u32 passIndex, RGTexture texture, Access access);
 		void BindTargets(CommandList& cmd, const Pass& pass);
 		void Inspect();
+		void NotifyWrites(u32 passIndex);
 
 	private:
 		GfxDevice*                         m_device = nullptr;
@@ -111,5 +123,7 @@ namespace koi
 		std::vector<Pass>                  m_passes;
 		std::set<std::string, std::less<>> m_names;
 		RGInspection                       m_inspection;
+		IRGObserver*                       m_observer  = nullptr;
+		bool                               m_notifying = false;
 	};
 }

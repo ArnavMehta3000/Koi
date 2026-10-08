@@ -3,80 +3,146 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include <imgui.h>
+#include <rfl.hpp>
 #include <format>
-#include <vector>
 
 namespace koi::editor
 {
 	namespace
 	{
-		struct Entry
+		constexpr std::string_view kCapturePass = "Capture";
+
+		bool IsDepth(Format format)
 		{
-			std::string   Label;    // "Pass / Attachment"
-			TextureHandle Texture;
-		};
+			return format == Format::D32_FLOAT || format == Format::D32_FLOAT_S8X24_UINT;
+		}
+
+		// What a fresh pick should look like: depth as distance, everything else as plain color
+		CaptureSettings DefaultsFor(Format format)
+		{
+			return IsDepth(format)
+				? CaptureSettings{ .Mode = CaptureMode::LinearDepth, .Channels = 0b0001 }
+				: CaptureSettings{};
+		}
+
+		const RGInspection::Output* FindWatched(const RGInspection& inspection, const TargetCapture::Target& target)
+		{
+			for (const RGInspection::Pass& pass : inspection.Passes)
+			{
+				for (const RGInspection::Output& out : pass.Writes)
+				{
+					if (out.Name == target.Name && out.Version == target.Version)
+						return &out;
+				}
+			}
+			return nullptr;
+		}
 	}
 
 	void RenderTargetsPanel::OnDraw()
 	{
-		std::vector<Entry> entries;
+		constexpr ImGuiTableFlags kFlags = ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV;
+		if (!ImGui::BeginTable("##RenderTargets", 2, kFlags)) return;
+
+		ImGui::TableSetupColumn("Targets", ImGuiTableColumnFlags_WidthFixed, 200.0f);
+		ImGui::TableSetupColumn("Preview", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::TableNextRow();
+
+		ImGui::TableNextColumn();
+		DrawTargetList();
+
+		ImGui::TableNextColumn();
+		DrawPreview();
+
+		ImGui::EndTable();
+	}
+
+	void RenderTargetsPanel::DrawTargetList()
+	{
+		TargetCapture& capture = m_renderer->GetTargetCapture();
+		const auto&    watched = capture.GetWatched();
+		GfxDevice&     device  = m_renderer->GetDevice();
+
+		ImGui::BeginChild("##List");
 		for (const RGInspection::Pass& pass : m_renderer->GetRenderGraph().GetInspection().Passes)
 		{
+			if (pass.Name == kCapturePass || pass.Writes.empty()) continue;
+
+			ImGui::SeparatorText(pass.Name.data());
 			for (const RGInspection::Output& out : pass.Writes)
 			{
-				if (out.Texture)
-					entries.push_back(Entry{ std::format("{} / {} v{}", pass.Name, out.Name, out.Version), out.Texture });
+				const bool selected = watched && watched->Name == out.Name && watched->Version == out.Version;
+				const std::string label = std::format("{} v{}##{}", out.Name, out.Version, pass.Name);
+
+				if (ImGui::Selectable(label.c_str(), selected) && !selected)
+				{
+					capture.Watch(TargetCapture::Target{ .Name = out.Name, .Version = out.Version });
+					if (const Texture* tex = device.Get(out.Texture))
+					{
+						capture.GetSettings() = DefaultsFor(tex->Desc.Format);
+					}
+				}
 			}
 		}
+		ImGui::EndChild();
+	}
 
-		if (entries.empty())
+	void RenderTargetsPanel::DrawPreview()
+	{
+		TargetCapture& capture = m_renderer->GetTargetCapture();
+		const auto&    watched = capture.GetWatched();
+		if (!watched)
 		{
-			ImGui::TextUnformatted("No pass has produced a target yet.");
+			ImGui::TextDisabled("Pick a target on the left.");
 			return;
 		}
 
-		size_t selected = 0;
-		for (size_t i = 0; i < entries.size(); ++i)
+		CaptureSettings& s = capture.GetSettings();
+
+		int mode = static_cast<int>(s.Mode);
+		ImGui::SetNextItemWidth(120.0f);
+		if (ImGui::Combo("##Mode", &mode, "Color\0Linear Depth\0"))
+			s.Mode = static_cast<CaptureMode>(mode);
+
+		static constexpr const char* kChannels[] = { "R", "G", "B", "A" };
+		for (u32 i = 0; i < 4; ++i)
 		{
-			if (entries[i].Label == m_selected) selected = i;
+			ImGui::SameLine();
+			bool on = (s.Channels >> i) & 1u;
+			if (ImGui::Checkbox(kChannels[i], &on))
+				s.Channels = on ? (s.Channels | (1u << i)) : (s.Channels & ~(1u << i));
 		}
 
-		if (ImGui::BeginCombo("Target", entries[selected].Label.c_str()))
-		{
-			for (size_t i = 0; i < entries.size(); ++i)
-			{
-				const bool isSelected = (i == selected);
-				if (ImGui::Selectable(entries[i].Label.c_str(), isSelected)) selected = i;
-				if (isSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-		m_selected = entries[selected].Label;
+		ImGui::SetNextItemWidth(-FLT_MIN);
+		ImGui::DragFloatRange2("##Range", &s.RangeMin, &s.RangeMax, 0.01f, 0.0f, 0.0f, "Min %.2f", "Max %.2f");
 
 		GfxDevice& device = m_renderer->GetDevice();
-		if (const Texture* tex = device.Get(entries[selected].Texture); tex && tex->SRVIndex != INVALID_DESCRIPTOR)
+		if (const RGInspection::Output* out = FindWatched(m_renderer->GetRenderGraph().GetInspection(), *watched))
 		{
-			// No pass leaves its outputs readable for us, so ask for this one explicitly
-			m_renderer->RequestShaderRead(entries[selected].Texture);
-
-			ImGui::TextDisabled("%ux%u", tex->Desc.Width, tex->Desc.Height);
-
-			const ImVec2 avail = ImGui::GetContentRegionAvail();
-			const f32 aspect   = tex->Desc.Height > 0
-				? static_cast<f32>(tex->Desc.Width) / static_cast<f32>(tex->Desc.Height)
-				: 1.0f;
-
-			// Fit-to-region while preserving the target's aspect ratio
-			ImVec2 size = (avail.x / aspect <= avail.y)
-				? ImVec2(avail.x, avail.x / aspect)
-				: ImVec2(avail.y * aspect, avail.y);
-
-			const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
-			ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
+			if (const Texture* tex = device.Get(out->Texture))
+			{
+				ImGui::TextDisabled("%ux%u  %s", tex->Desc.Width, tex->Desc.Height, rfl::enum_to_string(tex->Desc.Format).c_str());
+			}
 		}
-		else
+
+		const TextureHandle preview = capture.GetPreview();
+		const Texture*      tex     = device.Get(preview);
+		if (!tex)
 		{
-			ImGui::TextDisabled("'%s' is not sampleable (no SRV).", entries[selected].Label.c_str());
+			ImGui::TextDisabled("'%s v%u' was not produced this frame.", watched->Name.c_str(), watched->Version);
+			return;
 		}
+
+		m_renderer->RequestShaderRead(preview);
+
+		// Fit to the region, keeping the target's aspect
+		const ImVec2 avail  = ImGui::GetContentRegionAvail();
+		const f32    aspect = static_cast<f32>(tex->Desc.Width) / static_cast<f32>(std::max(tex->Desc.Height, 1u));
+		const ImVec2 size   = (avail.x / aspect <= avail.y)
+			? ImVec2(avail.x, avail.x / aspect)
+			: ImVec2(avail.y * aspect, avail.y);
+
+		const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
+		ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
 	}
 }

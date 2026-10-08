@@ -174,6 +174,13 @@ namespace koi
 			"engine://Content/Shaders/GridPS",
 			Format::R8G8B8A8_UNORM));
 
+		// --- Target capture (editor Render Targets panel) ---
+		CapturePipeline = library.Register(device, PipelineRecipe::FullScreen(
+			"TargetCapture",
+			"engine://Content/Shaders/TonemapVS",
+			"engine://Content/Shaders/DebugVisualizePS",
+			Format::R16G16B16A16_FLOAT));
+
 		// --- Debug lines (last pass, over the tonemapped image) ---
 		DebugLinePipeline = library.Register(device, PipelineRecipe::Lines(
 			"DebugLine",
