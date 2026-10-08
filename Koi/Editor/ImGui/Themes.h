@@ -103,7 +103,8 @@ namespace koi::editor
 
 		inline void ApplyZeroColors(const EditorPalette& p, ImVec4* colors)
 		{
-			constexpr ImVec4 kNone = HexColor(0x000000, 0.0f);
+			constexpr ImVec4 kNone    = HexColor(0x000000, 0.0f);
+			constexpr ImVec4 kDivider = WithAlpha(HexColor(0x4B5B7E), 0.45f); // Border is invisible on Base
 
 			colors[ImGuiCol_Text]                      = p.Text;
 			colors[ImGuiCol_TextDisabled]              = p.TextDisabled;
@@ -133,7 +134,7 @@ namespace koi::editor
 			colors[ImGuiCol_Header]                    = p.Raised;
 			colors[ImGuiCol_HeaderHovered]             = p.RaisedHover;
 			colors[ImGuiCol_HeaderActive]              = p.RaisedActive;
-			colors[ImGuiCol_Separator]                 = p.Border;
+			colors[ImGuiCol_Separator]                 = kDivider;
 			colors[ImGuiCol_SeparatorHovered]          = p.Accent;
 			colors[ImGuiCol_SeparatorActive]           = p.AccentHover;
 			colors[ImGuiCol_ResizeGrip]                = WithAlpha(p.Selection, 0.20f);
@@ -154,13 +155,13 @@ namespace koi::editor
 			colors[ImGuiCol_PlotHistogram]             = p.Accent;
 			colors[ImGuiCol_PlotHistogramHovered]      = p.AccentHover;
 			colors[ImGuiCol_TableHeaderBg]             = p.Elevated;
-			colors[ImGuiCol_TableBorderStrong]         = p.BorderStrong;
-			colors[ImGuiCol_TableBorderLight]          = p.Border;
+			colors[ImGuiCol_TableBorderStrong]         = kDivider;
+			colors[ImGuiCol_TableBorderLight]          = WithAlpha(kDivider, 0.25f);
 			colors[ImGuiCol_TableRowBg]                = kNone;
 			colors[ImGuiCol_TableRowBgAlt]             = HexColor(0xFFFFFF, 0.02f);
 			colors[ImGuiCol_TextLink]                  = p.Link;
 			colors[ImGuiCol_TextSelectedBg]            = p.Selection;
-			colors[ImGuiCol_TreeLines]                 = p.Raised;
+			colors[ImGuiCol_TreeLines]                 = WithAlpha(kDivider, 0.30f);
 			colors[ImGuiCol_DragDropTarget]            = p.AccentHover;
 			colors[ImGuiCol_DragDropTargetBg]          = HexColor(0x062F4A, 0.60f); // TreeView DragOverItem
 			colors[ImGuiCol_UnsavedMarker]             = p.Text;

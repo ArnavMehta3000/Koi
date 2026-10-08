@@ -16,8 +16,8 @@ name = 'Sponza 2'
     id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
     [entity.transform]
-    position = [ -5.45, 0.0, 18.65 ]
-    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    position = [ 6.04529, 0.0, 18.65 ]
+    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -107,7 +107,7 @@ name = 'Sun'
     intensity = 2.8
     range = 0.0
     shadow_bias = 0.0015
-    shadow_extent = 0.0
+    shadow_extent = 16.5
     type = 'Directional'
 
     [entity.spin]
@@ -115,6 +115,6 @@ name = 'Sun'
     speed = 45.0
 
     [entity.transform]
-    position = [ 0.0, 0.0, 0.0 ]
-    rotation = [ -0.704015, 0.0, 0.0, 0.710185 ]
+    position = [ 4.93682, 0.0, 5.53945 ]
+    rotation = [ -0.704015, 0.0, -0.0, 0.710185 ]
     scale = [ 1.0, 1.0, 1.0 ]
