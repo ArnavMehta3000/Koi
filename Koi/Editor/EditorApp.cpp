@@ -186,8 +186,7 @@ namespace koi::editor
 	void EditorApp::HostRender()
 	{
 		ZoneScoped;
-		if (CommandList* cmd = Engine::Get().GetSubsystem<Renderer>().GetCommandList())
-			m_viewportPanel->PrepareFrame(*cmd);
+		m_viewportPanel->PrepareFrame();
 
 		m_game->HostRender();
 
@@ -263,7 +262,7 @@ namespace koi::editor
 		PassList& passes = Engine::Get().GetSubsystem<Renderer>().GetPasses();
 
 		const ShadowPass* shadow = passes.Find<ShadowPass>();
-		if (!shadow || !shadow->GetShadowMap()) return;
+		if (!shadow || !shadow->HasShadow()) return;
 
 		// The ortho volume the caster was fitted to, as the box its matrix maps to clip space
 		DebugDraw::Frustum(shadow->GetLightViewProjection(), Color(1.0f, 0.9f, 0.2f, 1.0f));
@@ -345,7 +344,7 @@ namespace koi::editor
 		// Panels above asked for the targets they sample; satisfy all of them in one batch before ImGui::Image reads them
 		engine.GetSubsystem<Renderer>().FlushShaderReadRequests(cmd);
 
-		// ScenePass/TonemapPass render into the Viewport panel's offscreen target rather than
+		// The pipeline renders into the Viewport panel's offscreen target rather than
 		// the swapchain back buffer, so the back buffer needs to be bound/cleared explicitly here
 		if (RenderWindow* rw = engine.GetSubsystem<Renderer>().GetMainRenderWindow())
 		{

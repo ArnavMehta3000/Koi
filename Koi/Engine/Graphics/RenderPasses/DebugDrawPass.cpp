@@ -3,7 +3,6 @@
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
-#include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include <cassert>
 
@@ -17,60 +16,36 @@ namespace koi
 		m_vertexBuffer.Init(*m_config.Device, BufferUsage::Storage, 1024, "DebugVertex");
 	}
 
-	DebugDrawPass::~DebugDrawPass() = default;
-
-	void DebugDrawPass::Reset()
-	{
-		m_camera      = nullptr;
-		m_colorTarget = {};
-		m_depth       = {};
-		m_width       = 0;
-		m_height      = 0;
-		m_lineCount   = 0;
-	}
-
-	DebugDrawPass& DebugDrawPass::SetTarget(TextureHandle colorTarget, TextureHandle depth, u32 width, u32 height)
-	{
-		m_colorTarget = colorTarget;
-		m_depth       = depth;
-		m_width       = width;
-		m_height      = height;
-		return *this;
-	}
-
-	void DebugDrawPass::Execute(CommandList& cmd)
+	SceneTargets DebugDrawPass::Record(RenderGraph& graph, const Camera& camera, SceneTargets targets)
 	{
 		ZoneScoped;
-		if (!m_colorTarget || !m_camera || !m_config.Resources || !m_config.Resources->DebugLinePipeline) return;
+		if (!targets.Color || !m_config.Resources || !m_config.Resources->DebugLinePipeline) return targets;
 
-		const std::span<const DebugVertex> vertices = m_config.Queue->GetVertices();
-		if (vertices.empty()) return;
+		graph.AddPass<RasterPass>("Debug Draw",
+			[&](RGBuilder& b)
+			{
+				targets.Color = b.ColorTarget(targets.Color);
+				targets.Depth = b.DepthTarget(targets.Depth);
+			},
+			[this, &camera](RasterContext& ctx)
+			{
+				const std::span<const DebugVertex> vertices = m_config.Queue->GetVertices();
+				if (vertices.empty()) return;
 
-		GfxDevice& device   = *m_config.Device;
-		const u32  frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
+				const u32 frameSlot = static_cast<u32>(m_config.Device->GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
+				const DescriptorIndex vertexBufferIndex = m_vertexBuffer.Upload(frameSlot, vertices);
+				if (vertexBufferIndex == INVALID_DESCRIPTOR) return;
 
-		const DescriptorIndex vertexBufferIndex = m_vertexBuffer.Upload(frameSlot, vertices);
-		if (vertexBufferIndex == INVALID_DESCRIPTOR) return;
+				ctx.SetPipeline(m_config.Resources->DebugLinePipeline);
+				ctx.SetRootConstants(DebugDrawRootConstants
+				{
+					.ViewProjection    = camera.ViewProjection,
+					.VertexBufferIndex = vertexBufferIndex,
+					._Pad              = {},
+				});
+				ctx.Draw(static_cast<u32>(vertices.size()));
+			});
 
-		cmd.TransitionBarrier(m_colorTarget, D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-		// A writable DSV needs DEPTH_WRITE even though the pipeline only tests against it
-		if (m_depth)
-			cmd.TransitionBarrier(m_depth, D3D12_RESOURCE_STATE_DEPTH_WRITE);
-
-		cmd.SetRenderTarget(m_colorTarget, m_depth);
-		cmd.SetViewportAndScissor(m_width, m_height);
-		cmd.SetPipeline(m_config.Resources->DebugLinePipeline);
-
-		const DebugDrawRootConstants pc
-		{
-			.ViewProjection    = m_camera->ViewProjection,
-			.VertexBufferIndex = vertexBufferIndex,
-			._Pad              = {},
-		};
-		cmd.SetRootConstants(&pc, sizeof(pc) / sizeof(u32));
-
-		m_lineCount = static_cast<u32>(vertices.size()) / 2;
-		cmd.Draw(static_cast<u32>(vertices.size()));
+		return targets;
 	}
 }

@@ -7,8 +7,7 @@ namespace koi
 
 	struct ViewportTarget
 	{
-		TextureHandle HDRColorBuffer;       // the lighting pass writes here
-		TextureHandle ResolvedColorBuffer;  // TonemapPass writes here; sampled by ImGui::Image
+		TextureHandle ResolvedColorBuffer;  // the pipeline's final image; sampled by ImGui::Image
 		u32 Width  = 0;
 		u32 Height = 0;
 	};

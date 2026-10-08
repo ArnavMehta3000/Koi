@@ -12,7 +12,6 @@ namespace koi
 	namespace
 	{
 		constexpr Format SWAPCHAIN_FORMAT = Format::R8G8B8A8_UNORM;
-		constexpr Format HDR_FORMAT       = Format::R16G16B16A16_FLOAT;
 	}
 
 	RenderWindow::RenderWindow(GfxDevice& device, Window& window, bool vsync)
@@ -30,7 +29,6 @@ namespace koi
 		assert(m_hwnd && "Window has no native HWND");
 		CreateSwapChain();
 		AcquireBackBuffers();
-		CreateHDRBuffer();
 	}
 
 	RenderWindow::~RenderWindow()
@@ -40,7 +38,6 @@ namespace koi
 		if (!m_device) return;   // moved-from
 
 		m_device->WaitForIdle();
-		ReleaseHDRBuffer();
 		ReleaseBackBuffers();
 		m_swapChain = nullptr;
 	}
@@ -51,7 +48,6 @@ namespace koi
 		, m_hwnd(other.m_hwnd)
 		, m_swapChain(std::move(other.m_swapChain))
 		, m_backBuffers(other.m_backBuffers)
-		, m_hdrColorBuffer(other.m_hdrColorBuffer)
 		, m_frameFenceValues(other.m_frameFenceValues)
 		, m_width(other.m_width)
 		, m_height(other.m_height)
@@ -69,7 +65,6 @@ namespace koi
 		other.m_hwnd   = nullptr;
 
 		other.m_backBuffers.fill(TextureHandle{});
-		other.m_hdrColorBuffer = TextureHandle{};
 	}
 
 	RenderWindow& RenderWindow::operator=(RenderWindow&& other) noexcept
@@ -91,7 +86,6 @@ namespace koi
 			m_hwnd              = other.m_hwnd;
 			m_swapChain         = std::move(other.m_swapChain);
 			m_backBuffers       = other.m_backBuffers;
-			m_hdrColorBuffer    = other.m_hdrColorBuffer;
 			m_frameFenceValues  = other.m_frameFenceValues;
 			m_width             = other.m_width;
 			m_height            = other.m_height;
@@ -107,7 +101,6 @@ namespace koi
 			other.m_hwnd   = nullptr;
 
 			other.m_backBuffers.fill(TextureHandle{});
-			other.m_hdrColorBuffer = TextureHandle{};
 		}
 		return *this;
 	}
@@ -144,7 +137,6 @@ namespace koi
 		KOI_LOG(Render, Debug, "Swapchain resized {}x{} -> {}x{}", m_width, m_height, width, height);
 
 		m_device->WaitForIdle();
-		ReleaseHDRBuffer();
 		ReleaseBackBuffers();
 		m_device->FlushPendingDeletions();
 
@@ -157,7 +149,6 @@ namespace koi
 		m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 
 		AcquireBackBuffers();
-		CreateHDRBuffer();
 	}
 
 	void RenderWindow::Present()
@@ -294,31 +285,6 @@ namespace koi
 			// and flush via WaitForIdle in Resize.
 			m_device->Destroy(m_backBuffers[i]);
 			m_backBuffers[i] = TextureHandle{};
-		}
-	}
-
-	void RenderWindow::CreateHDRBuffer()
-	{
-		ZoneScoped;
-
-		m_hdrColorBuffer = m_device->CreateTexture(TextureDesc
-		{
-			.Width     = m_width,
-			.Height    = m_height,
-			.Format    = HDR_FORMAT,
-			.Usage     = TextureUsage::RenderTarget | TextureUsage::ShaderRead,
-			.DebugName = "HDR Color Buffer",
-		});
-	}
-
-	void RenderWindow::ReleaseHDRBuffer()
-	{
-		ZoneScoped;
-
-		if (m_hdrColorBuffer)
-		{
-			m_device->Destroy(m_hdrColorBuffer);
-			m_hdrColorBuffer = {};
 		}
 	}
 

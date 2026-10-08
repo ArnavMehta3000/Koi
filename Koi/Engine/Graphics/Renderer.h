@@ -42,6 +42,7 @@ namespace koi
 		[[nodiscard]] inline RenderWindow*            GetMainRenderWindow() noexcept       { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline const RenderWindow*      GetMainRenderWindow() const noexcept { return m_renderWindow ? &*m_renderWindow : nullptr; }
 		[[nodiscard]] inline PassList&                GetPasses() noexcept                 { return m_passes;               }
+		[[nodiscard]] inline const RenderGraph&       GetRenderGraph() const noexcept      { return m_graph;                }
 		[[nodiscard]] inline MaterialTable&           GetMaterialTable() noexcept          { return m_materials;            }
 		[[nodiscard]] inline MaterialTemplateLibrary& GetMaterialTemplates() noexcept      { return m_materialTemplates;    }
 		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
@@ -90,6 +91,7 @@ namespace koi
 		MaterialTable                    m_materials;
 		MaterialTemplateLibrary          m_materialTemplates;
 		PassList                         m_passes;
+		RenderGraph                      m_graph;
 		std::unique_ptr<IRenderPipeline> m_pipeline;
 		u32                              m_frameSlot = 0;
 		IRendererOverlay*                m_overlay   = nullptr;

@@ -19,15 +19,13 @@ namespace koi::editor
 
 	void RenderTargetsPanel::OnDraw()
 	{
-		PassList& passes = m_renderer->GetPasses();
-
 		std::vector<Entry> entries;
-		for (const auto& pass : passes.GetPasses())
+		for (const RGInspection::Pass& pass : m_renderer->GetRenderGraph().GetInspection().Passes)
 		{
-			for (const RenderPassAttachment& out : pass->GetOutputs())
+			for (const RGInspection::Output& out : pass.Writes)
 			{
 				if (out.Texture)
-					entries.push_back(Entry{ std::format("{} / {}", pass->GetName(), out.Name), out.Texture });
+					entries.push_back(Entry{ std::format("{} / {} v{}", pass.Name, out.Name, out.Version), out.Texture });
 			}
 		}
 

@@ -36,7 +36,6 @@ namespace koi
 
 		m_tonemapPass = &passes.Add<TonemapPass>(TonemapPass::Config
 		{
-			.Device   = &renderer.GetDevice(),
 			.Pipeline = renderer.GetDefaultResources().TonemapPipeline,
 		});
 
@@ -55,31 +54,29 @@ namespace koi
 		});
 	}
 
-	void DeferredPipeline::Setup(const RenderView& view, World& world)
+	void DeferredPipeline::Record(RenderGraph& graph, const RenderView& view, World& world)
 	{
 		ZoneScoped;
+		if (!view.Camera) return;
+
+		const Camera&         camera = *view.Camera;
 		const ViewportTarget& target = view.Target;
 
-		// Fits the light matrix up front, so the lighting pass can read it below
-		m_shadowPass->SetWorld(&world);
+		const ShadowPass::Output  shadow  = m_shadowPass->Record(graph, world);
+		const GBufferPass::Output gbuffer = m_gbufferPass->Record(graph, world, camera, target.Width, target.Height);
 
-		m_gbufferPass->SetWorld(&world)
-			.SetCamera(view.Camera)
-			.SetTarget(target.Width, target.Height);
+		// Format must match the Lighting/Tonemap pipeline recipes
+		RGTexture hdr = graph.CreateTexture(TextureDesc{ .Width = target.Width, .Height = target.Height, .Format = Format::R16G16B16A16_FLOAT }, "HDRColor");
+		hdr = m_lightingPass->Record(graph, world, camera, gbuffer, shadow, hdr);
 
-		m_lightingPass->SetWorld(&world)
-			.SetCamera(view.Camera)
-			.SetGBuffer(m_gbufferPass->GetAlbedo(), m_gbufferPass->GetNormals(), m_gbufferPass->GetMaterial(), m_gbufferPass->GetDepth())
-			.SetShadow(m_shadowPass->GetShadowMap(), m_shadowPass->GetLightViewProjection())
-			.SetTarget(target.HDRColorBuffer, target.Width, target.Height);
+		SceneTargets scene
+		{
+			.Color = m_tonemapPass->Record(graph, hdr, graph.ImportTexture(target.ResolvedColorBuffer, "Output")),
+			.Depth = gbuffer.Depth,
+		};
 
-		m_tonemapPass->SetInput(m_lightingPass->GetColorOutput())
-			.SetTarget(target.ResolvedColorBuffer, target.Width, target.Height);
-
-		m_gridPass->SetCamera(view.Camera)
-			.SetTarget(target.ResolvedColorBuffer, m_gbufferPass->GetDepth(), target.Width, target.Height);
-
-		m_debugDrawPass->SetCamera(view.Camera)
-			.SetTarget(target.ResolvedColorBuffer, m_gbufferPass->GetDepth(), target.Width, target.Height);
+		// Over the tonemapped image, under the debug lines
+		scene = m_gridPass->Record(graph, camera, scene);
+		m_debugDrawPass->Record(graph, camera, scene);
 	}
 }

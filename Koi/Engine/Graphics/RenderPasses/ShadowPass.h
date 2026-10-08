@@ -19,29 +19,28 @@ namespace koi
 			u32                      Resolution = 2048;
 		};
 
+		struct Output
+		{
+			RGTexture ShadowMap;  // invalid when nothing casts a shadow this frame
+			Matrix    LightViewProjection = Matrix::Identity;
+		};
+
 		explicit ShadowPass(const Config& config);
-		~ShadowPass();
 
 		std::string_view GetName() const override { return "Shadow"; }
-		std::span<const RenderPassAttachment> GetOutputs() const override { return { &m_output, 1 }; }
-		void Execute(CommandList& cmd) override;
-		void Reset() override;
 
-		// Also picks the caster and fits the light matrix, so both are readable before Execute
-		ShadowPass& SetWorld(World* world);
+		Output Record(RenderGraph& graph, World& world);
 
-		// Null handle when nothing casts a shadow this frame
-		[[nodiscard]] inline TextureHandle GetShadowMap() const { return m_hasShadow ? m_output.Texture : TextureHandle(); }
+		[[nodiscard]] inline bool HasShadow() const { return m_hasShadow; }
 		[[nodiscard]] inline const Matrix& GetLightViewProjection() const { return m_lightViewProjection; }
-
 
 	private:
 		// Ortho light-space view-projection fitted to the world bounds
-		bool ComputeLightMatrix();
+		bool ComputeLightMatrix(World& world);
+		void Draw(RasterContext& ctx, World& world);
 
 	private:
 		Config m_config;
-		World* m_world = nullptr;
 
 		Matrix     m_lightViewProjection = Matrix::Identity;
 		CullVolume m_cullVolume;                 // the ortho volume, as an oriented box
@@ -51,7 +50,5 @@ namespace koi
 		GpuFrameBuffer<PerObjectData>  m_objects;
 		MeshGatherer                   m_gatherer;
 		MeshGatherResult               m_gather;
-
-		RenderPassAttachment m_output{ {}, "ShadowMap" };
 	};
 }

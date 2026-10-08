@@ -38,14 +38,11 @@ namespace koi
 		};
 
 		explicit GridPass(const Config& config);
-		~GridPass() override;
 
 		inline std::string_view GetName() const override { return "Grid"; }
-		void Reset() override;
-		void Execute(CommandList& cmd) override;
 
-		inline GridPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }
-		GridPass& SetTarget(TextureHandle colorTarget, TextureHandle depth, u32 width, u32 height);
+		// Adds nothing while disabled and hands the targets back unchanged
+		SceneTargets Record(RenderGraph& graph, const Camera& camera, SceneTargets targets);
 
 		[[nodiscard]] inline Settings& GetSettings() noexcept { return m_settings; }
 		[[nodiscard]] inline const Settings& GetSettings() const noexcept { return m_settings; }
@@ -53,13 +50,6 @@ namespace koi
 	private:
 		Config                       m_config;
 		Settings                     m_settings{};
-		const Camera*                m_camera = nullptr;
-
-		TextureHandle                m_colorTarget;
-		TextureHandle                m_depth;
-		u32                          m_width  = 0;
-		u32                          m_height = 0;
-
 		GpuFrameBuffer<GridConstants> m_constants;
 	};
 }

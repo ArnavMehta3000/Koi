@@ -2,7 +2,6 @@
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/MeshGather.h"
-#include <array>
 
 namespace koi
 {
@@ -22,51 +21,29 @@ namespace koi
 			MaterialTable*           Materials = nullptr;
 		};
 
-		explicit GBufferPass(const Config& config);
-		~GBufferPass();
-
-		std::string_view GetName() const override { return "GBuffer"; }
-		std::span<const RenderPassAttachment> GetOutputs() const override { return m_outputs; }
-		void Execute(CommandList& cmd) override;
-		void Reset() override;
-
-		inline GBufferPass& SetWorld(World* world) { m_world = world; return *this; }
-		inline GBufferPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }
-		GBufferPass& SetTarget(u32 width, u32 height);
-
-		[[nodiscard]] inline TextureHandle GetAlbedo()   const { return m_outputs[size_t(Outputs::Albedo)].Texture;   }
-		[[nodiscard]] inline TextureHandle GetNormals()  const { return m_outputs[size_t(Outputs::Normals)].Texture;  }
-		[[nodiscard]] inline TextureHandle GetMaterial() const { return m_outputs[size_t(Outputs::Material)].Texture; }
-		[[nodiscard]] inline TextureHandle GetDepth()    const { return m_outputs[size_t(Outputs::Depth)].Texture;    }
-
-
-	private:
-		void CreateRenderTargets();
-		void DestroyRenderTargets();
-
-	private:
-		enum class Outputs
+		struct Output
 		{
-			Albedo,    // RGB + AO (RGBA8_UNORM)
-			Normals,   // XYZ + MatID (RGBA16_UNORM)
-			Material,  // Roughness/Metallic/Specular (in rgb) + A (unused) (RGBA8_UNORM)
-			Depth,     // DSV (D32)
-			//TODO Emissive
-			MAX_COUNT
+			RGTexture Albedo;    // RGB + AO (RGBA8_UNORM)
+			RGTexture Normals;   // XYZ + MatID (RGBA16_UNORM)
+			RGTexture Material;  // Roughness/Metallic/Specular + unused A (RGBA8_UNORM)
+			RGTexture Depth;     // D32
 		};
 
+		explicit GBufferPass(const Config& config);
+
+		std::string_view GetName() const override { return "GBuffer"; }
+
+		Output Record(RenderGraph& graph, World& world, const Camera& camera, u32 width, u32 height);
+
 	private:
-		Config        m_config;
-		World*        m_world  = nullptr;
-		const Camera* m_camera = nullptr;
-		u32           m_width  = 0;
-		u32           m_height = 0;
+		void Draw(RasterContext& ctx, World& world, const Camera& camera);
+
+	private:
+		Config m_config;
 
 		GpuFrameBuffer<FrameConstants> m_frameConstants;
 		GpuFrameBuffer<PerObjectData>  m_objects;
 		MeshGatherer                   m_gatherer;
 		MeshGatherResult               m_gather;
-
-		std::array<RenderPassAttachment, size_t(Outputs::MAX_COUNT)> m_outputs;
 	};
 }

@@ -24,8 +24,7 @@
 
 namespace koi::editor
 {
-	// Must match the RT formats RendererResources bakes into MeshOpaquePipeline / TonemapPipeline
-	static constexpr Format kHDRFormat = Format::R16G16B16A16_FLOAT;
+	// Must match the RT format RendererResources bakes into TonemapPipeline
 	static constexpr Format kResolvedFormat = Format::R8G8B8A8_UNORM;
 
 	// A click that moves further than this is a camera drag, not a pick
@@ -42,7 +41,6 @@ namespace koi::editor
 	ViewportPanel::~ViewportPanel()
 	{
 		GfxDevice& device = m_renderer->GetDevice();
-		if (m_target.HDRColorBuffer)      device.Destroy(m_target.HDRColorBuffer);
 		if (m_target.ResolvedColorBuffer) device.Destroy(m_target.ResolvedColorBuffer);
 	}
 
@@ -58,16 +56,7 @@ namespace koi::editor
 		if (m_valid && m_target.Width == width && m_target.Height == height) return;
 
 		GfxDevice& device = m_renderer->GetDevice();
-		if (m_target.HDRColorBuffer)      device.Destroy(m_target.HDRColorBuffer);
 		if (m_target.ResolvedColorBuffer) device.Destroy(m_target.ResolvedColorBuffer);
-
-		m_target.HDRColorBuffer = device.CreateTexture(TextureDesc{
-			.Width  = width,
-			.Height = height,
-			.Format = kHDRFormat,
-			.Usage  = TextureUsage::RenderTarget | TextureUsage::ShaderRead,
-			.DebugName = "Viewport HDR Color",
-		});
 
 		m_target.ResolvedColorBuffer = device.CreateTexture(TextureDesc
 		{
@@ -86,17 +75,11 @@ namespace koi::editor
 		m_resizeSettle = 0.25f;
 	}
 
-	const ViewportTarget* ViewportPanel::PrepareFrame(CommandList& cmd)
+	const ViewportTarget* ViewportPanel::PrepareFrame()
 	{
 		ZoneScoped;
 		EnsureSize(m_desiredWidth, m_desiredHeight);
-		if (!m_valid) return nullptr;
-
-		static constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		cmd.TransitionBarrier(m_target.HDRColorBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET);
-		cmd.ClearRenderTarget(m_target.HDRColorBuffer, kClearColor);
-
-		return &m_target;
+		return m_valid ? &m_target : nullptr;
 	}
 
 	void ViewportPanel::DrawToolbar()

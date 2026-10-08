@@ -1,29 +1,23 @@
 #pragma once
-#include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/Graphics/RenderGraph/RenderGraph.h"
 #include <memory>
-#include <span>
 #include <vector>
 
 namespace koi
 {
-	class CommandList;
-
-	// A texture a pass produced
-	struct RenderPassAttachment
+	// The scene color and depth an overlay draws into
+	struct SceneTargets
 	{
-		TextureHandle    Texture;
-		std::string_view Name;
+		RGTexture Color;
+		RGTexture Depth;
 	};
 
+	// Owns what outlives a frame (upload buffers, settings); records into the graph each frame
 	class RenderPass
 	{
 	public:
 		virtual ~RenderPass() = default;
-
 		virtual std::string_view GetName() const = 0;
-		virtual std::span<const RenderPassAttachment> GetOutputs() const { return {}; }
-		virtual void Reset() {}
-		virtual void Execute(CommandList& cmd) = 0;
 	};
 
 	class PassList
@@ -47,11 +41,7 @@ namespace koi
 			return nullptr;
 		}
 
-		[[nodiscard]] inline std::span<const std::unique_ptr<RenderPass>> GetPasses() const { return m_passes; }
-
-		void Execute(CommandList& cmd);
-		void ResetAll();
-		void Clear();
+		inline void Clear() { m_passes.clear(); }
 
 	private:
 		std::vector<std::unique_ptr<RenderPass>> m_passes;

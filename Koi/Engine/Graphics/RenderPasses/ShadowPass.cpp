@@ -4,7 +4,6 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
-#include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include <cassert>
 
@@ -18,46 +17,40 @@ namespace koi
 
 		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "Shadow FrameConstants");
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "Shadow PerObjectData");
-
-		// Fixed size, so unlike the G-buffer this is created once and never resized
-		m_output.Texture = m_config.Device->CreateTexture(TextureDesc
-		{
-			.Width     = m_config.Resolution,
-			.Height    = m_config.Resolution,
-			.Format    = Format::D32_FLOAT,
-			.Usage     = TextureUsage::DepthStencil | TextureUsage::ShaderRead,
-			.DebugName = "Shadow Map",
-		});
 	}
 
-	ShadowPass::~ShadowPass()
+	ShadowPass::Output ShadowPass::Record(RenderGraph& graph, World& world)
 	{
 		ZoneScoped;
-		if (!m_config.Device) return;
+		m_hasShadow = ComputeLightMatrix(world);
+		if (!m_hasShadow || !m_config.Resources) return {};
 
-		m_config.Device->Destroy(m_output.Texture);
-		m_output.Texture = TextureHandle();
+		RGTexture shadowMap = graph.CreateTexture(TextureDesc
+		{
+			.Width  = m_config.Resolution,
+			.Height = m_config.Resolution,
+			.Format = Format::D32_FLOAT,
+		}, "ShadowMap");
+
+		// Cleared even with nothing to draw: Lighting samples the map whenever it exists
+		graph.AddPass<RasterPass>("Shadow",
+			[&](RGBuilder& b) { shadowMap = b.DepthTarget(shadowMap, LoadOp::Clear); },
+			[this, &world](RasterContext& ctx) { Draw(ctx, world); });
+
+		return { .ShadowMap = shadowMap, .LightViewProjection = m_lightViewProjection };
 	}
 
-	ShadowPass& ShadowPass::SetWorld(World* world)
-	{
-		m_world     = world;
-		m_hasShadow = ComputeLightMatrix();
-		return *this;
-	}
-
-	bool ShadowPass::ComputeLightMatrix()
+	bool ShadowPass::ComputeLightMatrix(World& world)
 	{
 		// Returns false when there is no caster
 
 		ZoneScoped;
-		if (!m_world) return false;
 
 		Vector3 lightDir;
 		Vector3 center;
 		f32     radius = 0.0f;
 		bool    found  = false;
-		m_world->GetECS()
+		world.GetECS()
 			.query<const Transform, const Light>()
 			.each([&](const Transform& xform, const Light& light)
 			{
@@ -76,7 +69,7 @@ namespace koi
 		// Texel density falls off as the scene grows
 		if (radius <= 0.0f)
 		{
-			const BoundingBox& bounds = m_world->GetBounds();
+			const BoundingBox& bounds = world.GetBounds();
 			if (math::IsEmpty(bounds)) return false;  // nothing loaded yet
 
 			center = Vector3(bounds.Center);
@@ -109,71 +102,51 @@ namespace koi
 		return true;
 	}
 
-	void ShadowPass::Execute(CommandList& cmd)
+	void ShadowPass::Draw(RasterContext& ctx, World& world)
 	{
 		ZoneScoped;
-		const TextureHandle shadowMap = m_output.Texture;
-		if (!m_hasShadow || !shadowMap || !m_world || !m_config.Resources) return;
-
-		GfxDevice& device   = *m_config.Device;
+		GfxDevice& device    = *m_config.Device;
 		const u32  frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
 
 		// Depth-only, so the normal matrix is never needed
-		m_gatherer.Gather(*m_world, m_cullVolume, false, m_gather);
+		m_gatherer.Gather(world, m_cullVolume, false, m_gather);
 		FrameStats::Count("Shadow Draws",  i64(m_gather.Draws.size()));
 		FrameStats::Count("Shadow Culled", i64(m_gather.Culled));
+		if (m_gather.Draws.empty()) return;
 
-		// Clear unconditionally: LightingPass samples the map whenever m_hasShadow, so an
-		// empty draw list still has to leave a valid RT/Depth map behind
-		cmd.ClearDepthStencil(shadowMap);
+		const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(m_gather.Objects));
 
-		if (!m_gather.Draws.empty())
+		const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 		{
-			const DescriptorIndex objectBufferIndex = m_objects.Upload(frameSlot, std::span<const PerObjectData>(m_gather.Objects));
+			.ViewProjection = m_lightViewProjection,
+			.CameraPosition = Vector4::Zero,
+		});
 
-			const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
+		ctx.SetPipeline(m_config.Resources->ShadowPipeline);
+
+		const GPUMesh* boundMesh = nullptr;
+		for (const MeshDrawItem& item : m_gather.Draws)
+		{
+			assert(item.Mesh && "Invalid mesh pointer");
+
+			if (item.Mesh && item.Mesh != boundMesh)
 			{
-				.ViewProjection = m_lightViewProjection,
-				.CameraPosition = Vector4::Zero,
-			});
-
-			// No color targets at all - the PSO declares RenderTargetCount = 0 to match
-			cmd.SetRenderTarget(TextureHandle(), shadowMap);
-			cmd.SetViewportAndScissor(m_config.Resolution, m_config.Resolution);
-			cmd.SetPipeline(m_config.Resources->ShadowPipeline);
-
-			const GPUMesh* boundMesh = nullptr;
-			for (const MeshDrawItem& item : m_gather.Draws)
-			{
-				assert(item.Mesh && "Invalid mesh pointer");
-
-				if (item.Mesh && item.Mesh != boundMesh)
-				{
-					cmd.SetIndexBuffer(item.Mesh->IndexBuffer);
-					boundMesh = item.Mesh;
-				}
-
-				const GPUMeshDraw& d = *item.Draw;
-				DrawRootConstants pc
-				{
-					.FrameConstantsIndex = frameConstantsIndex,
-					.ObjectBufferIndex   = objectBufferIndex,
-					.ObjectIndex         = item.ObjectIndex,
-					.MaterialIndex       = 0,
-					.VertexBufferIndex   = item.Mesh ? item.Mesh->VertexBufferSRV : INVALID_DESCRIPTOR,
-					.SamplerIndex        = INVALID_DESCRIPTOR,
-					.VertexOffset        = static_cast<u32>(d.VertexOffset),
-				};
-				cmd.SetRootConstants(&pc, sizeof(pc) / sizeof(u32));
-				cmd.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);
+				ctx.SetIndexBuffer(item.Mesh->IndexBuffer);
+				boundMesh = item.Mesh;
 			}
+
+			const GPUMeshDraw& d = *item.Draw;
+			ctx.SetRootConstants(DrawRootConstants
+			{
+				.FrameConstantsIndex = frameConstantsIndex,
+				.ObjectBufferIndex   = objectBufferIndex,
+				.ObjectIndex         = item.ObjectIndex,
+				.MaterialIndex       = 0,
+				.VertexBufferIndex   = item.Mesh ? item.Mesh->VertexBufferSRV : INVALID_DESCRIPTOR,
+				.SamplerIndex        = INVALID_DESCRIPTOR,
+				.VertexOffset        = static_cast<u32>(d.VertexOffset),
+			});
+			ctx.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);
 		}
-
-	}
-
-	void ShadowPass::Reset()
-	{
-		m_world     = nullptr;
-		m_hasShadow = false;
 	}
 }

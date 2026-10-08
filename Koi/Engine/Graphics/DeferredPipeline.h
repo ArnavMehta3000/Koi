@@ -14,7 +14,7 @@ namespace koi
 	{
 	public:
 		void Build(Renderer& renderer, PassList& passes) override;
-		void Setup(const RenderView& view, World& world) override;
+		void Record(RenderGraph& graph, const RenderView& view, World& world) override;
 
 	private:
 		ShadowPass*    m_shadowPass    = nullptr;

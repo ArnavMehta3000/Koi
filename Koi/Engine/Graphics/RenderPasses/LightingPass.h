@@ -1,5 +1,6 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 
@@ -20,53 +21,17 @@ namespace koi
 		};
 
 		explicit LightingPass(const Config& config);
-		~LightingPass() override;
 
 		std::string_view GetName() const override { return "Lighting"; }
-		std::span<const RenderPassAttachment> GetOutputs() const override { return { &m_output, 1 }; }
-		void Reset() override;
-		void Execute(CommandList& cmd) override;
 
-		inline LightingPass& SetWorld(World* world) { m_world = world; return *this; }
-		inline LightingPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }
-
-		LightingPass& SetGBuffer(TextureHandle albedo, TextureHandle normals, TextureHandle material, TextureHandle depth);
-
-		// Null handle disables shadowing for this frame
-		LightingPass& SetShadow(TextureHandle shadowMap, const Matrix& lightViewProjection);
-		LightingPass& SetTarget(TextureHandle colorTarget, u32 width, u32 height);
-
-		[[nodiscard]] inline TextureHandle GetColorOutput() const { return m_colorTarget; }
-		[[nodiscard]] inline u32 GetLightCount() const { return m_lightCount; }
+		// Clears hdr and accumulates every light into it; returns the version it wrote
+		RGTexture Record(RenderGraph& graph, World& world, const Camera& camera, const GBufferPass::Output& gbuffer, const ShadowPass::Output& shadow, RGTexture hdr);
 
 	private:
-		void GatherLights();
-
-		struct Inputs
-		{
-			TextureHandle Albedo;
-			TextureHandle Normals;
-			TextureHandle Material;
-			TextureHandle Depth;
-			TextureHandle Shadow;
-		};
+		void GatherLights(World& world, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex);
 
 		Config                   m_config;
-		World*                   m_world  = nullptr;
-		const Camera*            m_camera = nullptr;
-
-		Inputs                   m_inputs;
-		RenderPassAttachment     m_output{ {}, "HDRColor" };  // the HDR buffer this pass writes
-		TextureHandle            m_colorTarget;
-		u32                      m_width  = 0;
-		u32                      m_height = 0;
-
-		GpuFrameBuffer<GPULight> m_lightBuffer;     // StructuredBuffer<GPULight>, grown on demand
-		u32                      m_lightCount = 0;  // lights uploaded this frame
-
-		Matrix                   m_lightViewProjection = Matrix::Identity;
-		DescriptorIndex          m_shadowMapIndex      = INVALID_DESCRIPTOR;
-
+		GpuFrameBuffer<GPULight> m_lightBuffer;  // StructuredBuffer<GPULight>, grown on demand
 		std::vector<GPULight>    m_lights;
 	};
 }

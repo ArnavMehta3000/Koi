@@ -20,27 +20,14 @@ namespace koi
 		};
 
 		explicit DebugDrawPass(const Config& config);
-		~DebugDrawPass() override;
 
 		inline std::string_view GetName() const override { return "Debug Draw"; }
-		void Reset() override;
-		void Execute(CommandList& cmd) override;
 
-		inline DebugDrawPass& SetCamera(const Camera* camera) { m_camera = camera; return *this; }
-		DebugDrawPass& SetTarget(TextureHandle colorTarget, TextureHandle depth, u32 width, u32 height);
-
-		[[nodiscard]] inline u32 GetLineCount() const { return m_lineCount; }
+		// Always adds its pass: gizmos are queued after the graph is built
+		SceneTargets Record(RenderGraph& graph, const Camera& camera, SceneTargets targets);
 
 	private:
-		Config                     m_config;
-		const Camera*              m_camera = nullptr;
-
-		TextureHandle              m_colorTarget;
-		TextureHandle              m_depth;
-		u32                        m_width  = 0;
-		u32                        m_height = 0;
-
+		Config                      m_config;
 		GpuFrameBuffer<DebugVertex> m_vertexBuffer;
-		u32                         m_lineCount = 0;
 	};
 }

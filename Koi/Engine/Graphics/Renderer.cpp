@@ -48,6 +48,7 @@ namespace koi
 		m_device->SetDeviceNotify(this);
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
+		m_graph.Init(*m_device);
 		m_defaultResources.Init(*m_device, m_pipelineLibrary);
 		RegisterMaterialTemplates();
 
@@ -90,6 +91,7 @@ namespace koi
 
 		m_pipeline.reset();  // holds raw pointers into the pass list
 		m_passes.Clear();
+		m_graph.Shutdown();
 		m_frameContext.reset();
 		m_renderWindow.reset();
 		m_materials.Shutdown();
@@ -138,15 +140,10 @@ namespace koi
 		// Closes off the previous frame's timestamp payload and signals the graphics queue for it
 		m_device->GpuProfilerNewFrame();
 
-		m_passes.ResetAll();
 		m_shaderReadRequests.clear();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_frameSlot);
-
-		constexpr f32 kClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-		m_frameContext->List.TransitionBarrier(m_renderWindow->GetHDRColorBuffer(), D3D12_RESOURCE_STATE_RENDER_TARGET);
-		m_frameContext->List.ClearRenderTarget(m_renderWindow->GetHDRColorBuffer(), kClearColor);
 	}
 
 	void Renderer::RequestShaderRead(TextureHandle texture)
@@ -170,7 +167,7 @@ namespace koi
 
 		CommandList& cmd = m_frameContext->List;
 
-		m_passes.Execute(cmd);
+		m_graph.Execute(cmd);
 		m_debugDraw.Clear();  // after the pass consumed it, so ImGui-time pushes (inspectors) survive into the next frame
 
 		if (m_overlay)
@@ -200,6 +197,7 @@ namespace koi
 		ZoneScoped;
 
 		m_device->WaitForIdle();
+		m_graph.Reset();  // its callbacks point into the passes about to go
 		m_pipeline.reset();
 		m_passes.Clear();
 
@@ -211,8 +209,9 @@ namespace koi
 	void Renderer::SetupFrame(const RenderView& view, World& world)
 	{
 		KOI_SCOPE("Render Setup");
+		m_graph.Reset();
 		if (m_pipeline)
-			m_pipeline->Setup(view, world);
+			m_pipeline->Record(m_graph, view, world);
 	}
 
 	CommandList* Renderer::GetCommandList() noexcept

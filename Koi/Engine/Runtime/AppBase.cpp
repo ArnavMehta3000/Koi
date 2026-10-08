@@ -121,7 +121,6 @@ namespace koi
 			.Camera = camera,
 			.Target =
 			{
-				.HDRColorBuffer      = rw->GetHDRColorBuffer(),
 				.ResolvedColorBuffer = rw->CurrentBackBuffer(),
 				.Width               = rw->GetWidth(),
 				.Height              = rw->GetHeight(),

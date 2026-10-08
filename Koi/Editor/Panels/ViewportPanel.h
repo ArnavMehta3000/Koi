@@ -65,7 +65,7 @@ namespace koi::editor
 		[[nodiscard]] inline ViewportCamera GetCameraMode() const { return m_cameraMode; }
 		inline void SetCameraMode(ViewportCamera mode) { m_cameraMode = mode; }
 
-		const ViewportTarget* PrepareFrame(CommandList& cmd);
+		const ViewportTarget* PrepareFrame();
 		void FrameBounds(const BoundingBox& bounds);
 
 		// Orbit camera state, persisted per project across editor sessions

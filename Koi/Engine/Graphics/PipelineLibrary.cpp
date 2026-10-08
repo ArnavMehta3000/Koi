@@ -8,7 +8,7 @@ namespace koi
 {
 	namespace
 	{
-		// Must match GBufferPass::CreateRenderTargets and the shader's SV_Target formats
+		// Must match GBufferPass::Record and the shader's SV_Target formats
 		constexpr Format kGBufferFormats[] = { Format::R8G8B8A8_UNORM, Format::R16G16B16A16_UNORM, Format::R8G8B8A8_UNORM };
 		constexpr Format kHDRFormat        = Format::R16G16B16A16_FLOAT;
 		constexpr Format kDepthFormat      = Format::D32_FLOAT;

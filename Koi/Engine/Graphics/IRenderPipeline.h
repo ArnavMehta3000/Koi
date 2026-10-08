@@ -2,6 +2,7 @@
 namespace koi
 {
 	class PassList;
+	class RenderGraph;
 	class Renderer;
 	class World;
 	struct RenderView;
@@ -13,6 +14,6 @@ namespace koi
 		virtual ~IRenderPipeline() = default;
 
 		virtual void Build(Renderer& renderer, PassList& passes) = 0;  // Pipeline init setup
-		virtual void Setup(const RenderView& view, World& world)  = 0;  // Per-frame setup
+		virtual void Record(RenderGraph& graph, const RenderView& view, World& world) = 0;  // Per frame
 	};
 }
