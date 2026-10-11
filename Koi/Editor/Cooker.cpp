@@ -1,7 +1,7 @@
 #include "Koi/Editor/Cooker.h"
 #include "Koi/Engine/Assets/AssetFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Graphics/PipelineLibrary.h"
+#include "Koi/Engine/Graphics/PipelineCache.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
@@ -96,7 +96,8 @@ namespace koi::editor
 			ShaderCache& cache = ShaderCache::Get();
 			ShaderTally tally;
 
-			for (const std::string& virtualPath : Engine::Get().GetSubsystem<Renderer>().GetPipelineLibrary().CollectShaderPaths())
+			const auto& shaderPaths = Engine::Get().GetSubsystem<Renderer>().GetPipelineCache().CollectShaderPaths();
+			for (const std::string& virtualPath : shaderPaths)
 			{
 				tally.Total++;
 				switch (cache.GetBuildState(virtualPath))

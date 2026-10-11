@@ -4,6 +4,7 @@
 #include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Graphics/RHI/PipelineDesc.h"
+#include <expected>
 #include <queue>
 #include <span>
 #include <variant>
@@ -139,7 +140,7 @@ namespace koi
 		void CreateFences();
 		void CreateHeaps();
 		void CreateRootSignature();
-		[[nodiscard]] ComPtr<dx12::PipelineState> BuildPipelineState(const PipelineDesc& desc);
+		[[nodiscard]] std::expected<ComPtr<dx12::PipelineState>, HRESULT> BuildPipelineState(const PipelineDesc& desc);
 		void FlushDeferredDeletions(u64 completedFence);
 		void ReportLiveResources();
 

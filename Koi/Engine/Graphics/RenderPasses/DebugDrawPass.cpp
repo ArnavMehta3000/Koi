@@ -8,6 +8,18 @@
 
 namespace koi
 {
+	namespace
+	{
+		constexpr RasterPipeline kDebugLines
+		{
+			.VertexShader = "engine://Content/Shaders/DebugLineVS",
+			.PixelShader  = "engine://Content/Shaders/DebugLinePS",
+			.Rasterizer   = RasterizerDesc::CullNone(),
+			.DepthStencil = DepthStencilDesc::Read(),
+			.Topology     = D3D_PRIMITIVE_TOPOLOGY_LINELIST,
+		};
+	}
+
 	DebugDrawPass::DebugDrawPass(const Config& config)
 		: m_config(config)
 	{
@@ -19,7 +31,7 @@ namespace koi
 	SceneTargets DebugDrawPass::Record(RenderGraph& graph, const Camera& camera, SceneTargets targets)
 	{
 		ZoneScoped;
-		if (!targets.Color || !m_config.Resources || !m_config.Resources->DebugLinePipeline) return targets;
+		if (!targets.Color) return targets;
 
 		graph.AddPass<RasterPass>("Debug Draw",
 			[&](RGBuilder& b)
@@ -34,9 +46,8 @@ namespace koi
 
 				const u32 frameSlot = static_cast<u32>(m_config.Device->GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
 				const DescriptorIndex vertexBufferIndex = m_vertexBuffer.Upload(frameSlot, vertices);
-				if (vertexBufferIndex == INVALID_DESCRIPTOR) return;
+				if (vertexBufferIndex == INVALID_DESCRIPTOR || !ctx.SetPipeline(kDebugLines)) return;
 
-				ctx.SetPipeline(m_config.Resources->DebugLinePipeline);
 				ctx.SetRootConstants(DebugDrawRootConstants
 				{
 					.ViewProjection    = camera.ViewProjection,

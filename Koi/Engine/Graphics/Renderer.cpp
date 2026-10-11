@@ -50,9 +50,10 @@ namespace koi
 		m_device->SetDeviceNotify(this);
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
-		m_graph.Init(*m_device);
-		m_defaultResources.Init(*m_device, m_pipelineLibrary);
-		m_capture.Init(*m_device, m_defaultResources.CapturePipeline);
+		m_pipelineCache.Init(*m_device);
+		m_graph.Init(*m_device, m_pipelineCache);
+		m_defaultResources.Init(*m_device);
+		m_capture.Init(*m_device);
 		m_graph.SetObserver(&m_capture);
 		RegisterMaterialTemplates();
 
@@ -64,11 +65,13 @@ namespace koi
 		using enum MaterialParamType;
 
 		// Offsets into GPUMaterialData, which is what a material row is
-		const MaterialTemplate& standard = m_materialTemplates.Register(*m_device, m_pipelineLibrary,
-			PipelineRecipe::GBuffer("GBuffer",
-				"engine://Content/Shaders/GBufferVS",
-				"engine://Content/Shaders/GBufferPS"),
+		m_materialTemplates.Register("GBuffer",
+			RasterPipeline
 			{
+				.VertexShader = "engine://Content/Shaders/GBufferVS",
+				.PixelShader  = "engine://Content/Shaders/GBufferPS",
+			},
+			{   // std::vector<MaterialParams>
 				{ "base_color",         Float4,  offsetof(GPUMaterialData, BaseColorFactor)        },
 				{ "emissive",           Float3,  offsetof(GPUMaterialData, EmissiveFactor)         },
 				{ "metallic",           Float,   offsetof(GPUMaterialData, MetallicFactor)         },
@@ -82,8 +85,6 @@ namespace koi
 				{ "occlusion",          Texture, offsetof(GPUMaterialData, OcclusionIndex)         },
 				{ "emissive",           Texture, offsetof(GPUMaterialData, EmissiveIndex)          },
 			});
-
-		m_defaultResources.GBufferPipeline = standard.SingleSided;
 	}
 
 	Renderer::~Renderer()
@@ -100,7 +101,7 @@ namespace koi
 		m_frameContext.reset();
 		m_renderWindow.reset();
 		m_materials.Shutdown();
-		m_pipelineLibrary.Shutdown(*m_device);
+		m_pipelineCache.Shutdown();
 		m_defaultResources.Shutdown();
 		m_device = nullptr;
 
@@ -249,7 +250,7 @@ namespace koi
 		{
 			shaders.InvalidateAll();
 			m_device->WaitForIdle();
-			m_pipelineLibrary.RebuildAll(*m_device);
+			m_pipelineCache.RebuildAll();
 			return;
 		}
 
@@ -258,6 +259,6 @@ namespace koi
 			return;  // nothing recompiled, so nothing to rebuild and no reason to stall
 
 		m_device->WaitForIdle();
-		m_pipelineLibrary.RebuildUsing(*m_device, changed);
+		m_pipelineCache.RebuildUsing(changed);
 	}
 }

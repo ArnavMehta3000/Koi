@@ -7,6 +7,19 @@
 
 namespace koi
 {
+	namespace
+	{
+		// The pixel shader writes SV_Depth, so it depth-tests without writing
+		constexpr RasterPipeline kGrid
+		{
+			.VertexShader = "engine://Content/Shaders/GridVS",
+			.PixelShader  = "engine://Content/Shaders/GridPS",
+			.Rasterizer   = RasterizerDesc::CullNone(),
+			.Blend        = BlendTargetDesc::AlphaBlend(),
+			.DepthStencil = DepthStencilDesc::Read(),
+		};
+	}
+
 	GridPass::GridPass(const Config& config)
 		: m_config(config)
 	{
@@ -20,7 +33,6 @@ namespace koi
 	{
 		ZoneScoped;
 		if (!m_settings.Enabled || !targets.Color || !targets.Depth) return targets;
-		if (!m_config.Resources || !m_config.Resources->GridPipeline) return targets;
 
 		graph.AddPass<RasterPass>("Grid",
 			[&](RGBuilder& b)
@@ -47,9 +59,8 @@ namespace koi
 					.FadeEnd           = m_settings.FadeEnd,
 					.MajorLineWidth    = m_settings.MajorLineWidth,
 				});
-				if (constantsIndex == INVALID_DESCRIPTOR) return;
+				if (constantsIndex == INVALID_DESCRIPTOR || !ctx.SetPipeline(kGrid)) return;
 
-				ctx.SetPipeline(m_config.Resources->GridPipeline);
 				ctx.SetRootConstants(constantsIndex);
 				ctx.Draw(3);
 			});

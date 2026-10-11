@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Graphics/PipelineCache.h"
 #include "Koi/Engine/Graphics/RenderGraph/RGHandles.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include <type_traits>
@@ -17,13 +18,16 @@ namespace koi
 	class RasterContext : NonCopyable
 	{
 	public:
-		RasterContext(CommandList& cmd, const RenderGraph& graph) : m_cmd(cmd), m_graph(graph) {}
+		RasterContext(CommandList& cmd, const RenderGraph& graph, const TargetFormats& targets)
+			: m_cmd(cmd), m_graph(graph), m_targets(targets) {}
 
 		[[nodiscard]] TextureHandle Texture(RGTexture texture) const;
 		[[nodiscard]] DescriptorIndex SRV(RGTexture texture) const;
 
-		inline void SetPipeline(PipelineHandle pipeline) { m_cmd.SetPipeline(pipeline); }
-		inline void SetIndexBuffer(BufferHandle buffer)  { m_cmd.SetIndexBuffer(buffer); }
+		// Built against this pass's target formats. False if it failed to build: skip the draw
+		[[nodiscard]] bool SetPipeline(const RasterPipeline& pipeline);
+
+		inline void SetIndexBuffer(BufferHandle buffer) { m_cmd.SetIndexBuffer(buffer); }
 
 		template <RootConstantBlock T>
 		inline void SetRootConstants(const T& constants)
@@ -42,8 +46,9 @@ namespace koi
 		}
 
 	private:
-		CommandList&       m_cmd;
-		const RenderGraph& m_graph;
+		CommandList&         m_cmd;
+		const RenderGraph&   m_graph;
+		const TargetFormats& m_targets;
 	};
 
 	// Pass kinds. Each names the context its execute callback receives

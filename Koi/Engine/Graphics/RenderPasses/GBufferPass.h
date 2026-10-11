@@ -16,9 +16,10 @@ namespace koi
 	public:
 		struct Config
 		{
-			GfxDevice*               Device    = nullptr;
-			const RendererResources* Resources = nullptr;
-			MaterialTable*           Materials = nullptr;
+			GfxDevice*               Device          = nullptr;
+			const RendererResources* Resources       = nullptr;
+			MaterialTable*           Materials       = nullptr;
+			const RasterPipeline*    DefaultPipeline = nullptr;  // for draws whose material names none
 		};
 
 		struct Output

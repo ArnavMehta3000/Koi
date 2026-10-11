@@ -25,7 +25,7 @@ namespace koi
 			u16         Version = 0;
 		};
 
-		void Init(GfxDevice& device, PipelineHandle pipeline);
+		void Init(GfxDevice& device);
 		void Shutdown();
 
 		inline void Watch(std::optional<Target> target) { m_target = std::move(target); }
@@ -45,7 +45,6 @@ namespace koi
 
 	private:
 		GfxDevice*            m_device = nullptr;
-		PipelineHandle        m_pipeline;
 		std::optional<Target> m_target;
 		CaptureSettings       m_settings;
 		f32                   m_near          = 0.1f;

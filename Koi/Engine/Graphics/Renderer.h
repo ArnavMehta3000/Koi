@@ -2,7 +2,7 @@
 #include "Koi/Engine/Graphics/DebugDraw.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
-#include "Koi/Engine/Graphics/PipelineLibrary.h"
+#include "Koi/Engine/Graphics/PipelineCache.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
@@ -47,8 +47,8 @@ namespace koi
 		[[nodiscard]] inline TargetCapture&           GetTargetCapture() noexcept          { return m_capture;              }
 		[[nodiscard]] inline MaterialTable&           GetMaterialTable() noexcept          { return m_materials;            }
 		[[nodiscard]] inline MaterialTemplateLibrary& GetMaterialTemplates() noexcept      { return m_materialTemplates;    }
-		[[nodiscard]] inline PipelineLibrary&         GetPipelineLibrary() noexcept        { return m_pipelineLibrary;      }
-		[[nodiscard]] inline const PipelineLibrary&   GetPipelineLibrary() const noexcept  { return m_pipelineLibrary;      }
+		[[nodiscard]] inline PipelineCache&           GetPipelineCache() noexcept          { return m_pipelineCache;        }
+		[[nodiscard]] inline const PipelineCache&     GetPipelineCache() const noexcept    { return m_pipelineCache;        }
 		[[nodiscard]] inline DebugDrawQueue&          GetDebugDraw() noexcept              { return m_debugDraw;            }
 		[[nodiscard]] inline const DebugDrawQueue&    GetDebugDraw() const noexcept        { return m_debugDraw;            }
 
@@ -88,7 +88,7 @@ namespace koi
 		CommandQueue                     m_graphicsQueue;
 		std::optional<RenderWindow>      m_renderWindow;
 		std::unique_ptr<FrameContext>    m_frameContext;
-		PipelineLibrary                  m_pipelineLibrary;
+		PipelineCache                    m_pipelineCache;
 		RendererResources                m_defaultResources;
 		MaterialTable                    m_materials;
 		MaterialTemplateLibrary          m_materialTemplates;

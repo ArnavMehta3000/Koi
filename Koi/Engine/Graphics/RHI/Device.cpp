@@ -550,7 +550,7 @@ namespace koi
 		}
 	}
 
-	ComPtr<dx12::PipelineState> GfxDevice::BuildPipelineState(const PipelineDesc& desc)
+	std::expected<ComPtr<dx12::PipelineState>, HRESULT> GfxDevice::BuildPipelineState(const PipelineDesc& desc)
 	{
 		ZoneScoped;
 
@@ -617,38 +617,58 @@ namespace koi
 		depthDesc.DepthFunc                = desc.DepthStencil.DepthFunc;
 		depthDesc.StencilEnable            = desc.DepthStencil.StencilEnable;
 
-		// Create PSO desc
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc
+		struct GraphicsStream
 		{
-			.pRootSignature        = m_rootSignature.Get(),
-			.VS                    = { desc.VertexShader.data(), desc.VertexShader.size() },
-			.PS                    = { desc.PixelShader.data(), desc.PixelShader.size() },
-			.BlendState            = blendDesc,
-			.SampleMask            = 0xffffffff , // Same as UINT_MAX
-			.RasterizerState       = rasterDesc,
-			.DepthStencilState     = depthDesc,
-			.InputLayout           = { inputElements.data(), static_cast<u32>(desc.VertexLayout.size())},
-			.PrimitiveTopologyType = desc.TopologyType,
-			.NumRenderTargets      = desc.RenderTargetCount,
-			.DSVFormat             = utils::ToDXGIFormat(desc.DepthFormat),
-			.SampleDesc            = { desc.SampleCount , 0 },
+			CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE         RootSignature;
+			CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT           InputLayout;
+			CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY     TopologyType;
+			CD3DX12_PIPELINE_STATE_STREAM_VS                     VS;
+			CD3DX12_PIPELINE_STATE_STREAM_HS                     HS;
+			CD3DX12_PIPELINE_STATE_STREAM_DS                     DS;
+			CD3DX12_PIPELINE_STATE_STREAM_GS                     GS;
+			CD3DX12_PIPELINE_STATE_STREAM_PS                     PS;
+			CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER             Rasterizer;
+			CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC             Blend;
+			CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL          DepthStencil;
+			CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT   DepthFormat;
+			CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS  RenderTargetFormats;
+			CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC            SampleDesc;
 		};
 
-		// Add optional shaders
-		if (!desc.GeometryShader.empty()) psoDesc.GS = { desc.GeometryShader.data(), desc.GeometryShader.size() };
-		if (!desc.HullShader.empty())     psoDesc.HS = { desc.HullShader.data(), desc.HullShader.size()         };
-		if (!desc.DomainShader.empty())   psoDesc.DS = { desc.DomainShader.data(), desc.DomainShader.size()     };
-
+		D3D12_RT_FORMAT_ARRAY rtFormats{ .NumRenderTargets = desc.RenderTargetCount };
 		for (u32 i = 0; i < desc.RenderTargetCount; i++)
 		{
-			psoDesc.RTVFormats[i] = utils::ToDXGIFormat(desc.RenderTargetFormats[i]);
+			rtFormats.RTFormats[i] = utils::ToDXGIFormat(desc.RenderTargetFormats[i]);
 		}
 
-		// Create pipeline/PSO
-		ComPtr<dx12::PipelineState> pso;
-		DX_CHECK(m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pso)));
+		const auto bytecode = [](std::span<const byte> code) { return D3D12_SHADER_BYTECODE{ code.data(), code.size() }; };
 
-		if (pso && !desc.DebugName.empty())
+		GraphicsStream stream;
+		stream.RootSignature       = m_rootSignature.Get();
+		stream.InputLayout         = D3D12_INPUT_LAYOUT_DESC{ inputElements.data(), static_cast<u32>(desc.VertexLayout.size()) };
+		stream.TopologyType        = desc.TopologyType;
+		stream.VS                  = bytecode(desc.VertexShader);
+		stream.HS                  = bytecode(desc.HullShader);
+		stream.DS                  = bytecode(desc.DomainShader);
+		stream.GS                  = bytecode(desc.GeometryShader);
+		stream.PS                  = bytecode(desc.PixelShader);
+		stream.Rasterizer          = rasterDesc;
+		stream.Blend               = blendDesc;
+		stream.DepthStencil        = depthDesc;
+		stream.DepthFormat         = utils::ToDXGIFormat(desc.DepthFormat);
+		stream.RenderTargetFormats = rtFormats;
+		stream.SampleDesc          = DXGI_SAMPLE_DESC{ desc.SampleCount, 0 };
+
+		const D3D12_PIPELINE_STATE_STREAM_DESC streamDesc{ sizeof(stream), &stream };
+
+		ComPtr<dx12::PipelineState> pso;
+		if (const HRESULT hr = m_device->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&pso)); FAILED(hr))
+		{
+			KOI_LOG(RHI, Error, "CreatePipelineState failed for '{}' (0x{:08X})", desc.DebugName, static_cast<u32>(hr));
+			return std::unexpected(hr);
+		}
+
+		if (!desc.DebugName.empty())
 		{
 			const std::wstring wname = utils::ToWide(std::string(desc.DebugName));
 			pso->SetName(wname.c_str());
@@ -659,12 +679,12 @@ namespace koi
 
 	PipelineHandle GfxDevice::CreatePipeline(const PipelineDesc& desc)
 	{
-		ComPtr<dx12::PipelineState> pso = BuildPipelineState(desc);
+		auto pso = BuildPipelineState(desc);
 		if (!pso)
 			return {};
 
 		KOI_LOG(RHI, Debug, "Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
-		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(pso), .Topology = desc.Topology });
+		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(*pso), .Topology = desc.Topology });
 	}
 
 	bool GfxDevice::RecreatePipeline(PipelineHandle h, const PipelineDesc& desc)
@@ -673,13 +693,13 @@ namespace koi
 			return false;
 
 		// Rebuild pipeline
-		ComPtr<dx12::PipelineState> pso = BuildPipelineState(desc);
+		auto pso = BuildPipelineState(desc);
 		if (!pso)
 			return false;
 
 		// Overwrite old pipeline
 		Pipeline* pipeline = m_pipelines.Get(h);  assert(pipeline);
-		pipeline->Pso      = std::move(pso);
+		pipeline->Pso      = std::move(*pso);
 		pipeline->Topology = desc.Topology;
 
 		KOI_LOG(RHI, Debug, "Recreated pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);

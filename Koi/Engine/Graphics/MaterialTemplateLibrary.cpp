@@ -4,17 +4,17 @@
 
 namespace koi
 {
-	const MaterialTemplate& MaterialTemplateLibrary::Register(GfxDevice& device, PipelineLibrary& library, const PipelineRecipe& recipe, std::vector<MaterialParam> parameters)
+	const MaterialTemplate& MaterialTemplateLibrary::Register(std::string name, const RasterPipeline& pipeline, std::vector<MaterialParam> parameters)
 	{
-		PipelineRecipe doubleSided = recipe;
-		doubleSided.Named(recipe.Name + ".DoubleSided").Cull(D3D12_CULL_MODE_NONE);
+		RasterPipeline doubleSided = pipeline;
+		doubleSided.Rasterizer.CullMode = D3D12_CULL_MODE_NONE;
 
 		const MaterialTemplate& entry = *m_templates.emplace_back(std::make_unique<MaterialTemplate>(MaterialTemplate
 		{
-			.Name        = recipe.Name,
+			.Name        = std::move(name),
 			.Parameters  = std::move(parameters),
-			.SingleSided = library.Register(device, recipe),
-			.DoubleSided = library.Register(device, std::move(doubleSided)),
+			.SingleSided = pipeline,
+			.DoubleSided = doubleSided,
 		}));
 
 		KOI_LOG(Render, Debug, "Material template '{}' registered with {} parameter(s)", entry.Name, entry.Parameters.size());

@@ -6,7 +6,6 @@
 namespace koi
 {
 	class GfxDevice;
-	class PipelineLibrary;
 
 	struct RendererResources
 	{
@@ -23,21 +22,8 @@ namespace koi
 		DescriptorIndex PointClampSampler  = INVALID_DESCRIPTOR;
 		DescriptorIndex ShadowSampler      = INVALID_DESCRIPTOR;  // comparison sampler for SampleCmp
 
-		// Default pipelines
-		PipelineHandle TonemapPipeline{};           // fullscreen HDR -> swapchain ACES tonemap
-		PipelineHandle GBufferPipeline{};           // deferred geometry: 3 MRT (albedo/normals/material) + depth
-		PipelineHandle LightingPipeline{};          // full-screen deferred lighting: samples G-buffer -> HDR
-		PipelineHandle ShadowPipeline{};            // depth-only shadow map: no pixel shader, no render targets
-		PipelineHandle DebugLinePipeline{};         // LINELIST overlay
-		PipelineHandle GridPipeline{};              // editor ground grid: blended full-screen, depth-tested
-		PipelineHandle CapturePipeline{};           // copies a graph texture into the editor's preview, visualized
-
-		void Init(GfxDevice& device, PipelineLibrary& library);
+		void Init(GfxDevice& device);
 		void Shutdown();
 		void RegisterFallbackAssets(GfxDevice& device);
-
-	private:
-		// The library owns the recipes and rebuilds them on reload; we only cache the handles
-		void RegisterPipelines(GfxDevice& device, PipelineLibrary& library);
 	};
 }

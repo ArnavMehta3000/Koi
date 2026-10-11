@@ -174,7 +174,9 @@ namespace koi::editor
 
 		material->Constants   = m_source.Constants;
 		material->DoubleSided = m_source.DoubleSided;
-		if (material->Template) material->Pipeline = material->Template->PipelineFor(material->DoubleSided);
+
+		if (material->Template)
+			material->Pipeline = &material->Template->PipelineFor(material->DoubleSided);
 
 		material->WriteRow();
 	}

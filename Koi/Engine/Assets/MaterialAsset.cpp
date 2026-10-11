@@ -127,7 +127,8 @@ namespace koi
 			material.Template = templates.Default();
 		}
 
-		if (material.Template) material.Pipeline = material.Template->PipelineFor(material.DoubleSided);
+		if (material.Template)
+			material.Pipeline = &material.Template->PipelineFor(material.DoubleSided);
 
 		// The row is only writable once the textures are resident, since it stores their indices
 		material.TableSlot = renderer.GetMaterialTable().Allocate({});

@@ -9,6 +9,17 @@
 
 namespace koi
 {
+	namespace
+	{
+		constexpr RasterPipeline kLighting
+		{
+			.VertexShader = "engine://Content/Shaders/LightingVS",
+			.PixelShader  = "engine://Content/Shaders/LightingPS",
+			.Rasterizer   = RasterizerDesc::CullNone(),
+			.DepthStencil = DepthStencilDesc::None(),
+		};
+	}
+
 	LightingPass::LightingPass(const Config& config)
 		: m_config(config)
 	{
@@ -38,11 +49,10 @@ namespace koi
 				const u32 frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
 
 				GatherLights(world, shadow.LightViewProjection, ctx.SRV(shadow.ShadowMap));
-				if (m_lights.empty() || !m_config.Resources || !m_config.Resources->LightingPipeline) return;
+				if (m_lights.empty() || !m_config.Resources || !ctx.SetPipeline(kLighting)) return;
 
 				const DescriptorIndex lightBufferIndex = m_lightBuffer.Upload(frameSlot, std::span<const GPULight>(m_lights));
 
-				ctx.SetPipeline(m_config.Resources->LightingPipeline);
 				ctx.SetRootConstants(LightingRootConstants
 				{
 					.InvViewProjection  = camera.ViewProjection.Invert(),

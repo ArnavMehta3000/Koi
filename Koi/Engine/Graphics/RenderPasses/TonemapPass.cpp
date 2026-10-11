@@ -3,10 +3,21 @@
 
 namespace koi
 {
+	namespace
+	{
+		constexpr RasterPipeline kTonemap
+		{
+			.VertexShader = "engine://Content/Shaders/TonemapVS",
+			.PixelShader  = "engine://Content/Shaders/TonemapPS",
+			.Rasterizer   = RasterizerDesc::CullNone(),
+			.DepthStencil = DepthStencilDesc::None(),
+		};
+	}
+
 	RGTexture TonemapPass::Record(RenderGraph& graph, RGTexture hdr, RGTexture output)
 	{
 		ZoneScoped;
-		if (!m_config.Pipeline || !output) return output;
+		if (!output) return output;
 
 		graph.AddPass<RasterPass>("Tonemap",
 			[&](RGBuilder& b)
@@ -14,9 +25,9 @@ namespace koi
 				b.Read(hdr);
 				output = b.ColorTarget(output);
 			},
-			[this, hdr](RasterContext& ctx)
+			[hdr](RasterContext& ctx)
 			{
-				ctx.SetPipeline(m_config.Pipeline);
+				if (!ctx.SetPipeline(kTonemap)) return;
 				ctx.SetRootConstants(ctx.SRV(hdr));
 				ctx.Draw(3);
 			});

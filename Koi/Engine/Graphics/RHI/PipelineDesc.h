@@ -5,16 +5,24 @@
 
 namespace koi
 {
+	// State presets mirror DirectXTK's CommonStates from D3D11
+
 	struct RasterizerDesc
 	{
 		D3D12_FILL_MODE FillMode              = D3D12_FILL_MODE_SOLID;
 		D3D12_CULL_MODE CullMode              = D3D12_CULL_MODE_BACK;
-		bool            FrontCounterClockwise = false;
+		bool            FrontCounterClockwise = true;  // SimpleMath is right-handed
 		bool            DepthClipEnable       = true;
 		bool            ConservativeRaster    = false;
 		i32             DepthBias             = 0;
 		f32             DepthBiasClamp        = 0.0f;
 		f32             SlopeScaledDepthBias  = 0.0f;
+
+		[[nodiscard]] static constexpr RasterizerDesc CullBack()  { return {}; }
+		[[nodiscard]] static constexpr RasterizerDesc CullNone()  { return { .CullMode = D3D12_CULL_MODE_NONE }; }
+		[[nodiscard]] static constexpr RasterizerDesc Wireframe() { return { .FillMode = D3D12_FILL_MODE_WIREFRAME, .CullMode = D3D12_CULL_MODE_NONE }; }
+
+		bool operator==(const RasterizerDesc&) const = default;
 	};
 
 	struct BlendTargetDesc
@@ -27,6 +35,12 @@ namespace koi
 		D3D12_BLEND     DstBlendAlpha = D3D12_BLEND_ZERO;
 		D3D12_BLEND_OP  BlendOpAlpha  = D3D12_BLEND_OP_ADD;
 		u8              WriteMask     = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+		[[nodiscard]] static constexpr BlendTargetDesc Opaque()     { return {}; }
+		[[nodiscard]] static constexpr BlendTargetDesc AlphaBlend() { return { .BlendEnable = true, .SrcBlend = D3D12_BLEND_SRC_ALPHA, .DstBlend = D3D12_BLEND_INV_SRC_ALPHA }; }
+		[[nodiscard]] static constexpr BlendTargetDesc Additive()   { return { .BlendEnable = true, .SrcBlend = D3D12_BLEND_ONE, .DstBlend = D3D12_BLEND_ONE }; }
+
+		bool operator==(const BlendTargetDesc&) const = default;
 	};
 
 	struct DepthStencilDesc
@@ -35,6 +49,12 @@ namespace koi
 		bool                  DepthWrite    = true;
 		D3D12_COMPARISON_FUNC DepthFunc     = D3D12_COMPARISON_FUNC_LESS;
 		bool                  StencilEnable = false;
+
+		[[nodiscard]] static constexpr DepthStencilDesc Default() { return {}; }
+		[[nodiscard]] static constexpr DepthStencilDesc Read()    { return { .DepthWrite = false, .DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL }; }
+		[[nodiscard]] static constexpr DepthStencilDesc None()    { return { .DepthEnable = false, .DepthWrite = false }; }
+
+		bool operator==(const DepthStencilDesc&) const = default;
 	};
 
 	struct PipelineDesc

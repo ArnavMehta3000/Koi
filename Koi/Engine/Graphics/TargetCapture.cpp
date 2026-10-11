@@ -5,10 +5,20 @@
 
 namespace koi
 {
-	void TargetCapture::Init(GfxDevice& device, PipelineHandle pipeline)
+	namespace
 	{
-		m_device   = &device;
-		m_pipeline = pipeline;
+		constexpr RasterPipeline kCapture
+		{
+			.VertexShader = "engine://Content/Shaders/TonemapVS",
+			.PixelShader  = "engine://Content/Shaders/DebugVisualizePS",
+			.Rasterizer   = RasterizerDesc::CullNone(),
+			.DepthStencil = DepthStencilDesc::None(),
+		};
+	}
+
+	void TargetCapture::Init(GfxDevice& device)
+	{
+		m_device = &device;
 	}
 
 	void TargetCapture::Shutdown()
@@ -50,7 +60,7 @@ namespace koi
 
 	void TargetCapture::OnWrite(RenderGraph& graph, std::string_view resource, RGTexture written)
 	{
-		if (!m_target || !m_pipeline || resource != m_target->Name || written.Version != m_target->Version) return;
+		if (!m_target || resource != m_target->Name || written.Version != m_target->Version) return;
 
 		const TextureDesc& desc = graph.GetDesc(written);
 		if (!desc.Usage.Has(TextureUsage::ShaderRead)) return;
@@ -66,9 +76,10 @@ namespace koi
 				b.Read(written);
 				preview = b.ColorTarget(preview);
 			},
-			[this, written, settings = m_settings, nearZ = m_near, farZ = m_far](RasterContext& ctx)
+			[written, settings = m_settings, nearZ = m_near, farZ = m_far](RasterContext& ctx)
 			{
-				ctx.SetPipeline(m_pipeline);
+				if (!ctx.SetPipeline(kCapture)) return;
+
 				ctx.SetRootConstants(CaptureRootConstants
 				{
 					.SourceIndex = ctx.SRV(written),

@@ -54,9 +54,19 @@ namespace koi
 		return tex ? tex->SRVIndex : INVALID_DESCRIPTOR;
 	}
 
-	void RenderGraph::Init(GfxDevice& device)
+	bool RasterContext::SetPipeline(const RasterPipeline& pipeline)
 	{
-		m_device = &device;
+		const auto handle = m_graph.GetPipelines().Get(pipeline, m_targets);
+		if (!handle) return false;
+
+		m_cmd.SetPipeline(*handle);
+		return true;
+	}
+
+	void RenderGraph::Init(GfxDevice& device, PipelineCache& pipelines)
+	{
+		m_device    = &device;
+		m_pipelines = &pipelines;
 		m_pool.Init(device);
 	}
 
@@ -170,6 +180,21 @@ namespace koi
 		}
 	}
 
+	TargetFormats RenderGraph::FormatsOf(const Pass& pass) const
+	{
+		TargetFormats formats{ .ColorCount = static_cast<u32>(pass.ColorTargets.size()) };
+		for (const auto& [i, att] : std::views::enumerate(pass.ColorTargets))
+		{
+			formats.Colors[i] = m_resources[att.Resource].Desc.Format;
+		}
+
+		if (pass.DepthTarget)
+		{
+			formats.Depth = m_resources[pass.DepthTarget->Resource].Desc.Format;
+		}
+		return formats;
+	}
+
 	void RenderGraph::Execute(CommandList& cmd)
 	{
 		KOI_SCOPE("Record Passes");
@@ -200,7 +225,8 @@ namespace koi
 
 			if (pass.Execute)
 			{
-				RasterContext ctx(cmd, *this);
+				const TargetFormats formats = FormatsOf(pass);
+				RasterContext ctx(cmd, *this, formats);
 				pass.Execute(ctx);
 			}
 		}

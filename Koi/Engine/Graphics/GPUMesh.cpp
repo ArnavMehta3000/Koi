@@ -105,12 +105,12 @@ namespace koi
 
 			Materials.push_back(handle);
 			TableSlots.push_back(material ? material->TableSlot : MaterialTable::kFallbackSlot);
-			SlotPipelines.push_back(material ? material->Pipeline : PipelineHandle());
+			SlotPipelines.push_back(material ? material->Pipeline : nullptr);
 		}
 
 		// The slot Upload gave every submesh whose material index was missing or out of range
 		TableSlots.push_back(MaterialTable::kFallbackSlot);
-		SlotPipelines.push_back(PipelineHandle());
+		SlotPipelines.push_back(nullptr);
 
 		KOI_LOG(Render, Debug, "GPUMesh materials bound: {} slot(s), {} material asset(s)", TableSlots.size(), Materials.size());
 	}

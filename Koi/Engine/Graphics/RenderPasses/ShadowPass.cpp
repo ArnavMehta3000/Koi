@@ -9,6 +9,16 @@
 
 namespace koi
 {
+	namespace
+	{
+		// Raster-stage depth bias pushes fragments away from the light, which removes most acne for free
+		constexpr RasterPipeline kShadow
+		{
+			.VertexShader = "engine://Content/Shaders/ShadowVS",
+			.Rasterizer   = { .DepthBias = 100, .SlopeScaledDepthBias = 2.0f },
+		};
+	}
+
 	ShadowPass::ShadowPass(const Config& config)
 		: m_config(config)
 	{
@@ -122,7 +132,7 @@ namespace koi
 			.CameraPosition = Vector4::Zero,
 		});
 
-		ctx.SetPipeline(m_config.Resources->ShadowPipeline);
+		if (!ctx.SetPipeline(kShadow)) return;
 
 		const GPUMesh* boundMesh = nullptr;
 		for (const MeshDrawItem& item : m_gather.Draws)

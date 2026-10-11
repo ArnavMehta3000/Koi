@@ -1,6 +1,5 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
-#include "Koi/Engine/Graphics/PipelineLibrary.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -54,7 +53,7 @@ namespace koi
 		}
 	}
 
-	void RendererResources::Init(GfxDevice& device, PipelineLibrary& library)
+	void RendererResources::Init(GfxDevice& device)
 	{
 		LinearWrapSampler  = device.CreateSampler(MakeLinearWrapDesc());
 		LinearClampSampler = device.CreateSampler(MakeLinearClampDesc());
@@ -62,7 +61,6 @@ namespace koi
 		ShadowSampler      = device.CreateSampler(MakeShadowCompareDesc());
 
 		KOI_LOG(Render, Debug, "Default samplers created");
-		RegisterPipelines(device, library);
 	}
 
 	void RendererResources::RegisterFallbackAssets(GfxDevice& device)
@@ -124,68 +122,12 @@ namespace koi
 
 	void RendererResources::Shutdown()
 	{
-		// Pipelines belong to the PipelineLibrary, which destroys them itself
 		// The asset caches shut down first and have already released these
 		FallbackMesh          = {};
 		FallbackTexture       = {};
 		WhiteTexture          = {};
 		WhiteTextureSRV       = INVALID_DESCRIPTOR;
 		FallbackTextureSRV    = INVALID_DESCRIPTOR;
-		TonemapPipeline       = {};
-		GBufferPipeline       = {};
-		LightingPipeline      = {};
-		ShadowPipeline        = {};
-		DebugLinePipeline     = {};
-		GridPipeline          = {};
 		// Samplers live in the sampler heap for the device lifetime; no explicit free needed.
-	}
-
-	void RendererResources::RegisterPipelines(GfxDevice& device, PipelineLibrary& library)
-	{
-		KOI_LOG(Render, Debug, "Registering default pipelines");
-
-		// --- Tonemap ---
-		TonemapPipeline = library.Register(device, PipelineRecipe::FullScreen(
-			"Tonemap",
-			"engine://Content/Shaders/TonemapVS",
-			"engine://Content/Shaders/TonemapPS",
-			Format::R8G8B8A8_UNORM));
-
-		// The G-buffer pipeline is a material template, registered by the Renderer
-
-		// Raster-stage depth bias pushes fragments away from the light before the depth test,
-		// which removes most self-shadowing acne for free
-		ShadowPipeline = library.Register(device, PipelineRecipe::DepthOnly(
-			"ShadowMap",
-			"engine://Content/Shaders/ShadowVS")
-			.DepthBias(100, 2.0f));
-
-		// --- Deferred lighting (full-screen triangle: samples G-buffer -> HDR color) ---
-		LightingPipeline = library.Register(device, PipelineRecipe::FullScreen(
-			"DeferredLighting",
-			"engine://Content/Shaders/LightingVS",
-			"engine://Content/Shaders/LightingPS",
-			Format::R16G16B16A16_FLOAT));
-
-		// --- Editor grid (over the tonemapped image, under the debug lines) ---
-		GridPipeline = library.Register(device, PipelineRecipe::Overlay(
-			"Grid",
-			"engine://Content/Shaders/GridVS",
-			"engine://Content/Shaders/GridPS",
-			Format::R8G8B8A8_UNORM));
-
-		// --- Target capture (editor Render Targets panel) ---
-		CapturePipeline = library.Register(device, PipelineRecipe::FullScreen(
-			"TargetCapture",
-			"engine://Content/Shaders/TonemapVS",
-			"engine://Content/Shaders/DebugVisualizePS",
-			Format::R16G16B16A16_FLOAT));
-
-		// --- Debug lines (last pass, over the tonemapped image) ---
-		DebugLinePipeline = library.Register(device, PipelineRecipe::Lines(
-			"DebugLine",
-			"engine://Content/Shaders/DebugLineVS",
-			"engine://Content/Shaders/DebugLinePS",
-			Format::R8G8B8A8_UNORM));
 	}
 }

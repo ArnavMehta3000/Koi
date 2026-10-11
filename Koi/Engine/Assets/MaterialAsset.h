@@ -12,6 +12,7 @@ namespace koi
 {
 	class GfxDevice;
 	struct MaterialTemplate;
+	struct RasterPipeline;
 
 	// The texture channels a material can bind, in the order the GPU row writes them
 	enum class MaterialTextureSlot : u8
@@ -55,7 +56,7 @@ namespace koi
 		u32 TableSlot = 0;  // the row this material owns in the renderer's MaterialTable
 
 		const MaterialTemplate* Template = nullptr;  // owned by the MaterialTemplateLibrary
-		PipelineHandle          Pipeline;            // the template's build for this cull mode
+		const RasterPipeline*   Pipeline = nullptr;  // the template's variant for this cull mode
 
 		// The key a slot's texture parameter is stored under
 		[[nodiscard]] static std::string_view SlotName(MaterialTextureSlot slot);

@@ -13,7 +13,7 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
-		assert(config.Device && "GBufferPass requires a valid GfxDevice");
+		assert(config.Device && config.DefaultPipeline && "GBufferPass requires a device and a default pipeline");
 
 		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "GBuffer FrameConstants");
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "GBuffer PerObjectData");
@@ -23,7 +23,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		// Formats must match PipelineRecipe::GBuffer
+		// Formats must match the shader's SV_Target outputs
 		const auto target = [&](Format format, std::string_view name)
 		{
 			return graph.CreateTexture(TextureDesc{ .Width = width, .Height = height, .Format = format }, name);
@@ -74,17 +74,19 @@ namespace koi
 
 		// Draws arrive sorted by (pipeline, mesh), so both only rebind when they change.
 		// A draw with no pipeline of its own gets the standard G-buffer one
-		const GPUMesh* boundMesh = nullptr;
-		PipelineHandle boundPipeline;
+		const GPUMesh*        boundMesh     = nullptr;
+		const RasterPipeline* boundPipeline = nullptr;
+		bool                  pipelineOk    = false;
 
 		for (const MeshDrawItem& item : m_gather.Draws)
 		{
-			const PipelineHandle pipeline = item.Pipeline.IsValid() ? item.Pipeline : m_config.Resources->GBufferPipeline;
-			if (pipeline.GetId() != boundPipeline.GetId())
+			const RasterPipeline* pipeline = item.Pipeline ? item.Pipeline : m_config.DefaultPipeline;
+			if (pipeline != boundPipeline)
 			{
-				ctx.SetPipeline(pipeline);
+				pipelineOk    = ctx.SetPipeline(*pipeline);
 				boundPipeline = pipeline;
 			}
+			if (!pipelineOk) continue;
 
 			if (item.Mesh != boundMesh)
 			{

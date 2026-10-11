@@ -23,9 +23,10 @@ namespace koi
 
 		m_gbufferPass = &passes.Add<GBufferPass>(GBufferPass::Config
 		{
-			.Device    = &renderer.GetDevice(),
-			.Resources = &renderer.GetDefaultResources(),
-			.Materials = &renderer.GetMaterialTable(),
+			.Device          = &renderer.GetDevice(),
+			.Resources       = &renderer.GetDefaultResources(),
+			.Materials       = &renderer.GetMaterialTable(),
+			.DefaultPipeline = &renderer.GetMaterialTemplates().Default()->SingleSided,
 		});
 
 		m_lightingPass = &passes.Add<LightingPass>(LightingPass::Config
@@ -34,10 +35,7 @@ namespace koi
 			.Resources = &renderer.GetDefaultResources(),
 		});
 
-		m_tonemapPass = &passes.Add<TonemapPass>(TonemapPass::Config
-		{
-			.Pipeline = renderer.GetDefaultResources().TonemapPipeline,
-		});
+		m_tonemapPass = &passes.Add<TonemapPass>();
 
 		// Over the tonemapped image, under the debug lines
 		m_gridPass = &passes.Add<GridPass>(GridPass::Config
@@ -65,7 +63,6 @@ namespace koi
 		const ShadowPass::Output  shadow  = m_shadowPass->Record(graph, world);
 		const GBufferPass::Output gbuffer = m_gbufferPass->Record(graph, world, camera, target.Width, target.Height);
 
-		// Format must match the Lighting/Tonemap pipeline recipes
 		RGTexture hdr = graph.CreateTexture(TextureDesc{ .Width = target.Width, .Height = target.Height, .Format = Format::R16G16B16A16_FLOAT }, "HDRColor");
 		hdr = m_lightingPass->Record(graph, world, camera, gbuffer, shadow, hdr);
 

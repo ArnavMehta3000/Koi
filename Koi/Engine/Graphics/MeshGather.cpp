@@ -73,10 +73,10 @@ namespace koi
 		// Sort by pipeline first (to set PSO), then mesh (to set IB)
 		std::ranges::sort(out.Draws, [](const MeshDrawItem& a, const MeshDrawItem& b)
 		{
-			if (a.Pipeline.GetId() != b.Pipeline.GetId())
-				return a.Pipeline.GetId() < b.Pipeline.GetId();
+			if (a.Pipeline != b.Pipeline)
+				return std::less<>{}(a.Pipeline, b.Pipeline);
 
-			return a.Mesh < b.Mesh;
+			return std::less<>{}(a.Mesh, b.Mesh);
 		});
 	}
 }

@@ -81,7 +81,7 @@ namespace koi
 		};
 
 	public:
-		void Init(GfxDevice& device);
+		void Init(GfxDevice& device, PipelineCache& pipelines);
 		void Shutdown();
 
 		// Drops anything declared but never executed
@@ -106,6 +106,7 @@ namespace koi
 		[[nodiscard]] TextureHandle Resolve(RGTexture texture) const;
 		[[nodiscard]] inline const RGInspection& GetInspection() const noexcept { return m_inspection; }
 		[[nodiscard]] inline GfxDevice& GetDevice() const noexcept { return *m_device; }
+		[[nodiscard]] inline PipelineCache& GetPipelines() const noexcept { return *m_pipelines; }
 
 		inline void SetObserver(IRGObserver* observer) noexcept { m_observer = observer; }
 
@@ -113,11 +114,13 @@ namespace koi
 		[[nodiscard]] u32 BeginPass(std::string_view name);
 		[[nodiscard]] RGTexture Declare(u32 passIndex, RGTexture texture, Access access);
 		void BindTargets(CommandList& cmd, const Pass& pass);
+		[[nodiscard]] TargetFormats FormatsOf(const Pass& pass) const;
 		void Inspect();
 		void NotifyWrites(u32 passIndex);
 
 	private:
-		GfxDevice*                         m_device = nullptr;
+		GfxDevice*                         m_device    = nullptr;
+		PipelineCache*                     m_pipelines = nullptr;
 		TransientPool                      m_pool;
 		std::vector<Resource>              m_resources;
 		std::vector<Pass>                  m_passes;

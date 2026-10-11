@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/ShaderCache.h"
+#include "Koi/Engine/Core/Hash.h"
 #include "Koi/Engine/Graphics/ShaderCompiler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
@@ -9,33 +10,12 @@
 
 namespace koi
 {
-	namespace
-	{
-		// Stuff for Fowler–Noll–Vo hashing
-		constexpr u64 kFnvOffset = 14695981039346656037ull;
-		constexpr u64 kFnvPrime  = 1099511628211ull;
-
-		static void FnvFeed(u64& hash, std::string_view text)
-		{
-			for (const char c : text)
-			{
-				hash ^= static_cast<u64>(static_cast<byte>(c));
-				hash *= kFnvPrime;
-			}
-		}
-
-		static void HashCombine(size_t& seed, size_t value)
-		{
-			seed ^= value + 0x9e3779b97f4a7c15ull + (seed << 6) + (seed >> 2);
-		}
-	}
-
 	size_t ShaderKey::Hash::operator()(const ShaderKey& key) const noexcept
 	{
-		size_t seed = std::hash<std::string>{}(key.Path);
-		HashCombine(seed, static_cast<size_t>(key.Type));
-		HashCombine(seed, static_cast<size_t>(key.DefinesHash));
-		return seed;
+		u64 seed = utils::Fnv1a(key.Path);
+		utils::HashCombine(seed, static_cast<u64>(key.Type));
+		utils::HashCombine(seed, key.DefinesHash);
+		return static_cast<size_t>(seed);
 	}
 
 	ShaderType ShaderCache::InferType(std::string_view path)
@@ -62,13 +42,13 @@ namespace koi
 		std::vector<ShaderDefine> sorted(defines.begin(), defines.end());
 		std::ranges::sort(sorted, {}, &ShaderDefine::Name);
 
-		u64 hash = kFnvOffset;
+		u64 hash = utils::kFnvOffset;
 		for (const ShaderDefine& define : sorted)
 		{
-			FnvFeed(hash, define.Name);
-			FnvFeed(hash, "=");
-			FnvFeed(hash, define.Value);
-			FnvFeed(hash, ";");
+			utils::FnvFeed(hash, define.Name);
+			utils::FnvFeed(hash, "=");
+			utils::FnvFeed(hash, define.Value);
+			utils::FnvFeed(hash, ";");
 		}
 		return hash;
 	}

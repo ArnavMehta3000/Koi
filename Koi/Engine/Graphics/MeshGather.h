@@ -9,15 +9,16 @@ namespace koi
 	class  World;
 	struct GPUMesh;
 	struct GPUMeshDraw;
+	struct RasterPipeline;
 
 	// One submesh that survived culling, plus where its transform landed in the object buffer
 	struct MeshDrawItem
 	{
-		const GPUMesh*     Mesh;
-		const GPUMeshDraw* Draw;
-		u32                ObjectIndex;
-		PipelineHandle     Pipeline; 
-		u32                MaterialSlot; // row in the MaterialTable
+		const GPUMesh*        Mesh;
+		const GPUMeshDraw*    Draw;
+		u32                   ObjectIndex;
+		const RasterPipeline* Pipeline;      // null = the pass decides
+		u32                   MaterialSlot;  // row in the MaterialTable
 	};
 
 	struct MeshGatherResult

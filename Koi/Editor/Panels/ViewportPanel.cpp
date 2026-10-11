@@ -24,7 +24,6 @@
 
 namespace koi::editor
 {
-	// Must match the RT format RendererResources bakes into TonemapPipeline
 	static constexpr Format kResolvedFormat = Format::R8G8B8A8_UNORM;
 
 	// A click that moves further than this is a camera drag, not a pick
