@@ -1,6 +1,6 @@
 CompileFlags:
   Add:
-    - /std:c++23preview
+    - -clang:-std=c++23
     - -fms-extensions
     - -fms-compatibility
     - -fms-compatibility-version=19.30
@@ -24,14 +24,15 @@ Diagnostics:
     - default_member_initializer_not_yet_parsed
 
 Completion:
-  AllScopes: Yes
+  AllScopes: true
   ArgumentLists: None
   HeaderInsertion: Never
   CodePatterns: None
 
 InlayHints:
-  BlockEnd: Yes
+  BlockEnd: false
   TypeNameLimit: 32
+  ParameterNames: false
 
 Hover:
-  ShowAKA: Yes
+  ShowAKA: true
