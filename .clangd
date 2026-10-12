@@ -1,10 +1,9 @@
 CompileFlags:
   Add:
-    - /std:c++latest
+    - /std:c++23preview
     - -fms-extensions
     - -fms-compatibility
     - -fms-compatibility-version=19.30
-    - -fdelayed-template-parsing
     - -fexceptions
     - -fcxx-exceptions
   Remove:
@@ -28,3 +27,11 @@ Completion:
   AllScopes: Yes
   ArgumentLists: None
   HeaderInsertion: Never
+  CodePatterns: None
+
+InlayHints:
+  BlockEnd: Yes
+  TypeNameLimit: 32
+
+Hover:
+  ShowAKA: Yes
