@@ -3,6 +3,7 @@
 
 namespace koi
 {
+	class BlitPass;
 	class DebugDrawPass;
 	class GBufferPass;
 	class GridPass;
@@ -23,5 +24,6 @@ namespace koi
 		DebugDrawPass* m_debugDrawPass = nullptr;
 		TonemapPass*   m_tonemapPass   = nullptr;
 		GridPass*      m_gridPass      = nullptr;
+		BlitPass*      m_blitPass      = nullptr;
 	};
 }

@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/DeferredPipeline.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Graphics/RenderPasses/BlitPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/DebugDrawPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/GridPass.h"
@@ -50,6 +51,8 @@ namespace koi
 			.Resources = &renderer.GetDefaultResources(),
 			.Queue     = &renderer.GetDebugDraw(),
 		});
+
+		m_blitPass = &passes.Add<BlitPass>();
 	}
 
 	void DeferredPipeline::Record(RenderGraph& graph, const RenderView& view, World& world)
@@ -66,14 +69,17 @@ namespace koi
 		RGTexture hdr = graph.CreateTexture(TextureDesc{ .Width = target.Width, .Height = target.Height, .Format = Format::R16G16B16A16_FLOAT }, "HDRColor");
 		hdr = m_lightingPass->Record(graph, world, camera, gbuffer, shadow, hdr);
 
+		RGTexture ldr = graph.CreateTexture(TextureDesc{ .Width = target.Width, .Height = target.Height, .Format = Format::R8G8B8A8_UNORM }, "LDRColor");
 		SceneTargets scene
 		{
-			.Color = m_tonemapPass->Record(graph, hdr, graph.ImportTexture(target.ResolvedColorBuffer, "Output")),
+			.Color = m_tonemapPass->Record(graph, hdr, ldr),
 			.Depth = gbuffer.Depth,
 		};
 
 		// Over the tonemapped image, under the debug lines
 		scene = m_gridPass->Record(graph, camera, scene);
-		m_debugDrawPass->Record(graph, camera, scene);
+		scene = m_debugDrawPass->Record(graph, camera, scene);
+
+		m_blitPass->Record(graph, scene.Color, graph.ImportTexture(target.ResolvedColorBuffer, "Output"));
 	}
 }

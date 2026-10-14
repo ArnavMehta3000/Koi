@@ -11,6 +11,7 @@
 		{ "source": "LightingPS.hlsl" },
 		{ "source": "ShadowVS.hlsl" },
 		{ "source": "TonemapVS.hlsl" },
-		{ "source": "TonemapPS.hlsl" }
+		{ "source": "TonemapPS.hlsl" },
+		{ "source": "BlitPS.hlsl" }
 	]
 }
