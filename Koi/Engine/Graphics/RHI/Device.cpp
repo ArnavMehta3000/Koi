@@ -291,6 +291,21 @@ namespace koi
 			m_device->CreateShaderResourceView(tex.Resource.Get(), &srvDesc, m_resourceHeap.CpuHandle(tex.SRVIndex));
 		}
 
+		// Writable from compute as RWTexture2D via ResourceDescriptorHeap[], mip 0 only
+		if (desc.Usage.Has(TextureUsage::ShaderWrite))
+		{
+			assert(!isDepth && desc.SampleCount == 1 && "Depth and MSAA textures can't have a UAV");
+			tex.UAVIndex = m_resourceHeap.Allocate();
+
+			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc
+			{
+				.Format        = utils::ToDXGIFormat(desc.Format),
+				.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D,
+				.Texture2D     = { .MipSlice = 0, .PlaneSlice = 0 },
+			};
+			m_device->CreateUnorderedAccessView(tex.Resource.Get(), nullptr, &uavDesc, m_resourceHeap.CpuHandle(tex.UAVIndex));
+		}
+
 		if (isRenderTarget)
 		{
 			tex.RTVIndex = m_rtvHeap.Allocate();
