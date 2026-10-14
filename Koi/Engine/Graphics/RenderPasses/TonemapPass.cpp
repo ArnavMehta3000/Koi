@@ -5,12 +5,15 @@ namespace koi
 {
 	namespace
 	{
-		constexpr RasterPipeline kTonemap
+		constexpr ComputePipeline kTonemap
 		{
-			.VertexShader = "engine://Content/Shaders/TonemapVS",
-			.PixelShader  = "engine://Content/Shaders/TonemapPS",
-			.Rasterizer   = RasterizerDesc::CullNone(),
-			.DepthStencil = DepthStencilDesc::None(),
+			.ComputeShader = "engine://Content/Shaders/TonemapCS",
+		};
+
+		struct TonemapRootConstants
+		{
+			DescriptorIndex HDRTextureIndex;
+			DescriptorIndex LDRTextureIndex;
 		};
 	}
 
@@ -19,17 +22,22 @@ namespace koi
 		ZoneScoped;
 		if (!output) return output;
 
-		graph.AddPass<RasterPass>("Tonemap",
+		const TextureDesc& desc = graph.GetDesc(output);
+
+		graph.AddPass<ComputePass>("Tonemap",
 			[&](RGBuilder& b)
 			{
 				b.Read(hdr);
-				output = b.ColorTarget(output);
+				output = b.Write(output);
 			},
-			[hdr](RasterContext& ctx)
+			[hdr, ldr = output, width = desc.Width, height = desc.Height](ComputeContext& ctx)
 			{
 				if (!ctx.SetPipeline(kTonemap)) return;
-				ctx.SetRootConstants(ctx.SRV(hdr));
-				ctx.Draw(3);
+				ctx.SetRootConstants(TonemapRootConstants{ .HDRTextureIndex = ctx.SRV(hdr), .LDRTextureIndex = ctx.UAV(ldr) });
+
+				// Round up so the edge pixels get a group; the shader skips the overhang
+				const auto& group = ctx.GetThreadGroup();
+				ctx.Dispatch((width + group[0] - 1) / group[0], (height + group[1] - 1) / group[1]);
 			});
 
 		return output;

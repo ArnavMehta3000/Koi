@@ -82,7 +82,8 @@ namespace koi
 
 	bool ComputeContext::SetPipeline(const ComputePipeline& pipeline)
 	{
-		return Bind(m_graph.GetPipelines().Get(pipeline));
+		// No thread group means no reflection data, and the dispatch maths would divide by zero
+		return Bind(m_graph.GetPipelines().Get(pipeline)) && m_bound.Info.ThreadGroup[0] != 0;
 	}
 
 	void RenderGraph::Init(GfxDevice& device, PipelineCache& pipelines)
