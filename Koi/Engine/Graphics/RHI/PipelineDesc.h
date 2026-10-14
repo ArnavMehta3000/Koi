@@ -82,4 +82,10 @@ namespace koi
 		u32              SampleCount = 1;
 		std::string_view DebugName;
 	};
+
+	struct ComputePipelineDesc
+	{
+		std::span<const byte> ComputeShader;
+		std::string_view      DebugName;
+	};
 }

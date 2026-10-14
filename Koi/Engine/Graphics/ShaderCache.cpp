@@ -61,13 +61,25 @@ namespace koi
 
 	std::span<const byte> ShaderCache::GetShader(std::string_view virtualPathNoExt, std::span<const ShaderDefine> defines)
 	{
+		const Entry* entry = Find(virtualPathNoExt, defines);
+		return entry ? std::span<const byte>(entry->Bytecode) : std::span<const byte>();
+	}
+
+	ShaderInfo ShaderCache::GetInfo(std::string_view virtualPathNoExt, std::span<const ShaderDefine> defines)
+	{
+		const Entry* entry = Find(virtualPathNoExt, defines);
+		return entry ? entry->Info : ShaderInfo();
+	}
+
+	const ShaderCache::Entry* ShaderCache::Find(std::string_view virtualPathNoExt, std::span<const ShaderDefine> defines)
+	{
 		LoadManifests();
 
 		const ShaderType type = InferType(virtualPathNoExt);
 		if (type == ShaderType::Unknown)
 		{
 			KOI_LOG(Shaders, Error, "ShaderCache: cannot infer type from '{}' (expected *VS/*PS/*CS/*HS/*DS/*GS)", virtualPathNoExt);
-			return {};
+			return nullptr;
 		}
 
 		const ShaderKey key
@@ -79,17 +91,17 @@ namespace koi
 
 		if (auto it = m_entries.find(key); it != m_entries.end())
 		{
-			return it->second.Bytecode;
+			return &it->second;
 		}
 
 		Entry entry;
 		if (!LoadBytecode(key, defines, entry))
-			return {};  // failures aren't cached, so a fixed shader loads on the next attempt
+			return nullptr;  // failures aren't cached, so a fixed shader loads on the next attempt
 
 		KOI_LOG(Shaders, Debug, "Shader cached: '{}' ({} bytes, {} dependencies)",
 			virtualPathNoExt, entry.Bytecode.size(), entry.Dependencies.size());
 
-		return m_entries.emplace(key, std::move(entry)).first->second.Bytecode;
+		return &m_entries.emplace(key, std::move(entry)).first->second;
 	}
 
 	std::vector<std::string> ShaderCache::InvalidateStale()
@@ -216,6 +228,10 @@ namespace koi
 				}
 
 				BuiltShader built{ .Bytecode = std::string(scheme) + "://Shaders/" + cso };
+				if (const std::string refl = (*shader)["reflection"].value_or(std::string()); !refl.empty())
+				{
+					built.Reflection = std::string(scheme) + "://Shaders/" + refl;
+				}
 				if (const toml::array* list = (*shader)["dependencies"].as_array())
 				{
 					for (const toml::node& dependency : *list)
@@ -305,7 +321,7 @@ namespace koi
 		}
 
 		std::vector<fs::path> includes;
-		auto blob = ShaderCompiler::Get().CompileFromFile(source, args, &includes);
+		auto blob = ShaderCompiler::Get().CompileFromFile(source, args, &includes, &outEntry.Info);
 		if (!blob || blob->GetBufferSize() == 0)
 		{
 			KOI_LOG(Shaders, Error, "{} didn't compile, the errors are just above", key.Path);
@@ -337,6 +353,15 @@ namespace koi
 		}
 
 		outEntry.Bytecode = std::move(*data);
+
+		if (const auto reflection = VirtualFileSystem::Get().Read(built.Reflection))
+		{
+			outEntry.Info = ShaderCompiler::Get().Reflect(*reflection);
+		}
+		else
+		{
+			KOI_LOG(Shaders, Warn, "Couldn't read {}, so {} has no reflection data", built.Reflection, built.Bytecode);
+		}
 
 		// So F5 notices edits made from here on
 		if (trackDependencies)

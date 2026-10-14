@@ -289,6 +289,10 @@ namespace koi
 		m_cmdList->SetGraphicsRoot32BitConstants(0, count32BitValues, data, destOffsetIn32BitValues);
 	}
 
+	void CommandList::Dispatch(u32, u32, u32)
+	{
+	}
+
 	void CommandList::Draw(u32 vertexCount, u32 instanceCount, u32 startVertex, u32 startInstance)
 	{
 		FlushBarriers();

@@ -43,48 +43,66 @@ namespace koi
 
 	void PipelineCache::Shutdown()
 	{
-		for (auto& [key, entry] : m_entries)
+		ForEach([this](const auto&, Entry& entry, const auto&)
 		{
 			if (entry.Handle)
 			{
 				m_device->Destroy(entry.Handle);
 			}
-		}
-		m_entries.clear();
+		});
+		m_raster.clear();
+		m_compute.clear();
 		m_paths.clear();
 	}
 
-	std::expected<PipelineHandle, PipelineError> PipelineCache::Get(const RasterPipeline& pipeline, const TargetFormats& targets)
+	std::expected<BoundPipeline, PipelineError> PipelineCache::Get(const RasterPipeline& pipeline, const TargetFormats& targets)
 	{
 		assert(pipeline.VertexShader.IsValid() && "A raster pipeline needs a vertex shader");
 
-		auto it = m_entries.find(Key{ .Pipeline = pipeline, .Targets = targets });
-		if (it == m_entries.end())
+		auto it = m_raster.find(Key{ .Pipeline = pipeline, .Targets = targets });
+		if (it == m_raster.end())
 		{
 			Key stored{ .Pipeline = pipeline, .Targets = targets };
 			stored.Pipeline.VertexShader = Intern(pipeline.VertexShader);
 			stored.Pipeline.PixelShader  = Intern(pipeline.PixelShader);
 
-			it = m_entries.emplace(stored, Entry{}).first;
+			it = m_raster.emplace(stored, Entry{}).first;
 			Build(it->first, it->second);
 		}
+		return Result(it->second);
+	}
 
-		if (it->second.Handle)
-			return it->second.Handle;
+	std::expected<BoundPipeline, PipelineError> PipelineCache::Get(const ComputePipeline& pipeline)
+	{
+		assert(pipeline.ComputeShader.IsValid() && "A compute pipeline needs a compute shader");
 
-		return std::unexpected(it->second.Error.value_or(PipelineError::CreateFailed));
+		auto it = m_compute.find(pipeline);
+		if (it == m_compute.end())
+		{
+			it = m_compute.emplace(ComputePipeline{ Intern(pipeline.ComputeShader) }, Entry{}).first;
+			Build(it->first, it->second);
+		}
+		return Result(it->second);
+	}
+
+	std::expected<BoundPipeline, PipelineError> PipelineCache::Result(const Entry& entry)
+	{
+		if (entry.Handle)
+			return BoundPipeline{ .Handle = entry.Handle, .Info = entry.Info };
+
+		return std::unexpected(entry.Error.value_or(PipelineError::CreateFailed));
 	}
 
 	u32 PipelineCache::RebuildAll()
 	{
 		u32 rebuilt = 0;
-		for (auto& [key, entry] : m_entries)
+		ForEach([&](const auto& key, Entry& entry, const auto&)
 		{
 			Build(key, entry);
 			rebuilt += entry.Error ? 0 : 1;
-		}
+		});
 
-		KOI_LOG(Render, Info, "PipelineCache: rebuilt {}/{} pipeline(s)", rebuilt, m_entries.size());
+		KOI_LOG(Render, Info, "PipelineCache: rebuilt {}/{} pipeline(s)", rebuilt, GetCount());
 		return rebuilt;
 	}
 
@@ -96,16 +114,15 @@ namespace koi
 		};
 
 		u32 rebuilt = 0;
-		for (auto& [key, entry] : m_entries)
+		ForEach([&](const auto& key, Entry& entry, const auto& shaders)
 		{
-			if (!uses(key.Pipeline.VertexShader) && !uses(key.Pipeline.PixelShader))
-				continue;
+			if (std::ranges::none_of(shaders, uses)) return;
 
 			Build(key, entry);
 			rebuilt += entry.Error ? 0 : 1;
-		}
+		});
 
-		KOI_LOG(Render, Info, "PipelineCache: rebuilt {} of {} pipeline(s)", rebuilt, m_entries.size());
+		KOI_LOG(Render, Info, "PipelineCache: rebuilt {} of {} pipeline(s)", rebuilt, GetCount());
 		return rebuilt;
 	}
 
@@ -124,8 +141,8 @@ namespace koi
 	{
 		ZoneScoped;
 		const RasterPipeline& pipeline = key.Pipeline;
-		const std::string     name     = DebugName(pipeline);
 		ShaderCache&          shaders  = ShaderCache::Get();
+		entry.Name = DebugName(pipeline);
 
 		PipelineDesc desc
 		{
@@ -137,7 +154,7 @@ namespace koi
 			.DepthFormat       = key.Targets.Depth,
 			.TopologyType      = TopologyTypeOf(pipeline.Topology),
 			.Topology          = pipeline.Topology,
-			.DebugName         = name,
+			.DebugName         = entry.Name,
 		};
 		std::ranges::copy(key.Targets.Colors, desc.RenderTargetFormats);
 		std::ranges::fill(desc.BlendTargets, pipeline.Blend);
@@ -152,11 +169,41 @@ namespace koi
 		{
 			entry.Error = PipelineError::CreateFailed;
 		}
+		Report(entry);
+	}
 
-		if (entry.Error)
+	void PipelineCache::Build(const ComputePipeline& pipeline, Entry& entry)
+	{
+		ZoneScoped;
+		entry.Name = std::string(Stem(pipeline.ComputeShader.Path));
+
+		const ComputePipelineDesc desc
 		{
-			KOI_LOG(Render, Error, "PipelineCache: '{}' failed to build ({})", name,
-				*entry.Error == PipelineError::MissingShader ? "shader missing or failed to compile" : "rejected by the driver");
+			.ComputeShader = ShaderCache::Get().GetShader(pipeline.ComputeShader.Path),
+			.DebugName     = entry.Name,
+		};
+
+		entry.Error.reset();
+		if (desc.ComputeShader.empty())
+		{
+			entry.Error = PipelineError::MissingShader;
 		}
+		else if (entry.Handle ? !m_device->RecreatePipeline(entry.Handle, desc) : !(entry.Handle = m_device->CreatePipeline(desc)))
+		{
+			entry.Error = PipelineError::CreateFailed;
+		}
+		else
+		{
+			entry.Info = ShaderCache::Get().GetInfo(pipeline.ComputeShader.Path);
+		}
+		Report(entry);
+	}
+
+	void PipelineCache::Report(const Entry& entry) const
+	{
+		if (!entry.Error) return;
+
+		KOI_LOG(Render, Error, "PipelineCache: '{}' failed to build ({})", entry.Name,
+			*entry.Error == PipelineError::MissingShader ? "shader missing or failed to compile" : "rejected by the driver");
 	}
 }

@@ -4,6 +4,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <algorithm>
+#include <d3d12shader.h>
 #include <fstream>
 #include <span>
 #include <spdlog/fmt/xchar.h>
@@ -134,7 +135,23 @@ namespace koi
 		return instance;
 	}
 
-	ComPtr<IDxcBlob> ShaderCompiler::CompileFromFile(const fs::path& filePath, const Args& args, std::vector<fs::path>* outIncludes)
+	ShaderInfo ShaderCompiler::Reflect(std::span<const byte> reflection) const
+	{
+		ShaderInfo info;
+		const DxcBuffer buffer{ .Ptr = reflection.data(), .Size = reflection.size(), .Encoding = 0 };
+
+		ComPtr<ID3D12ShaderReflection> shader;
+		if (FAILED(m_dxcUtils->CreateReflection(&buffer, IID_PPV_ARGS(&shader))))
+		{
+			KOI_LOG(Shaders, Warn, "Couldn't read a shader's reflection data");
+			return info;
+		}
+
+		shader->GetThreadGroupSize(&info.ThreadGroup[0], &info.ThreadGroup[1], &info.ThreadGroup[2]);
+		return info;
+	}
+
+	ComPtr<IDxcBlob> ShaderCompiler::CompileFromFile(const fs::path& filePath, const Args& args, std::vector<fs::path>* outIncludes, ShaderInfo* outInfo)
 	{
 		ZoneScoped;
 		KOI_LOG(Shaders, Debug, "Compiling shader: {}", filePath.string());
@@ -231,6 +248,13 @@ namespace koi
 
 		ComPtr<IDxcBlob> shader;
 		DX_CHECK(results->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shader), nullptr));
+
+		ComPtr<IDxcBlob> reflection;
+		if (shader && outInfo && SUCCEEDED(results->GetOutput(DXC_OUT_REFLECTION, IID_PPV_ARGS(&reflection), nullptr)) && reflection)
+		{
+			*outInfo = Reflect({ static_cast<const byte*>(reflection->GetBufferPointer()), reflection->GetBufferSize() });
+		}
+
 		if (shader && args.OutDir)
 		{
 			// Save CSO to file

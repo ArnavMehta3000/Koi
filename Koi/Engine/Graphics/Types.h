@@ -75,6 +75,12 @@ namespace koi
 		MAX_COUNT
 	};
 
+	// Read from the shader's reflection data
+	struct ShaderInfo
+	{
+		std::array<u32, 3> ThreadGroup{};  // [numthreads], compute only
+	};
+
 	struct TextureDesc
 	{
 		u32 Width              = 1;

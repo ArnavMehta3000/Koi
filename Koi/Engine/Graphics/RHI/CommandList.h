@@ -51,6 +51,7 @@ namespace koi
 		// Draw
 		void Draw(u32 vertexCount, u32 instanceCount = 1, u32 startVertex = 0, u32 startInstance = 0);
 		void DrawIndexed(u32 indexCount, u32 instanceCount = 1, u32 startIndex = 0, i32 vertexOffset = 0, u32 startInstance = 0);
+		void Dispatch(u32 groupsX, u32 groupsY = 1, u32 groupsZ = 1);
 
 		// Copy
 		void CopyBuffer(BufferHandle dst, u64 dstOffset, BufferHandle src, u64 srcOffset, u64 size);

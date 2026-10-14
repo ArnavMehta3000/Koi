@@ -42,6 +42,13 @@ namespace koi
 		bool operator==(const RasterPipeline&) const = default;
 	};
 
+	struct ComputePipeline
+	{
+		ShaderRef ComputeShader;
+
+		bool operator==(const ComputePipeline&) const = default;
+	};
+
 	struct TargetFormats
 	{
 		std::array<Format, MAX_RENDER_TARGETS> Colors{};
@@ -57,13 +64,22 @@ namespace koi
 		CreateFailed,   // the driver rejected it | D3D error
 	};
 
+	// A built pipeline plus its shader's reflection (compute only)
+	struct BoundPipeline
+	{
+		PipelineHandle Handle;
+		ShaderInfo     Info;
+	};
+
 	class PipelineCache : NonCopyable
 	{
 	public:
 		void Init(GfxDevice& device);
 		void Shutdown();
 
-		[[nodiscard]] std::expected<PipelineHandle, PipelineError> Get(const RasterPipeline& pipeline, const TargetFormats& targets);
+		// Builds on first use. A failure is remembered until a reload touches one of its shaders
+		[[nodiscard]] std::expected<BoundPipeline, PipelineError> Get(const RasterPipeline& pipeline, const TargetFormats& targets);
+		[[nodiscard]] std::expected<BoundPipeline, PipelineError> Get(const ComputePipeline& pipeline);
 
 		// Call at a frame boundary with the GPU idle. Returns how many rebuilt
 		u32 RebuildAll();
@@ -72,7 +88,7 @@ namespace koi
 		// Every distinct shader of every pipeline requested so far
 		[[nodiscard]] std::vector<std::string> CollectShaderPaths() const;
 
-		[[nodiscard]] inline size_t GetCount() const noexcept { return m_entries.size(); }
+		[[nodiscard]] inline size_t GetCount() const noexcept { return m_raster.size() + m_compute.size(); }
 
 	private:
 		struct Key
@@ -86,15 +102,28 @@ namespace koi
 		struct Entry
 		{
 			PipelineHandle               Handle;
+			ShaderInfo                   Info;
+			std::string                  Name;
 			std::optional<PipelineError> Error;
 		};
 
 		[[nodiscard]] ShaderRef Intern(ShaderRef shader);
+		[[nodiscard]] static std::expected<BoundPipeline, PipelineError> Result(const Entry& entry);
 		void Build(const Key& key, Entry& entry);
+		void Build(const ComputePipeline& pipeline, Entry& entry);
+		void Report(const Entry& entry) const;
+
+		template <typename Fn>
+		void ForEach(Fn&& fn)
+		{
+			for (auto& [key, entry] : m_raster)  fn(key, entry, std::array{ key.Pipeline.VertexShader, key.Pipeline.PixelShader });
+			for (auto& [key, entry] : m_compute) fn(key, entry, std::array{ key.ComputeShader, ShaderRef() });
+		}
 
 	private:
-		GfxDevice*                                       m_device = nullptr;
-		std::unordered_map<Key, Entry, utils::FieldHash> m_entries;
-		std::set<std::string, std::less<>>               m_paths;  // what the stored keys' ShaderRefs view
+		GfxDevice*                                                   m_device = nullptr;
+		std::unordered_map<Key, Entry, utils::FieldHash>             m_raster;
+		std::unordered_map<ComputePipeline, Entry, utils::FieldHash> m_compute;
+		std::set<std::string, std::less<>>                           m_paths;  // what the stored keys' ShaderRefs view
 	};
 }

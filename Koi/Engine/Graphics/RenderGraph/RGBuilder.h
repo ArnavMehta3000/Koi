@@ -17,8 +17,8 @@ namespace koi
 	{
 		friend class RenderGraph;
 	public:
-		// Sampled from any shader stage. Invalid handles are ignored, so optional inputs need no branch
 		void Read(RGTexture texture);
+		[[nodiscard]] RGTexture Write(RGTexture texture);
 
 		// Bound as a render target; returns the version the pass produces
 		[[nodiscard]] RGTexture ColorTarget(RGTexture texture, LoadOp load = LoadOp::Load, const Color& clear = Color(0.0f, 0.0f, 0.0f, 1.0f));

@@ -55,6 +55,9 @@ namespace koi
 		// Empty on failure
 		[[nodiscard]] std::span<const byte> GetShader(std::string_view virtualPathNoExt, std::span<const ShaderDefine> defines = {});
 
+		// Reflection of the same variant. Zeroed when it failed to load
+		[[nodiscard]] ShaderInfo GetInfo(std::string_view virtualPathNoExt, std::span<const ShaderDefine> defines = {});
+
 		// Drops the entries whose source or any included header changed on disk since they
 		// were compiled, leaving the rest alone. Returns the virtual paths dropped, so
 		// callers can rebuild just what depended on them
@@ -79,6 +82,7 @@ namespace koi
 		struct Entry
 		{
 			std::vector<byte>       Bytecode;
+			ShaderInfo              Info;
 			std::vector<Dependency> Dependencies;  // the source itself, then everything it includes
 		};
 
@@ -86,12 +90,14 @@ namespace koi
 		struct BuiltShader
 		{
 			std::string              Bytecode;
+			std::string              Reflection;
 			std::vector<std::string> Dependencies;  // the source, then its includes
 		};
 
 		ShaderCache() = default;
 
 		void LoadManifests();
+		[[nodiscard]] const Entry* Find(std::string_view virtualPathNoExt, std::span<const ShaderDefine> defines);
 
 		[[nodiscard]] bool LoadBytecode(const ShaderKey& key, std::span<const ShaderDefine> defines, Entry& outEntry) const;
 		[[nodiscard]] bool LoadBuilt(const BuiltShader& built, bool trackDependencies, Entry& outEntry) const;

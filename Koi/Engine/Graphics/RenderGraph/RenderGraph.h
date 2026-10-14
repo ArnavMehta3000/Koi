@@ -46,7 +46,7 @@ namespace koi
 	{
 		friend class RGBuilder;
 
-		enum class Access : u8 { ShaderRead, ColorTarget, DepthTarget };
+		enum class Access : u8 { ShaderRead, ShaderWrite, ColorTarget, DepthTarget };
 
 		struct Resource
 		{
@@ -77,7 +77,8 @@ namespace koi
 			std::vector<Use>                              Uses;
 			std::vector<Attachment>                       ColorTargets;
 			std::optional<Attachment>                     DepthTarget;
-			std::move_only_function<void(RasterContext&)> Execute;
+			bool                                          Compute = false;
+			std::move_only_function<void(CommandList&, const TargetFormats&)> Execute;
 		};
 
 	public:
@@ -94,10 +95,26 @@ namespace koi
 		template <PassKind Kind, std::invocable<RGBuilder&> Setup, std::invocable<typename Kind::Context&> Exec>
 		void AddPass(std::string_view name, Setup&& setup, Exec&& exec)
 		{
-			const u32 index = BeginPass(name);                   // Gets pass index
-			RGBuilder builder(*this, index);                     // Prepare builder
-			std::invoke(std::forward<Setup>(setup), builder);    // Invoke setup callback
-			m_passes[index].Execute = std::forward<Exec>(exec);  // Save execute function
+			const u32 index = BeginPass(name);                 // Gets pass index
+			RGBuilder builder(*this, index);                   // Prepare builder
+			std::invoke(std::forward<Setup>(setup), builder);  // Invoke setup callback
+
+			// Save execute function, wrapped to build the context its kind asks for
+			Pass& pass   = m_passes[index];
+			pass.Compute = std::same_as<Kind, ComputePass>;
+			pass.Execute = [this, exec = std::forward<Exec>(exec)](CommandList& cmd, [[maybe_unused]] const TargetFormats& formats) mutable
+			{
+				if constexpr (std::same_as<Kind, ComputePass>)
+				{
+					ComputeContext ctx(cmd, *this);
+					std::invoke(exec, ctx);
+				}
+				else
+				{
+					RasterContext ctx(cmd, *this, formats);
+					std::invoke(exec, ctx);
+				}
+			};
 			NotifyWrites(index);
 		}
 

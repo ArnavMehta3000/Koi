@@ -659,18 +659,41 @@ namespace koi
 			.SampleDesc          = DXGI_SAMPLE_DESC{ desc.SampleCount, 0 },
 		};
 
-		const D3D12_PIPELINE_STATE_STREAM_DESC streamDesc{ sizeof(stream), &stream };
+		return CreateFromStream({ sizeof(stream), &stream }, desc.DebugName);
+	}
 
-		ComPtr<dx12::PipelineState> pso;
-		if (const HRESULT hr = m_device->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&pso)); FAILED(hr))
+	std::expected<ComPtr<dx12::PipelineState>, HRESULT> GfxDevice::BuildPipelineState(const ComputePipelineDesc& desc)
+	{
+		ZoneScoped;
+		assert(!desc.ComputeShader.empty() && "ComputePipelineDesc missing compute shader");
+
+		struct ComputeStream
 		{
-			KOI_LOG(RHI, Error, "CreatePipelineState failed for '{}' (0x{:08X})", desc.DebugName, static_cast<u32>(hr));
+			CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE RootSignature;
+			CD3DX12_PIPELINE_STATE_STREAM_CS             CS;
+		};
+
+		ComputeStream stream
+		{
+			.RootSignature = m_rootSignature.Get(),
+			.CS            = D3D12_SHADER_BYTECODE{ desc.ComputeShader.data(), desc.ComputeShader.size() },
+		};
+
+		return CreateFromStream({ sizeof(stream), &stream }, desc.DebugName);
+	}
+
+	std::expected<ComPtr<dx12::PipelineState>, HRESULT> GfxDevice::CreateFromStream(const D3D12_PIPELINE_STATE_STREAM_DESC& stream, std::string_view name)
+	{
+		ComPtr<dx12::PipelineState> pso;
+		if (const HRESULT hr = m_device->CreatePipelineState(&stream, IID_PPV_ARGS(&pso)); FAILED(hr))
+		{
+			KOI_LOG(RHI, Error, "CreatePipelineState failed for '{}' (0x{:08X})", name, static_cast<u32>(hr));
 			return std::unexpected(hr);
 		}
 
-		if (!desc.DebugName.empty())
+		if (!name.empty())
 		{
-			const std::wstring wname = utils::ToWide(std::string(desc.DebugName));
+			const std::wstring wname = utils::ToWide(std::string(name));
 			pso->SetName(wname.c_str());
 		}
 
@@ -685,6 +708,16 @@ namespace koi
 
 		KOI_LOG(RHI, Debug, "Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(*pso), .Topology = desc.Topology });
+	}
+
+	PipelineHandle GfxDevice::CreatePipeline(const ComputePipelineDesc& desc)
+	{
+		auto pso = BuildPipelineState(desc);
+		if (!pso)
+			return {};
+
+		KOI_LOG(RHI, Debug, "Created compute pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(*pso), .IsCompute = true });
 	}
 
 	bool GfxDevice::RecreatePipeline(PipelineHandle h, const PipelineDesc& desc)
@@ -703,6 +736,20 @@ namespace koi
 		pipeline->Topology = desc.Topology;
 
 		KOI_LOG(RHI, Debug, "Recreated pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		return true;
+	}
+
+	bool GfxDevice::RecreatePipeline(PipelineHandle h, const ComputePipelineDesc& desc)
+	{
+		if (!m_pipelines.Get(h))
+			return false;
+
+		auto pso = BuildPipelineState(desc);
+		if (!pso)
+			return false;
+
+		m_pipelines.Get(h)->Pso = std::move(*pso);
+		KOI_LOG(RHI, Debug, "Recreated compute pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return true;
 	}
 

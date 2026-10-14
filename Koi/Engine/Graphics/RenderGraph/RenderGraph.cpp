@@ -21,6 +21,12 @@ namespace koi
 		}
 	}
 
+	RGTexture RGBuilder::Write(RGTexture texture)
+	{
+		if (!texture) return {};
+		return m_graph.Declare(m_passIndex, texture, RenderGraph::Access::ShaderWrite);
+	}
+
 	RGTexture RGBuilder::ColorTarget(RGTexture texture, LoadOp load, const Color& clear)
 	{
 		if (!texture) return {};
@@ -43,24 +49,40 @@ namespace koi
 		return written;
 	}
 
-	TextureHandle RasterContext::Texture(RGTexture texture) const
+	TextureHandle PassContext::Texture(RGTexture texture) const
 	{
 		return m_graph.Resolve(texture);
 	}
 
-	DescriptorIndex RasterContext::SRV(RGTexture texture) const
+	DescriptorIndex PassContext::SRV(RGTexture texture) const
 	{
 		const koi::Texture* tex = m_graph.GetDevice().Get(m_graph.Resolve(texture));
 		return tex ? tex->SRVIndex : INVALID_DESCRIPTOR;
 	}
 
+	DescriptorIndex PassContext::UAV(RGTexture texture) const
+	{
+		const koi::Texture* tex = m_graph.GetDevice().Get(m_graph.Resolve(texture));
+		return tex ? tex->UAVIndex : INVALID_DESCRIPTOR;
+	}
+
+	bool PassContext::Bind(const std::expected<BoundPipeline, PipelineError>& pipeline)
+	{
+		if (!pipeline) return false;
+
+		m_bound = *pipeline;
+		m_cmd.SetPipeline(m_bound.Handle);
+		return true;
+	}
+
 	bool RasterContext::SetPipeline(const RasterPipeline& pipeline)
 	{
-		const auto handle = m_graph.GetPipelines().Get(pipeline, m_targets);
-		if (!handle) return false;
+		return Bind(m_graph.GetPipelines().Get(pipeline, m_targets));
+	}
 
-		m_cmd.SetPipeline(*handle);
-		return true;
+	bool ComputeContext::SetPipeline(const ComputePipeline& pipeline)
+	{
+		return Bind(m_graph.GetPipelines().Get(pipeline));
 	}
 
 	void RenderGraph::Init(GfxDevice& device, PipelineCache& pipelines)
@@ -131,6 +153,7 @@ namespace koi
 
 		// Shader read or depth/render target
 		const TextureUsage needed = access == Access::ShaderRead  ? TextureUsage::ShaderRead
+		                          : access == Access::ShaderWrite ? TextureUsage::ShaderWrite
 		                          : access == Access::ColorTarget ? TextureUsage::RenderTarget
 		                          :                                 TextureUsage::DepthStencil;
 		if (r.Imported)
@@ -214,20 +237,21 @@ namespace koi
 
 			for (const Use& use : pass.Uses)
 			{
+				const TextureHandle texture = m_resources[use.Texture.Index].Texture;
 				const D3D12_RESOURCE_STATES state = use.Access == Access::ShaderRead  ? kShaderRead
+				                                  : use.Access == Access::ShaderWrite ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 				                                  : use.Access == Access::ColorTarget ? D3D12_RESOURCE_STATE_RENDER_TARGET
 				                                  :                                     D3D12_RESOURCE_STATE_DEPTH_WRITE;
-				cmd.TransitionBarrier(m_resources[use.Texture.Index].Texture, state);
+				cmd.TransitionBarrier(texture, state);
 			}
 			cmd.FlushBarriers();
 
+			assert((!pass.Compute || (pass.ColorTargets.empty() && !pass.DepthTarget)) && "Compute passes write through Write(), not targets");
 			BindTargets(cmd, pass);
 
 			if (pass.Execute)
 			{
-				const TargetFormats formats = FormatsOf(pass);
-				RasterContext ctx(cmd, *this, formats);
-				pass.Execute(ctx);
+				pass.Execute(cmd, FormatsOf(pass));
 			}
 		}
 

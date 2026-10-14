@@ -1,5 +1,7 @@
 -- Uses a 'Shaders.json' to build shaders to <autogendir>/Built/Shaders along with 'Manifest.toml'
 --
+-- Each manifest record names the variant's .cso and its .refl (dxc -Fre), which the engine reads for [numthreads].
+--
 -- A complete Shaders.json. Only "source", "defines" and "permutations" are read today; [planned] keys are not
 -- {
 --   "defines":  ["KOI_BINDLESS=1"],                  [planned] added to every shader in this file

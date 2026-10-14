@@ -102,10 +102,12 @@ namespace koi
 		[[nodiscard]] TextureHandle  CreateTexture(const TextureDesc& desc);
 		[[nodiscard]] BufferHandle   CreateBuffer(const BufferDesc& desc);
 		[[nodiscard]] PipelineHandle CreatePipeline(const PipelineDesc& desc);
+		[[nodiscard]] PipelineHandle CreatePipeline(const ComputePipelineDesc& desc);
 
 		// Rebuilds an existing pipeline in place | call at a frame boundary: the old PSO is released immediately,
 		// so no command list may still be recording draws against it
 		bool RecreatePipeline(PipelineHandle h, const PipelineDesc& desc);
+		bool RecreatePipeline(PipelineHandle h, const ComputePipelineDesc& desc);
 
 		// Creates a sampler in the shader-visible sampler heap; returns its bindless index.
 		[[nodiscard]] DescriptorIndex CreateSampler(const D3D12_SAMPLER_DESC& desc);
@@ -141,6 +143,8 @@ namespace koi
 		void CreateHeaps();
 		void CreateRootSignature();
 		[[nodiscard]] std::expected<ComPtr<dx12::PipelineState>, HRESULT> BuildPipelineState(const PipelineDesc& desc);
+		[[nodiscard]] std::expected<ComPtr<dx12::PipelineState>, HRESULT> BuildPipelineState(const ComputePipelineDesc& desc);
+		[[nodiscard]] std::expected<ComPtr<dx12::PipelineState>, HRESULT> CreateFromStream(const D3D12_PIPELINE_STATE_STREAM_DESC& stream, std::string_view name);
 		void FlushDeferredDeletions(u64 completedFence);
 		void ReportLiveResources();
 
