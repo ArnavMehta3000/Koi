@@ -12,8 +12,6 @@
 
 #define LOG_HANDLE_TRACE(msg, h) KOI_LOG(RHI, Trace, msg, (h).GetIndex(), (h).GetGeneration())
 
-
-
 namespace koi
 {
 	namespace
@@ -76,7 +74,7 @@ namespace koi
 	}
 
 	// From DX12Common.h
-	void internal::ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line)
+	void internal::ThrowOnHRFail(HRESULT hr, const char* expr, std::string_view file, int line)
 	{
 		if (FAILED(hr))
 		{
@@ -196,7 +194,7 @@ namespace koi
 
 		Texture tex
 		{
-			.Resource         = resource,
+			.Resource         = std::move(resource),
 			.Desc             = desc,
 			.CurrentState     = D3D12_RESOURCE_STATE_PRESENT,
 			.IsSwapChainImage = true
@@ -565,11 +563,11 @@ namespace koi
 		for (const auto& [index, attr] : std::views::enumerate(desc.VertexLayout) | std::views::as_const)
 		{
 			assert(index < MAX_VERTEX_ATTRIBUTES && "Too many vertex attributes");
-			assert(!attr.SemanticName.empty() && "Vertex attribute missing semantic name");
+			assert(attr.SemanticName && *attr.SemanticName && "Vertex attribute missing semantic name");
 
 			inputElements[index] =
 			{
-				.SemanticName         = attr.SemanticName.data(),
+				.SemanticName         = attr.SemanticName,
 				.SemanticIndex        = attr.SemanticIndex,
 				.Format               = utils::ToDXGIFormat(attr.Format),
 				.InputSlot            = attr.InputSlot,
@@ -643,21 +641,23 @@ namespace koi
 
 		const auto bytecode = [](std::span<const byte> code) { return D3D12_SHADER_BYTECODE{ code.data(), code.size() }; };
 
-		GraphicsStream stream;
-		stream.RootSignature       = m_rootSignature.Get();
-		stream.InputLayout         = D3D12_INPUT_LAYOUT_DESC{ inputElements.data(), static_cast<u32>(desc.VertexLayout.size()) };
-		stream.TopologyType        = desc.TopologyType;
-		stream.VS                  = bytecode(desc.VertexShader);
-		stream.HS                  = bytecode(desc.HullShader);
-		stream.DS                  = bytecode(desc.DomainShader);
-		stream.GS                  = bytecode(desc.GeometryShader);
-		stream.PS                  = bytecode(desc.PixelShader);
-		stream.Rasterizer          = rasterDesc;
-		stream.Blend               = blendDesc;
-		stream.DepthStencil        = depthDesc;
-		stream.DepthFormat         = utils::ToDXGIFormat(desc.DepthFormat);
-		stream.RenderTargetFormats = rtFormats;
-		stream.SampleDesc          = DXGI_SAMPLE_DESC{ desc.SampleCount, 0 };
+		GraphicsStream stream
+		{
+			.RootSignature       = m_rootSignature.Get(),
+			.InputLayout         = D3D12_INPUT_LAYOUT_DESC{ inputElements.data(), static_cast<u32>(desc.VertexLayout.size()) },
+			.TopologyType        = desc.TopologyType,
+			.VS                  = bytecode(desc.VertexShader),
+			.HS                  = bytecode(desc.HullShader),
+			.DS                  = bytecode(desc.DomainShader),
+			.GS                  = bytecode(desc.GeometryShader),
+			.PS                  = bytecode(desc.PixelShader),
+			.Rasterizer          = rasterDesc,
+			.Blend               = blendDesc,
+			.DepthStencil        = depthDesc,
+			.DepthFormat         = utils::ToDXGIFormat(desc.DepthFormat),
+			.RenderTargetFormats = rtFormats,
+			.SampleDesc          = DXGI_SAMPLE_DESC{ desc.SampleCount, 0 },
+		};
 
 		const D3D12_PIPELINE_STATE_STREAM_DESC streamDesc{ sizeof(stream), &stream };
 

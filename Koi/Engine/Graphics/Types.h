@@ -98,7 +98,7 @@ namespace koi
 
 	struct VertexAttribute
 	{
-		std::string_view SemanticName = "";
+		const char* SemanticName      = "";
 		u32 SemanticIndex             = 0;
 		Format Format                 = Format::UNKNOWN;
 		u32 InputSlot                 = 0;

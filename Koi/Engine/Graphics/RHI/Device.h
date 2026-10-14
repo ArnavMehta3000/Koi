@@ -84,9 +84,9 @@ namespace koi
 		[[nodiscard]] inline DescriptorHeap&      DSVHeap()              noexcept       { return m_dsvHeap;             }
 		[[nodiscard]] inline DescriptorHeap&      ResourceHeap()         noexcept       { return m_resourceHeap;        }
 		[[nodiscard]] inline DescriptorHeap&      SamplerHeap()          noexcept       { return m_samplerHeap;         }
-		[[nodiscard]] inline UploadContext&       GetUploadContext()      noexcept      { return m_uploadContext;       }
-		[[nodiscard]] inline TracyD3D12Ctx        GetProfilerCtx()       const noexcept { return m_gpuProfilerCtx;     }
-		[[nodiscard]] inline GpuTimers&           GetGpuTimers()         noexcept       { return m_gpuTimers;          }
+		[[nodiscard]] inline UploadContext&       GetUploadContext()     noexcept       { return m_uploadContext;       }
+		[[nodiscard]] inline TracyD3D12Ctx        GetProfilerCtx()       const noexcept { return m_gpuProfilerCtx;      }
+		[[nodiscard]] inline GpuTimers&           GetGpuTimers()         noexcept       { return m_gpuTimers;           }
 
 		[[nodiscard]] u64 GetCompletedFenceValue () const noexcept;
 

@@ -55,11 +55,11 @@ namespace koi
 			&& requires(T p) { p->Release(); };
 
 		// Result-check helper. Logs + asserts on failure.
-		void ThrowOnHRFail(HRESULT hr, const char* expr, const char* file, int line);
+		void ThrowOnHRFail(HRESULT hr, const char* expr, std::string_view file, int line);
 	}
 
 #if KOI_DEBUG
-	#define DX_CHECK(expr) ::koi::internal::ThrowOnHRFail((expr), #expr, (KOI_FILENAME).data(), __LINE__)
+	#define DX_CHECK(expr) ::koi::internal::ThrowOnHRFail((expr), #expr, KOI_FILENAME, __LINE__)
 #else
 	#define DX_CHECK(expr) (void)(expr)
 #endif
