@@ -58,7 +58,8 @@ namespace koi
 		};
 		m_cmdList->SetDescriptorHeaps(static_cast<u32>(heaps.size()), heaps.data());
 
-		m_recording = true;
+		m_recording    = true;
+		m_computeBound = false;
 	}
 
 	void CommandList::End()
@@ -247,8 +248,18 @@ namespace koi
 		assert((pipeline && pipeline->Pso) && "SetPipeline: invalid pipeline handle");
 
 		m_cmdList->SetPipelineState(pipeline->Pso.Get());
-		m_cmdList->SetGraphicsRootSignature(m_device->GetRootSignature());
-		m_cmdList->IASetPrimitiveTopology(pipeline->Topology);
+		m_computeBound = pipeline->IsCompute;
+
+		// Graphics and compute each have their own root signature slot
+		if (m_computeBound)
+		{
+			m_cmdList->SetComputeRootSignature(m_device->GetRootSignature());
+		}
+		else
+		{
+			m_cmdList->SetGraphicsRootSignature(m_device->GetRootSignature());
+			m_cmdList->IASetPrimitiveTopology(pipeline->Topology);
+		}
 	}
 
 	void CommandList::SetVertexBuffer(u32 slot, BufferHandle h)
@@ -286,11 +297,21 @@ namespace koi
 
 	void CommandList::SetRootConstants(const void* data, u32 count32BitValues, u32 destOffsetIn32BitValues)
 	{
-		m_cmdList->SetGraphicsRoot32BitConstants(0, count32BitValues, data, destOffsetIn32BitValues);
+		if (m_computeBound)
+		{
+			m_cmdList->SetComputeRoot32BitConstants(0, count32BitValues, data, destOffsetIn32BitValues);
+		}
+		else
+		{
+			m_cmdList->SetGraphicsRoot32BitConstants(0, count32BitValues, data, destOffsetIn32BitValues);
+		}
 	}
 
-	void CommandList::Dispatch(u32, u32, u32)
+	void CommandList::Dispatch(u32 groupsX, u32 groupsY, u32 groupsZ)
 	{
+		assert(m_computeBound && "Dispatch needs a compute pipeline bound");
+		FlushBarriers();
+		m_cmdList->Dispatch(groupsX, groupsY, groupsZ);
 	}
 
 	void CommandList::Draw(u32 vertexCount, u32 instanceCount, u32 startVertex, u32 startInstance)

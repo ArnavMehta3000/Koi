@@ -61,6 +61,7 @@ namespace koi
 		CommandAllocator*                   m_allocator = nullptr;
 		D3D12_COMMAND_LIST_TYPE             m_type      = D3D12_COMMAND_LIST_TYPE_DIRECT;
 		bool                                m_recording = false;
+		bool                                m_computeBound = false;  // picks the root signature SetRootConstants writes to
 		ComPtr<dx12::GraphicsCommandList>   m_cmdList;
 		std::vector<D3D12_RESOURCE_BARRIER> m_pendingBarriers;
 	};
