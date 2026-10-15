@@ -22,19 +22,12 @@ namespace koi
 			const RasterPipeline*    DefaultPipeline = nullptr;  // for draws whose material names none
 		};
 
-		struct Output
-		{
-			RGTexture Albedo;    // RGB + AO (RGBA8_UNORM)
-			RGTexture Normals;   // XYZ + MatID (RGBA16_UNORM)
-			RGTexture Material;  // Roughness/Metallic/Specular + unused A (RGBA8_UNORM)
-			RGTexture Depth;     // D32
-		};
-
 		explicit GBufferPass(const Config& config);
 
 		std::string_view GetName() const override { return "GBuffer"; }
 
-		Output Record(RenderGraph& graph, World& world, const Camera& camera, u32 width, u32 height);
+		// Publishes GBufferData and SceneDepth
+		void Record(RenderGraph& graph, World& world, const Camera& camera, u32 width, u32 height);
 
 	private:
 		void Draw(RasterContext& ctx, World& world, const Camera& camera);

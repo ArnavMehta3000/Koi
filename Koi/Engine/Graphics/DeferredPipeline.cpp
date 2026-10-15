@@ -63,23 +63,15 @@ namespace koi
 		const Camera&         camera = *view.Camera;
 		const ViewportTarget& target = view.Target;
 
-		const ShadowPass::Output  shadow  = m_shadowPass->Record(graph, world);
-		const GBufferPass::Output gbuffer = m_gbufferPass->Record(graph, world, camera, target.Width, target.Height);
-
-		RGTexture hdr = graph.CreateTexture(TextureDesc{ .Width = target.Width, .Height = target.Height, .Format = Format::R16G16B16A16_FLOAT }, "HDRColor");
-		hdr = m_lightingPass->Record(graph, world, camera, gbuffer, shadow, hdr);
-
-		RGTexture ldr = graph.CreateTexture(TextureDesc{ .Width = target.Width, .Height = target.Height, .Format = Format::R8G8B8A8_UNORM }, "LDRColor");
-		SceneTargets scene
-		{
-			.Color = m_tonemapPass->Record(graph, hdr, ldr),
-			.Depth = gbuffer.Depth,
-		};
+		m_shadowPass->Record(graph, world);
+		m_gbufferPass->Record(graph, world, camera, target.Width, target.Height);
+		m_lightingPass->Record(graph, world, camera);
+		m_tonemapPass->Record(graph);
 
 		// Over the tonemapped image, under the debug lines
-		scene = m_gridPass->Record(graph, camera, scene);
-		scene = m_debugDrawPass->Record(graph, camera, scene);
+		m_gridPass->Record(graph, camera);
+		m_debugDrawPass->Record(graph, camera);
 
-		m_blitPass->Record(graph, scene.Color, graph.ImportTexture(target.ResolvedColorBuffer, "Output"));
+		m_blitPass->Record(graph, graph.ImportTexture(target.ResolvedColorBuffer, "Output"));
 	}
 }

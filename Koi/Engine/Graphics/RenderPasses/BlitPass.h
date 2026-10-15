@@ -8,6 +8,7 @@ namespace koi
 	public:
 		inline std::string_view GetName() const override { return "Blit"; }
 
-		RGTexture Record(RenderGraph& graph, RGTexture source, RGTexture output);
+		// Copies DisplayColor into output
+		void Record(RenderGraph& graph, RGTexture output);
 	};
 }

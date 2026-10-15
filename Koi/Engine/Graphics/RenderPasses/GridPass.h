@@ -41,8 +41,8 @@ namespace koi
 
 		inline std::string_view GetName() const override { return "Grid"; }
 
-		// Adds nothing while disabled and hands the targets back unchanged
-		SceneTargets Record(RenderGraph& graph, const Camera& camera, SceneTargets targets);
+		// Draws into DisplayColor and SceneDepth; adds nothing while disabled
+		void Record(RenderGraph& graph, const Camera& camera);
 
 		[[nodiscard]] inline Settings& GetSettings() noexcept { return m_settings; }
 		[[nodiscard]] inline const Settings& GetSettings() const noexcept { return m_settings; }

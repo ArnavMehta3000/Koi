@@ -29,11 +29,11 @@ namespace koi
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "Shadow PerObjectData");
 	}
 
-	ShadowPass::Output ShadowPass::Record(RenderGraph& graph, World& world)
+	void ShadowPass::Record(RenderGraph& graph, World& world)
 	{
 		ZoneScoped;
 		m_hasShadow = ComputeLightMatrix(world);
-		if (!m_hasShadow || !m_config.Resources) return {};
+		if (!m_hasShadow || !m_config.Resources) return;
 
 		RGTexture shadowMap = graph.CreateTexture(TextureDesc
 		{
@@ -47,7 +47,7 @@ namespace koi
 			[&](RGBuilder& b) { shadowMap = b.DepthTarget(shadowMap, LoadOp::Clear); },
 			[this, &world](RasterContext& ctx) { Draw(ctx, world); });
 
-		return { .ShadowMap = shadowMap, .LightViewProjection = m_lightViewProjection };
+		graph.GetBlackboard().Add(ShadowData{ .ShadowMap = shadowMap, .LightViewProjection = m_lightViewProjection });
 	}
 
 	bool ShadowPass::ComputeLightMatrix(World& world)

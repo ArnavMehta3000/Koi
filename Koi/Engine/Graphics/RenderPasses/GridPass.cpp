@@ -29,16 +29,20 @@ namespace koi
 		m_constants.Init(*m_config.Device, BufferUsage::Constant, 1, "Grid Constants");
 	}
 
-	SceneTargets GridPass::Record(RenderGraph& graph, const Camera& camera, SceneTargets targets)
+	void GridPass::Record(RenderGraph& graph, const Camera& camera)
 	{
 		ZoneScoped;
-		if (!m_settings.Enabled || !targets.Color || !targets.Depth) return targets;
+		RGBlackboard& bb = graph.GetBlackboard();
+
+		DisplayColor* color = bb.TryGet<DisplayColor>();
+		SceneDepth*   depth = bb.TryGet<SceneDepth>();
+		if (!m_settings.Enabled || !color || !depth) return;
 
 		graph.AddPass<RasterPass>("Grid",
 			[&](RGBuilder& b)
 			{
-				targets.Color = b.ColorTarget(targets.Color);
-				targets.Depth = b.DepthTarget(targets.Depth);
+				color->Color = b.ColorTarget(color->Color);
+				depth->Depth = b.DepthTarget(depth->Depth);
 			},
 			[this, &camera](RasterContext& ctx)
 			{
@@ -64,7 +68,5 @@ namespace koi
 				ctx.SetRootConstants(constantsIndex);
 				ctx.Draw(3);
 			});
-
-		return targets;
 	}
 }

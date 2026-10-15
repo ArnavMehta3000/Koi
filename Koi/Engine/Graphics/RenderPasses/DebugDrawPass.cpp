@@ -28,16 +28,23 @@ namespace koi
 		m_vertexBuffer.Init(*m_config.Device, BufferUsage::Storage, 1024, "DebugVertex");
 	}
 
-	SceneTargets DebugDrawPass::Record(RenderGraph& graph, const Camera& camera, SceneTargets targets)
+	void DebugDrawPass::Record(RenderGraph& graph, const Camera& camera)
 	{
 		ZoneScoped;
-		if (!targets.Color) return targets;
+		RGBlackboard& bb = graph.GetBlackboard();
+
+		DisplayColor* color = bb.TryGet<DisplayColor>();
+		SceneDepth*   depth = bb.TryGet<SceneDepth>();
+		if (!color) return;
 
 		graph.AddPass<RasterPass>("Debug Draw",
 			[&](RGBuilder& b)
 			{
-				targets.Color = b.ColorTarget(targets.Color);
-				targets.Depth = b.DepthTarget(targets.Depth);
+				color->Color = b.ColorTarget(color->Color);
+				if (depth)
+				{
+					depth->Depth = b.DepthTarget(depth->Depth);
+				}
 			},
 			[this, &camera](RasterContext& ctx)
 			{
@@ -56,7 +63,5 @@ namespace koi
 				});
 				ctx.Draw(static_cast<u32>(vertices.size()));
 			});
-
-		return targets;
 	}
 }

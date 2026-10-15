@@ -29,9 +29,21 @@ namespace koi
 		m_lightBuffer.Init(*m_config.Device, BufferUsage::Storage, 16, "GPULight");
 	}
 
-	RGTexture LightingPass::Record(RenderGraph& graph, World& world, const Camera& camera, const GBufferPass::Output& gbuffer, const ShadowPass::Output& shadow, RGTexture hdr)
+	void LightingPass::Record(RenderGraph& graph, World& world, const Camera& camera)
 	{
 		ZoneScoped;
+		RGBlackboard& bb = graph.GetBlackboard();
+
+		const GBufferData* gbufferData = bb.TryGet<GBufferData>();
+		const SceneDepth*  sceneDepth  = bb.TryGet<SceneDepth>();
+		if (!gbufferData || !sceneDepth) return;
+
+		const GBufferData gbuffer = *gbufferData;
+		const RGTexture   depth   = sceneDepth->Depth;
+		const ShadowData  shadow  = bb.Has<ShadowData>() ? bb.Get<ShadowData>() : ShadowData{};
+
+		const TextureDesc size = graph.GetDesc(gbuffer.Albedo);
+		RGTexture hdr = graph.CreateTexture(TextureDesc{ .Width = size.Width, .Height = size.Height, .Format = Format::R16G16B16A16_FLOAT }, "HDRColor");
 
 		graph.AddPass<RasterPass>("Lighting",
 			[&](RGBuilder& b)
@@ -39,11 +51,11 @@ namespace koi
 				b.Read(gbuffer.Albedo);
 				b.Read(gbuffer.Normals);
 				b.Read(gbuffer.Material);
-				b.Read(gbuffer.Depth);
+				b.Read(depth);
 				b.Read(shadow.ShadowMap);
 				hdr = b.ColorTarget(hdr, LoadOp::Clear);
 			},
-			[this, &world, &camera, gbuffer, shadow](RasterContext& ctx)
+			[this, &world, &camera, gbuffer, depth, shadow](RasterContext& ctx)
 			{
 				GfxDevice& device   = *m_config.Device;
 				const u32 frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
@@ -60,7 +72,7 @@ namespace koi
 					.AlbedoIndex        = ctx.SRV(gbuffer.Albedo),
 					.NormalIndex        = ctx.SRV(gbuffer.Normals),
 					.MaterialIndex      = ctx.SRV(gbuffer.Material),
-					.DepthIndex         = ctx.SRV(gbuffer.Depth),
+					.DepthIndex         = ctx.SRV(depth),
 					.LightBufferIndex   = lightBufferIndex,
 					.LightCount         = static_cast<u32>(m_lights.size()),
 					.ShadowSamplerIndex = m_config.Resources->ShadowSampler,
@@ -69,7 +81,7 @@ namespace koi
 				ctx.Draw(3);
 			});
 
-		return hdr;
+		bb.Add(SceneColor{ .Color = hdr });
 	}
 
 	void LightingPass::GatherLights(World& world, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex)

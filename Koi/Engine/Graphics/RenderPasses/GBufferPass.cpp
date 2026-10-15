@@ -19,7 +19,7 @@ namespace koi
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "GBuffer PerObjectData");
 	}
 
-	GBufferPass::Output GBufferPass::Record(RenderGraph& graph, World& world, const Camera& camera, u32 width, u32 height)
+	void GBufferPass::Record(RenderGraph& graph, World& world, const Camera& camera, u32 width, u32 height)
 	{
 		ZoneScoped;
 
@@ -29,13 +29,13 @@ namespace koi
 			return graph.CreateTexture(TextureDesc{ .Width = width, .Height = height, .Format = format }, name);
 		};
 
-		Output out
+		GBufferData out
 		{
 			.Albedo   = target(Format::R8G8B8A8_UNORM,     "Albedo"),
 			.Normals  = target(Format::R16G16B16A16_UNORM, "Normals"),
 			.Material = target(Format::R8G8B8A8_UNORM,     "Material"),
-			.Depth    = target(Format::D32_FLOAT,          "Depth"),
 		};
+		RGTexture depth = target(Format::D32_FLOAT, "Depth");
 
 		graph.AddPass<RasterPass>("GBuffer",
 			[&](RGBuilder& b)
@@ -43,11 +43,13 @@ namespace koi
 				out.Albedo   = b.ColorTarget(out.Albedo,   LoadOp::Clear);
 				out.Normals  = b.ColorTarget(out.Normals,  LoadOp::Clear);
 				out.Material = b.ColorTarget(out.Material, LoadOp::Clear);
-				out.Depth    = b.DepthTarget(out.Depth,    LoadOp::Clear);
+				depth        = b.DepthTarget(depth,        LoadOp::Clear);
 			},
 			[this, &world, &camera](RasterContext& ctx) { Draw(ctx, world, camera); });
 
-		return out;
+		RGBlackboard& bb = graph.GetBlackboard();
+		bb.Add(out);
+		bb.Add(SceneDepth{ .Depth = depth });
 	}
 
 	void GBufferPass::Draw(RasterContext& ctx, World& world, const Camera& camera)

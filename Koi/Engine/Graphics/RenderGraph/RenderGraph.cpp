@@ -104,6 +104,7 @@ namespace koi
 	{
 		m_resources.clear();
 		m_passes.clear();
+		m_blackboard.Clear();
 	}
 
 	RGTexture RenderGraph::CreateTexture(const TextureDesc& desc, std::string_view name)

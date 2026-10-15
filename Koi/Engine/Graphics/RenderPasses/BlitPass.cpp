@@ -14,16 +14,20 @@ namespace koi
 		};
 	}
 
-	RGTexture BlitPass::Record(RenderGraph& graph, RGTexture source, RGTexture output)
+	void BlitPass::Record(RenderGraph& graph, RGTexture output)
 	{
 		ZoneScoped;
-		if (!output) return output;
+
+		const DisplayColor* display = graph.GetBlackboard().TryGet<DisplayColor>();
+		if (!display || !output) return;
+
+		const RGTexture source = display->Color;
 
 		graph.AddPass<RasterPass>("Blit",
 			[&](RGBuilder& b)
 			{
 				b.Read(source);
-				output = b.ColorTarget(output);
+				(void)b.ColorTarget(output);
 			},
 			[source](RasterContext& ctx)
 			{
@@ -31,7 +35,5 @@ namespace koi
 				ctx.SetRootConstants(ctx.SRV(source));
 				ctx.Draw(3);
 			});
-
-		return output;
 	}
 }

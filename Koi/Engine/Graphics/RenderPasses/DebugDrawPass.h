@@ -24,7 +24,7 @@ namespace koi
 		inline std::string_view GetName() const override { return "Debug Draw"; }
 
 		// Always adds its pass: gizmos are queued after the graph is built
-		SceneTargets Record(RenderGraph& graph, const Camera& camera, SceneTargets targets);
+		void Record(RenderGraph& graph, const Camera& camera);
 
 	private:
 		Config                      m_config;

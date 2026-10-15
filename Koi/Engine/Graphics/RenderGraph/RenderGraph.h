@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Graphics/RenderGraph/RGBlackboard.h"
 #include "Koi/Engine/Graphics/RenderGraph/RGBuilder.h"
 #include "Koi/Engine/Graphics/RenderGraph/RGContext.h"
 #include "Koi/Engine/Graphics/RenderGraph/TransientPool.h"
@@ -121,6 +122,7 @@ namespace koi
 		void Execute(CommandList& cmd);
 
 		[[nodiscard]] TextureHandle Resolve(RGTexture texture) const;
+		[[nodiscard]] inline RGBlackboard& GetBlackboard() noexcept { return m_blackboard; }
 		[[nodiscard]] inline const RGInspection& GetInspection() const noexcept { return m_inspection; }
 		[[nodiscard]] inline GfxDevice& GetDevice() const noexcept { return *m_device; }
 		[[nodiscard]] inline PipelineCache& GetPipelines() const noexcept { return *m_pipelines; }
@@ -142,6 +144,7 @@ namespace koi
 		std::vector<Resource>              m_resources;
 		std::vector<Pass>                  m_passes;
 		std::set<std::string, std::less<>> m_names;
+		RGBlackboard                       m_blackboard;
 		RGInspection                       m_inspection;
 		IRGObserver*                       m_observer  = nullptr;
 		bool                               m_notifying = false;

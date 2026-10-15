@@ -1,6 +1,5 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
-#include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 
@@ -24,8 +23,8 @@ namespace koi
 
 		std::string_view GetName() const override { return "Lighting"; }
 
-		// Clears hdr and accumulates every light into it; returns the version it wrote
-		RGTexture Record(RenderGraph& graph, World& world, const Camera& camera, const GBufferPass::Output& gbuffer, const ShadowPass::Output& shadow, RGTexture hdr);
+		// Reads GBufferData, SceneDepth and ShadowData if present; publishes SceneColor
+		void Record(RenderGraph& graph, World& world, const Camera& camera);
 
 	private:
 		void GatherLights(World& world, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex);

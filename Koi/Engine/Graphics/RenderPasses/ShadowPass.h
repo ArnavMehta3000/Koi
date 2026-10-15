@@ -19,17 +19,12 @@ namespace koi
 			u32                      Resolution = 2048;
 		};
 
-		struct Output
-		{
-			RGTexture ShadowMap;  // invalid when nothing casts a shadow this frame
-			Matrix    LightViewProjection = Matrix::Identity;
-		};
-
 		explicit ShadowPass(const Config& config);
 
 		std::string_view GetName() const override { return "Shadow"; }
 
-		Output Record(RenderGraph& graph, World& world);
+		// Publishes ShadowData
+		void Record(RenderGraph& graph, World& world);
 
 		[[nodiscard]] inline bool HasShadow() const { return m_hasShadow; }
 		[[nodiscard]] inline const Matrix& GetLightViewProjection() const { return m_lightViewProjection; }

@@ -8,7 +8,7 @@ namespace koi
 	public:
 		inline std::string_view GetName() const override { return "Tonemap"; }
 
-		// Returns the version of output it wrote
-		RGTexture Record(RenderGraph& graph, RGTexture hdr, RGTexture output);
+		// Reads SceneColor, publishes DisplayColor
+		void Record(RenderGraph& graph);
 	};
 }

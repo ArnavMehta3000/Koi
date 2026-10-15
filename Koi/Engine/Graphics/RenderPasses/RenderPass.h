@@ -1,17 +1,11 @@
 #pragma once
 #include "Koi/Engine/Graphics/RenderGraph/RenderGraph.h"
+#include "Koi/Engine/Graphics/RenderPasses/PassData.h"
 #include <memory>
 #include <vector>
 
 namespace koi
 {
-	// The scene color and depth an overlay draws into
-	struct SceneTargets
-	{
-		RGTexture Color;
-		RGTexture Depth;
-	};
-
 	// Owns what outlives a frame (upload buffers, settings); records into the graph each frame
 	class RenderPass
 	{

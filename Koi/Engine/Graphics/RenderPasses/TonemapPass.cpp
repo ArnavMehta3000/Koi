@@ -17,12 +17,17 @@ namespace koi
 		};
 	}
 
-	RGTexture TonemapPass::Record(RenderGraph& graph, RGTexture hdr, RGTexture output)
+	void TonemapPass::Record(RenderGraph& graph)
 	{
 		ZoneScoped;
-		if (!output) return output;
+		RGBlackboard& bb = graph.GetBlackboard();
 
-		const TextureDesc& desc = graph.GetDesc(output);
+		const SceneColor* scene = bb.TryGet<SceneColor>();
+		if (!scene) return;
+
+		const RGTexture   hdr  = scene->Color;
+		const TextureDesc desc = graph.GetDesc(hdr);
+		RGTexture output = graph.CreateTexture(TextureDesc{ .Width = desc.Width, .Height = desc.Height, .Format = Format::R8G8B8A8_UNORM }, "LDRColor");
 
 		graph.AddPass<ComputePass>("Tonemap",
 			[&](RGBuilder& b)
@@ -40,6 +45,6 @@ namespace koi
 				ctx.Dispatch((width + group[0] - 1) / group[0], (height + group[1] - 1) / group[1]);
 			});
 
-		return output;
+		bb.Add(DisplayColor{ .Color = output });
 	}
 }
