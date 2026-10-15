@@ -7,12 +7,9 @@ namespace koi
 {
 	namespace
 	{
-		constexpr RasterPipeline kCapture
+		constexpr ComputePipeline kCapture
 		{
-			.VertexShader = "engine://Content/Shaders/TonemapVS",
-			.PixelShader  = "engine://Content/Shaders/DebugVisualizePS",
-			.Rasterizer   = RasterizerDesc::CullNone(),
-			.DepthStencil = DepthStencilDesc::None(),
+			.ComputeShader = "engine://Content/Shaders/DebugVisualizeCS",
 		};
 	}
 
@@ -53,7 +50,7 @@ namespace koi
 			.Width     = width,
 			.Height    = height,
 			.Format    = Format::R16G16B16A16_FLOAT,
-			.Usage     = TextureUsage::RenderTarget | TextureUsage::ShaderRead,
+			.Usage     = TextureUsage::ShaderWrite | TextureUsage::ShaderRead,
 			.DebugName = "Capture Preview",
 		});
 	}
@@ -66,32 +63,36 @@ namespace koi
 		if (!desc.Usage.Has(TextureUsage::ShaderRead)) return;
 
 		ZoneScoped;
-		EnsurePreview(desc.Width, desc.Height);
+		// Copied to prevent desc dangling post import
+		const u32 width  = desc.Width;
+		const u32 height = desc.Height;
+		EnsurePreview(width, height);
 		RGTexture preview = graph.ImportTexture(m_preview, "Capture");
 
-		// Full-screen quad pass
-		graph.AddPass<RasterPass>("Capture",
+		graph.AddPass<ComputePass>("Capture",
 			[&](RGBuilder& b)
 			{
 				b.Read(written);
-				preview = b.ColorTarget(preview);
+				preview = b.Write(preview);
 			},
-			[written, settings = m_settings, nearZ = m_near, farZ = m_far](RasterContext& ctx)
+			[written, preview, width, height, settings = m_settings, nearZ = m_near, farZ = m_far](ComputeContext& ctx)
 			{
 				if (!ctx.SetPipeline(kCapture)) return;
 
 				ctx.SetRootConstants(CaptureRootConstants
 				{
-					.SourceIndex = ctx.SRV(written),
-					.Mode        = static_cast<u32>(settings.Mode),
-					.ChannelMask = settings.Channels,
-					.RangeMin    = settings.RangeMin,
-					.RangeMax    = settings.RangeMax,
-					.Near        = nearZ,
-					.Far         = farZ,
-					._Pad        = 0,
+					.SourceIndex  = ctx.SRV(written),
+					.PreviewIndex = ctx.UAV(preview),
+					.Mode         = static_cast<u32>(settings.Mode),
+					.ChannelMask  = settings.Channels,
+					.RangeMin     = settings.RangeMin,
+					.RangeMax     = settings.RangeMax,
+					.Near         = nearZ,
+					.Far          = farZ,
 				});
-				ctx.Draw(3);
+
+				const auto& group = ctx.GetThreadGroup();
+				ctx.Dispatch((width + group[0] - 1) / group[0], (height + group[1] - 1) / group[1]);
 			});
 
 		m_capturedFrame = m_device->GetCurrentFrameIndex();

@@ -1,6 +1,7 @@
 cbuffer PushConstants : register(b0)
 {
 	uint  SourceIndex;
+	uint  PreviewIndex;
 	uint  Mode;         // 0 = color, 1 = linear depth
 	uint  ChannelMask;  // bit per RGBA channel
 	float RangeMin;
@@ -9,10 +10,18 @@ cbuffer PushConstants : register(b0)
 	float Far;
 };
 
-float4 PSMain(float4 pos : SV_Position) : SV_Target
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
 {
-	Texture2D<float4> source = ResourceDescriptorHeap[SourceIndex];
-	float4 value = source.Load(int3(pos.xy, 0));
+	Texture2D<float4>   source  = ResourceDescriptorHeap[SourceIndex];
+	RWTexture2D<float4> preview = ResourceDescriptorHeap[PreviewIndex];
+
+	uint width, height;
+	preview.GetDimensions(width, height);
+	if (id.x >= width || id.y >= height)
+		return;
+
+	float4 value = source.Load(int3(id.xy, 0));
 
 	if (Mode == 1)
 	{
@@ -28,9 +37,9 @@ float4 PSMain(float4 pos : SV_Position) : SV_Target
 	// A single channel reads better as grayscale than as a tinted image
 	if (countbits(ChannelMask) == 1)
 	{
-		
-		return float4(dot(value, mask).xxx, 1.0);
+		preview[id.xy] = float4(dot(value, mask).xxx, 1.0);
+		return;
 	}
 
-	return float4(value.rgb * mask.rgb, 1.0);
+	preview[id.xy] = float4(value.rgb * mask.rgb, 1.0);
 }

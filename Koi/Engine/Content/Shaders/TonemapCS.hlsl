@@ -12,7 +12,6 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	Texture2D<float4>   hdrTex = ResourceDescriptorHeap[HDRTextureIndex];
 	RWTexture2D<float4> ldrTex = ResourceDescriptorHeap[LDRTextureIndex];
 
-	// The last groups hang over the edge when the size isn't a multiple of 8
 	uint width, height;
 	ldrTex.GetDimensions(width, height);
 	if (id.x >= width || id.y >= height)

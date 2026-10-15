@@ -89,17 +89,17 @@ namespace koi
 		f32     _Pad[3];
 	};
 
-	// Root constants for the target capture pass. Must match the b0 cbuffer in DebugVisualizePS.hlsl
+	// Root constants for the target capture pass. Must match the b0 cbuffer in DebugVisualizeCS.hlsl
 	struct CaptureRootConstants
 	{
 		u32 SourceIndex;
+		u32 PreviewIndex;
 		u32 Mode;         // CaptureMode
 		u32 ChannelMask;  // bit per RGBA channel
 		f32 RangeMin;
 		f32 RangeMax;
 		f32 Near;
 		f32 Far;
-		u32 _Pad;
 	};
 
 	// Root constants for the debug line pass. Must match the b0 cbuffer in DebugLineVS.hlsl
