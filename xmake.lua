@@ -1,6 +1,7 @@
 set_xmakever("3.1.1")
 add_rules("mode.debug", "mode.release", "mode.releasedbg", "mode.profile")
 add_rules("plugin.compile_commands.autoupdate")
+set_policy("generator.compile_commands", true)
 
 set_project("Koi")
 set_version("0.0.1", { build = "%Y%m%d%H%M" })
