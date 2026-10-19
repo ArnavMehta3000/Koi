@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Engine/Content/Shaders/Interop/Grid.hlsli"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
-#include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/RenderFeature.h"
 
 namespace koi

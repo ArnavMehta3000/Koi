@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Graphics/GPUSceneTypes.h"
+#include "Koi/Engine/Content/Shaders/Interop/Mesh.hlsli"
 #include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Math/Math.h"
 #include <vector>

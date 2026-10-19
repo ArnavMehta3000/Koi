@@ -1,24 +1,6 @@
-cbuffer PushConstants : register(b0)
-{
-	uint GridConstantsIndex;
-};
+#include "Interop/Grid.hlsli"
 
-struct GridConstants
-{
-	row_major float4x4 ViewProjection;
-	row_major float4x4 InvViewProjection;
-	float4             CameraPosition;
-	float4             ThinColor;
-	float4             ThickColor;
-	float4             AxisXColor;
-	float4             AxisZColor;
-	float              CellSize;
-	float              ThickEvery;
-	float              FadeStart;
-	float              FadeEnd;
-	float              MajorLineWidth;
-	float3             _Pad;
-};
+ConstantBuffer<GridRootConstants> g_root : register(b0);
 
 struct PSOutput
 {
@@ -42,7 +24,7 @@ float LineCoverage(float2 p, float2 dpdx, float spacing, float widthPx)
 
 PSOutput PSMain(float4 pos : SV_Position, float2 ndc : TEXCOORD0)
 {
-	ConstantBuffer<GridConstants> c = ResourceDescriptorHeap[GridConstantsIndex];
+	ConstantBuffer<GridConstants> c = ResourceDescriptorHeap[g_root.GridConstantsIndex];
 
 	// Unproject the far plane to get a ray through this pixel
 	float4 farPoint = mul(float4(ndc, 1.0, 1.0), c.InvViewProjection);

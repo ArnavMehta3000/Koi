@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
+#include "Koi/Engine/Content/Shaders/Interop/PostProcess.hlsli"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 
 namespace koi
@@ -8,12 +9,6 @@ namespace koi
 		constexpr ComputePipeline kTonemap
 		{
 			.ComputeShader = "engine://Content/Shaders/TonemapCS",
-		};
-
-		struct TonemapRootConstants
-		{
-			DescriptorIndex HDRTextureIndex;
-			DescriptorIndex LDRTextureIndex;
 		};
 	}
 

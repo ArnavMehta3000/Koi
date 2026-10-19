@@ -66,7 +66,7 @@ namespace koi
 				});
 				if (constantsIndex == INVALID_DESCRIPTOR || !ctx.SetPipeline(kGrid)) return;
 
-				ctx.SetRootConstants(constantsIndex);
+				ctx.SetRootConstants(GridRootConstants{ .GridConstantsIndex = constantsIndex });
 				ctx.Draw(3);
 			});
 	}

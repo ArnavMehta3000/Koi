@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/RenderPasses/BlitPass.h"
+#include "Koi/Engine/Content/Shaders/Interop/PostProcess.hlsli"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 
 namespace koi
@@ -34,7 +35,7 @@ namespace koi
 			[source](RasterContext& ctx)
 			{
 				if (!ctx.SetPipeline(kBlit)) return;
-				ctx.SetRootConstants(ctx.SRV(source));
+				ctx.SetRootConstants(BlitRootConstants{ .SourceIndex = ctx.SRV(source) });
 				ctx.Draw(3);
 			});
 	}

@@ -1,16 +1,13 @@
+#include "Interop/PostProcess.hlsli"
 #include "Tonemapping.hlsl"
 
-cbuffer PushConstants : register(b0)
-{
-	uint HDRTextureIndex;
-	uint LDRTextureIndex;
-};
+ConstantBuffer<TonemapRootConstants> g_root : register(b0);
 
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-	Texture2D<float4>   hdrTex = ResourceDescriptorHeap[HDRTextureIndex];
-	RWTexture2D<float4> ldrTex = ResourceDescriptorHeap[LDRTextureIndex];
+	Texture2D<float4>   hdrTex = ResourceDescriptorHeap[g_root.HDRTextureIndex];
+	RWTexture2D<float4> ldrTex = ResourceDescriptorHeap[g_root.LDRTextureIndex];
 
 	uint width, height;
 	ldrTex.GetDimensions(width, height);
