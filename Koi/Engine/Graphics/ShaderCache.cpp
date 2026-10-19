@@ -177,7 +177,7 @@ namespace koi
 		for (const std::string_view scheme : { "engine", "project" })
 		{
 			const std::string manifestPath = std::string(scheme) + "://Shaders/Manifest.toml";
-			const std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(manifestPath);
+			const Result<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(manifestPath);
 			if (!bytes)
 			{
 				// Projects without a Shaders.json simply have nothing here
@@ -345,10 +345,10 @@ namespace koi
 	{
 		ZoneScoped;
 
-		std::optional<std::vector<byte>> data = VirtualFileSystem::Get().Read(built.Bytecode);
+		Result<std::vector<byte>> data = VirtualFileSystem::Get().Read(built.Bytecode);
 		if (!data)
 		{
-			KOI_LOG(Shaders, Error, "Couldn't read {}. The shader build looks incomplete, try rebuilding with xmake", built.Bytecode);
+			KOI_LOG(Shaders, Error, "Couldn't read {} ({}). The shader build looks incomplete, try rebuilding with xmake", built.Bytecode, data.error().Message);
 			return false;
 		}
 

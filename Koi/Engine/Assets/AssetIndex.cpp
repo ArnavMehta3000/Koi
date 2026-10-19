@@ -42,8 +42,12 @@ namespace koi
 			const AssetFileType expected = AssetFile::TypeForPath(file.path());
 			if (expected == AssetFileType::Unknown) continue;
 
-			const std::optional<AssetFileHeader> header = AssetFile::ReadHeader(file.path());
-			if (!header) continue;  // already logged why
+			const Result<AssetFileHeader> header = AssetFile::ReadHeader(file.path());
+			if (!header)
+			{
+				KOI_LOG(Assets, Error, "Skipped {}: {}", file.path().string(), header.error().Message);
+				continue;
+			}
 
 			const fs::path relative = fs::relative(file.path(), root, ec);
 			if (ec) continue;

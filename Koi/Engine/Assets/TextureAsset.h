@@ -15,7 +15,7 @@ namespace koi
 		using Source = ImageAsset;
 
 		// Reads a .ktex. Generated textures have no file, so they come in through AssetCache::AcquireFrom
-		static std::unique_ptr<Source> Load(const std::string& vfsPath);
+		static Result<std::unique_ptr<Source>> Load(const std::string& vfsPath);
 		static GPUTexture Upload(GfxDevice& device, const Source& source);
 		static void Destroy(GfxDevice& device, GPUTexture& resource);
 	};

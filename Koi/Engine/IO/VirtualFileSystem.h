@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Error.h"
 #include "Koi/Engine/Core/Types.h"
 #include <filesystem>
 #include <functional>
@@ -20,7 +21,7 @@ namespace koi
 		virtual ~IMountBackend() = default;
 
 		// Read the entire contents of a virtual file relative to this mount
-		[[nodiscard]] virtual std::optional<std::vector<byte>> Read(std::string_view relativePath) = 0;
+		[[nodiscard]] virtual Result<std::vector<byte>> Read(std::string_view relativePath) = 0;
 
 		// Resolve a virtual path to a concrete disk path (if using a filesystem mount)
 		[[nodiscard]] virtual std::optional<fs::path> TryResolveToDisk(std::string_view relativePath) = 0;
@@ -37,7 +38,7 @@ namespace koi
 
 		[[nodiscard]] std::span<const fs::path> GetRoots() const override { return m_roots; }
 
-		[[nodiscard]] std::optional<std::vector<byte>> Read(std::string_view relativePath) override;
+		[[nodiscard]] Result<std::vector<byte>> Read(std::string_view relativePath) override;
 		[[nodiscard]] std::optional<fs::path> TryResolveToDisk(std::string_view relativePath) override;
 
 	private:
@@ -55,7 +56,7 @@ namespace koi
 		void Mount(const std::string& scheme, std::unique_ptr<IMountBackend> backend);
 		void Unmount(std::string_view scheme);
 
-		[[nodiscard]] std::optional<std::vector<byte>> Read(std::string_view virtualPath);
+		[[nodiscard]] Result<std::vector<byte>> Read(std::string_view virtualPath);
 		[[nodiscard]] std::optional<fs::path> TryResolveToDisk(std::string_view virtualPath);
 
 		// Visits every disk directory behind every mount, with the scheme it is mounted under

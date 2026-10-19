@@ -33,7 +33,7 @@ namespace koi::editor
 		}
 
 		// Saving over a .kmat keeps its id, so meshes pointing at it don't lose it
-		const std::optional<AssetFileHeader> existing = AssetFile::ReadHeader(file);
+		const Result<AssetFileHeader> existing = AssetFile::ReadHeader(file);
 		return WriteMaterialFile(file, existing ? UUID(existing->Id) : utils::NewUUID(), source);
 	}
 }

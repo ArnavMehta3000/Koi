@@ -38,35 +38,29 @@ namespace koi
 			return (value + alignment - 1) & ~(alignment - 1);
 		}
 
-		bool CheckHeader(const AssetFileHeader& header, std::string_view debugName)
+		Result<void> CheckHeader(const AssetFileHeader& header)
 		{
 			if (header.Magic != kAssetFileMagic)
 			{
-				KOI_LOG(Assets, Error, "{} isn't a Koi asset file (bad magic)", debugName);
-				return false;
+				return Error::Make("it isn't a Koi asset file (bad magic)");
 			}
 
 			if (header.FormatVersion > kAssetFormatVersion)
 			{
-				KOI_LOG(Assets, Error, "{} was written by a newer Koi (format v{}), this build only understands up to v{}",
-					debugName, header.FormatVersion, kAssetFormatVersion);
-				return false;
+				return Error::Make("it was written by a newer Koi (format v{}), this build only understands up to v{}", header.FormatVersion, kAssetFormatVersion);
 			}
 
 			if (header.FormatVersion < kAssetFormatVersion)
 			{
-				KOI_LOG(Assets, Error, "{} uses an old asset format (v{}, current is v{}). Reimport it from its source",
-					debugName, header.FormatVersion, kAssetFormatVersion);
-				return false;
+				return Error::Make("it uses an old asset format (v{}, current is v{}). Reimport it from its source", header.FormatVersion, kAssetFormatVersion);
 			}
 
 			if (!FindFileType(header.Type))
 			{
-				KOI_LOG(Assets, Error, "{} claims to be asset type {}, which Koi doesn't know about", debugName, static_cast<u16>(header.Type));
-				return false;
+				return Error::Make("it claims to be asset type {}, which Koi doesn't know about", static_cast<u16>(header.Type));
 			}
 
-			return true;
+			return {};
 		}
 	}
 
@@ -102,71 +96,69 @@ namespace koi
 		return it != std::end(kFileTypes) ? it->Type : AssetFileType::Unknown;
 	}
 
-	std::optional<AssetFileHeader> AssetFile::ReadHeader(const fs::path& diskPath)
+	Result<AssetFileHeader> AssetFile::ReadHeader(const fs::path& diskPath)
 	{
 		std::ifstream file(diskPath, std::ios::binary);
-		if (!file) return std::nullopt;
+		if (!file)
+		{
+			return Error::Make("couldn't open it");
+		}
 
 		AssetFileHeader header;
 		if (!file.read(reinterpret_cast<char*>(&header), sizeof(header)))
 		{
-			KOI_LOG(Assets, Warn, "{} is too short to be a Koi asset", diskPath.string());
-			return std::nullopt;
+			return Error::Make("it's too short to be a Koi asset");
 		}
 
-		if (!CheckHeader(header, diskPath.string())) return std::nullopt;
-		return header;
+		return CheckHeader(header).transform([&] { return header; });
 	}
 
-	std::optional<AssetFile> AssetFile::FromBytes(std::vector<byte> bytes, std::string_view debugName)
+	Result<AssetFile> AssetFile::FromBytes(std::vector<byte> bytes)
 	{
 		ZoneScoped;
 
 		if (bytes.size() < sizeof(AssetFileHeader))
 		{
-			KOI_LOG(Assets, Error, "{} is only {} bytes, too short to be a Koi asset", debugName, bytes.size());
-			return std::nullopt;
+			return Error::Make("it's only {} bytes, too short to be a Koi asset", bytes.size());
 		}
 
 		AssetFile file(std::move(bytes));
 		const AssetFileHeader& header = file.Header();
-		if (!CheckHeader(header, debugName)) return std::nullopt;
+		if (Result<void> valid = CheckHeader(header); !valid)
+		{
+			return std::unexpected(std::move(valid.error()));
+		}
 
 		const u64 fileSize   = file.m_bytes.size();
 		const u64 tableBytes = static_cast<u64>(header.ChunkCount) * sizeof(ChunkEntry);
 		if (header.ChunkTableOffset % alignof(ChunkEntry) != 0 || header.ChunkTableOffset > fileSize || tableBytes > fileSize - header.ChunkTableOffset)
 		{
-			KOI_LOG(Assets, Error, "{} has a chunk table that runs off the end of the file. It's probably truncated or corrupt", debugName);
-			return std::nullopt;
+			return Error::Make("its chunk table runs off the end of the file. It's probably truncated or corrupt");
 		}
 
 		for (const ChunkEntry& chunk : file.Chunks())
 		{
 			if (chunk.Offset % kAssetChunkAlignment != 0 || chunk.Offset > fileSize || chunk.Size > fileSize - chunk.Offset)
 			{
-				KOI_LOG(Assets, Error, "{} has a broken '{}' chunk (offset {}, size {}, file is {} bytes)",
-					debugName, utils::FourCCToString(chunk.Type), chunk.Offset, chunk.Size, fileSize);
-				return std::nullopt;
+				return Error::Make("its '{}' chunk is broken (offset {}, size {}, file is {} bytes)",
+					utils::FourCCToString(chunk.Type), chunk.Offset, chunk.Size, fileSize);
 			}
 		}
 
-		KOI_LOG(Assets, Trace, "Opened {} {} with {} chunk(s)", ToString(header.Type), debugName, header.ChunkCount);
 		return file;
 	}
 
-	std::optional<AssetFile> AssetFile::Load(std::string_view virtualPath)
+	Result<AssetFile> AssetFile::Load(std::string_view virtualPath)
 	{
 		ZoneScoped;
 		ZoneText(virtualPath.data(), virtualPath.size());
 
-		std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
-		if (!bytes)
+		Result<AssetFile> file = VirtualFileSystem::Get().Read(virtualPath).and_then(&AssetFile::FromBytes);
+		if (file)
 		{
-			KOI_LOG(Assets, Error, "Couldn't read {}", virtualPath);
-			return std::nullopt;
+			KOI_LOG(Assets, Trace, "Opened {} {} with {} chunk(s)", ToString(file->Type()), virtualPath, file->Header().ChunkCount);
 		}
-
-		return FromBytes(std::move(*bytes), virtualPath);
+		return file;
 	}
 
 	UUID AssetFile::Id() const

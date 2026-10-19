@@ -44,7 +44,7 @@ namespace koi
 		[[nodiscard]] bool Has(TextureFileFlags flag) const { return (Header->Flags & static_cast<u32>(flag)) != 0; }
 
 		// Checks the chunks agree with each other before anything gets near the GPU
-		[[nodiscard]] static std::shared_ptr<const PreparedTexture> Read(AssetFile file, std::string_view debugName);
+		[[nodiscard]] static Result<std::shared_ptr<const PreparedTexture>> Read(AssetFile file);
 
 		// The layout D3D12's GetCopyableFootprints produces: rows padded to 256 bytes, subresources 512-byte aligned.
 		// False if the format isn't one Koi knows the block size of

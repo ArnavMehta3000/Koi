@@ -9,22 +9,23 @@ namespace koi
 {
 	static_assert(AssetType<GPUTexture>, "AssetTraits<GPUTexture> does not satisfy AssetType");
 
-	std::unique_ptr<ImageAsset> AssetTraits<GPUTexture>::Load(const std::string& vfsPath)
+	Result<std::unique_ptr<ImageAsset>> AssetTraits<GPUTexture>::Load(const std::string& vfsPath)
 	{
 		KOI_ZONE_UNMUTED;  // Texture decode can arrive here from a parallel-for loop
 
 		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Texture)
 		{
-			KOI_LOG(Assets, Error, "{} isn't a .ktex. Import the image in the editor and use what it writes", vfsPath);
-			return nullptr;
+			return Error::Make("it isn't a .ktex. Import the image in the editor and use what it writes");
 		}
 
-		std::optional<AssetFile> file = AssetFile::Load(vfsPath);
-		if (!file) return nullptr;
+		Result<std::shared_ptr<const PreparedTexture>> prepared = AssetFile::Load(vfsPath).and_then(&PreparedTexture::Read);
+		if (!prepared)
+		{
+			return std::unexpected(std::move(prepared.error()));
+		}
 
 		auto image      = std::make_unique<ImageAsset>();
-		image->Prepared = PreparedTexture::Read(std::move(*file), vfsPath);
-		if (!image->Prepared) return nullptr;
+		image->Prepared = std::move(*prepared);
 
 		image->Width  = static_cast<i32>(image->Prepared->Header->Width);
 		image->Height = static_cast<i32>(image->Prepared->Header->Height);

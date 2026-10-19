@@ -1,6 +1,5 @@
 #include "Koi/Engine/Assets/MaterialFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Logging/Logger.h"
 #include <cstring>
 #include <tuple>
 
@@ -58,14 +57,13 @@ namespace koi
 		}
 	}
 
-	std::optional<MaterialFileContents> MaterialFileContents::Read(const AssetFile& file, std::string_view debugName)
+	Result<MaterialFileContents> MaterialFileContents::Read(const AssetFile& file)
 	{
 		ZoneScoped;
 
 		if (file.Type() != AssetFileType::Material)
 		{
-			KOI_LOG(Assets, Error, "{} isn't a material, it holds a {}", debugName, AssetFile::ToString(file.Type()));
-			return std::nullopt;
+			return Error::Make("it isn't a material, it holds a {}", AssetFile::ToString(file.Type()));
 		}
 
 		const MaterialFileHeader* header = file.ChunkAs<MaterialFileHeader>(MaterialChunk::Header);
@@ -75,16 +73,14 @@ namespace koi
 
 		if (!header || params.size() != header->ParamCount)
 		{
-			KOI_LOG(Assets, Error, "{} is missing its material header or some of its parameters. Reimport it", debugName);
-			return std::nullopt;
+			return Error::Make("it's missing its material header or some of its parameters. Reimport it");
 		}
 
 		const std::optional<std::string_view> name    = Slice(strings, header->NameOffset, header->NameLength);
 		const std::optional<std::string_view> templ   = Slice(strings, header->TemplateOffset, header->TemplateLength);
 		if (!name || !templ)
 		{
-			KOI_LOG(Assets, Error, "{} has names pointing outside its string table. Reimport it", debugName);
-			return std::nullopt;
+			return Error::Make("its names point outside its string table. Reimport it");
 		}
 
 		MaterialFileContents contents

@@ -69,6 +69,6 @@ namespace koi
 
 		[[nodiscard]] std::string_view SlotName(const MeshMaterialSlot& slot) const;
 
-		[[nodiscard]] static std::shared_ptr<const PreparedMesh> Read(AssetFile file, std::string_view debugName);
+		[[nodiscard]] static Result<std::shared_ptr<const PreparedMesh>> Read(AssetFile file);
 	};
 }

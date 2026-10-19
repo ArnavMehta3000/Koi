@@ -120,10 +120,10 @@ namespace koi
 		ZoneScoped;
 		KOI_LOG(Scene, Debug, "Loading scene '{}'", virtualPath);
 
-		const std::optional<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
+		const Result<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
 		if (!bytes)
 		{
-			KOI_LOG(Scene, Error, "Failed to read scene file: {}", virtualPath);
+			KOI_LOG(Scene, Error, "Failed to read scene file {}: {}", virtualPath, bytes.error().Message);
 			return std::nullopt;
 		}
 

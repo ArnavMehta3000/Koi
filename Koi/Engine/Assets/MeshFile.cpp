@@ -1,6 +1,5 @@
 #include "Koi/Engine/Assets/MeshFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {
@@ -10,14 +9,13 @@ namespace koi
 		return Strings.substr(slot.NameOffset, slot.NameLength);
 	}
 
-	std::shared_ptr<const PreparedMesh> PreparedMesh::Read(AssetFile file, std::string_view debugName)
+	Result<std::shared_ptr<const PreparedMesh>> PreparedMesh::Read(AssetFile file)
 	{
 		ZoneScoped;
 
 		if (file.Type() != AssetFileType::Mesh)
 		{
-			KOI_LOG(Assets, Error, "{} isn't a mesh, it holds a {}", debugName, AssetFile::ToString(file.Type()));
-			return nullptr;
+			return Error::Make("it isn't a mesh, it holds a {}", AssetFile::ToString(file.Type()));
 		}
 
 		auto prepared = std::make_shared<PreparedMesh>(PreparedMesh{ .File = std::move(file) });
@@ -35,8 +33,7 @@ namespace koi
 		const MeshHeader* header = prepared->Header;
 		if (!header || header->Layout != VertexLayout::Interleaved)
 		{
-			KOI_LOG(Assets, Error, "{} has no mesh header, or a vertex layout this build can't read. Reimport it", debugName);
-			return nullptr;
+			return Error::Make("it has no mesh header, or a vertex layout this build can't read. Reimport it");
 		}
 
 		if (prepared->Vertices.size() != header->VertexCount
@@ -47,9 +44,8 @@ namespace koi
 			|| prepared->Indices.empty()
 			|| prepared->Submeshes.empty())
 		{
-			KOI_LOG(Assets, Error, "{} says it has {} vertices, {} indices and {} submesh(es), but the data doesn't match. Reimport it",
-				debugName, header->VertexCount, header->IndexCount, header->SubmeshCount);
-			return nullptr;
+			return Error::Make("it says it has {} vertices, {} indices and {} submesh(es), but the data doesn't match. Reimport it",
+				header->VertexCount, header->IndexCount, header->SubmeshCount);
 		}
 
 		for (const MeshSubmesh& sub : prepared->Submeshes)
@@ -59,8 +55,7 @@ namespace koi
 				|| static_cast<u32>(sub.VertexOffset) >= header->VertexCount
 				|| sub.MaterialSlot > header->MaterialSlotCount)
 			{
-				KOI_LOG(Assets, Error, "{} has a submesh pointing outside its own data. Reimport it", debugName);
-				return nullptr;
+				return Error::Make("it has a submesh pointing outside its own data. Reimport it");
 			}
 		}
 

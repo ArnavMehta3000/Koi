@@ -1,11 +1,11 @@
 #pragma once
 #include "Koi/Engine/Core/EnumFlags.h"
+#include "Koi/Engine/Core/Error.h"
 #include "Koi/Engine/Core/Macros.h"
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Core/UUID.h"
 #include <array>
 #include <filesystem>
-#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -86,11 +86,11 @@ namespace koi
 	class AssetFile
 	{
 	public:
-		[[nodiscard]] static std::optional<AssetFile> FromBytes(std::vector<byte> bytes, std::string_view debugName);
-		[[nodiscard]] static std::optional<AssetFile> Load(std::string_view virtualPath);
+		[[nodiscard]] static Result<AssetFile> FromBytes(std::vector<byte> bytes);
+		[[nodiscard]] static Result<AssetFile> Load(std::string_view virtualPath);
 
 		// Read 64 byte header, cheap for scanning
-		[[nodiscard]] static std::optional<AssetFileHeader> ReadHeader(const fs::path& diskPath);
+		[[nodiscard]] static Result<AssetFileHeader> ReadHeader(const fs::path& diskPath);
 
 		[[nodiscard]] static std::string_view ToString(AssetFileType type);
 		[[nodiscard]] static std::string_view ExtensionFor(AssetFileType type);     // ".kmesh"

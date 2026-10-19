@@ -1,6 +1,5 @@
 #include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {
@@ -93,14 +92,13 @@ namespace koi
 		return true;
 	}
 
-	std::shared_ptr<const PreparedTexture> PreparedTexture::Read(AssetFile file, std::string_view debugName)
+	Result<std::shared_ptr<const PreparedTexture>> PreparedTexture::Read(AssetFile file)
 	{
 		ZoneScoped;
 
 		if (file.Type() != AssetFileType::Texture)
 		{
-			KOI_LOG(Assets, Error, "{} isn't a texture, it holds a {}", debugName, AssetFile::ToString(file.Type()));
-			return nullptr;
+			return Error::Make("it isn't a texture, it holds a {}", AssetFile::ToString(file.Type()));
 		}
 
 		auto prepared = std::make_shared<PreparedTexture>(PreparedTexture{ .File = std::move(file) });
@@ -113,16 +111,14 @@ namespace koi
 		const TextureHeader* header = prepared->Header;
 		if (!header || prepared->Subresources.empty() || prepared->Data.empty())
 		{
-			KOI_LOG(Assets, Error, "{} is missing part of its texture data. Reimport it", debugName);
-			return nullptr;
+			return Error::Make("it's missing part of its texture data. Reimport it");
 		}
 
 		if (header->Width == 0 || header->Height == 0 || header->MipLevels == 0 || header->ArraySize == 0 ||
 			prepared->Subresources.size() != static_cast<size_t>(header->MipLevels) * header->ArraySize)
 		{
-			KOI_LOG(Assets, Error, "{} describes a {}x{} texture with {} mip(s) but carries {} subresource(s). Reimport it",
-				debugName, header->Width, header->Height, header->MipLevels, prepared->Subresources.size());
-			return nullptr;
+			return Error::Make("it describes a {}x{} texture with {} mip(s) but carries {} subresource(s). Reimport it",
+				header->Width, header->Height, header->MipLevels, prepared->Subresources.size());
 		}
 
 		for (const TextureSubresourceLayout& sub : prepared->Subresources)
@@ -130,8 +126,7 @@ namespace koi
 			const u64 end = sub.Offset + static_cast<u64>(sub.RowPitch) * (sub.NumRows - 1) + sub.RowBytes;
 			if (sub.NumRows == 0 || sub.RowBytes > sub.RowPitch || end > prepared->Data.size())
 			{
-				KOI_LOG(Assets, Error, "{} has mip data that doesn't fit inside the file. Reimport it", debugName);
-				return nullptr;
+				return Error::Make("its mip data doesn't fit inside the file. Reimport it");
 			}
 		}
 

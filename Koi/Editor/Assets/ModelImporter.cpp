@@ -51,8 +51,7 @@ namespace koi::editor
 		// Reimporting over a file keeps its id, so whatever points at it keeps working
 		UUID IdFor(const fs::path& file)
 		{
-			std::error_code ec;
-			const std::optional<AssetFileHeader> existing = fs::exists(file, ec) ? AssetFile::ReadHeader(file) : std::nullopt;
+			const Result<AssetFileHeader> existing = AssetFile::ReadHeader(file);
 			return existing ? UUID(existing->Id) : utils::NewUUID();
 		}
 

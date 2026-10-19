@@ -72,19 +72,18 @@ namespace koi
 		}
 	}
 
-	std::unique_ptr<MaterialSource> AssetTraits<Material>::Load(const std::string& vfsPath)
+	Result<std::unique_ptr<MaterialSource>> AssetTraits<Material>::Load(const std::string& vfsPath)
 	{
 		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Material)
 		{
-			KOI_LOG(Assets, Error, "{} isn't a .kmat, and materials can only be loaded from those", vfsPath);
-			return nullptr;
+			return Error::Make("it isn't a .kmat, and materials can only be loaded from those");
 		}
 
-		const std::optional<AssetFile> file = AssetFile::Load(vfsPath);
-		if (!file) return nullptr;
-
-		const std::optional<MaterialFileContents> contents = MaterialFileContents::Read(*file, vfsPath);
-		if (!contents) return nullptr;
+		const Result<MaterialFileContents> contents = AssetFile::Load(vfsPath).and_then([](const AssetFile& file) { return MaterialFileContents::Read(file); });
+		if (!contents)
+		{
+			return std::unexpected(contents.error());
+		}
 
 		const AssetIndex& index = Engine::Get().GetSubsystem<AssetRegistry>().Index();
 		return std::make_unique<MaterialSource>(contents->ToSource([&](const UUID& id)

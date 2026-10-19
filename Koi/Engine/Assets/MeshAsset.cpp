@@ -10,20 +10,21 @@ namespace koi
 {
 	static_assert(AssetType<GPUMesh>, "AssetTraits<GPUMesh> does not satisfy AssetType");
 
-	std::unique_ptr<ModelAsset> AssetTraits<GPUMesh>::Load(const std::string& vfsPath)
+	Result<std::unique_ptr<ModelAsset>> AssetTraits<GPUMesh>::Load(const std::string& vfsPath)
 	{
 		if (AssetFile::TypeForPath(vfsPath) != AssetFileType::Mesh)
 		{
-			KOI_LOG(Assets, Error, "{} isn't a .kmesh. Import the model in the editor and use what it writes", vfsPath);
-			return nullptr;
+			return Error::Make("it isn't a .kmesh. Import the model in the editor and use what it writes");
 		}
 
-		std::optional<AssetFile> file = AssetFile::Load(vfsPath);
-		if (!file) return nullptr;
+		Result<std::shared_ptr<const PreparedMesh>> prepared = AssetFile::Load(vfsPath).and_then(&PreparedMesh::Read);
+		if (!prepared)
+		{
+			return std::unexpected(std::move(prepared.error()));
+		}
 
 		auto model      = std::make_unique<ModelAsset>();
-		model->Prepared = PreparedMesh::Read(std::move(*file), vfsPath);
-		if (!model->Prepared) return nullptr;
+		model->Prepared = std::move(*prepared);
 
 		const PreparedMesh& mesh = *model->Prepared;
 		model->SourcePath = vfsPath;

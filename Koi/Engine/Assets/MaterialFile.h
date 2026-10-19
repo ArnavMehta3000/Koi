@@ -64,7 +64,7 @@ namespace koi
 		u8                 ShadingModel = 0;
 		std::vector<Param> Params;
 
-		[[nodiscard]] static std::optional<MaterialFileContents> Read(const AssetFile& file, std::string_view debugName);
+		[[nodiscard]] static Result<MaterialFileContents> Read(const AssetFile& file);
 		void Write(AssetFileWriter& writer) const;
 
 		[[nodiscard]] static MaterialFileContents FromSource(const MaterialSource& source, const TextureIdFor& idFor);

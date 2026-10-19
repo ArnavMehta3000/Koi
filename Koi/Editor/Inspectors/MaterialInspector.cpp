@@ -146,10 +146,15 @@ namespace koi::editor
 		m_loaded = entry.VirtualPath;
 		m_dirty  = false;
 
-		if (const std::unique_ptr<MaterialSource> source = AssetTraits<Material>::Load(entry.VirtualPath))
-			m_source = std::move(*source);
+		if (const Result<std::unique_ptr<MaterialSource>> source = AssetTraits<Material>::Load(entry.VirtualPath))
+		{
+			m_source = std::move(**source);
+		}
 		else
+		{
+			KOI_LOG(AssetDB, Error, "Couldn't open {}: {}", entry.VirtualPath, source.error().Message);
 			m_source = MaterialSource{};
+		}
 	}
 
 	void MaterialInspector::Save(AssetDatabase& database, const AssetEntry& entry)

@@ -59,10 +59,10 @@ namespace koi::editor
 					in.seekg(0);
 					in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
 
-					const std::optional<AssetFile> asset = AssetFile::FromBytes(std::move(bytes), file.path().string());
+					const Result<AssetFile> asset = AssetFile::FromBytes(std::move(bytes));
 					if (!asset)
 					{
-						KOI_LOG(Cook, Warn, "Cook: left out {}, it didn't read back cleanly", file.path().string());
+						KOI_LOG(Cook, Warn, "Cook: left out {}: {}", file.path().string(), asset.error().Message);
 						continue;
 					}
 

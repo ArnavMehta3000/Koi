@@ -12,7 +12,7 @@ namespace koi
 		m_roots.assign(roots.begin(), roots.end());
 	}
 
-	std::optional<std::vector<byte>> FilesystemMount::Read(std::string_view relativePath)
+	Result<std::vector<byte>> FilesystemMount::Read(std::string_view relativePath)
 	{
 		ZoneScoped;
 
@@ -31,7 +31,7 @@ namespace koi
 		}
 
 		KOI_LOG(IO, Trace, "VFS read '{}' missing in all {} root(s)", relativePath, m_roots.size());
-		return std::nullopt;
+		return Error::Make("not found in any of the {} mounted folder(s)", m_roots.size());
 	}
 
 	std::optional<fs::path> FilesystemMount::TryResolveToDisk(std::string_view relativePath)
@@ -92,15 +92,14 @@ namespace koi
 		}
 	}
 
-	std::optional<std::vector<byte>> VirtualFileSystem::Read(std::string_view virtualPath)
+	Result<std::vector<byte>> VirtualFileSystem::Read(std::string_view virtualPath)
 	{
 		const auto [scheme, path] = ResolveScheme(virtualPath);
 
 		auto it = m_mounts.find(std::string(scheme));
 		if (it == m_mounts.end())
 		{
-			KOI_LOG(IO, Error, "VFS Read: scheme '{}://' not mounted (path '{}')", scheme, virtualPath);
-			return std::nullopt;
+			return Error::Make("{}:// isn't mounted", scheme);
 		}
 
 		return it->second->Read(path);

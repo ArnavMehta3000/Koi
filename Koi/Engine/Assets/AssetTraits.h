@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Error.h"
 #include <concepts>
 #include <memory>
 #include <string>
@@ -22,7 +23,7 @@ namespace koi
 	//   {
 	//       static constexpr std::string_view Name = "Mesh";
 	//       using Source = ModelAsset;            // discarded after upload
-	//       static std::unique_ptr<Source> Load(const std::string& vfsPath);
+	//       static Result<std::unique_ptr<Source>> Load(const std::string& vfsPath);
 	//       static GPUMesh Upload (GfxDevice& device, const Source& source);
 	//       static void    Destroy(GfxDevice& device, GPUMesh& resource);
 	//   };
@@ -36,8 +37,8 @@ namespace koi
 		// Human-readable name, used in load/failure logs
 		{ AssetTraits<T>::Name }                      -> std::convertible_to<std::string_view>;
 
-		// Reads the CPU-side intermediate off disk; returns null on failure
-		{ AssetTraits<T>::Load(vfsPath) }             -> std::same_as<std::unique_ptr<typename AssetTraits<T>::Source>>;
+		// Reads the CPU-side intermediate off disk
+		{ AssetTraits<T>::Load(vfsPath) }             -> std::same_as<Result<std::unique_ptr<typename AssetTraits<T>::Source>>>;
 
 		// Turns that intermediate into the live GPU resource the cache stores
 		{ AssetTraits<T>::Upload(device, source) }    -> std::same_as<T>;

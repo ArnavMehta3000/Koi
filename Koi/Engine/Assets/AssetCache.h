@@ -32,15 +32,15 @@ namespace koi
 				return AcquireFallback();
 			}
 
-			const std::unique_ptr<Traits::Source> source = Traits::Load(key.Path());
+			const Result<std::unique_ptr<typename Traits::Source>> source = Traits::Load(key.Path());
 			if (!source)
 			{
-				KOI_LOG(Assets, Error, "Failed to load {} asset: {}", Traits::Name, key.Path());
+				KOI_LOG(Assets, Error, "Couldn't load {} {}: {}", Traits::Name, key.Path(), source.error().Message);
 				return AcquireFallback();
 			}
 
 			KOI_LOG(Assets, Debug, "Loaded {} asset: {}", Traits::Name, key.Path());
-			return Insert(device, key, *source);
+			return Insert(device, key, **source);
 		}
 
 		// Takes a reference on an asset that has no file, supplied as an already-built source

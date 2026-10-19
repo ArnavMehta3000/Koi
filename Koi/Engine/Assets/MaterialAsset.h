@@ -75,7 +75,7 @@ namespace koi
 
 		using Source = MaterialSource;
 
-		static std::unique_ptr<Source> Load(const std::string& vfsPath);
+		static Result<std::unique_ptr<Source>> Load(const std::string& vfsPath);
 		static Material Upload(GfxDevice& device, const Source& source);
 		static void Destroy(GfxDevice& device, Material& resource);
 	};

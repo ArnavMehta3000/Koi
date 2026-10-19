@@ -14,7 +14,7 @@ namespace koi
 
 		using Source = ModelAsset;
 
-		static std::unique_ptr<Source> Load(const std::string& vfsPath);
+		static Result<std::unique_ptr<Source>> Load(const std::string& vfsPath);
 		static GPUMesh Upload(GfxDevice& device, const Source& source);
 		static void Destroy(GfxDevice& device, GPUMesh& resource);
 	};

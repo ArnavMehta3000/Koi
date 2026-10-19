@@ -180,8 +180,12 @@ namespace koi::editor
 
 	bool ImportQueue::Reimport(std::string_view assetPath)
 	{
-		const std::optional<AssetFile> file = AssetFile::Load(assetPath);
-		if (!file) return false;
+		const Result<AssetFile> file = AssetFile::Load(assetPath);
+		if (!file)
+		{
+			KOI_LOG(Import, Error, "Couldn't reimport {}: {}", assetPath, file.error().Message);
+			return false;
+		}
 
 		// Both importers keep their settings and source in chunks with the same tags
 		const bool isModel = file->Type() == AssetFileType::Mesh;
@@ -269,7 +273,7 @@ namespace koi::editor
 			item->OutputDisk = destination.Disk / subdir / fileName;
 
 			// Importing over an existing file keeps its id, so references to it survive
-			const std::optional<AssetFileHeader> existing = fs::exists(item->OutputDisk) ? AssetFile::ReadHeader(item->OutputDisk) : std::nullopt;
+			const Result<AssetFileHeader> existing = AssetFile::ReadHeader(item->OutputDisk);
 			item->Id = existing ? UUID(existing->Id) : utils::NewUUID();
 		}
 
