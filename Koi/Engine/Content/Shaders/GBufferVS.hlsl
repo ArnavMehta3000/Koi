@@ -3,14 +3,6 @@
 
 #include "MeshShaderCommon.hlsl"
 
-struct Vertex
-{
-	float3 Position;
-	float3 Normal;
-	float4 Tangent;
-	float2 UV;
-};
-
 struct VSOutput
 {
 	float4 Position    : SV_Position;
@@ -18,20 +10,14 @@ struct VSOutput
 	float2 UV          : TEXCOORD0;
 };
 
-struct PerObjectData
-{
-	row_major float4x4 World;
-	row_major float4x4 NormalMatrix;
-};
-
 VSOutput VSMain(uint vertexId : SV_VertexID)
 {
-	StructuredBuffer<Vertex>        vertices = ResourceDescriptorHeap[VertexBufferIndex];
-	ConstantBuffer<FrameConstants>  frame    = ResourceDescriptorHeap[FrameConstantsIndex];
-	StructuredBuffer<PerObjectData> objects  = ResourceDescriptorHeap[ObjectBufferIndex];
+	StructuredBuffer<Vertex>        vertices = ResourceDescriptorHeap[g_root.VertexBufferIndex];
+	ConstantBuffer<FrameConstants>  frame    = ResourceDescriptorHeap[g_root.FrameConstantsIndex];
+	StructuredBuffer<PerObjectData> objects  = ResourceDescriptorHeap[g_root.ObjectBufferIndex];
 
-	Vertex v = vertices[vertexId + VertexOffset];
-	PerObjectData obj = objects[ObjectIndex];
+	Vertex v = vertices[vertexId + g_root.VertexOffset];
+	PerObjectData obj = objects[g_root.ObjectIndex];
 
 	float4 worldPos = mul(float4(v.Position, 1.0f), obj.World);
 

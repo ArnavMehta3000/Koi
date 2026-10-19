@@ -19,12 +19,12 @@ struct PSOutput
 
 PSOutput PSMain(PSInput input)
 {
-	ConstantBuffer<FrameConstants>    frame     = ResourceDescriptorHeap[FrameConstantsIndex];
+	ConstantBuffer<FrameConstants>    frame     = ResourceDescriptorHeap[g_root.FrameConstantsIndex];
 	StructuredBuffer<GPUMaterialData> materials = ResourceDescriptorHeap[frame.MaterialBufferIndex];
-	GPUMaterialData mat = materials[MaterialIndex];
+	GPUMaterialData mat = materials[g_root.MaterialIndex];
 
 	Texture2D baseColorTex = ResourceDescriptorHeap[mat.BaseColorIndex];
-	SamplerState samp      = SamplerDescriptorHeap[SamplerIndex];
+	SamplerState samp      = SamplerDescriptorHeap[g_root.SamplerIndex];
 
 	// Albedo: base color texture (always valid, CPU falls back to white) * factor
 	const float3 albedo = baseColorTex.Sample(samp, input.UV).rgb * mat.BaseColorFactor.rgb;
