@@ -1,16 +1,6 @@
-cbuffer DebugDrawPushConstants : register(b0)
-{
-	row_major float4x4 ViewProjection;
-	uint               VertexBufferIndex;
-	uint3              _Pad;
-};
+#include "Interop/DebugDraw.hlsli"
 
-// Must match koi::DebugVertex
-struct DebugVertex
-{
-	float3 Position;
-	uint   Color;      // RGBA8, low byte is red
-};
+ConstantBuffer<DebugDrawRootConstants> g_root : register(b0);
 
 struct VSOutput
 {
@@ -20,11 +10,11 @@ struct VSOutput
 
 VSOutput VSMain(uint vertexId : SV_VertexID)
 {
-	StructuredBuffer<DebugVertex> vertices = ResourceDescriptorHeap[VertexBufferIndex];
+	StructuredBuffer<DebugVertex> vertices = ResourceDescriptorHeap[g_root.VertexBufferIndex];
 	DebugVertex v = vertices[vertexId];
 
 	VSOutput output;
-	output.Position = mul(float4(v.Position, 1.0f), ViewProjection);
+	output.Position = mul(float4(v.Position, 1.0f), g_root.ViewProjection);
 	output.Color    = float4(
 		 (v.Color        & 0xFF) / 255.0f,
 		((v.Color >>  8) & 0xFF) / 255.0f,

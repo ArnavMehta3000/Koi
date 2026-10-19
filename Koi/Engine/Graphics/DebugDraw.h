@@ -1,16 +1,11 @@
 #pragma once
+#include "Koi/Engine/Content/Shaders/Interop/DebugDraw.hlsli"
 #include "Koi/Engine/Math/Transform.h"
 #include <span>
 #include <vector>
 
 namespace koi
 {
-	struct DebugVertex
-	{
-		Vector3 Position;
-		u32     Color;  // RGBA8
-	};
-
 	class DebugDrawQueue
 	{
 	public:

@@ -1,7 +1,6 @@
 #include "Koi/Engine/Graphics/RenderPasses/DebugDrawPass.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/Camera.h"
-#include "Koi/Engine/Graphics/GPUSceneTypes.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include <cassert>
@@ -60,7 +59,6 @@ namespace koi
 				{
 					.ViewProjection    = camera.ViewProjection,
 					.VertexBufferIndex = vertexBufferIndex,
-					._Pad              = {},
 				});
 				ctx.Draw(static_cast<u32>(vertices.size()));
 			});

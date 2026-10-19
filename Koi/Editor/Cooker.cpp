@@ -23,7 +23,7 @@ namespace koi::editor
 		constexpr std::string_view kSourceFiles[] =
 		{
 			".gltf", ".glb", ".bin", ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".tif", ".tiff", ".gif", ".dds", ".hdr",
-			".hlsl", "shaders.json",
+			".hlsl", ".hlsli", "shaders.json",
 		};
 
 		std::string Lower(std::string text)
