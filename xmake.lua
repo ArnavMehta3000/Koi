@@ -12,6 +12,11 @@ set_languages("c17", "cxx23")
 set_defaultmode("debug")
 set_warnings("all", "extra")
 
+-- Keep a PDB in release too so crash stack traces have names
+if is_mode("release") then
+	set_symbols("debug")
+end
+
 set_policy("build.warning", true)
 set_policy("run.autobuild", true)
 set_policy("generator.vsxmake.root_sln", true)

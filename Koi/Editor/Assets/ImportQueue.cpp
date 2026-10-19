@@ -2,6 +2,7 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/TextureFile.h"
+#include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -89,6 +90,7 @@ namespace koi::editor
 				catch (const std::exception& e)
 				{
 					error = std::string("the importer threw: ") + e.what();
+					KOI_LOG(Import, Error, "Importer threw at:\n{}", CrashHandler::Format(CrashHandler::LastThrowTrace()));
 				}
 
 				item->Seconds = std::chrono::duration<f64>(std::chrono::steady_clock::now() - start).count();

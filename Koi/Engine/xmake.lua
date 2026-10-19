@@ -38,7 +38,8 @@ target("Koi.Engine")
 		"d3d12",
 		"dxgi",
 		"dxguid",
-		"d3dcompiler", { public = true })
+		"d3dcompiler",
+		"dbghelp", { public = true })
 	end
 
 	add_extrafiles("Content/Shaders/**.hlsl")

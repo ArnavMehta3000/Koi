@@ -1,4 +1,5 @@
 #include "Koi/Engine/Runtime/EntryPoint.h"
+#include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
@@ -185,6 +186,7 @@ namespace koi::internal
 		assert(argv != nullptr && "argv must not be nullptr");
 
 		LoggerScope logger;
+		CrashHandler::Install();
 
 		try
 		{
@@ -198,6 +200,7 @@ namespace koi::internal
 			const fs::path exeDir   = utils::ExecutableDir();
 			const bool     isEditor = !desc.ProjectDir.empty();
 			const fs::path savedDir = (isEditor ? desc.ProjectDir : exeDir) / ".koi";
+			CrashHandler::SetDumpDir(savedDir / "Crashes");
 
 			if (isEditor)
 			{
@@ -259,12 +262,12 @@ namespace koi::internal
 		}
 		catch (const std::exception& e)
 		{
-			KOI_LOG(Engine, Critical, "Unhandled exception: {}", e.what());
+			KOI_LOG(Engine, Critical, "Unhandled exception: {}\n{}", e.what(), CrashHandler::Format(CrashHandler::LastThrowTrace()));
 			return 1;
 		}
 		catch (...)
 		{
-			KOI_LOG(Engine, Critical, "Unhandled unknown exception");
+			KOI_LOG(Engine, Critical, "Unhandled unknown exception\n{}", CrashHandler::Format(CrashHandler::LastThrowTrace()));
 			return 2;
 		}
 	}
