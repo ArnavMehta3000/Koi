@@ -1,8 +1,8 @@
 #include "Koi/Editor/EditorCameraController.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include <algorithm>
-#include <cassert>
 #include <numbers>
 
 namespace koi::editor
@@ -41,7 +41,7 @@ namespace koi::editor
 		: m_camera(camera)
 		, m_mode(mode)
 	{
-		assert(m_camera && "Null camera passed to CameraController");
+		KOI_ASSERT(m_camera, "Null camera passed to CameraController");
 	}
 
 	void CameraController::SetFirstPersonPosition(const Vector3& position, f32 yaw, f32 pitch)

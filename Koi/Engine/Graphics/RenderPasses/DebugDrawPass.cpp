@@ -1,9 +1,9 @@
 #include "Koi/Engine/Graphics/RenderPasses/DebugDrawPass.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include <cassert>
 
 namespace koi
 {
@@ -22,7 +22,7 @@ namespace koi
 	DebugDrawPass::DebugDrawPass(const Config& config)
 		: m_config(config)
 	{
-		assert(m_config.Device && m_config.Queue && "DebugDrawPass requires a device and a queue");
+		KOI_ASSERT(m_config.Device && m_config.Queue, "DebugDrawPass requires a device and a queue");
 
 		m_vertexBuffer.Init(*m_config.Device, BufferUsage::Storage, 1024, "DebugVertex");
 	}

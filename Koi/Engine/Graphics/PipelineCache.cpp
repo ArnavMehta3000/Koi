@@ -1,10 +1,10 @@
 #include "Koi/Engine/Graphics/PipelineCache.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
-#include <cassert>
 #include <format>
 
 namespace koi
@@ -57,7 +57,7 @@ namespace koi
 
 	std::expected<BoundPipeline, PipelineError> PipelineCache::Get(const RasterPipeline& pipeline, const TargetFormats& targets)
 	{
-		assert(pipeline.VertexShader.IsValid() && "A raster pipeline needs a vertex shader");
+		KOI_ASSERT(pipeline.VertexShader.IsValid(), "A raster pipeline needs a vertex shader");
 
 		auto it = m_raster.find(Key{ .Pipeline = pipeline, .Targets = targets });
 		if (it == m_raster.end())
@@ -74,7 +74,7 @@ namespace koi
 
 	std::expected<BoundPipeline, PipelineError> PipelineCache::Get(const ComputePipeline& pipeline)
 	{
-		assert(pipeline.ComputeShader.IsValid() && "A compute pipeline needs a compute shader");
+		KOI_ASSERT(pipeline.ComputeShader.IsValid(), "A compute pipeline needs a compute shader");
 
 		auto it = m_compute.find(pipeline);
 		if (it == m_compute.end())

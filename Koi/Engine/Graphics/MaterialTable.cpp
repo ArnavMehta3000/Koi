@@ -1,5 +1,5 @@
 #include "Koi/Engine/Graphics/MaterialTable.h"
-#include <cassert>
+#include "Koi/Engine/Core/Assert.h"
 
 namespace koi
 {
@@ -8,7 +8,7 @@ namespace koi
 		m_buffer.Init(device, BufferUsage::Storage, 16, "Material Table");
 
 		[[maybe_unused]] const u32 slot = Allocate(fallback);
-		assert(slot == kFallbackSlot && "The fallback has to be the first row allocated");
+		KOI_ASSERT(slot == kFallbackSlot, "The fallback has to be the first row allocated");
 	}
 
 	void MaterialTable::Shutdown()

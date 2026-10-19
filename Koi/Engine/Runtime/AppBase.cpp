@@ -1,4 +1,5 @@
 #include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -11,7 +12,7 @@ namespace koi
 {
 	AppBase::AppBase()
 	{
-		assert(s_instance == nullptr && "Application already exists!");
+		KOI_ASSERT(s_instance == nullptr, "Application already exists!");
 		s_instance = this;
 		m_engine = &Engine::Get();
 	}

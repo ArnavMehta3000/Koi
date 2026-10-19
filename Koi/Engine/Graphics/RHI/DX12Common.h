@@ -7,6 +7,9 @@
 #define D3DX12_USE_ARRAY_COM_PTR
 #include <directx/d3dx12.h>
 #include <dxgi1_6.h>
+#include <source_location>
+#include <stdexcept>
+#include <string>
 #include <type_traits>
 
 namespace koi
@@ -54,13 +57,27 @@ namespace koi
 			&& std::is_class_v<std::remove_pointer_t<T>>
 			&& requires(T p) { p->Release(); };
 
-		// Result-check helper. Logs + asserts on failure.
-		void ThrowOnHRFail(HRESULT hr, const char* expr, std::string_view file, int line);
+		[[noreturn]] void ThrowHResult(HRESULT hr, const char* expr, const std::source_location& where);
+
+		inline void CheckHResult(HRESULT hr, const char* expr, const std::source_location& where = std::source_location::current())
+		{
+			if (FAILED(hr)) [[unlikely]]
+			{
+				ThrowHResult(hr, expr, where);
+			}
+		}
 	}
 
-#if KOI_DEBUG
-	#define DX_CHECK(expr) ::koi::internal::ThrowOnHRFail((expr), #expr, KOI_FILENAME, __LINE__)
-#else
-	#define DX_CHECK(expr) (void)(expr)
-#endif
+	class GfxError : public std::runtime_error
+	{
+	public:
+		GfxError(HRESULT hr, const std::string& message) : std::runtime_error(message), m_result(hr) {}
+
+		[[nodiscard]] HRESULT GetResult() const noexcept { return m_result; }
+
+	private:
+		HRESULT m_result;
+	};
+
+	#define DX_CHECK(expr) ::koi::internal::CheckHResult((expr), #expr)
 }

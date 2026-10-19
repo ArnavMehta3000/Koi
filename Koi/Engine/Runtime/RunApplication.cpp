@@ -1,4 +1,5 @@
 #include "Koi/Engine/Runtime/EntryPoint.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Interop/AppHost.h"
@@ -10,7 +11,6 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <toml++/toml.hpp>
-#include <cassert>
 #include <filesystem>
 #include <map>
 #include <memory>
@@ -182,8 +182,8 @@ namespace koi::internal
 
 	int RunApplication(int argc, char* argv[], const LaunchDesc& desc)
 	{
-		assert(argc > 0 && "argc must be > 0");
-		assert(argv != nullptr && "argv must not be nullptr");
+		KOI_ASSERT(argc > 0, "argc must be > 0");
+		KOI_ASSERT(argv != nullptr, "argv must not be nullptr");
 
 		LoggerScope logger;
 		CrashHandler::Install();

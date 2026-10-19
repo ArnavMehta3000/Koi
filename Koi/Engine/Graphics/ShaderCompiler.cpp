@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/ShaderCompiler.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -156,13 +157,15 @@ namespace koi
 		ZoneScoped;
 		KOI_LOG(Shaders, Debug, "Compiling shader: {}", filePath.string());
 
-		assert(args.Type != ShaderType::Unknown && "Unknown shader type");
+		KOI_ASSERT(args.Type != ShaderType::Unknown, "Unknown shader type");
 		if (args.Type == ShaderType::Unknown) return nullptr;
 
 		ComPtr<IDxcBlobEncoding> sourceBlob;
-		DX_CHECK(m_dxcUtils->LoadFile(filePath.wstring().c_str(), nullptr, &sourceBlob));
-
-		assert(sourceBlob && "Failed to load shader file");
+		if (FAILED(m_dxcUtils->LoadFile(filePath.wstring().c_str(), nullptr, &sourceBlob)) || !sourceBlob)
+		{
+			KOI_LOG(Shaders, Error, "Couldn't read shader {}", filePath.string());
+			return nullptr;
+		}
 
 		DxcBuffer source
 		{
@@ -316,8 +319,8 @@ namespace koi
 		ZoneScoped;
 
 		// Ensure the map size is correct.
-		assert(s_shaderProfile.size() == (size_t)ShaderType::MAX_COUNT);
-		assert(s_entryPoint.size() == (size_t)ShaderType::MAX_COUNT);
+		KOI_ASSERT(s_shaderProfile.size() == (size_t)ShaderType::MAX_COUNT);
+		KOI_ASSERT(s_entryPoint.size() == (size_t)ShaderType::MAX_COUNT);
 
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils)));
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler)));

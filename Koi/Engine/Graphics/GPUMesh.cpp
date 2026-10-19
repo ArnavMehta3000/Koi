@@ -2,12 +2,12 @@
 #include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/MeshFile.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include <cassert>
 
 namespace koi
 {
@@ -23,7 +23,7 @@ namespace koi
 		{
 			const u64 vbSize = vertices.size_bytes();
 			const u64 ibSize = indices.size_bytes();
-			assert(vbSize > 0 && ibSize > 0 && "GPUMesh::Upload: model has no geometry");
+			KOI_ASSERT(vbSize > 0 && ibSize > 0, "GPUMesh::Upload: model has no geometry");
 
 			mesh.VertexBuffer = device.CreateBuffer(BufferDesc
 			{
@@ -50,7 +50,7 @@ namespace koi
 			upload.End();
 
 			mesh.VertexBufferSRV = device.Get(mesh.VertexBuffer)->SRVIndex;
-			assert(mesh.VertexBufferSRV != INVALID_DESCRIPTOR && "Vertex buffer has no bindless SRV");
+			KOI_ASSERT(mesh.VertexBufferSRV != INVALID_DESCRIPTOR, "Vertex buffer has no bindless SRV");
 		}
 
 		// A .kmesh is already one flat vertex and index buffer, so it goes up without any copying
@@ -84,7 +84,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		assert(model.Prepared && "GPUMesh::Upload: meshes only come from .kmesh files");
+		KOI_ASSERT(model.Prepared, "GPUMesh::Upload: meshes only come from .kmesh files");
 		return UploadPrepared(device, model);
 	}
 

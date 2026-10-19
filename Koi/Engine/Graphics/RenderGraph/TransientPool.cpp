@@ -1,10 +1,10 @@
 #include "Koi/Engine/Graphics/RenderGraph/TransientPool.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <algorithm>
-#include <cassert>
 
 namespace koi
 {
@@ -43,7 +43,7 @@ namespace koi
 	TextureHandle TransientPool::Acquire(const TextureDesc& desc)
 	{
 		ZoneScoped;
-		assert(m_device && "TransientPool used before Init");
+		KOI_ASSERT(m_device, "TransientPool used before Init");
 
 		auto it = std::ranges::find_if(m_entries, [&](const Entry& e) { return !e.InUse && Matches(e.Desc, desc); });
 		if (it == m_entries.end())
@@ -77,7 +77,7 @@ namespace koi
 	void TransientPool::Release(TextureHandle texture)
 	{
 		auto it = std::ranges::find(m_entries, texture, &Entry::Texture);
-		assert(it != m_entries.end() && it->InUse && "Releasing a texture the pool did not hand out");
+		KOI_ASSERT(it != m_entries.end() && it->InUse, "Releasing a texture the pool did not hand out");
 		it->InUse = false;
 	}
 

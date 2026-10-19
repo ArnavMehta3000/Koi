@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Core/Types.h"
-#include <cassert>
 #include <concepts>
 #include <memory>
 #include <vector>
@@ -30,7 +30,7 @@ namespace koi
 		T& Add(T value = {})
 		{
 			Slot<T>& slot = SlotOf<T>();
-			assert(!slot.Present && "Blackboard entry added twice in one frame");
+			KOI_ASSERT(!slot.Present, "Blackboard entry added twice in one frame");
 			slot.Value   = std::move(value);
 			slot.Present = true;
 			return slot.Value;
@@ -40,7 +40,7 @@ namespace koi
 		[[nodiscard]] T& Get()
 		{
 			T* value = TryGet<T>();
-			assert(value && "Blackboard entry read before any pass added it");
+			KOI_ASSERT(value, "Blackboard entry read before any pass added it");
 			return *value;
 		}
 

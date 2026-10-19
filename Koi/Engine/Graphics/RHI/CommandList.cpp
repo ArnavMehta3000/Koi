@@ -1,10 +1,10 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/CommandAllocator.h"
 #include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
-#include <cassert>
 #include <ranges>
 
 #pragma warning(push)
@@ -43,8 +43,8 @@ namespace koi
 	void CommandList::Begin(u32 frameSlot)
 	{
 		ZoneScoped;
-		assert(!m_recording);
-		assert(m_allocator && m_cmdList);
+		KOI_ASSERT(!m_recording);
+		KOI_ASSERT(m_allocator && m_cmdList);
 
 		m_allocator->Reset(frameSlot);
 		DX_CHECK(m_cmdList->Reset(m_allocator->Get(frameSlot), nullptr));
@@ -65,7 +65,7 @@ namespace koi
 	void CommandList::End()
 	{
 		ZoneScoped;
-		assert(m_recording);
+		KOI_ASSERT(m_recording);
 		FlushBarriers();
 		DX_CHECK(m_cmdList->Close());
 		m_recording = false;
@@ -142,8 +142,8 @@ namespace koi
 	{
 		Texture* tex = m_device->Get(rt);
 
-		assert(tex && tex->Resource && "Trying to clear an invalid texture");
-		assert(tex->RTVIndex != INVALID_DESCRIPTOR && "Texture had no attached RTV");
+		KOI_ASSERT(tex && tex->Resource, "Trying to clear an invalid texture");
+		KOI_ASSERT(tex->RTVIndex != INVALID_DESCRIPTOR, "Texture had no attached RTV");
 
 		TransitionBarrier(rt, D3D12_RESOURCE_STATE_RENDER_TARGET);
 		FlushBarriers();
@@ -156,8 +156,8 @@ namespace koi
 	{
 		Texture* tex = m_device->Get(ds);
 
-		assert(tex && tex->Resource && "Trying to clear an invalid depth texture");
-		assert(tex->DSVIndex != INVALID_DESCRIPTOR && "Texture had no attached DSV");
+		KOI_ASSERT(tex && tex->Resource, "Trying to clear an invalid depth texture");
+		KOI_ASSERT(tex->DSVIndex != INVALID_DESCRIPTOR, "Texture had no attached DSV");
 
 		TransitionBarrier(ds, D3D12_RESOURCE_STATE_DEPTH_WRITE);
 		FlushBarriers();
@@ -175,13 +175,13 @@ namespace koi
 
 		if (Texture* tex = m_device->Get(colorRT))
 		{
-			assert(tex->RTVIndex != INVALID_DESCRIPTOR && "SetRenderTarget: invalid color RT");
+			KOI_ASSERT(tex->RTVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid color RT");
 			rtvHandle = m_device->RTVHeap().CpuHandle(tex->RTVIndex);
 		}
 
 		if (Texture* tex = m_device->Get(depthRT))
 		{
-			assert(tex->DSVIndex != INVALID_DESCRIPTOR && "SetRenderTarget: invalid depth RT");
+			KOI_ASSERT(tex->DSVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid depth RT");
 			dsvHandle = m_device->DSVHeap().CpuHandle(tex->DSVIndex);
 		}
 
@@ -194,7 +194,7 @@ namespace koi
 
 	void CommandList::SetRenderTarget(std::span<TextureHandle> colorRTs, TextureHandle depthRT)
 	{
-		assert(colorRTs.size() <= MAX_RENDER_TARGETS && "SetRenderTarget: too many color RTs");
+		KOI_ASSERT(colorRTs.size() <= MAX_RENDER_TARGETS, "SetRenderTarget: too many color RTs");
 
 		FlushBarriers();
 
@@ -205,14 +205,14 @@ namespace koi
 		{
 			if (Texture* tex = m_device->Get(colorRTs[i]))
 			{
-				assert(tex->RTVIndex != INVALID_DESCRIPTOR && "SetRenderTarget: invalid color RT");
+				KOI_ASSERT(tex->RTVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid color RT");
 				rtvHandles[i] = m_device->RTVHeap().CpuHandle(tex->RTVIndex);
 			}
 		}
 
 		if (Texture* tex = m_device->Get(depthRT))
 		{
-			assert(tex->DSVIndex != INVALID_DESCRIPTOR && "SetRenderTarget: invalid depth RT");
+			KOI_ASSERT(tex->DSVIndex != INVALID_DESCRIPTOR, "SetRenderTarget: invalid depth RT");
 			dsvHandle = m_device->DSVHeap().CpuHandle(tex->DSVIndex);
 		}
 
@@ -245,7 +245,7 @@ namespace koi
 	void CommandList::SetPipeline(PipelineHandle h)
 	{
 		Pipeline* pipeline = m_device->Get(h);
-		assert((pipeline && pipeline->Pso) && "SetPipeline: invalid pipeline handle");
+		KOI_ASSERT(pipeline && pipeline->Pso, "SetPipeline: invalid pipeline handle");
 
 		m_cmdList->SetPipelineState(pipeline->Pso.Get());
 		m_computeBound = pipeline->IsCompute;
@@ -265,8 +265,8 @@ namespace koi
 	void CommandList::SetVertexBuffer(u32 slot, BufferHandle h)
 	{
 		Buffer* buf = m_device->Get(h);
-		assert((buf && buf->Resource) && "SetVertexBuffer: invalid buffer");
-		assert((buf->Desc.Stride > 0) && "SetVertexBuffer: buffer has no stride");
+		KOI_ASSERT(buf && buf->Resource, "SetVertexBuffer: invalid buffer");
+		KOI_ASSERT(buf->Desc.Stride > 0, "SetVertexBuffer: buffer has no stride");
 
 		D3D12_VERTEX_BUFFER_VIEW view
 		{
@@ -280,7 +280,7 @@ namespace koi
 	void CommandList::SetIndexBuffer(BufferHandle h)
 	{
 		Buffer* buf = m_device->Get(h);
-		assert((buf && buf->Resource) && "SetIndexBuffer: invalid buffer");
+		KOI_ASSERT(buf && buf->Resource, "SetIndexBuffer: invalid buffer");
 
 		const DXGI_FORMAT fmt = (buf->Desc.Stride == sizeof(u16))
 			? DXGI_FORMAT_R16_UINT
@@ -309,7 +309,7 @@ namespace koi
 
 	void CommandList::Dispatch(u32 groupsX, u32 groupsY, u32 groupsZ)
 	{
-		assert(m_computeBound && "Dispatch needs a compute pipeline bound");
+		KOI_ASSERT(m_computeBound, "Dispatch needs a compute pipeline bound");
 		FlushBarriers();
 		m_cmdList->Dispatch(groupsX, groupsY, groupsZ);
 	}
@@ -330,7 +330,7 @@ namespace koi
 	{
 		Buffer* dstBuf = m_device->Get(dst);
 		Buffer* srcBuf = m_device->Get(src);
-		assert((dstBuf && srcBuf) && "CopyBuffer: invalid buffer handle(s)");
+		KOI_ASSERT(dstBuf && srcBuf, "CopyBuffer: invalid buffer handle(s)");
 
 		FlushBarriers();
 		m_cmdList->CopyBufferRegion(

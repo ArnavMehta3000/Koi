@@ -1,5 +1,6 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -9,7 +10,6 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
-#include <cassert>
 
 namespace koi
 {
@@ -31,7 +31,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		assert(s_instance == nullptr && "Engine already initialized");
+		KOI_ASSERT(s_instance == nullptr, "Engine already initialized");
 		s_instance = this;
 
 		KOI_LOG(Engine, Info, "Engine initializing");

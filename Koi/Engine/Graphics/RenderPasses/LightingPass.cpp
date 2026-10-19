@@ -1,11 +1,11 @@
 #include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include <cassert>
 
 namespace koi
 {
@@ -24,7 +24,7 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
-		assert(m_config.Device && "LightingPass requires a valid GfxDevice");
+		KOI_ASSERT(m_config.Device, "LightingPass requires a valid GfxDevice");
 
 		m_lightBuffer.Init(*m_config.Device, BufferUsage::Storage, 16, "GPULight");
 	}

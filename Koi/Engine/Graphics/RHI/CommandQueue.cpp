@@ -1,14 +1,14 @@
 #include "Koi/Engine/Graphics/RHI/CommandQueue.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
-#include <cassert>
 
 namespace koi
 {
 	void CommandQueue::Submit(CommandList& list)
 	{
 		ZoneScoped;
-		assert(m_queue);
+		KOI_ASSERT(m_queue);
 		ID3D12CommandList* raw[] = { list.GetNativeBase() };
 		m_queue->ExecuteCommandLists(1, raw);
 	}
@@ -16,7 +16,7 @@ namespace koi
 	void CommandQueue::Submit(std::span<CommandList* const> lists)
 	{
 		ZoneScoped;
-		assert(m_queue);
+		KOI_ASSERT(m_queue);
 		if (lists.empty()) return;
 
 		std::vector<ID3D12CommandList*> raw;

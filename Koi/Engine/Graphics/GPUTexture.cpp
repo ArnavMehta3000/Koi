@@ -1,9 +1,9 @@
 #include "Koi/Engine/Graphics/GPUTexture.h"
 #include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Assets/TextureFile.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include <cassert>
 
 namespace koi
 {
@@ -65,7 +65,7 @@ namespace koi
 
 		if (image.Prepared) return UploadPrepared(device, image);
 
-		assert(image.Width > 0 && image.Height > 0 && !image.Pixels.empty() && "GPUTexture::Upload: empty image");
+		KOI_ASSERT(image.Width > 0 && image.Height > 0 && !image.Pixels.empty(), "GPUTexture::Upload: empty image");
 
 		GPUTexture out;
 		out.Width  = static_cast<u32>(image.Width);

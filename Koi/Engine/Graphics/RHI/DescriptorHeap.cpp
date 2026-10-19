@@ -1,13 +1,13 @@
 #include "Koi/Engine/Graphics/RHI/DescriptorHeap.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include <cassert>
 
 namespace koi
 {
 	void DescriptorHeap::Init(dx12::Device* device, D3D12_DESCRIPTOR_HEAP_TYPE type, u32 capacity, bool shaderVisible)
 	{
 		ZoneScoped;
-		assert(device && capacity > 0);
+		KOI_ASSERT(device && capacity > 0);
 
 		const D3D12_DESCRIPTOR_HEAP_FLAGS flags = shaderVisible
 			? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
@@ -62,7 +62,7 @@ namespace koi
 			return idx;
 		}
 
-		assert(m_nextFresh < m_capacity && "DescriptorHeap capacity exhausted");
+		KOI_ASSERT(m_nextFresh < m_capacity, "DescriptorHeap capacity exhausted");
 		return m_nextFresh++;
 	}
 
@@ -75,7 +75,7 @@ namespace koi
 			return;
 
 		std::scoped_lock lock(m_mutex);
-		assert(index < m_capacity);
+		KOI_ASSERT(index < m_capacity);
 		m_freeList.push_back(index);
 	}
 

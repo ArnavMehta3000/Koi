@@ -1,11 +1,11 @@
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include <cassert>
 
 namespace koi
 {
@@ -13,7 +13,7 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
-		assert(config.Device && config.DefaultPipeline && "GBufferPass requires a device and a default pipeline");
+		KOI_ASSERT(config.Device && config.DefaultPipeline, "GBufferPass requires a device and a default pipeline");
 
 		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "GBuffer FrameConstants");
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "GBuffer PerObjectData");

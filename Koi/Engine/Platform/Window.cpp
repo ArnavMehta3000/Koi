@@ -336,7 +336,10 @@ namespace koi
 		}
 
 		m_window = ::glfwCreateWindow(w, h, m_title.c_str(), fullscreenMonitor, nullptr);
-		assert(m_window && "Failed to create GLFW window");
+		if (!m_window)
+		{
+			throw std::runtime_error("Failed to create the GLFW window");
+		}
 		::glfwDefaultWindowHints();
 
 		if (desc.Mode == WindowMode::WindowedFullscreen)
@@ -365,7 +368,10 @@ namespace koi
 		::glfwGetWindowSize(m_window, &m_savedW, &m_savedH);
 
 		HWND hwnd = ::glfwGetWin32Window(m_window);
-		assert(hwnd && "Failed to get Win32 window handle");
+		if (!hwnd)
+		{
+			throw std::runtime_error("Failed to get the Win32 window handle");
+		}
 		m_nativeHandle = hwnd;
 
 		BOOL enable = TRUE;

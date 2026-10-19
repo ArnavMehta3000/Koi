@@ -1,5 +1,6 @@
 #include "Koi/Editor/Assets/MeshLoader.h"
 #include "Koi/Engine/Assets/AssetData.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -10,6 +11,8 @@
 #include "Koi/Engine/Math/Math.h"
 #include "stb_image.h"
 #include <cstring>
+#include <format>
+#include <stdexcept>
 
 namespace koi::editor
 {
@@ -401,8 +404,10 @@ namespace koi::editor
 			// the same GPU texture instead of a second copy
 			auto& uri = std::get<fastgltf::sources::URI>(gltfImage.data);
 
-			assert(uri.fileByteOffset == 0);
-			assert(uri.uri.isLocalPath());  // Needs to be a local file to be loaded
+			if (uri.fileByteOffset != 0 || !uri.uri.isLocalPath())
+			{
+				throw std::runtime_error(std::format("image {} isn't a plain local file", uri.uri.string()));
+			}
 
 			// Using virtual path to prevent texture loading process try to query from VFS path
 			img.Path = VirtualBase + "/" + uri.uri.fspath().generic_string();
@@ -438,7 +443,7 @@ namespace koi::editor
 			}
 			else
 			{
-				assert(!"Unknown image data type");
+				throw std::runtime_error(std::format("image {} has an unsupported data source", imageIndex));
 			}
 
 			if (!encoded || encodedSize == 0)
@@ -457,7 +462,7 @@ namespace koi::editor
 				return u32(-1);
 			}
 
-			assert(img.Width > 0 && img.Height > 0);
+			KOI_ASSERT(img.Width > 0 && img.Height > 0);
 
 			// stbi was asked for 4 components, so the returned data is always RGBA
 			// regardless of the file's native channel count.

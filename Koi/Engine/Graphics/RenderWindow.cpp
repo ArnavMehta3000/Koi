@@ -1,10 +1,10 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
-#include <cassert>
 #include <spdlog/fmt/xchar.h>
 
 namespace koi
@@ -26,7 +26,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		assert(m_hwnd && "Window has no native HWND");
+		KOI_ASSERT(m_hwnd, "Window has no native HWND");
 		CreateSwapChain();
 		AcquireBackBuffers();
 	}
@@ -132,7 +132,7 @@ namespace koi
 
 		if (width == 0 || height == 0) return;
 		if (width == m_width && height == m_height) return;
-		assert(m_device && "Render Window has been moved-from");
+		KOI_ASSERT(m_device, "Render Window has been moved-from");
 
 		KOI_LOG(Render, Debug, "Swapchain resized {}x{} -> {}x{}", m_width, m_height, width, height);
 

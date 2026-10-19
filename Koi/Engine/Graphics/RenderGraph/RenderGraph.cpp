@@ -1,9 +1,9 @@
 #include "Koi/Engine/Graphics/RenderGraph/RenderGraph.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
-#include <cassert>
 #include <ranges>
 
 namespace koi
@@ -33,7 +33,7 @@ namespace koi
 
 		const RGTexture written = m_graph.Declare(m_passIndex, texture, RenderGraph::Access::ColorTarget);
 		m_graph.m_passes[m_passIndex].ColorTargets.push_back({ .Resource = texture.Index, .Load = load, .Clear = clear });
-		assert(m_graph.m_passes[m_passIndex].ColorTargets.size() <= MAX_RENDER_TARGETS && "Too many color targets in one pass");
+		KOI_ASSERT(m_graph.m_passes[m_passIndex].ColorTargets.size() <= MAX_RENDER_TARGETS, "Too many color targets in one pass");
 		return written;
 	}
 
@@ -42,7 +42,7 @@ namespace koi
 		if (!texture) return {};
 
 		auto& pass = m_graph.m_passes[m_passIndex];
-		assert(!pass.DepthTarget && "A pass has at most one depth target");
+		KOI_ASSERT(!pass.DepthTarget, "A pass has at most one depth target");
 
 		const RGTexture written = m_graph.Declare(m_passIndex, texture, RenderGraph::Access::DepthTarget);
 		pass.DepthTarget = RenderGraph::Attachment{ .Resource = texture.Index, .Load = load, .ClearDepth = clearDepth };
@@ -129,7 +129,7 @@ namespace koi
 
 	const TextureDesc& RenderGraph::GetDesc(RGTexture texture) const
 	{
-		assert(texture.Index < m_resources.size() && "Invalid graph texture");
+		KOI_ASSERT(texture.Index < m_resources.size(), "Invalid graph texture");
 		return m_resources[texture.Index].Desc;
 	}
 
@@ -147,9 +147,9 @@ namespace koi
 
 	RGTexture RenderGraph::Declare(u32 passIndex, RGTexture texture, Access access)
 	{
-		assert(texture.Index < m_resources.size() && "Invalid graph texture");
+		KOI_ASSERT(texture.Index < m_resources.size(), "Invalid graph texture");
 		Resource& r = m_resources[texture.Index];
-		assert(texture.Version == r.Version && "Pass uses a stale version of a graph texture");
+		KOI_ASSERT(texture.Version == r.Version, "Pass uses a stale version of a graph texture");
 
 		m_passes[passIndex].Uses.push_back({ texture, access });
 
@@ -160,7 +160,7 @@ namespace koi
 		                          :                                 TextureUsage::DepthStencil;
 		if (r.Imported)
 		{
-			assert(r.Desc.Usage.Has(needed) && "Imported texture was not created for this use");
+			KOI_ASSERT(r.Desc.Usage.Has(needed), "Imported texture was not created for this use");
 		}
 		else
 		{
@@ -248,7 +248,7 @@ namespace koi
 			}
 			cmd.FlushBarriers();
 
-			assert((!pass.Compute || (pass.ColorTargets.empty() && !pass.DepthTarget)) && "Compute passes write through Write(), not targets");
+			KOI_ASSERT(!pass.Compute || (pass.ColorTargets.empty() && !pass.DepthTarget), "Compute passes write through Write(), not targets");
 			BindTargets(cmd, pass);
 
 			if (pass.Execute)

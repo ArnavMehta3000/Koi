@@ -1,4 +1,5 @@
 #include "Koi/Engine/Platform/InputManager.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
@@ -9,14 +10,13 @@
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 namespace koi
 {
 	InputManager::InputManager()
 	{
-		assert(s_instance == nullptr && "InputManager already exists");
+		KOI_ASSERT(s_instance == nullptr, "InputManager already exists");
 		s_instance = this;
 	}
 
@@ -39,7 +39,7 @@ namespace koi
 
 		Window& window = ctx.MainWindow;
 		GLFWwindow* glfwWnd = window.GetGLFWWindow();
-		assert(glfwWnd && "Window has a null GLFWwindow");
+		KOI_ASSERT(glfwWnd, "Window has a null GLFWwindow");
 		m_glfwWindow = glfwWnd;
 
 		m_config = ctx.Input;

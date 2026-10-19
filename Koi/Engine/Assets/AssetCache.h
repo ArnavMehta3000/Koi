@@ -2,9 +2,9 @@
 #include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Assets/AssetKey.h"
 #include "Koi/Engine/Assets/AssetTraits.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <unordered_map>
-#include <cassert>
 
 namespace koi
 {
@@ -97,7 +97,7 @@ namespace koi
 			Entry* entry = m_pool.Get(handle);
 			if (!entry) return;
 
-			assert(entry->RefCount > 0 && "Released an asset more times than it was acquired");
+			KOI_ASSERT(entry->RefCount > 0, "Released an asset more times than it was acquired");
 			if (--entry->RefCount > 0)
 			{
 				return;

@@ -1,11 +1,11 @@
 #include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include <cassert>
 
 namespace koi
 {
@@ -23,7 +23,7 @@ namespace koi
 		: m_config(config)
 	{
 		ZoneScoped;
-		assert(config.Device && "ShadowPass requires a valid GfxDevice");
+		KOI_ASSERT(config.Device, "ShadowPass requires a valid GfxDevice");
 
 		m_frameConstants.Init(*m_config.Device, BufferUsage::Constant, 1,  "Shadow FrameConstants");
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "Shadow PerObjectData");
@@ -138,7 +138,7 @@ namespace koi
 		const GPUMesh* boundMesh = nullptr;
 		for (const MeshDrawItem& item : m_gather.Draws)
 		{
-			assert(item.Mesh && "Invalid mesh pointer");
+			KOI_ASSERT(item.Mesh, "Invalid mesh pointer");
 
 			if (item.Mesh && item.Mesh != boundMesh)
 			{

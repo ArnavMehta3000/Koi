@@ -1,5 +1,6 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/Components.h"
@@ -11,7 +12,6 @@
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
-#include <cassert>
 #include <fstream>
 
 namespace koi
@@ -65,7 +65,7 @@ namespace koi
 	World& World::From(const flecs::world& ecs)
 	{
 		World* world = static_cast<World*>(ecs.get_ctx());
-		assert(world && "flecs world is not owned by a koi::World");
+		KOI_ASSERT(world, "flecs world is not owned by a koi::World");
 		return *world;
 	}
 

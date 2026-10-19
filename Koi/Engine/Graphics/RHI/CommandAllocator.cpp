@@ -1,7 +1,7 @@
 #include "Koi/Engine/Graphics/RHI/CommandAllocator.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include <cassert>
 #include <spdlog/fmt/xchar.h>
 
 namespace koi
@@ -26,7 +26,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		assert(frameSlot < FRAMES_IN_FLIGHT);
+		KOI_ASSERT(frameSlot < FRAMES_IN_FLIGHT);
 		DX_CHECK(m_allocators[frameSlot]->Reset());
 	}
 }

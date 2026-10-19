@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Core/Types.h"
-#include <cassert>
 #include <compare>
 #include <limits>
 #include <vector>
@@ -28,7 +28,7 @@ namespace koi
 		constexpr Handle(IndexType index, IndexType generation) noexcept
 			: m_id((index& INDEX_MASK) | ((generation & GENERATION_MASK) << IndexBits))
 		{
-			assert(index <= INDEX_MASK && generation <= GENERATION_MASK && "index or generation truncated");
+			KOI_ASSERT(index <= INDEX_MASK && generation <= GENERATION_MASK, "index or generation truncated");
 		}
 
 		// Handle from packed ID
@@ -142,7 +142,7 @@ namespace koi
 			{
 				// Append a new slot at generation 0.
 				sparseIdx = static_cast<IndexType>(m_sparse.size());
-				assert(sparseIdx < HandleType::INDEX_MASK && "Too many handles in pool!");
+				KOI_ASSERT(sparseIdx < HandleType::INDEX_MASK, "Too many handles in pool!");
 				generation = 0;
 				m_sparse.push_back({ 0, generation });
 			}

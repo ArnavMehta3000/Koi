@@ -1,10 +1,10 @@
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
-#include <cassert>
 #include <cstring>
 
 namespace koi
@@ -16,10 +16,9 @@ namespace koi
 
 	void GpuFrameBufferBase::Init(GfxDevice& device, BufferUsage usage, u32 elementSize, u32 initialCount, std::string_view debugName)
 	{
-		assert(!m_device && "GpuFrameBuffer is already initialized");
-		assert(elementSize > 0 && "GpuFrameBuffer element size must be non-zero");
-		assert((EnumFlag(usage).HasAny(BufferUsage::Storage | BufferUsage::Constant))
-			&& "GpuFrameBuffer supports Storage (StructuredBuffer) or Constant (ConstantBuffer) only");
+		KOI_ASSERT(!m_device, "GpuFrameBuffer is already initialized");
+		KOI_ASSERT(elementSize > 0, "GpuFrameBuffer element size must be non-zero");
+		KOI_ASSERT(EnumFlag(usage).HasAny(BufferUsage::Storage | BufferUsage::Constant), "GpuFrameBuffer supports Storage (StructuredBuffer) or Constant (ConstantBuffer) only");
 
 		m_device       = &device;
 		m_usage        = usage;
@@ -82,16 +81,16 @@ namespace koi
 	DescriptorIndex GpuFrameBufferBase::UploadBytes(u32 frameSlot, const void* data, u32 count)
 	{
 		ZoneScoped;
-		assert(m_device && "GpuFrameBuffer used before Init()");
-		assert(frameSlot < FRAMES_IN_FLIGHT && "Frame slot out of range");
-		assert(!(EnumFlag(m_usage).Has(BufferUsage::Constant) && count > 1) && "Constant buffers hold a single element");
+		KOI_ASSERT(m_device, "GpuFrameBuffer used before Init()");
+		KOI_ASSERT(frameSlot < FRAMES_IN_FLIGHT, "Frame slot out of range");
+		KOI_ASSERT(!(EnumFlag(m_usage).Has(BufferUsage::Constant) && count > 1), "Constant buffers hold a single element");
 
 		if (count == 0) return INVALID_DESCRIPTOR;
 
 		Reserve(frameSlot, count);
 
 		Buffer* buf = m_device->Get(m_buffers[frameSlot]);
-		assert(buf && buf->Resource && buf->MappedPtr && "Invalid GpuFrameBuffer buffer");
+		KOI_ASSERT(buf && buf->Resource && buf->MappedPtr, "Invalid GpuFrameBuffer buffer");
 
 		std::memcpy(buf->MappedPtr, data, static_cast<size_t>(count) * m_elementSize);
 

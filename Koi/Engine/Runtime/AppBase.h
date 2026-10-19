@@ -1,10 +1,10 @@
 #pragma once
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Interop/ViewportTarget.h"
 #include "Koi/Engine/Logging/LoggerConfig.h"
 #include "Koi/Engine/Platform/InputActions.h"
 #include "Koi/Engine/Platform/Window.h"
-#include <cassert>
 #include <map>
 #include <memory>
 #include <optional>
@@ -38,7 +38,7 @@ namespace koi
 		[[nodiscard]] static AppBase& Get() { return *s_instance; }
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override { return m_desc; }
 		[[nodiscard]] Engine* GetEngine() const { return m_engine; }
-		[[nodiscard]] Window& GetWindow() const { assert(m_window); return *m_window; }
+		[[nodiscard]] Window& GetWindow() const { KOI_ASSERT(m_window); return *m_window; }
 		[[nodiscard]] World& GetWorld() const { return *m_world; }
 
 		// Filled from the project TOML by RunApplication, before the engine starts

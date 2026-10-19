@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Core/Patterns/Match.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
@@ -6,8 +7,9 @@
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <comdef.h>
-#include <cassert>
 #include <dxgidebug.h>
+#include <filesystem>
+#include <format>
 #include <ranges>
 
 #define LOG_HANDLE_TRACE(msg, h) KOI_LOG(RHI, Trace, msg, (h).GetIndex(), (h).GetGeneration())
@@ -73,18 +75,11 @@ namespace koi
 		}
 	}
 
-	// From DX12Common.h
-	void internal::ThrowOnHRFail(HRESULT hr, const char* expr, std::string_view file, int line)
+	void internal::ThrowHResult(HRESULT hr, const char* expr, const std::source_location& where)
 	{
-		if (FAILED(hr))
-		{
-			_com_error err(hr);
-
-			KOI_LOG(RHI, Error, "DX_CHECK failed (0x{:08X} - {}): {} at {}:{}",
-				static_cast<u32>(hr), utils::FromWide(err.ErrorMessage()), expr, file, line);
-
-			assert(false && "D3D12/DXC/DXGI call failed");
-		}
+		const _com_error err(hr);
+		throw GfxError(hr, std::format("{} failed with 0x{:08X} ({}) at {}:{}",
+			expr, static_cast<u32>(hr), utils::FromWide(err.ErrorMessage()), std::filesystem::path(where.file_name()).filename().string(), where.line()));
 	}
 
 	GfxDevice::GfxDevice(const GfxDevice::Desc& desc)
@@ -294,7 +289,7 @@ namespace koi
 		// Writable from compute as RWTexture2D via ResourceDescriptorHeap[], mip 0 only
 		if (desc.Usage.Has(TextureUsage::ShaderWrite))
 		{
-			assert(!isDepth && desc.SampleCount == 1 && "Depth and MSAA textures can't have a UAV");
+			KOI_ASSERT(!isDepth && desc.SampleCount == 1, "Depth and MSAA textures can't have a UAV");
 			tex.UAVIndex = m_resourceHeap.Allocate();
 
 			D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc
@@ -567,18 +562,18 @@ namespace koi
 	{
 		ZoneScoped;
 
-		assert(!desc.VertexShader.empty() && "PipelineDesc missing vertex shader");
-		assert((!desc.PixelShader.empty() || desc.RenderTargetCount == 0) && "PipelineDesc missing pixel shader");  // Depth-only pipelines (shadow maps, depth prepass) have no pixel shader at all
-		assert(desc.RenderTargetCount <= MAX_RENDER_TARGETS && "Too many render targets");
-		assert(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN && "PipelineDesc has neither render targets nor a depth target");
+		KOI_ASSERT(!desc.VertexShader.empty(), "PipelineDesc missing vertex shader");
+		KOI_ASSERT(!desc.PixelShader.empty() || desc.RenderTargetCount == 0, "PipelineDesc missing pixel shader");  // Depth-only pipelines (shadow maps, depth prepass) have no pixel shader at all
+		KOI_ASSERT(desc.RenderTargetCount <= MAX_RENDER_TARGETS, "Too many render targets");
+		KOI_ASSERT(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN, "PipelineDesc has neither render targets nor a depth target");
 
 		// Vertex input layout
 		std::array<D3D12_INPUT_ELEMENT_DESC, MAX_VERTEX_ATTRIBUTES> inputElements{};
 
 		for (const auto& [index, attr] : std::views::enumerate(desc.VertexLayout) | std::views::as_const)
 		{
-			assert(index < MAX_VERTEX_ATTRIBUTES && "Too many vertex attributes");
-			assert(attr.SemanticName && *attr.SemanticName && "Vertex attribute missing semantic name");
+			KOI_ASSERT(index < MAX_VERTEX_ATTRIBUTES, "Too many vertex attributes");
+			KOI_ASSERT(attr.SemanticName && *attr.SemanticName, "Vertex attribute missing semantic name");
 
 			inputElements[index] =
 			{
@@ -680,7 +675,7 @@ namespace koi
 	std::expected<ComPtr<dx12::PipelineState>, HRESULT> GfxDevice::BuildPipelineState(const ComputePipelineDesc& desc)
 	{
 		ZoneScoped;
-		assert(!desc.ComputeShader.empty() && "ComputePipelineDesc missing compute shader");
+		KOI_ASSERT(!desc.ComputeShader.empty(), "ComputePipelineDesc missing compute shader");
 
 		struct ComputeStream
 		{
@@ -746,7 +741,7 @@ namespace koi
 			return false;
 
 		// Overwrite old pipeline
-		Pipeline* pipeline = m_pipelines.Get(h);  assert(pipeline);
+		Pipeline* pipeline = m_pipelines.Get(h);  KOI_ASSERT(pipeline);
 		pipeline->Pso      = std::move(*pso);
 		pipeline->Topology = desc.Topology;
 
@@ -784,7 +779,10 @@ namespace koi
 		KOI_LOG(RHI, Debug, "Creating bindless root signature");
 
 		const D3D_ROOT_SIGNATURE_VERSION rootSignatureVersion = g_featureSupport.HighestRootSignatureVersion();
-		assert(rootSignatureVersion >= D3D_ROOT_SIGNATURE_VERSION_1_1 && "Bindless requires root signature version 1.1 or higher");
+		if (rootSignatureVersion < D3D_ROOT_SIGNATURE_VERSION_1_1)
+		{
+			throw std::runtime_error("Bindless needs root signature version 1.1 or higher");
+		}
 
 		auto rootParam = CD3DX12_ROOT_PARAMETER1();
 		rootParam.InitAsConstants(MAX_PUSH_CONSTANT_U32S, 0, 0, D3D12_SHADER_VISIBILITY_ALL);
@@ -942,7 +940,10 @@ namespace koi
 			}
 		}
 
-		assert(adapter && "No D3D12-capable adapter found");
+		if (!adapter)
+		{
+			throw std::runtime_error("No D3D12-capable adapter found");
+		}
 		DX_CHECK(adapter.As(&m_adapter));
 	}
 
@@ -1027,7 +1028,10 @@ namespace koi
 		m_frameFence->SetName(L"Koi Frame Fence");
 
 		m_fenceEvent = ::CreateEventW(nullptr, FALSE, FALSE, nullptr);
-		assert(m_fenceEvent && "Failed to create fence event");
+		if (!m_fenceEvent)
+		{
+			throw std::runtime_error("Failed to create the frame fence event");
+		}
 	}
 
 	void GfxDevice::CreateHeaps()
