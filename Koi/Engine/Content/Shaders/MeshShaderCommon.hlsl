@@ -5,6 +5,4 @@
 
 ConstantBuffer<DrawRootConstants> g_root : register(b0);
 
-static const uint INVALID_DESCRIPTOR = 0xFFFFFFFFu;
-
 #endif // _MESH_SHADER_COMMON_HLSL_

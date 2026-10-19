@@ -77,7 +77,6 @@ namespace koi
 					.LightBufferIndex   = lightBufferIndex,
 					.LightCount         = static_cast<u32>(m_lights.size()),
 					.ShadowSamplerIndex = m_config.Resources->ShadowSampler,
-					._Pad               = 0,
 				});
 				ctx.Draw(3);
 			});
@@ -113,7 +112,6 @@ namespace koi
 				.ShadowMatrix   = shadowed ? lightViewProjection : Matrix::Identity,
 				.ShadowMapIndex = shadowed ? shadowMapIndex : INVALID_DESCRIPTOR,
 				.ShadowBias     = light.ShadowBias,
-				._Pad           = {},
 			});
 
 			if (shadowed) shadowMapIndex = INVALID_DESCRIPTOR;  // one shadowed light per frame

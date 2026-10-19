@@ -1,34 +1,6 @@
-cbuffer PushConstants : register(b0)
-{
-	row_major float4x4 InvViewProjection;
-	float4 CameraPosition;   // .xyz used
-	uint   AlbedoIndex;
-	uint   NormalIndex;
-	uint   MaterialIndex;
-	uint   DepthIndex;
-	uint   LightBufferIndex;
-	uint   LightCount;
-	uint   ShadowSamplerIndex;
-	uint   _Pad;
-};
+#include "Interop/Lighting.hlsli"
 
-static const uint INVALID_DESCRIPTOR = 0xFFFFFFFFu;
-
-// Must match koi::GPULight (scalar-packed). Type: 0 = directional, 1 = point.
-struct GPULight
-{
-	float3 Position;
-	uint   Type;
-	float3 Direction;
-	float  Range;
-	float3 Color;
-	float  Intensity;
-
-	row_major float4x4 ShadowMatrix;
-	uint               ShadowMapIndex;  // INVALID_DESCRIPTOR when unshadowed
-	float              ShadowBias;
-	uint2              _Pad;
-};
+ConstantBuffer<LightingRootConstants> g_root : register(b0);
 
 // 1 = fully lit, 0 = fully shadowed
 float SampleShadow(GPULight light, float3 worldPos, float3 N, float ndotl)
@@ -36,7 +8,7 @@ float SampleShadow(GPULight light, float3 worldPos, float3 N, float ndotl)
 	if (light.ShadowMapIndex == INVALID_DESCRIPTOR) return 1.0;
 
 	Texture2D<float>       shadowMap  = ResourceDescriptorHeap[light.ShadowMapIndex];
-	SamplerComparisonState shadowSamp = SamplerDescriptorHeap[ShadowSamplerIndex];
+	SamplerComparisonState shadowSamp = SamplerDescriptorHeap[g_root.ShadowSamplerIndex];
 
 	float2 texelSize;
 	shadowMap.GetDimensions(texelSize.x, texelSize.y);
@@ -73,10 +45,10 @@ float SampleShadow(GPULight light, float3 worldPos, float3 N, float ndotl)
 
 float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 {
-	Texture2D<float4> albedoTex   = ResourceDescriptorHeap[AlbedoIndex];
-	Texture2D<float4> normalTex   = ResourceDescriptorHeap[NormalIndex];
-	Texture2D<float4> materialTex = ResourceDescriptorHeap[MaterialIndex];
-	Texture2D<float>  depthTex    = ResourceDescriptorHeap[DepthIndex];
+	Texture2D<float4> albedoTex   = ResourceDescriptorHeap[g_root.AlbedoIndex];
+	Texture2D<float4> normalTex   = ResourceDescriptorHeap[g_root.NormalIndex];
+	Texture2D<float4> materialTex = ResourceDescriptorHeap[g_root.MaterialIndex];
+	Texture2D<float>  depthTex    = ResourceDescriptorHeap[g_root.DepthIndex];
 
 	// The G-buffer is the same size as this pass's target, so SV_Position already names the exact texel
 	// Normals and material IDs must not be blended
@@ -88,7 +60,7 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 
 	// Reconstruct world position from clip space
 	float4 clip     = float4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, depth, 1.0);
-	float4 world    = mul(clip, InvViewProjection);
+	float4 world    = mul(clip, g_root.InvViewProjection);
 	float3 worldPos = world.xyz / world.w;
 
 	float4 albedoSample = albedoTex.Load(texel);
@@ -99,14 +71,14 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 	float3 N = normalize(normalTex.Load(texel).xyz * 2.0 - 1.0);
 
 	float  roughness = materialTex.Load(texel).r;  // .g = metallic (unused for now)
-	float3 V         = normalize(CameraPosition.xyz - worldPos);
+	float3 V         = normalize(g_root.CameraPosition.xyz - worldPos);
 
 	// TODO: Maybe this is not needed?
 	// Small ambient so unlit areas aren't pure black; modulated by baked AO
 	float3 color = albedo * 0.03 * ao;
 
-	StructuredBuffer<GPULight> lights = ResourceDescriptorHeap[LightBufferIndex];
-	for (uint i = 0; i < LightCount; ++i)
+	StructuredBuffer<GPULight> lights = ResourceDescriptorHeap[g_root.LightBufferIndex];
+	for (uint i = 0; i < g_root.LightCount; ++i)
 	{
 		GPULight light = lights[i];
 

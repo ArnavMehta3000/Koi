@@ -22,6 +22,8 @@
 	typedef float  f32;
 	typedef uint   u32;
 	typedef uint   DescriptorIndex;
+
+	static const DescriptorIndex INVALID_DESCRIPTOR = 0xFFFFFFFFu;
 #endif
 
 #endif
