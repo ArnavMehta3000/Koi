@@ -1,9 +1,9 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetHandles.h"
+#include "Koi/Engine/Core/Error.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include <flecs.h>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -32,7 +32,7 @@ namespace koi
 		World(World&&) noexcept;
 		World& operator=(World&&) noexcept;
 
-		[[nodiscard]] static std::optional<World> Load(std::string_view virtualPath);
+		[[nodiscard]] static Result<World> Load(std::string_view virtualPath);
 		[[nodiscard]] static World& From(const flecs::world& ecs);
 
 		// Scene file order, then creation order
@@ -47,7 +47,7 @@ namespace koi
 		[[nodiscard]] inline const ECS&         GetECS()        const { return m_ecs;        }
 
 		// Writes back to the scene file this world was loaded from
-		bool Save();
+		Result<void> Save();
 		bool LoadFromTable(const toml::table& scene);
 		[[nodiscard]] toml::table SaveToTable();
 		void Clear(); // Destroys every entity. The assets they referenced are released by component hooks

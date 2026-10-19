@@ -476,10 +476,15 @@ namespace koi::editor
 			return;
 		}
 
-		if (world.Save())
+		if (const Result<void> saved = world.Save())
+		{
 			m_toasts.Push(ToastKind::Success, "Scene saved");
+		}
 		else
-			m_toasts.Push(ToastKind::Error, "Scene save failed, see the Log");
+		{
+			KOI_LOG(Editor, Error, "Scene save failed: {}", saved.error().Message);
+			m_toasts.Push(ToastKind::Error, "Scene save failed: " + saved.error().Message);
+		}
 	}
 
 	void EditorApp::Cook()

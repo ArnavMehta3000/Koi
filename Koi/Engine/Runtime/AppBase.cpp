@@ -94,8 +94,12 @@ namespace koi
 			return false;
 		}
 
-		std::optional<World> loaded = World::Load(it->second);
-		if (!loaded) return false;
+		Result<World> loaded = World::Load(it->second);
+		if (!loaded)
+		{
+			KOI_LOG(Scene, Error, "Couldn't load scene '{}' ({}): {}", name, it->second, loaded.error().Message);
+			return false;
+		}
 
 		*m_world = std::move(*loaded);
 		return true;

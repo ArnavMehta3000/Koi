@@ -115,7 +115,7 @@ namespace koi
 		});
 	}
 
-	std::optional<World> World::Load(std::string_view virtualPath)
+	Result<World> World::Load(std::string_view virtualPath)
 	{
 		ZoneScoped;
 		KOI_LOG(Scene, Debug, "Loading scene '{}'", virtualPath);
@@ -123,8 +123,7 @@ namespace koi
 		const Result<std::vector<byte>> bytes = VirtualFileSystem::Get().Read(virtualPath);
 		if (!bytes)
 		{
-			KOI_LOG(Scene, Error, "Failed to read scene file {}: {}", virtualPath, bytes.error().Message);
-			return std::nullopt;
+			return std::unexpected(bytes.error());
 		}
 
 		const std::string_view text(reinterpret_cast<const char*>(bytes->data()), bytes->size());
@@ -142,8 +141,7 @@ namespace koi
 		}
 		catch (const toml::parse_error& e)
 		{
-			KOI_LOG(Scene, Error, "Failed to parse scene '{}': {}", virtualPath, e.description());
-			return std::nullopt;
+			return Error::Make("line {}: {}", e.source().begin.line, e.description());
 		}
 	}
 
@@ -251,14 +249,13 @@ namespace koi
 		return true;
 	}
 
-	bool World::Save()
+	Result<void> World::Save()
 	{
 		ZoneScoped;
 
 		if (m_sourcePath.empty())
 		{
-			KOI_LOG(Scene, Error, "World was not loaded from a scene; nothing to save to");
-			return false;
+			return Error::Make("the world wasn't loaded from a scene, so there's nowhere to save it");
 		}
 
 		const toml::table root = SaveToTable();
@@ -266,20 +263,17 @@ namespace koi
 		const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(m_sourcePath);
 		if (!diskPath)
 		{
-			KOI_LOG(Scene, Error, "Cannot resolve scene path to disk for saving: {}", m_sourcePath);
-			return false;
+			return Error::Make("{} doesn't resolve to a file on disk", m_sourcePath);
 		}
 
 		std::ofstream out(*diskPath, std::ios::trunc);
-		if (!out)
+		if (!(out << utils::TomlDocument(root)))
 		{
-			KOI_LOG(Scene, Error, "Failed to open scene file for writing: {}", diskPath->string());
-			return false;
+			return Error::Make("couldn't write {}", diskPath->string());
 		}
 
-		out << utils::TomlDocument(root);
 		KOI_LOG(Scene, Info, "Saved scene '{}'", diskPath->string());
-		return true;
+		return {};
 	}
 
 	toml::table World::SaveToTable()
