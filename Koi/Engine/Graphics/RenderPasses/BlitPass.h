@@ -1,14 +1,14 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderFeature.h"
 
 namespace koi
 {
-	class BlitPass : public RenderPass
+	class BlitPass
 	{
 	public:
-		inline std::string_view GetName() const override { return "Blit"; }
+		static constexpr std::string_view kName = "Blit";
 
-		// Copies DisplayColor into output
-		void Record(RenderGraph& graph, RGTexture output);
+		// Copies DisplayColor into the view's target
+		void Record(RenderGraph& graph, const RenderView& view, World& world);
 	};
 }

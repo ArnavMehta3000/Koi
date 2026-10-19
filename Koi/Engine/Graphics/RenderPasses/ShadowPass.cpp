@@ -29,7 +29,7 @@ namespace koi
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "Shadow PerObjectData");
 	}
 
-	void ShadowPass::Record(RenderGraph& graph, World& world)
+	void ShadowPass::Record(RenderGraph& graph, const RenderView&, World& world)
 	{
 		ZoneScoped;
 		m_hasShadow = ComputeLightMatrix(world);
@@ -60,6 +60,7 @@ namespace koi
 		Vector3 center;
 		f32     radius = 0.0f;
 		bool    found  = false;
+
 		world.GetECS()
 			.query<const Transform, const Light>()
 			.each([&](const Transform& xform, const Light& light)
@@ -101,7 +102,7 @@ namespace koi
 		const Matrix invView = view.Invert();
 
 		BoundingOrientedBox volume;
-		BoundingOrientedBox::CreateFromBoundingBox(volume, 
+		BoundingOrientedBox::CreateFromBoundingBox(volume,
 			BoundingBox(
 				Vector3(0.0f, 0.0f, -radius * 2.0f),
 				Vector3(radius, radius, radius * 2.0f)));

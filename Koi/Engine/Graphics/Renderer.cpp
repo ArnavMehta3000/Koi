@@ -94,8 +94,7 @@ namespace koi
 		if (m_device)
 			m_device->WaitForIdle();
 
-		m_pipeline.reset();  // holds raw pointers into the pass list
-		m_passes.Clear();
+		m_features.Clear();
 		m_graph.Shutdown();
 		m_capture.Shutdown();
 		m_frameContext.reset();
@@ -130,7 +129,7 @@ namespace koi
 		m_defaultResources.RegisterFallbackAssets(*m_device);
 		m_materials.Set(MaterialTable::kFallbackSlot, FallbackMaterialRow(m_defaultResources.FallbackTextureSRV));
 
-		SetPipeline(std::make_unique<DeferredPipeline>());
+		SetPipeline(&DeferredPipeline::Build);
 
 		KOI_LOG(Render, Debug, "Renderer: main render window initialized ({}x{}, vsync {})", window.GetWidth(), window.GetHeight(), ctx.VSync);
 	}
@@ -198,18 +197,16 @@ namespace koi
 		m_frameSlot = (m_frameSlot + 1) % FRAMES_IN_FLIGHT;
 	}
 
-	void Renderer::SetPipeline(std::unique_ptr<IRenderPipeline> pipeline)
+	void Renderer::SetPipeline(PipelineBuildFunc build)
 	{
 		ZoneScoped;
 
 		m_device->WaitForIdle();
-		m_graph.Reset();  // its callbacks point into the passes about to go
-		m_pipeline.reset();
-		m_passes.Clear();
+		m_graph.Reset();  // its callbacks point into the features about to go
+		m_features.Clear();
 
-		m_pipeline = std::move(pipeline);
-		if (m_pipeline)
-			m_pipeline->Build(*this, m_passes);
+		if (build)
+			build(*this, m_features);
 	}
 
 	void Renderer::SetupFrame(const RenderView& view, World& world)
@@ -219,11 +216,7 @@ namespace koi
 		if (view.Camera)
 		{
 			m_capture.SetDepthPlanes(view.Camera->Near, view.Camera->Far);
-		}
-
-		if (m_pipeline)
-		{
-			m_pipeline->Record(m_graph, view, world);
+			m_features.Record(m_graph, view, world);
 		}
 	}
 

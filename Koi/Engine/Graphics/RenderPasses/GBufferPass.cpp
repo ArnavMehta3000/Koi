@@ -19,9 +19,12 @@ namespace koi
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "GBuffer PerObjectData");
 	}
 
-	void GBufferPass::Record(RenderGraph& graph, World& world, const Camera& camera, u32 width, u32 height)
+	void GBufferPass::Record(RenderGraph& graph, const RenderView& view, World& world)
 	{
 		ZoneScoped;
+		const Camera& camera = *view.Camera;
+		const u32     width  = view.Target.Width;
+		const u32     height = view.Target.Height;
 
 		// Formats must match the shader's SV_Target outputs
 		const auto target = [&](Format format, std::string_view name)

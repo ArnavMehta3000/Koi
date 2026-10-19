@@ -1,14 +1,14 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderFeature.h"
 
 namespace koi
 {
-	class TonemapPass : public RenderPass
+	class TonemapPass
 	{
 	public:
-		inline std::string_view GetName() const override { return "Tonemap"; }
+		static constexpr std::string_view kName = "Tonemap";
 
 		// Reads SceneColor, publishes DisplayColor
-		void Record(RenderGraph& graph);
+		void Record(RenderGraph& graph, const RenderView& view, World& world);
 	};
 }

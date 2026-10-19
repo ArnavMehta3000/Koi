@@ -28,9 +28,10 @@ namespace koi
 		m_vertexBuffer.Init(*m_config.Device, BufferUsage::Storage, 1024, "DebugVertex");
 	}
 
-	void DebugDrawPass::Record(RenderGraph& graph, const Camera& camera)
+	void DebugDrawPass::Record(RenderGraph& graph, const RenderView& view, World&)
 	{
 		ZoneScoped;
+		const Camera& camera = *view.Camera;
 		RGBlackboard& bb = graph.GetBlackboard();
 
 		DisplayColor* color = bb.TryGet<DisplayColor>();

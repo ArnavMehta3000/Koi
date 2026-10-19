@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderFeature.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
 
@@ -7,12 +7,13 @@ namespace koi
 {
 	class  World;
 	class  GfxDevice;
-	struct Camera;
 	struct RendererResources;
 
-	class LightingPass : public RenderPass
+	class LightingPass
 	{
 	public:
+		static constexpr std::string_view kName = "Lighting";
+
 		struct Config
 		{
 			GfxDevice*               Device    = nullptr;
@@ -20,11 +21,7 @@ namespace koi
 		};
 
 		explicit LightingPass(const Config& config);
-
-		std::string_view GetName() const override { return "Lighting"; }
-
-		// Reads GBufferData, SceneDepth and ShadowData if present; publishes SceneColor
-		void Record(RenderGraph& graph, World& world, const Camera& camera);
+		void Record(RenderGraph& graph, const RenderView& view, World& world);
 
 	private:
 		void GatherLights(World& world, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex);

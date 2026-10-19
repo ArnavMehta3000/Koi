@@ -125,7 +125,7 @@ namespace koi::editor
 
 			if (const toml::node* grid = root.get(GridPass::Settings::kKey))
 			{
-				if (GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetPasses().Find<GridPass>())
+				if (GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<GridPass>())
 				{
 					if (auto settings = Serializer<GridPass::Settings>::Deserialize(*grid))
 						pass->GetSettings() = *settings;
@@ -148,7 +148,7 @@ namespace koi::editor
 		toml::table root;
 		root.insert("camera", m_viewportPanel->SaveCameraState());
 
-		if (const GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetPasses().Find<GridPass>())
+		if (const GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<GridPass>())
 			root.insert(GridPass::Settings::kKey, Serializer<GridPass::Settings>::Serialize(pass->GetSettings()));
 
 		std::error_code ec;
@@ -259,9 +259,9 @@ namespace koi::editor
 
 	void EditorApp::DrawShadowVolume()
 	{
-		PassList& passes = Engine::Get().GetSubsystem<Renderer>().GetPasses();
+		FeatureList& features = Engine::Get().GetSubsystem<Renderer>().GetFeatures();
 
-		const ShadowPass* shadow = passes.Find<ShadowPass>();
+		const ShadowPass* shadow = features.Find<ShadowPass>();
 		if (!shadow || !shadow->HasShadow()) return;
 
 		// The ortho volume the caster was fitted to, as the box its matrix maps to clip space
@@ -454,7 +454,7 @@ namespace koi::editor
 		if (!ImGui::BeginMenu("Gizmos")) return;
 
 		// The grid lives in a pass, so its own Settings is the toggle; see the Grid panel
-		if (GridPass* grid = Engine::Get().GetSubsystem<Renderer>().GetPasses().Find<GridPass>())
+		if (GridPass* grid = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<GridPass>())
 			ImGui::MenuItem("Grid", nullptr, &grid->GetSettings().Enabled);
 
 		ImGui::MenuItem("Selection Bounds", nullptr, &m_gizmos.SelectionBounds);

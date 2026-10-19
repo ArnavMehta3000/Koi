@@ -29,9 +29,10 @@ namespace koi
 		m_lightBuffer.Init(*m_config.Device, BufferUsage::Storage, 16, "GPULight");
 	}
 
-	void LightingPass::Record(RenderGraph& graph, World& world, const Camera& camera)
+	void LightingPass::Record(RenderGraph& graph, const RenderView& view, World& world)
 	{
 		ZoneScoped;
+		const Camera& camera = *view.Camera;
 		RGBlackboard& bb = graph.GetBlackboard();
 
 		const GBufferData* gbufferData = bb.TryGet<GBufferData>();

@@ -14,14 +14,16 @@ namespace koi
 		};
 	}
 
-	void BlitPass::Record(RenderGraph& graph, RGTexture output)
+	void BlitPass::Record(RenderGraph& graph, const RenderView& view, World&)
 	{
 		ZoneScoped;
 
 		const DisplayColor* display = graph.GetBlackboard().TryGet<DisplayColor>();
-		if (!display || !output) return;
+		if (!display) return;
 
 		const RGTexture source = display->Color;
+		const RGTexture output = graph.ImportTexture(view.Target.ResolvedColorBuffer, "Output");
+		if (!output) return;
 
 		graph.AddPass<RasterPass>("Blit",
 			[&](RGBuilder& b)

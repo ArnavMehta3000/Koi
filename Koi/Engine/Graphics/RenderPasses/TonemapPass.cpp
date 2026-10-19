@@ -17,7 +17,7 @@ namespace koi
 		};
 	}
 
-	void TonemapPass::Record(RenderGraph& graph)
+	void TonemapPass::Record(RenderGraph& graph, const RenderView&, World&)
 	{
 		ZoneScoped;
 		RGBlackboard& bb = graph.GetBlackboard();
@@ -40,7 +40,6 @@ namespace koi
 				if (!ctx.SetPipeline(kTonemap)) return;
 				ctx.SetRootConstants(TonemapRootConstants{ .HDRTextureIndex = ctx.SRV(hdr), .LDRTextureIndex = ctx.UAV(ldr) });
 
-				// Round up so the edge pixels get a group; the shader skips the overhang
 				const auto& group = ctx.GetThreadGroup();
 				ctx.Dispatch((width + group[0] - 1) / group[0], (height + group[1] - 1) / group[1]);
 			});

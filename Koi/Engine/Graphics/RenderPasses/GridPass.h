@@ -1,15 +1,14 @@
 #pragma once
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/GPUSceneTypes.h"
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderFeature.h"
 
 namespace koi
 {
 	class  GfxDevice;
-	struct Camera;
 	struct RendererResources;
 
-	class GridPass : public RenderPass
+	class GridPass
 	{
 	public:
 		struct Config
@@ -39,10 +38,10 @@ namespace koi
 
 		explicit GridPass(const Config& config);
 
-		inline std::string_view GetName() const override { return "Grid"; }
+		static constexpr std::string_view kName = "Grid";
 
 		// Draws into DisplayColor and SceneDepth; adds nothing while disabled
-		void Record(RenderGraph& graph, const Camera& camera);
+		void Record(RenderGraph& graph, const RenderView& view, World& world);
 
 		[[nodiscard]] inline Settings& GetSettings() noexcept { return m_settings; }
 		[[nodiscard]] inline const Settings& GetSettings() const noexcept { return m_settings; }

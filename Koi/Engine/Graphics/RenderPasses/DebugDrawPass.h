@@ -1,15 +1,14 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderFeature.h"
 #include "Koi/Engine/Graphics/DebugDraw.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 
 namespace koi
 {
 	class  GfxDevice;
-	struct Camera;
 	struct RendererResources;
 
-	class DebugDrawPass : public RenderPass
+	class DebugDrawPass
 	{
 	public:
 		struct Config
@@ -21,10 +20,10 @@ namespace koi
 
 		explicit DebugDrawPass(const Config& config);
 
-		inline std::string_view GetName() const override { return "Debug Draw"; }
+		static constexpr std::string_view kName = "Debug Draw";
 
 		// Always adds its pass: gizmos are queued after the graph is built
-		void Record(RenderGraph& graph, const Camera& camera);
+		void Record(RenderGraph& graph, const RenderView& view, World& world);
 
 	private:
 		Config                      m_config;

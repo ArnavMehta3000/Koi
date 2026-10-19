@@ -29,9 +29,10 @@ namespace koi
 		m_constants.Init(*m_config.Device, BufferUsage::Constant, 1, "Grid Constants");
 	}
 
-	void GridPass::Record(RenderGraph& graph, const Camera& camera)
+	void GridPass::Record(RenderGraph& graph, const RenderView& view, World&)
 	{
 		ZoneScoped;
+		const Camera& camera = *view.Camera;
 		RGBlackboard& bb = graph.GetBlackboard();
 
 		DisplayColor* color = bb.TryGet<DisplayColor>();

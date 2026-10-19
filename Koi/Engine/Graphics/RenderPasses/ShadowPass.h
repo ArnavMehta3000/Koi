@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderFeature.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/MeshGather.h"
 
@@ -9,9 +9,11 @@ namespace koi
 	class  GfxDevice;
 	struct RendererResources;
 
-	class ShadowPass : public RenderPass
+	class ShadowPass
 	{
 	public:
+		static constexpr std::string_view kName = "Shadow";
+
 		struct Config
 		{
 			GfxDevice*               Device     = nullptr;
@@ -20,11 +22,7 @@ namespace koi
 		};
 
 		explicit ShadowPass(const Config& config);
-
-		std::string_view GetName() const override { return "Shadow"; }
-
-		// Publishes ShadowData
-		void Record(RenderGraph& graph, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, World& world);
 
 		[[nodiscard]] inline bool HasShadow() const { return m_hasShadow; }
 		[[nodiscard]] inline const Matrix& GetLightViewProjection() const { return m_lightViewProjection; }

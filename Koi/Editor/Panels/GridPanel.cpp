@@ -8,7 +8,7 @@ namespace koi::editor
 {
 	GridPass* GridPanel::FindPass() const
 	{
-		return m_renderer ? m_renderer->GetPasses().Find<GridPass>() : nullptr;
+		return m_renderer ? m_renderer->GetFeatures().Find<GridPass>() : nullptr;
 	}
 
 	void GridPanel::OnDraw()

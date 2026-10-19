@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderPasses/RenderPass.h"
+#include "Koi/Engine/Graphics/RenderFeature.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/MeshGather.h"
 
@@ -11,9 +11,11 @@ namespace koi
 	struct RendererResources;
 	class  MaterialTable;
 
-	class GBufferPass : public RenderPass
+	class GBufferPass
 	{
 	public:
+		static constexpr std::string_view kName = "GBuffer";
+
 		struct Config
 		{
 			GfxDevice*               Device          = nullptr;
@@ -23,11 +25,7 @@ namespace koi
 		};
 
 		explicit GBufferPass(const Config& config);
-
-		std::string_view GetName() const override { return "GBuffer"; }
-
-		// Publishes GBufferData and SceneDepth
-		void Record(RenderGraph& graph, World& world, const Camera& camera, u32 width, u32 height);
+		void Record(RenderGraph& graph, const RenderView& view, World& world);
 
 	private:
 		void Draw(RasterContext& ctx, World& world, const Camera& camera);
