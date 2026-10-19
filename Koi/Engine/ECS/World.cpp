@@ -1,6 +1,7 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Core/Assert.h"
+#include "Koi/Engine/Core/Exception.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/Components.h"
@@ -351,13 +352,28 @@ namespace koi
 
 		// Timer already clamps dt, which bounds how many fixed steps one frame can owe
 		m_fixedAccumulator += dt;
-		while (m_fixedAccumulator >= kFixedStep)
+		while (m_fixedAccumulator >= kFixedStep && !m_systemFailure)
 		{
 			m_ecs.run_pipeline(m_fixedPipeline, kFixedStep);
 			m_fixedAccumulator -= kFixedStep;
 		}
 
-		m_ecs.progress(dt);
+		if (!m_systemFailure)
+		{
+			m_ecs.progress(dt);
+		}
+
+		if (m_systemFailure)
+		{
+			SystemFailure failure = *std::exchange(m_systemFailure, std::nullopt);
+			throw Exception(failure.Message, std::move(failure.Trace));
+		}
+	}
+
+	void World::ReportSystemFailure(std::string_view system, std::string_view what, std::stacktrace trace)
+	{
+		if (m_systemFailure) return;
+		m_systemFailure = SystemFailure{ std::format("System '{}' threw: {}", system, what), std::move(trace) };
 	}
 
 	const Camera* World::ResolveCamera(f32 aspect)

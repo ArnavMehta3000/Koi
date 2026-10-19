@@ -262,7 +262,7 @@ namespace koi::internal
 		}
 		catch (const std::exception& e)
 		{
-			KOI_LOG(Engine, Critical, "Unhandled exception: {}\n{}", e.what(), CrashHandler::Format(CrashHandler::LastThrowTrace()));
+			KOI_LOG(Engine, Critical, "Unhandled exception: {}\n{}", e.what(), CrashHandler::Format(CrashHandler::TraceOf(e)));
 			return 1;
 		}
 		catch (...)

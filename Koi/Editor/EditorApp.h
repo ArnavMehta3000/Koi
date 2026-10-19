@@ -103,6 +103,7 @@ namespace koi::editor
 		void Play();
 		void TogglePause();
 		void Stop();
+		void ReportPlayFailure(const std::exception& e);
 
 	private:
 		std::unique_ptr<AppBase>        m_game;

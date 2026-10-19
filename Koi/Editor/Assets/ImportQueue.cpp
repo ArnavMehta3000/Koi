@@ -90,7 +90,7 @@ namespace koi::editor
 				catch (const std::exception& e)
 				{
 					error = std::string("the importer threw: ") + e.what();
-					KOI_LOG(Import, Error, "Importer threw at:\n{}", CrashHandler::Format(CrashHandler::LastThrowTrace()));
+					KOI_LOG(Import, Error, "Importer threw at:\n{}", CrashHandler::Format(CrashHandler::TraceOf(e)));
 				}
 
 				item->Seconds = std::chrono::duration<f64>(std::chrono::steady_clock::now() - start).count();

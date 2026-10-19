@@ -14,6 +14,7 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/DebugDraw.h"
@@ -180,7 +181,16 @@ namespace koi::editor
 
 		// The game always ticks. What play state gates is the world's simulation, and
 		// World::Update decides that itself, so nothing here has to know the difference
-		m_game->HostTick(dt);
+		try
+		{
+			m_game->HostTick(dt);
+		}
+		catch (const std::exception& e)
+		{
+			if (Engine::Get().GetPlayState() == PlayState::Edit) throw;
+			ReportPlayFailure(e);
+			Stop();
+		}
 	}
 
 	void EditorApp::HostRender()
@@ -279,9 +289,31 @@ namespace koi::editor
 		KOI_LOG(Editor, Info, "Editor shut down");
 	}
 
-	void EditorApp::HostBeginPlay() { m_game->HostBeginPlay(); }
+	void EditorApp::HostBeginPlay()
+	{
+		try
+		{
+			m_game->HostBeginPlay();
+		}
+		catch (const std::exception& e)
+		{
+			ReportPlayFailure(e);
+			Stop();
+		}
+	}
 
-	void EditorApp::HostEndPlay() { m_game->HostEndPlay(); }
+	// Already on the way out of play, so there's nothing left to stop
+	void EditorApp::HostEndPlay()
+	{
+		try
+		{
+			m_game->HostEndPlay();
+		}
+		catch (const std::exception& e)
+		{
+			ReportPlayFailure(e);
+		}
+	}
 
 	void EditorApp::RegisterReloadable(IReloadable* reloadable) { m_reloadables.push_back(reloadable); }
 
@@ -547,6 +579,12 @@ namespace koi::editor
 			case PlayState::Paused:  engine.SetPlayState(PlayState::Playing); break;
 			case PlayState::Edit:                                             break;
 		}
+	}
+
+	void EditorApp::ReportPlayFailure(const std::exception& e)
+	{
+		KOI_LOG(Editor, Error, "Play stopped: {}\n{}", e.what(), CrashHandler::Format(CrashHandler::TraceOf(e)));
+		m_toasts.Push(ToastKind::Error, std::string("Play stopped: ") + e.what());
 	}
 
 	void EditorApp::Stop()

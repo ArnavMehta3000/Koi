@@ -4,6 +4,8 @@
 #include "Koi/Engine/Graphics/Camera.h"
 #include <flecs.h>
 #include <memory>
+#include <optional>
+#include <stacktrace>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -55,6 +57,10 @@ namespace koi
 		// Steps FixedUpdate systems as many times as dt covers, then runs the frame pipeline once
 		void Update(f32 dt);
 
+		// A throw can't unwind through flecs, so systems park it here and Update rethrows it after the pipeline
+		void ReportSystemFailure(std::string_view system, std::string_view what, std::stacktrace trace);
+		[[nodiscard]] bool HasSystemFailure() const { return m_systemFailure.has_value(); }
+
 		// Projects the primary camera entity for a surface of the given aspect and returns it
 		// Null if the world has no primary camera
 		[[nodiscard]] const Camera* ResolveCamera(f32 aspect);
@@ -66,6 +72,12 @@ namespace koi
 		void BuildSystems();
 
 	private:
+		struct SystemFailure
+		{
+			std::string     Message;
+			std::stacktrace Trace;
+		};
+
 		ECS    m_ecs;
 		Entity m_root;
 		Entity m_fixedPipeline;          // runs only FixedUpdate systems; the default pipeline skips them
@@ -74,5 +86,6 @@ namespace koi
 		std::string m_sourcePath;        // virtual path this world was loaded from, empty if none
 		BoundingBox m_bounds{ {}, {} };  // zero extents until meshes resolve
 		Camera m_camera;                 // derived from the primary camera entity by ResolveCamera
+		std::optional<SystemFailure> m_systemFailure;
 	};
 }

@@ -1,4 +1,5 @@
 #include "Koi/Engine/Diagnostics/CrashHandler.h"
+#include "Koi/Engine/Core/Exception.h"
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Win32.h"
@@ -182,6 +183,12 @@ namespace koi
 	const std::stacktrace& CrashHandler::LastThrowTrace()
 	{
 		return t_lastThrow;
+	}
+
+	const std::stacktrace& CrashHandler::TraceOf(const std::exception& e)
+	{
+		const auto* traced = dynamic_cast<const Exception*>(&e);
+		return traced && !traced->GetTrace().empty() ? traced->GetTrace() : t_lastThrow;
 	}
 
 	std::string CrashHandler::Format(const std::stacktrace& trace)
