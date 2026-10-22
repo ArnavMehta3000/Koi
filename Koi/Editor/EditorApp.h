@@ -2,19 +2,15 @@
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Core/EditorExtension.h"
 #include "Koi/Editor/ImGui/ImGuiLayer.h"
-#include "Koi/Editor/Inspectors/InspectorRegistry.h"
-#include "Koi/Editor/Panels/PanelHost.h"
-#include "Koi/Editor/Selection.h"
 #include "Koi/Editor/StatusBar.h"
-#include "Koi/Editor/Toasts.h"
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Graphics/RendererOverlay.h"
 #include "Koi/Engine/Graphics/RenderView.h"
 #include "Koi/Engine/Runtime/AppHost.h"
-#include "Koi/Engine/Runtime/Reloadable.h"
-#include <toml++/toml.hpp>
 #include <filesystem>
+#include <memory>
 #include <optional>
+#include <vector>
 
 namespace koi
 {
@@ -27,12 +23,13 @@ namespace koi::editor
 {
 	namespace fs = std::filesystem;
 
-	class AssetDatabase;
 	class ImportPanel;
-	class LogPanel;
 	class ImportQueue;
+	class PanelHost;
+	class PlaySession;
+	class Reloader;
+	class Toasts;
 	class ViewportPanel;
-	enum class ViewportCamera : u8;
 
 	struct EditorConfig
 	{
@@ -55,11 +52,10 @@ namespace koi::editor
 		: public NonCopyable
 		, public IAppHost
 		, public IRendererOverlay
-		, public IEditorContext
 	{
 	public:
 		EditorApp(std::unique_ptr<AppBase> game, EditorConfig config);
-		~EditorApp() override;  // out of line: m_assetDatabase is forward-declared
+		~EditorApp() override;
 
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override;
 		void SetWindow(Window& window) override;
@@ -73,13 +69,6 @@ namespace koi::editor
 
 		void OnOverlayRender(CommandList& cmd) override;
 
-		[[nodiscard]] AppBase* GetGame() const override { return m_game.get(); }
-		void RegisterReloadable(IReloadable* reloadable) override;
-		void RegisterPanel(std::unique_ptr<IEditorPanel> panel) override;
-		void RegisterInspector(std::unique_ptr<IComponentInspector> inspector) override;
-		using IEditorContext::RegisterPanel;
-		using IEditorContext::RegisterInspector;
-
 	private:
 		void Setup();
 		void StartExtensions();
@@ -90,7 +79,6 @@ namespace koi::editor
 		void DrawPlayControls();
 		void DrawGizmoMenu();
 		void PollShortcuts();
-		void ReloadAll(const ReloadRequest& request);
 		void SaveScene();
 		void Cook();
 
@@ -105,33 +93,24 @@ namespace koi::editor
 		bool LoadEditorState();
 		void SaveEditorState() const;
 
-		void Play();
-		void TogglePause();
-		void Stop();
-		void ReportPlayFailure(const std::exception& e);
-
 	private:
-		std::unique_ptr<AppBase>        m_game;
-		std::unique_ptr<AssetDatabase>  m_assetDatabase;
-		std::unique_ptr<ImportQueue>    m_importQueue;
-		ImportPanel*                    m_importPanel = nullptr;
-		LogPanel*                       m_logPanel    = nullptr;
-		EditorConfig                    m_config{};
-		ImGuiLayer                      m_imgui;
-		PanelHost                       m_panels;
-		StatusBar                       m_statusBar;
-		Toasts                          m_toasts;
-		InspectorRegistry               m_inspectors;
-		std::vector<IReloadable*>       m_reloadables;
-		std::vector<std::unique_ptr<EditorExtension>> m_extensions;
-		ViewportPanel*                  m_viewportPanel     = nullptr;
-		Selection                       m_selection{};
-		GizmoOptions                    m_gizmos{};
-		std::optional<ReloadRequest>    m_pendingReload;
+		using EdExtensions = std::vector<std::unique_ptr<EditorExtension>>;
 
-		toml::table                     m_snapshot;            // the world as it was when Play was pressed
-		std::vector<MeshHandle>         m_pinnedMeshes;        // keep the snapshot's assets resident across Stop
-		std::vector<MaterialHandle>     m_pinnedMaterials;
-		ViewportCamera                  m_cameraBeforePlay{};  // restored on Stop
+		std::unique_ptr<AppBase> m_game;
+		EditorConfig             m_config{};
+		EditorContext            m_context;
+		EdExtensions             m_extensions;
+		ImGuiLayer               m_imgui;
+		StatusBar                m_statusBar;
+		GizmoOptions             m_gizmos{};
+
+		// Owned by m_context, cached for access
+		PanelHost*     m_panels        = nullptr;
+		ImportQueue*   m_importQueue   = nullptr;
+		PlaySession*   m_play          = nullptr;
+		Reloader*      m_reloader      = nullptr;
+		Toasts*        m_toasts        = nullptr;
+		ImportPanel*   m_importPanel   = nullptr;
+		ViewportPanel* m_viewportPanel = nullptr;
 	};
 }

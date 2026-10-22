@@ -1,5 +1,7 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
+#include "Koi/Editor/PlaySession.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
@@ -21,6 +23,7 @@
 #include <ImGuizmo.h>
 #include <cmath>
 #include <limits>
+#include <utility>
 
 namespace koi::editor
 {
@@ -29,12 +32,16 @@ namespace koi::editor
 	// A click that moves further than this is a camera drag, not a pick
 	static constexpr f32 kPickDragSlop = 4.0f;
 
-	ViewportPanel::ViewportPanel(Renderer& renderer, AppBase& game, Selection& selection)
-		: m_renderer(&renderer)
-		, m_game(&game)
-		, m_selection(&selection)
+	ViewportPanel::ViewportPanel(EditorContext* ctx)
+		: m_renderer(&Engine::Get().GetSubsystem<Renderer>())
+		, m_game(ctx->GetGame())
+		, m_selection(ctx->Get<Selection>())
 		, m_controller(&m_camera, CameraMode::Orbit)
 	{
+		// Show the game camera by default; the toolbar can still switch back mid-play
+		PlaySession* play = ctx->Get<PlaySession>();
+		play->OnStarted([this] { m_cameraBeforePlay = std::exchange(m_cameraMode, ViewportCamera::Game); });
+		play->OnStopped([this] { m_cameraMode = m_cameraBeforePlay; });
 	}
 
 	ViewportPanel::~ViewportPanel()

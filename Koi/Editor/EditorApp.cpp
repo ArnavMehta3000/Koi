@@ -1,21 +1,26 @@
+#include "Koi/Editor/EditorApp.h"
+
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/Cooker.h"
-#include "Koi/Editor/EditorApp.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
+#include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Panels/GridPanel.h"
 #include "Koi/Editor/Panels/ImportPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
+#include "Koi/Editor/Panels/PanelHost.h"
 #include "Koi/Editor/Panels/ProfilerPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
+#include "Koi/Editor/PlaySession.h"
+#include "Koi/Editor/Reloader.h"
+#include "Koi/Editor/Selection.h"
+#include "Koi/Editor/Toasts.h"
 #include "Koi/Editor/UI/Widgets.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
-#include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/DebugDraw.h"
@@ -33,16 +38,17 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include "Koi/Engine/Runtime/Serializer.h"
+
+#include <fstream>
 #include <IconsFontAwesome6.h>
 #include <imgui_internal.h>
-#include <fstream>
-#include <utility>
 
 namespace koi::editor
 {
 	EditorApp::EditorApp(std::unique_ptr<AppBase> game, EditorConfig config)
 		: m_game(std::move(game))
 		, m_config(std::move(config))
+		, m_context(m_game.get())
 	{
 		KOI_LOG(Editor, Debug, "Initializing Editor");
 		KOI_LOG(Editor, Debug, "\tEngine source path: {}" , m_config.EngineSource.string());
@@ -65,27 +71,31 @@ namespace koi::editor
 		// Set editor as overlay (ImGui)
 		renderer.SetOverlay(this);
 
-		// Register the renderer as reloadable so that it can recompile shaders and rebuild pipelines
-		RegisterReloadable(&renderer);
+		// Services first; panels fetch them as they're constructed, so order matters
+		m_context.Add<Selection>();
+		m_toasts   = m_context.Add<Toasts>();
+		m_reloader = m_context.Add<Reloader>();
+		m_reloader->Register(&renderer);  // recompiles shaders and rebuilds pipelines
 
 		// Scan content and reconcile the manifest before any panel can query it
-		m_assetDatabase = std::make_unique<AssetDatabase>(m_config.EngineSource, m_config.ProjectSource);
-		m_assetDatabase->Refresh();
-		m_importQueue = std::make_unique<ImportQueue>(*m_assetDatabase);
+		AssetDatabase* database = m_context.Add<AssetDatabase>(m_config.EngineSource, m_config.ProjectSource);
+		database->Refresh();
+		m_importQueue = m_context.Add<ImportQueue>(*database);
 
 		// Extensions can expect the built-in inspectors to exist at startup
-		m_inspectors.RegisterBuiltins();
+		m_context.Add<InspectorRegistry>()->RegisterBuiltins();
+		m_play = m_context.Add<PlaySession>();
 
-		// Register default editor panels
-		m_panels.Emplace<WorldOutlinePanel>(*m_game, m_selection);
-		m_panels.Emplace<InspectorPanel>(m_selection, m_inspectors, *m_assetDatabase);
-		m_panels.Emplace<RenderTargetsPanel>(renderer);
-		m_panels.Emplace<GridPanel>(renderer);
-		m_logPanel = &m_panels.Emplace<LogPanel>();
-		m_panels.Emplace<ProfilerPanel>();
-		m_viewportPanel = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
-		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection, *m_importQueue);
-		m_importPanel = &m_panels.Emplace<ImportPanel>(*m_importQueue, *m_assetDatabase);
+		m_panels = m_context.Add<PanelHost>();
+		m_panels->Emplace<WorldOutlinePanel>();
+		m_panels->Emplace<InspectorPanel>();
+		m_panels->Emplace<RenderTargetsPanel>();
+		m_panels->Emplace<GridPanel>();
+		m_panels->Emplace<LogPanel>();
+		m_panels->Emplace<ProfilerPanel>();
+		m_viewportPanel = m_panels->Emplace<ViewportPanel>();
+		m_panels->Emplace<AssetsPanel>();
+		m_importPanel = m_panels->Emplace<ImportPanel>();
 
 		// Files dragged in from Explorer land in the Import panel to have their settings checked
 		Engine::Get().GetWindow().SetDropCallback([this](std::span<const fs::path> files) { m_importQueue->AddFiles(files); });
@@ -97,7 +107,7 @@ namespace koi::editor
 		m_game->HostInit();
 		StartExtensions();
 		m_imgui.Init(Engine::Get().GetWindow());
-		m_panels.RegisterSettingsHandler();
+		m_panels->RegisterSettingsHandler();
 
 		if (!LoadEditorState())
 		{
@@ -114,7 +124,7 @@ namespace koi::editor
 		{
 			KOI_LOG(Editor, Debug, "Starting editor extension '{}'", entry.Name);
 			m_extensions.push_back(entry.Create());
-			m_extensions.back()->OnStartup(*this);
+			m_extensions.back()->OnStartup(m_context);
 		}
 	}
 
@@ -189,8 +199,7 @@ namespace koi::editor
 		InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 
 		// Requested during the ImGui frame; runs here, before any command list is recording
-		if (m_pendingReload)
-			ReloadAll(*std::exchange(m_pendingReload, std::nullopt));
+		m_reloader->Flush();
 
 		m_viewportPanel->Update(dt, input);
 		m_importQueue->Update();
@@ -205,8 +214,8 @@ namespace koi::editor
 		catch (const std::exception& e)
 		{
 			if (Engine::Get().GetPlayState() == PlayState::Edit) throw;
-			ReportPlayFailure(e);
-			Stop();
+			m_play->ReportFailure(e);
+			m_play->Stop();
 		}
 	}
 
@@ -298,10 +307,9 @@ namespace koi::editor
 	void EditorApp::HostShutdown()
 	{
 		Engine::Get().GetWindow().SetDropCallback({});
-		m_importQueue.reset();  // cancels running imports and waits for them
-
 		SaveEditorState();
 		ShutdownExtensions();
+		m_context.Shutdown();  // cancels running imports and waits for them
 		m_game->HostShutdown();
 		m_imgui.Shutdown();
 		KOI_LOG(Editor, Info, "Editor shut down");
@@ -315,8 +323,8 @@ namespace koi::editor
 		}
 		catch (const std::exception& e)
 		{
-			ReportPlayFailure(e);
-			Stop();
+			m_play->ReportFailure(e);
+			m_play->Stop();
 		}
 	}
 
@@ -329,15 +337,9 @@ namespace koi::editor
 		}
 		catch (const std::exception& e)
 		{
-			ReportPlayFailure(e);
+			m_play->ReportFailure(e);
 		}
 	}
-
-	void EditorApp::RegisterReloadable(IReloadable* reloadable) { m_reloadables.push_back(reloadable); }
-
-	void EditorApp::RegisterPanel(std::unique_ptr<IEditorPanel> panel) { m_panels.Add(std::move(panel)); }
-
-	void EditorApp::RegisterInspector(std::unique_ptr<IComponentInspector> inspector) { m_inspectors.Add(std::move(inspector)); }
 
 	std::optional<RenderView> EditorApp::GetViewportView() const
 	{
@@ -359,15 +361,6 @@ namespace koi::editor
 		return RenderView{ .Camera = camera, .Target = *target };
 	}
 
-	void EditorApp::ReloadAll(const ReloadRequest& request)
-	{
-		KOI_LOG(Editor, Info, "Hot-reloading {} registered target(s)", m_reloadables.size());
-		for (IReloadable* reloadable : m_reloadables)
-		{
-			reloadable->Reload(request);
-		}
-	}
-
 	void EditorApp::OnOverlayRender(CommandList& cmd)
 	{
 		ZoneScoped;
@@ -386,8 +379,8 @@ namespace koi::editor
 				.ScenePath = m_game->GetWorld().GetSourcePath(),
 				.Importing = m_importQueue->IsBusy(),
 			});
-			m_panels.DrawAll();
-			m_toasts.Draw();
+			m_panels->DrawAll();
+			m_toasts->Draw();
 			PollShortcuts();
 		}
 
@@ -412,9 +405,9 @@ namespace koi::editor
 	void EditorApp::PollShortcuts()
 	{
 		if (ImGui::Shortcut(ImGuiMod_Shift | ImGuiKey_F5, ImGuiInputFlags_RouteGlobal))  // Shift+F5: reload everything
-			m_pendingReload = ReloadRequest{ .Scope = ReloadScope::All };
+			m_reloader->Request({ .Scope = ReloadScope::All });
 		else if (ImGui::Shortcut(ImGuiKey_F5, ImGuiInputFlags_RouteGlobal))  //F5: Reload what is changed
-			m_pendingReload = ReloadRequest{ .Scope = ReloadScope::Changed };
+			m_reloader->Request({ .Scope = ReloadScope::Changed });
 
 		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal))  // Saving
 		{
@@ -423,14 +416,11 @@ namespace koi::editor
 
 		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_P, ImGuiInputFlags_RouteGlobal))
 		{
-			TogglePause();
+			m_play->TogglePause();
 		}
 		else if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_P, ImGuiInputFlags_RouteGlobal))
 		{
-			if (Engine::Get().GetPlayState() == PlayState::Edit)
-				Play();
-			else
-				Stop();
+			m_play->TogglePlay();
 		}
 	}
 
@@ -451,7 +441,7 @@ namespace koi::editor
 
 		if (ImGui::BeginMenu("View"))
 		{
-			m_panels.DrawMenuItems();
+			m_panels->DrawMenuItems();
 			ImGui::Separator();
 			DrawGizmoMenu();
 			ImGui::Separator();
@@ -474,19 +464,19 @@ namespace koi::editor
 		if (utils::IconButton(ICON_FA_PLAY, "Play (Ctrl+P)", state == PlayState::Playing, palette.Playing))
 		{
 			if (state == PlayState::Edit)
-				Play();
+				m_play->Play();
 			else if (state == PlayState::Paused)
-				TogglePause();
+				m_play->TogglePause();
 		}
 
 		ImGui::BeginDisabled(state == PlayState::Edit);
 		if (utils::IconButton(ICON_FA_PAUSE, "Pause (Ctrl+Shift+P)", state == PlayState::Paused, palette.Paused))
 		{
-			TogglePause();
+			m_play->TogglePause();
 		}
 		if (utils::IconButton(ICON_FA_STOP, "Stop (Ctrl+P)"))
 		{
-			Stop();
+			m_play->Stop();
 		}
 		ImGui::EndDisabled();
 
@@ -522,24 +512,24 @@ namespace koi::editor
 		World& world = m_game->GetWorld();
 		if (world.GetSourcePath().empty())
 		{
-			m_toasts.Push(ToastKind::Warning, "Nothing to save: the world was not loaded from a scene");
+			m_toasts->Push(ToastKind::Warning, "Nothing to save: the world was not loaded from a scene");
 			return;
 		}
 
 		if (const Result<void> saved = world.Save())
 		{
-			m_toasts.Push(ToastKind::Success, "Scene saved");
+			m_toasts->Push(ToastKind::Success, "Scene saved");
 		}
 		else
 		{
 			KOI_LOG(Editor, Error, "Scene save failed: {}", saved.error().Message);
-			m_toasts.Push(ToastKind::Error, "Scene save failed: " + saved.error().Message);
+			m_toasts->Push(ToastKind::Error, "Scene save failed: " + saved.error().Message);
 		}
 	}
 
 	void EditorApp::Cook()
 	{
-		m_toasts.Push(ToastKind::Info, editor::Cook(CookRequest
+		m_toasts->Push(ToastKind::Info, editor::Cook(CookRequest
 		{
 			.EngineSource  = m_config.EngineSource,
 			.ProjectSource = m_config.ProjectSource,
@@ -547,92 +537,5 @@ namespace koi::editor
 			.OutputRoot    = m_config.CookedOutput,
 			.Scenes        = m_game->GetDesc().Scenes,
 		}));
-	}
-
-	void EditorApp::Play()
-	{
-		ZoneScoped;
-		m_logPanel->OnPlay();
-
-		World& world                    = m_game->GetWorld();
-		Engine& engine                  = Engine::Get();
-		GfxDevice& device               = engine.GetSubsystem<Renderer>().GetDevice();
-		AssetRegistry& assets           = engine.GetSubsystem<AssetRegistry>();
-		AssetCache<GPUMesh>& meshes     = assets.Cache<GPUMesh>();
-		AssetCache<Material>& materials = assets.Cache<Material>();
-
-		m_snapshot = world.SaveToTable();
-
-		// Hold a reference to everything the snapshot names. Stop tears the world down
-		// before rebuilding it, and without this the last reference to each asset would
-		// drop to zero and the same files would be re-read from disk a moment later
-		world.GetECS().each<MeshRef>([&](Entity, MeshRef& mesh)
-		{
-			const AssetKey key = meshes.GetKey(mesh.Handle);
-			if (key) m_pinnedMeshes.push_back(meshes.Acquire(device, key));
-		});
-
-		world.GetECS().each<MaterialRef>([&](Entity, MaterialRef& material)
-		{
-			const AssetKey key = materials.GetKey(material.Handle);
-			if (key) m_pinnedMaterials.push_back(materials.Acquire(device, key));
-		});
-
-		// Show the game camera by default; the toolbar can still switch back mid-play
-		m_cameraBeforePlay = m_viewportPanel->GetCameraMode();
-		m_viewportPanel->SetCameraMode(ViewportCamera::Game);
-
-		// Set the state last: it fires OnBeginPlay, and whatever that spawns must land
-		// outside the snapshot so Stop discards it
-		Engine::Get().SetPlayState(PlayState::Playing);
-	}
-
-	void EditorApp::TogglePause()
-	{
-		ZoneScoped;
-		Engine& engine = Engine::Get();
-		switch (engine.GetPlayState())
-		{
-			case PlayState::Playing: engine.SetPlayState(PlayState::Paused);  break;
-			case PlayState::Paused:  engine.SetPlayState(PlayState::Playing); break;
-			case PlayState::Edit:                                             break;
-		}
-	}
-
-	void EditorApp::ReportPlayFailure(const std::exception& e)
-	{
-		KOI_LOG(Editor, Error, "Play stopped: {}\n{}", e.what(), CrashHandler::Format(CrashHandler::TraceOf(e)));
-		m_toasts.Push(ToastKind::Error, std::string("Play stopped: ") + e.what());
-	}
-
-	void EditorApp::Stop()
-	{
-		ZoneScoped;
-
-		Engine& engine = Engine::Get();
-		if (engine.GetPlayState() == PlayState::Edit) return;
-
-		// Leave play mode first: OnEndPlay still needs the world it ran against
-		engine.SetPlayState(PlayState::Edit);
-
-		// The rebuild below recycles entity ids, so a stale selection would resolve to whatever entity happens to land in that slot
-		m_selection.Clear();
-
-		World& world = m_game->GetWorld();
-		world.Clear();  // Clear all entities, without touching the systems
-		world.LoadFromTable(m_snapshot);
-
-		// The rebuilt world took its own references, so the play-time pins can go
-		GfxDevice& device     = engine.GetSubsystem<Renderer>().GetDevice();
-		AssetRegistry& assets = engine.GetSubsystem<AssetRegistry>();
-		for (const MeshHandle handle : m_pinnedMeshes)         assets.Cache<GPUMesh>().Release(device, handle);
-		for (const MaterialHandle handle : m_pinnedMaterials)  assets.Cache<Material>().Release(device, handle);
-
-		m_viewportPanel->SetCameraMode(m_cameraBeforePlay);
-
-		m_pinnedMeshes.clear();
-		m_pinnedMaterials.clear();
-		m_snapshot = toml::table{};
-		KOI_LOG(Editor, Debug, "Stop: world restored from snapshot, pinned assets released");
 	}
 }

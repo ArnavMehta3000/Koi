@@ -6,7 +6,7 @@
 
 namespace koi::editor
 {
-	class IEditorContext;
+	class EditorContext;
 
 	// Editor-only code for a game or an engine feature
 	class EditorExtension
@@ -14,7 +14,7 @@ namespace koi::editor
 	public:
 		virtual ~EditorExtension() = default;
 
-		virtual void OnStartup(IEditorContext& ctx) = 0;
+		virtual void OnStartup(EditorContext& ctx) = 0;
 		virtual void OnShutdown() {}
 	};
 

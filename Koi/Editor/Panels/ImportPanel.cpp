@@ -1,6 +1,7 @@
 #include "Koi/Editor/Panels/ImportPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
+#include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include <imgui.h>
@@ -49,6 +50,12 @@ namespace koi::editor
 		}
 	}
 
+	ImportPanel::ImportPanel(EditorContext* ctx)
+		: m_queue(ctx->Get<ImportQueue>())
+		, m_database(ctx->Get<AssetDatabase>())
+	{
+	}
+
 	void ImportPanel::OnUpdate()
 	{
 		if (std::exchange(m_focusPending, false))
@@ -59,16 +66,16 @@ namespace koi::editor
 	{
 		ZoneScoped;
 
-		if (m_queue.Pending().empty() && m_queue.History().empty())
+		if (m_queue->Pending().empty() && m_queue->History().empty())
 		{
 			ImGui::TextDisabled("Drag images or glTF models from Explorer onto the editor window to import them");
 			ImGui::TextDisabled("PNG, JPG, TGA, BMP, TIFF, DDS and HDR all valid");
 		}
 
-		if (!m_queue.Pending().empty())
+		if (!m_queue->Pending().empty())
 			DrawPending();
 
-		if (!m_queue.History().empty())
+		if (!m_queue->History().empty())
 		{
 			ImGui::SeparatorText("Progress");
 			DrawProgress();
@@ -84,7 +91,7 @@ namespace koi::editor
 		ImGui::SetNextItemWidth(-FLT_MIN);
 		if (ImGui::BeginCombo("##Destination", folder.c_str(), ImGuiComboFlags_HeightLarge))
 		{
-			for (const std::string& option : m_database.Folders())
+			for (const std::string& option : m_database->Folders())
 			{
 				if (!option.starts_with("project://")) continue;  // engine content is read-only
 				if (ImGui::Selectable(option.c_str(), option == folder)) folder = option;
@@ -99,7 +106,7 @@ namespace koi::editor
 
 	void ImportPanel::DrawPending()
 	{
-		std::vector<std::shared_ptr<ImportItem>>& pending = m_queue.Pending();
+		std::vector<std::shared_ptr<ImportItem>>& pending = m_queue->Pending();
 		const auto count = [&](AssetFileType type) { return std::ranges::count(pending, type, [](const auto& item) { return item->Type; }); };
 
 		size_t removeAt = pending.size();
@@ -109,17 +116,17 @@ namespace koi::editor
 		if (removeAt < pending.size()) pending.erase(pending.begin() + static_cast<std::ptrdiff_t>(removeAt));
 
 		if (ImGui::Button(std::format("Import {} file(s)", pending.size()).c_str()))
-			m_queue.StartPending();
+			m_queue->StartPending();
 		ImGui::SameLine();
 		if (ImGui::Button("Clear"))
-			m_queue.ClearPending();
+			m_queue->ClearPending();
 	}
 
 	void ImportPanel::DrawTextureTable(size_t& removeAt)
 	{
-		std::vector<std::shared_ptr<ImportItem>>& pending = m_queue.Pending();
+		std::vector<std::shared_ptr<ImportItem>>& pending = m_queue->Pending();
 		ImGui::SeparatorText("Images");
-		DrawDestination("Images", m_queue.DestinationFolder());
+		DrawDestination("Images", m_queue->DestinationFolder());
 
 		// Set every row at once, the usual case for a folder of one kind of texture
 		ImGui::AlignTextToFramePadding();
@@ -183,9 +190,9 @@ namespace koi::editor
 
 	void ImportPanel::DrawModelTable(size_t& removeAt)
 	{
-		std::vector<std::shared_ptr<ImportItem>>& pending = m_queue.Pending();
+		std::vector<std::shared_ptr<ImportItem>>& pending = m_queue->Pending();
 		ImGui::SeparatorText("Models");
-		DrawDestination("Models", m_queue.ModelDestinationFolder());
+		DrawDestination("Models", m_queue->ModelDestinationFolder());
 
 		if (!ImGui::BeginTable("##PendingModels", 4, kPendingTableFlags, ImVec2(0.0f, TableHeight(pending.size()))))
 			return;
@@ -230,7 +237,7 @@ namespace koi::editor
 
 	void ImportPanel::DrawProgress()
 	{
-		const std::span<const std::shared_ptr<ImportItem>> history = m_queue.History();
+		const std::span<const std::shared_ptr<ImportItem>> history = m_queue->History();
 
 		if (ImGui::BeginTable("##Progress", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp))
 		{
@@ -284,8 +291,8 @@ namespace koi::editor
 			ImGui::EndTable();
 		}
 
-		if (ImGui::Button("Cancel all")) m_queue.CancelAll();
+		if (ImGui::Button("Cancel all")) m_queue->CancelAll();
 		ImGui::SameLine();
-		if (ImGui::Button("Clear finished")) m_queue.ClearFinished();
+		if (ImGui::Button("Clear finished")) m_queue->ClearFinished();
 	}
 }

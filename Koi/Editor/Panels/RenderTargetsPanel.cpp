@@ -2,6 +2,7 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <rfl.hpp>
 #include <format>
@@ -37,6 +38,11 @@ namespace koi::editor
 			}
 			return nullptr;
 		}
+	}
+
+	RenderTargetsPanel::RenderTargetsPanel()
+		: m_renderer(&Engine::Get().GetSubsystem<Renderer>())
+	{
 	}
 
 	void RenderTargetsPanel::OnDraw()

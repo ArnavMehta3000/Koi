@@ -3,11 +3,11 @@
 
 namespace
 {
-	// Only editor builds compile this folder: register inspectors and panels here
+	// Only editor builds compile this folder. Reach editor services through ctx.Get<T>(), e.g. InspectorRegistry, PanelHost
 	class {{Name}}Editor final : public koi::editor::EditorExtension
 	{
 	public:
-		void OnStartup([[maybe_unused]] koi::editor::IEditorContext& ctx) override
+		void OnStartup([[maybe_unused]] koi::editor::EditorContext& ctx) override
 		{
 		}
 	};

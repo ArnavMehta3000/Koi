@@ -37,7 +37,10 @@ namespace koi::editor
 	{
 	public:
 		explicit ImportQueue(AssetDatabase& database);
-		~ImportQueue();  // cancels whatever is running and waits for it
+		~ImportQueue();
+
+		// Cancels whatever is running and waits for it
+		void OnShutdown();
 
 		// Anything that isn't an image or a glTF is skipped with a log line saying why
 		void AddFiles(std::span<const fs::path> files);

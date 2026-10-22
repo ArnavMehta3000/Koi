@@ -2,6 +2,7 @@
 #include "Components/PlayerMover.h"
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Core/EditorExtension.h"
+#include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Inspectors/ReflectInspector.h"
 
 namespace game
@@ -41,11 +42,12 @@ namespace game
 		class SurfEditor final : public koi::editor::EditorExtension
 		{
 		public:
-			void OnStartup(koi::editor::IEditorContext& ctx) override
+			void OnStartup(koi::editor::EditorContext& ctx) override
 			{
-				ctx.RegisterInspector<PlayerMoverInspector>();
-				ctx.RegisterInspector<ObstacleSpawnerInspector>();
-				ctx.RegisterInspector<koi::editor::ReflectedInspector<Obstacle>>();
+				koi::editor::InspectorRegistry* inspectors = ctx.Get<koi::editor::InspectorRegistry>();
+				inspectors->Emplace<PlayerMoverInspector>();
+				inspectors->Emplace<ObstacleSpawnerInspector>();
+				inspectors->Emplace<koi::editor::ReflectedInspector<Obstacle>>();
 			}
 		};
 	}

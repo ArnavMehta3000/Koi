@@ -1,4 +1,5 @@
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
+#include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Runtime/AppBase.h"
@@ -54,6 +55,12 @@ namespace koi::editor
 			};
 			visit(Entity{});
 		}
+	}
+
+	WorldOutlinePanel::WorldOutlinePanel(EditorContext* ctx)
+		: m_game(ctx->GetGame())
+		, m_selection(ctx->Get<Selection>())
+	{
 	}
 
 	void WorldOutlinePanel::OnDraw()

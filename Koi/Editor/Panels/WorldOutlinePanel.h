@@ -9,12 +9,14 @@ namespace koi { class AppBase; }
 
 namespace koi::editor
 {
+	class EditorContext;
+
 	// The entity tree. Selecting here drives the Inspector panel; they're split so
 	// each can be shown, hidden, or docked independently from the Windows menu
 	class WorldOutlinePanel : public IEditorPanel
 	{
 	public:
-		WorldOutlinePanel(AppBase& game, Selection& selection) : m_game(&game), m_selection(&selection) {}
+		explicit WorldOutlinePanel(EditorContext* ctx);
 
 		[[nodiscard]] std::string_view GetName() const override { return "World Outline"; }
 		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_SITEMAP; }

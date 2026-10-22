@@ -15,7 +15,7 @@ namespace koi::editor
 	class GridPanel : public IEditorPanel
 	{
 	public:
-		explicit GridPanel(Renderer& renderer) : m_renderer(&renderer) {}
+		GridPanel();
 
 		[[nodiscard]] std::string_view GetName() const override { return "Grid"; }
 		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_BORDER_ALL; }

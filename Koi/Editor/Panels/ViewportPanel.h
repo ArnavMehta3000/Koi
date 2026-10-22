@@ -17,6 +17,7 @@ namespace koi
 
 namespace koi::editor
 {
+	class EditorContext;
 	class Selection;
 
 	enum class GizmoOp : u8
@@ -49,7 +50,7 @@ namespace koi::editor
 	class ViewportPanel : public IEditorPanel
 	{
 	public:
-		ViewportPanel(Renderer& renderer, AppBase& game, Selection& selection);
+		explicit ViewportPanel(EditorContext* ctx);
 		~ViewportPanel() override;
 
 		[[nodiscard]] std::string_view GetName() const override { return "Viewport"; }
@@ -62,8 +63,6 @@ namespace koi::editor
 		[[nodiscard]] inline const ViewportTarget* GetTarget() const { return m_valid ? &m_target : nullptr; }
 		[[nodiscard]] inline const Camera& GetCamera() const { return m_camera; }
 		[[nodiscard]] inline bool IsGameCamera() const { return m_cameraMode == ViewportCamera::Game; }
-		[[nodiscard]] inline ViewportCamera GetCameraMode() const { return m_cameraMode; }
-		inline void SetCameraMode(ViewportCamera mode) { m_cameraMode = mode; }
 
 		const ViewportTarget* PrepareFrame();
 		void FrameBounds(const BoundingBox& bounds);
@@ -92,7 +91,8 @@ namespace koi::editor
 		u32               m_desiredHeight   = 720;
 		f32               m_resizeSettle    = 0.0f;  // counts down after a resize (to prevent log spam)
 
-		ViewportCamera     m_cameraMode = ViewportCamera::Scene;
+		ViewportCamera     m_cameraMode       = ViewportCamera::Scene;
+		ViewportCamera     m_cameraBeforePlay = ViewportCamera::Scene;  // restored on Stop
 		ViewportResolution m_resolution = ViewportResolution::FreeAspect;
 
 		Camera            m_camera;

@@ -1,5 +1,7 @@
 #include "Koi/Editor/Panels/LogPanel.h"
+#include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
+#include "Koi/Editor/PlaySession.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
@@ -143,6 +145,11 @@ namespace koi::editor
 			ImGui::TextUnformatted(begin, end);
 			ImGui::PopStyleColor();
 		}
+	}
+
+	LogPanel::LogPanel(EditorContext* ctx)
+	{
+		ctx->Get<PlaySession>()->OnStarted([this] { OnPlay(); });
 	}
 
 	void LogPanel::OnPlay()
