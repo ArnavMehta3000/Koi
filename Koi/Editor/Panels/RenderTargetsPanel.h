@@ -10,7 +10,7 @@ namespace koi::editor
 	class RenderTargetsPanel : public IEditorPanel
 	{
 	public:
-		explicit RenderTargetsPanel(Renderer& renderer) : m_renderer(&renderer) {}
+		RenderTargetsPanel();
 
 		[[nodiscard]] std::string_view GetName() const override { return "Render Targets"; }
 		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_LAYER_GROUP; }

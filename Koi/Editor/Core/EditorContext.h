@@ -1,44 +1,93 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
-#include "Koi/Editor/Inspectors/ComponentInspector.h"
+#include "Koi/Engine/Core/Assert.h"
+#include "Koi/Engine/Core/Types.h"
+#include <concepts>
 #include <memory>
 #include <utility>
+#include <vector>
 
-namespace koi
-{
-	class AppBase;
-	class IReloadable;
-}
+namespace koi { class AppBase; }
 
 namespace koi::editor
 {
-	class IEditorContext
+	class EditorContext : public NonCopyable, public NonMovable
 	{
 	public:
-		virtual ~IEditorContext() = default;
+		explicit EditorContext(AppBase* game) : m_game(game) {}
+		~EditorContext();
 
-		[[nodiscard]] virtual AppBase* GetGame() const = 0;
+		[[nodiscard]] AppBase* GetGame() const { return m_game; }
 
-		virtual void RegisterReloadable(IReloadable* reloadable) = 0;
-		virtual void RegisterPanel(std::unique_ptr<IEditorPanel> panel) = 0;
-		virtual void RegisterInspector(std::unique_ptr<IComponentInspector> inspector) = 0;
-
-		template<typename T, typename... Args>
-		T& RegisterPanel(Args&&... args)
+		template <typename T, typename... Args>
+		T* Add(Args&&... args)
 		{
-			auto panel = std::make_unique<T>(std::forward<Args>(args)...);
-			T& ref = *panel;
-			RegisterPanel(std::move(panel));
-			return ref;
+			KOI_ASSERT(!TryGet<T>(), "Editor service added twice");
+
+			std::unique_ptr<T> service;
+			if constexpr (std::constructible_from<T, EditorContext*, Args...>)
+			{
+				service = std::make_unique<T>(this, std::forward<Args>(args)...);  // Created with this (EditorContext) as first arg
+			}
+			else
+			{
+				service = std::make_unique<T>(std::forward<Args>(args)...);  // Created with no this as first arg
+			}
+
+			T* raw = service.get();
+			Entry& entry = m_services.emplace_back(Entry
+			{
+				.Key     = Key<T>(),
+				.Service = Owned(service.release(), [](void* p) { delete static_cast<T*>(p); }),
+			});
+
+			// If T has an OnShutdown function, then we can invoke it at destruction time
+			if constexpr (requires(T& t) { t.OnShutdown(); })
+			{
+				entry.Shutdown = [](void* p) { static_cast<T*>(p)->OnShutdown(); };
+			}
+
+			return raw;
 		}
 
-		template<typename T, typename... Args>
-		T& RegisterInspector(Args&&... args)
+		template <typename T>
+		[[nodiscard]] T* TryGet() const
 		{
-			auto inspector = std::make_unique<T>(std::forward<Args>(args)...);
-			T& ref = *inspector;
-			RegisterInspector(std::move(inspector));
-			return ref;
+			for (const Entry& entry : m_services)
+			{
+				if (entry.Key == Key<T>()) return static_cast<T*>(entry.Service.get());
+			}
+			return nullptr;
 		}
+
+		template <typename T>
+		[[nodiscard]] T* Get() const
+		{
+			T* service = TryGet<T>();
+			KOI_ASSERT(service, "Editor service was never added");
+			return service;
+		}
+
+		void Shutdown();
+
+	private:
+		using Owned = std::unique_ptr<void, void (*)(void*)>;  // A unique pointer with a custom deleter
+
+		struct Entry
+		{
+			const void* Key = nullptr;
+			Owned       Service{ nullptr, nullptr };
+			void      (*Shutdown)(void*) = nullptr;
+		};
+
+		template <typename T>
+		[[nodiscard]] static const void* Key()
+		{
+			static constexpr char kTag = 0;
+			return &kTag;
+		}
+
+	private:
+		AppBase*           m_game = nullptr;
+		std::vector<Entry> m_services;
 	};
 }

@@ -6,18 +6,14 @@
 
 namespace koi::editor
 {
-	class InspectorRegistry;
 	class AssetDatabase;
+	class EditorContext;
+	class InspectorRegistry;
 
 	class InspectorPanel : public IEditorPanel
 	{
 	public:
-		InspectorPanel(Selection& selection, InspectorRegistry& inspectors, AssetDatabase& database)
-			: m_selection(&selection)
-			, m_inspectors(&inspectors)
-			, m_database(&database)
-		{
-		}
+		explicit InspectorPanel(EditorContext* ctx);
 
 		[[nodiscard]] std::string_view GetName() const override { return "Inspector"; }
 		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_SLIDERS; }

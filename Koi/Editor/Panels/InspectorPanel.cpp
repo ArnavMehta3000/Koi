@@ -1,5 +1,6 @@
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
+#include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
@@ -17,6 +18,13 @@ namespace koi::editor
 			if (!s.empty()) s[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(s[0])));
 			return s;
 		}
+	}
+
+	InspectorPanel::InspectorPanel(EditorContext* ctx)
+		: m_selection(ctx->Get<Selection>())
+		, m_inspectors(ctx->Get<InspectorRegistry>())
+		, m_database(ctx->Get<AssetDatabase>())
+	{
 	}
 
 	void InspectorPanel::OnDraw()

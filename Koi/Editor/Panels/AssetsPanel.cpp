@@ -1,6 +1,7 @@
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
+#include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
@@ -70,18 +71,18 @@ namespace koi::editor
 		}
 	}
 
-	AssetsPanel::AssetsPanel(AssetDatabase& database, Selection& selection, ImportQueue& imports)
-		: m_database(database)
-		, m_selection(selection)
-		, m_imports(imports)
+	AssetsPanel::AssetsPanel(EditorContext* ctx)
+		: m_database(ctx->Get<AssetDatabase>())
+		, m_selection(ctx->Get<Selection>())
+		, m_imports(ctx->Get<ImportQueue>())
 	{
-		const std::span<const std::string> folders = m_database.Folders();
+		const std::span<const std::string> folders = m_database->Folders();
 		if (!folders.empty()) m_selectedFolder = folders.front();
 	}
 
 	void AssetsPanel::SelectAsset(std::string virtualPath)
 	{
-		m_selection.SelectAsset(std::move(virtualPath));
+		m_selection->SelectAsset(std::move(virtualPath));
 	}
 
 	void AssetsPanel::OnDraw()
@@ -118,7 +119,7 @@ namespace koi::editor
 	{
 		if (!ImGui::BeginMenuBar()) return;
 
-		if (utils::IconButton(ICON_FA_ARROWS_ROTATE, "Refresh")) m_database.Refresh();
+		if (utils::IconButton(ICON_FA_ARROWS_ROTATE, "Refresh")) m_database->Refresh();
 
 		ImGui::SetNextItemWidth(240.0f);
 		utils::SearchBar("##Search", m_search, "Search all folders...");
@@ -130,7 +131,7 @@ namespace koi::editor
 	{
 		// Folders arrive sorted, so indenting by depth reproduces the hierarchy without
 		// building a tree - the flat list is already in the right order
-		for (const std::string& folder : m_database.Folders())
+		for (const std::string& folder : m_database->Folders())
 		{
 			const u32 depth = static_cast<u32>(std::ranges::count(folder, '/')) - 2;  // "scheme://" contributes two
 
@@ -149,7 +150,7 @@ namespace koi::editor
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(utils::kAssetDragDropType))
 				{
 					const std::string dropped(static_cast<const char*>(payload->Data));
-					if (const AssetEntry* entry = m_database.Find(dropped); entry && entry->Writable)
+					if (const AssetEntry* entry = m_database->Find(dropped); entry && entry->Writable)
 					{
 						m_pending     = Action::Move;
 						m_pendingPath = entry->VirtualPath;
@@ -179,7 +180,7 @@ namespace koi::editor
 		ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthFixed, 70.0f);
 		ImGui::TableHeadersRow();
 
-		for (const AssetEntry& entry : m_database.All())
+		for (const AssetEntry& entry : m_database->All())
 		{
 			if (PassesFilter(entry)) DrawRow(entry);
 		}
@@ -187,7 +188,7 @@ namespace koi::editor
 		ImGui::EndTable();
 
 		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
-			if (m_selection.HasAsset()) m_selection.Clear();
+			if (m_selection->HasAsset()) m_selection->Clear();
 	}
 
 	void AssetsPanel::DrawRow(const AssetEntry& entry)
@@ -240,7 +241,7 @@ namespace koi::editor
 			return;
 		}
 
-		const bool selected = (entry.VirtualPath == m_selection.GetAsset());
+		const bool selected = (entry.VirtualPath == m_selection->GetAsset());
 
 		const std::string label = std::string(utils::AssetKindIcon(entry.Kind)) + "  " + entry.Name;
 		if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
@@ -290,7 +291,7 @@ namespace koi::editor
 		// Runs in the background; the database only refreshes once it's done, so the entry stays valid
 		const bool imported = fileType == AssetFileType::Texture || fileType == AssetFileType::Mesh;
 		if (imported && ImGui::MenuItem("Reimport", nullptr, false, editable))
-			m_imports.Reimport(entry.VirtualPath);
+			m_imports->Reimport(entry.VirtualPath);
 
 		ImGui::Separator();
 		if (ImGui::MenuItem("Copy Virtual Path")) ImGui::SetClipboardText(entry.VirtualPath.c_str());
@@ -305,7 +306,7 @@ namespace koi::editor
 		ImGui::SetNextWindowSize(ImVec2(480.0f, 0.0f));
 		if (!ImGui::BeginPopupModal("Delete Asset", nullptr, ImGuiWindowFlags_NoResize)) return;
 
-		const std::vector<std::string> referencers = m_database.ReferencersOf(m_pendingPath);
+		const std::vector<std::string> referencers = m_database->ReferencersOf(m_pendingPath);
 
 		ImGui::TextWrapped("Delete '%s' from disk?", m_pendingLabel.c_str());
 		ImGui::Spacing();
@@ -353,14 +354,14 @@ namespace koi::editor
 
 		switch (action)
 		{
-		case Action::Rename: m_database.Rename(m_pendingPath, m_pendingArg); break;
-		case Action::Move:   m_database.Move  (m_pendingPath, m_pendingArg); break;
-		case Action::Delete: m_database.Delete(m_pendingPath);              break;
+		case Action::Rename: m_database->Rename(m_pendingPath, m_pendingArg); break;
+		case Action::Move:   m_database->Move  (m_pendingPath, m_pendingArg); break;
+		case Action::Delete: m_database->Delete(m_pendingPath);              break;
 		default: break;
 		}
 
 		// Every path the panel was holding onto may have just changed underneath it
-		if (m_selection.HasAsset()) m_selection.Clear();
+		if (m_selection->HasAsset()) m_selection->Clear();
 		m_pendingArg.clear();
 		m_pendingPath.clear();
 	}

@@ -122,6 +122,11 @@ namespace koi::editor
 
 	ImportQueue::~ImportQueue()
 	{
+		OnShutdown();
+	}
+
+	void ImportQueue::OnShutdown()
+	{
 		CancelAll();
 		for (Batch& batch : m_batches)
 		{

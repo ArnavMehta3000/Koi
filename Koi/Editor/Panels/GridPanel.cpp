@@ -2,10 +2,16 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RenderPasses/GridPass.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 
 namespace koi::editor
 {
+	GridPanel::GridPanel()
+		: m_renderer(&Engine::Get().GetSubsystem<Renderer>())
+	{
+	}
+
 	GridPass* GridPanel::FindPass() const
 	{
 		return m_renderer ? m_renderer->GetFeatures().Find<GridPass>() : nullptr;

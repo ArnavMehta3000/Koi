@@ -9,6 +9,7 @@
 namespace koi::editor
 {
 	class AssetDatabase;
+	class EditorContext;
 	class ImportQueue;
 	struct AssetEntry;
 
@@ -16,7 +17,7 @@ namespace koi::editor
 	class AssetsPanel : public IEditorPanel
 	{
 	public:
-		AssetsPanel(AssetDatabase& database, Selection& selection, ImportQueue& imports);
+		explicit AssetsPanel(EditorContext* ctx);
 
 		[[nodiscard]] std::string_view GetName() const override { return "Assets"; }
 		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_FOLDER_OPEN; }
@@ -42,9 +43,9 @@ namespace koi::editor
 		enum class Action { None, Rename, Move, Delete };
 
 	private:
-		AssetDatabase&                        m_database;
-		Selection&                            m_selection;
-		ImportQueue&                          m_imports;
+		AssetDatabase* m_database  = nullptr;
+		Selection*     m_selection = nullptr;
+		ImportQueue*   m_imports   = nullptr;
 
 		std::string m_selectedFolder;
 		std::string m_search;

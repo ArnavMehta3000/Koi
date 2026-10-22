@@ -9,17 +9,19 @@
 
 namespace koi::editor
 {
+	class EditorContext;
+
 	class LogPanel : public IEditorPanel
 	{
 	public:
+		explicit LogPanel(EditorContext* ctx);
+
 		[[nodiscard]] inline std::string_view GetName() const override { return "Log"; }
 		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_TERMINAL; }
 		void OnDraw() override;
 
-		// Called by the editor as Play starts, before the game logs anything
-		void OnPlay();
-
 	private:
+		void OnPlay();  // before the game logs anything
 		// Verbose (Trace + Debug), Info, Warn, Error (+ Critical)
 		static constexpr u32 kGroupCount = 4;
 		static constexpr u32 kNoSelection = ~0u;

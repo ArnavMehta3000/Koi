@@ -7,12 +7,13 @@
 namespace koi::editor
 {
 	class AssetDatabase;
+	class EditorContext;
 	class ImportQueue;
 
 	class ImportPanel : public IEditorPanel
 	{
 	public:
-		ImportPanel(ImportQueue& queue, AssetDatabase& database) : m_queue(queue), m_database(database) {}
+		explicit ImportPanel(EditorContext* ctx);
 
 		[[nodiscard]] std::string_view GetName() const override { return "Import"; }
 		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_FILE_IMPORT; }
@@ -30,8 +31,8 @@ namespace koi::editor
 		void DrawProgress();
 
 	private:
-		ImportQueue&   m_queue;
-		AssetDatabase& m_database;
+		ImportQueue*   m_queue    = nullptr;
+		AssetDatabase* m_database = nullptr;
 		TextureKind    m_allKind      = TextureKind::Color;
 		bool           m_focusPending = false;
 	};

@@ -2,6 +2,7 @@
 #include "Components/Spin.h"
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Core/EditorExtension.h"
+#include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Inspectors/ReflectInspector.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include <imgui.h>
@@ -33,10 +34,11 @@ namespace
 	class SandboxEditor final : public koi::editor::EditorExtension
 	{
 	public:
-		void OnStartup(koi::editor::IEditorContext& ctx) override
+		void OnStartup(koi::editor::EditorContext& ctx) override
 		{
-			ctx.RegisterInspector<SpinInspector>();
-			ctx.RegisterInspector<koi::editor::ReflectedInspector<PlayerController>>();
+			koi::editor::InspectorRegistry* inspectors = ctx.Get<koi::editor::InspectorRegistry>();
+			inspectors->Emplace<SpinInspector>();
+			inspectors->Emplace<koi::editor::ReflectedInspector<PlayerController>>();
 		}
 	};
 }
