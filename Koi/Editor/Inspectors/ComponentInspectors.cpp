@@ -1,10 +1,10 @@
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -39,16 +39,16 @@ namespace koi::editor
 		// A property row holding an asset slot; returns the dropped path when it is the right kind
 		static std::optional<std::string> AssetRow(const char* label, std::string_view current, AssetKind kind)
 		{
-			koi::utils::PropertyLabel(label);
+			utils::PropertyLabel(label);
 
 			const std::string name = std::filesystem::path(current).stem().string();
 			std::string dropped;
-			if (!koi::utils::AssetField(label, koi::utils::AssetKindIcon(kind), name, current, dropped)) return std::nullopt;
+			if (!utils::AssetField(label, utils::AssetKindIcon(kind), name, current, dropped)) return std::nullopt;
 
-			if (const AssetTypeInfo* type = utils::FindAssetTypeForFile(dropped); type && type->Kind == kind)
+			if (const AssetTypeInfo* type = koi::utils::FindAssetTypeForFile(dropped); type && type->Kind == kind)
 				return dropped;
 
-			KOI_LOG(Editor, Warn, "Dropped asset is not a {}: {}", utils::FindAssetTypeByKind(kind)->Name, dropped);
+			KOI_LOG(Editor, Warn, "Dropped asset is not a {}: {}", koi::utils::FindAssetTypeByKind(kind)->Name, dropped);
 			return std::nullopt;
 		}
 	}
@@ -66,23 +66,23 @@ namespace koi::editor
 			m_eulerRot = local->Rotation;
 		}
 
-		if (!koi::utils::BeginPropertyGrid("##transform")) return;
+		if (!utils::BeginPropertyGrid("##transform")) return;
 
-		koi::utils::PropertyLabel("Position");
-		koi::utils::DragAxes("##Position", &local->Position.x, 3, 0.05f);
+		utils::PropertyLabel("Position");
+		utils::DragAxes("##Position", &local->Position.x, 3, 0.05f);
 
-		koi::utils::PropertyLabel("Rotation", "Euler angles in degrees");
-		if (koi::utils::DragAxes("##Rotation", &m_eulerDeg.x, 3, 0.5f, "%.1f"))
+		utils::PropertyLabel("Rotation", "Euler angles in degrees");
+		if (utils::DragAxes("##Rotation", &m_eulerDeg.x, 3, 0.5f, "%.1f"))
 		{
 			local->Rotation = Quaternion::CreateFromYawPitchRoll(
 				m_eulerDeg.y * kDegToRad, m_eulerDeg.x * kDegToRad, m_eulerDeg.z * kDegToRad);
 			m_eulerRot = local->Rotation;
 		}
 
-		koi::utils::PropertyLabel("Scale");
-		koi::utils::DragAxes("##Scale", &local->Scale.x, 3, 0.05f);
+		utils::PropertyLabel("Scale");
+		utils::DragAxes("##Scale", &local->Scale.x, 3, 0.05f);
 
-		koi::utils::EndPropertyGrid();
+		utils::EndPropertyGrid();
 	}
 
 	void MeshInspector::Draw(Entity e)
@@ -90,24 +90,24 @@ namespace koi::editor
 		const MeshRef* meshRef = e.try_get<MeshRef>();
 		if (!meshRef) return;
 
-		if (!koi::utils::BeginPropertyGrid("##mesh")) return;
+		if (!utils::BeginPropertyGrid("##mesh")) return;
 
 		// The old handle was just released, so meshRef is stale - resume next frame
 		if (const auto dropped = AssetRow("Mesh", Meshes().GetPath(meshRef->Handle), AssetKind::Mesh))
 		{
 			Reacquire<MeshRef>(e, Meshes(), AssetKey(*dropped));
-			koi::utils::EndPropertyGrid();
+			utils::EndPropertyGrid();
 			return;
 		}
 
 		if (const GPUMesh* mesh = Meshes().Get(meshRef->Handle))
 		{
-			koi::utils::PropertyLabel("Draw Calls");
+			utils::PropertyLabel("Draw Calls");
 			ImGui::TextDisabled("%d", static_cast<i32>(mesh->DrawItems.size()));
-			koi::utils::PropertyLabel("Materials");
+			utils::PropertyLabel("Materials");
 			ImGui::TextDisabled("%d", static_cast<i32>(mesh->Materials.size()));
 		}
-		koi::utils::EndPropertyGrid();
+		utils::EndPropertyGrid();
 	}
 
 	void MaterialRefInspector::Draw(Entity e)
@@ -115,10 +115,10 @@ namespace koi::editor
 		const MaterialRef* ref = e.try_get<MaterialRef>();
 		if (!ref) return;
 
-		if (!koi::utils::BeginPropertyGrid("##material")) return;
+		if (!utils::BeginPropertyGrid("##material")) return;
 
 		const auto dropped = AssetRow("Material", Materials().GetPath(ref->Handle), AssetKind::Material);
-		koi::utils::EndPropertyGrid();
+		utils::EndPropertyGrid();
 
 		if (dropped)
 		{
@@ -134,23 +134,23 @@ namespace koi::editor
 		CameraComponent* cam = e.try_get_mut<CameraComponent>();
 		if (!cam) return;
 
-		if (!koi::utils::BeginPropertyGrid("##camera")) return;
+		if (!utils::BeginPropertyGrid("##camera")) return;
 
 		f32 fovDeg = cam->FovY * kRadToDeg;
-		koi::utils::PropertyLabel("Field of View", "Vertical, in degrees");
+		utils::PropertyLabel("Field of View", "Vertical, in degrees");
 		if (ImGui::DragFloat("##FOV", &fovDeg, 0.5f, 1.0f, 179.0f, "%.1f"))
 		{
 			cam->FovY = fovDeg * kDegToRad;
 		}
 
-		koi::utils::PropertyLabel("Near");
+		utils::PropertyLabel("Near");
 		ImGui::DragFloat("##Near", &cam->Near, 0.01f, 0.001f, cam->Far);
-		koi::utils::PropertyLabel("Far");
+		utils::PropertyLabel("Far");
 		ImGui::DragFloat("##Far", &cam->Far, 1.0f, cam->Near, 100000.0f);
-		koi::utils::PropertyLabel("Primary", "The camera the game renders from");
+		utils::PropertyLabel("Primary", "The camera the game renders from");
 		ImGui::Checkbox("##Primary", &cam->Primary);
 
-		koi::utils::EndPropertyGrid();
+		utils::EndPropertyGrid();
 	}
 
 	void LightInspector::Draw(Entity e)
@@ -158,39 +158,39 @@ namespace koi::editor
 		Light* light = e.try_get_mut<Light>();
 		if (!light) return;
 
-		if (!koi::utils::BeginPropertyGrid("##light")) return;
+		if (!utils::BeginPropertyGrid("##light")) return;
 
 		const char* types[] = { "Directional", "Point" };
 		int type = static_cast<int>(light->Type);
-		koi::utils::PropertyLabel("Type");
+		utils::PropertyLabel("Type");
 		if (ImGui::Combo("##Type", &type, types, IM_ARRAYSIZE(types)))
 		{
 			light->Type = static_cast<LightType>(type);
 		}
 
-		koi::utils::PropertyLabel("Color");
+		utils::PropertyLabel("Color");
 		ImGui::ColorEdit3("##Color", &light->Color.x);
-		koi::utils::PropertyLabel("Intensity");
+		utils::PropertyLabel("Intensity");
 		ImGui::DragFloat("##Intensity", &light->Intensity, 0.05f, 0.0f, 100.0f);
 		if (light->Type == LightType::Point)
 		{
-			koi::utils::PropertyLabel("Range");
+			utils::PropertyLabel("Range");
 			ImGui::DragFloat("##Range", &light->Range, 0.1f, 0.0f, 1000.0f);
 		}
 
 		if (light->Type == LightType::Directional)
 		{
-			koi::utils::PropertyLabel("Casts Shadows");
+			utils::PropertyLabel("Casts Shadows");
 			ImGui::Checkbox("##CastsShadows", &light->CastsShadows);
 			if (light->CastsShadows)
 			{
-				koi::utils::PropertyLabel("Shadow Bias");
+				utils::PropertyLabel("Shadow Bias");
 				ImGui::DragFloat("##ShadowBias", &light->ShadowBias, 0.0001f, 0.0f, 0.05f, "%.4f");
-				koi::utils::PropertyLabel("Shadow Extent", "Half-size of the shadow box around this entity. 0 fits the whole scene");
+				utils::PropertyLabel("Shadow Extent", "Half-size of the shadow box around this entity. 0 fits the whole scene");
 				ImGui::DragFloat("##ShadowExtent", &light->ShadowExtent, 0.5f, 0.0f, 10000.0f, "%.1f");
 			}
 		}
 
-		koi::utils::EndPropertyGrid();
+		utils::EndPropertyGrid();
 	}
 }

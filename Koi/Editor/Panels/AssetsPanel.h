@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Editor/Core/EditorPanel.h"
 #include "Koi/Editor/Selection.h"
-#include "Koi/Engine/Interop/EditorPanel.h"
 #include <imgui.h>
 #include <string>
 #include <string_view>

@@ -1,11 +1,11 @@
 #include "Koi/Editor/ImGui/ImGuiLayer.h"
 #include "Koi/Editor/ImGui/Themes.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/Types.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -65,7 +65,7 @@ namespace koi::editor
 		static void LoadFonts(f32 sizePixels)
 		{
 			AddFontWithIcons(_binary_MapleMonoRegular_ttf_start, _binary_MapleMonoRegular_ttf_end, sizePixels);
-			koi::utils::s_headingFont = AddFontWithIcons(_binary_MapleMonoBold_ttf_start, _binary_MapleMonoBold_ttf_end, sizePixels);
+			utils::s_headingFont = AddFontWithIcons(_binary_MapleMonoBold_ttf_start, _binary_MapleMonoBold_ttf_end, sizePixels);
 		}
 
 		static void SrvAlloc(ImGui_ImplDX12_InitInfo* /*info*/,

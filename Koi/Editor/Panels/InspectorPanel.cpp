@@ -1,8 +1,8 @@
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include <IconsFontAwesome6.h>
 #include <imgui.h>
 #include <cctype>
@@ -39,9 +39,9 @@ namespace koi::editor
 
 		const char* name = selected.name().length() > 0 ? selected.name().c_str() : "(unnamed)";
 		ImGui::AlignTextToFramePadding();
-		koi::utils::PushHeadingFont();
+		utils::PushHeadingFont();
 		ImGui::TextUnformatted(name);
-		koi::utils::PopHeadingFont();
+		utils::PopHeadingFont();
 
 		constexpr const char* kAddLabel = ICON_FA_PLUS "  Add Component";
 		const f32 addWidth = ImGui::CalcTextSize(kAddLabel).x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -70,10 +70,10 @@ namespace koi::editor
 			const std::string_view key = type->Key();
 			ImGui::PushID(key.data(), key.data() + key.size());
 
-			const bool expanded = koi::utils::SectionHeader(Capitalize(key).c_str(), type->Removable());
+			const bool expanded = utils::SectionHeader(Capitalize(key).c_str(), type->Removable());
 
 			bool remove = false;
-			if (koi::utils::BeginSectionMenu())
+			if (utils::BeginSectionMenu())
 			{
 				remove = ImGui::MenuItem(ICON_FA_TRASH "  Remove Component");
 				ImGui::EndPopup();

@@ -1,6 +1,6 @@
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <IconsFontAwesome6.h>
 #include <imgui.h>
@@ -180,7 +180,7 @@ namespace koi::editor
 			m_focusRename  = true;
 		}
 
-		if (koi::utils::IconButton(ICON_FA_PLUS, "Add entity (as a child of the selection)"))
+		if (utils::IconButton(ICON_FA_PLUS, "Add entity (as a child of the selection)"))
 		{
 			Entity e = ecs.entity();
 			e.set_name(("Entity_" + std::to_string(static_cast<u64>(e.id()))).c_str());
@@ -194,7 +194,7 @@ namespace koi::editor
 		ImGui::SameLine();
 		ImGui::BeginDisabled(!selected.is_alive());
 
-		if (koi::utils::IconButton(ICON_FA_TRASH, "Remove selected entity"))
+		if (utils::IconButton(ICON_FA_TRASH, "Remove selected entity"))
 		{
 			m_selection->Clear();
 			selected.destruct();

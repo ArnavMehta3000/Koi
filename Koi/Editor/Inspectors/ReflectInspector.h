@@ -1,6 +1,6 @@
 #pragma once
-#include "Koi/Engine/Interop/ComponentInspector.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
+#include "Koi/Editor/Inspectors/ComponentInspector.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -9,7 +9,7 @@
 #include <string>
 
 // One ImGui widget per reflected field; components with custom widgets keep their own inspector
-namespace koi
+namespace koi::editor
 {
 	namespace utils
 	{

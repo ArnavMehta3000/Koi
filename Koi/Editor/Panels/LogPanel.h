@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Interop/EditorPanel.h"
+#include "Koi/Editor/Core/EditorPanel.h"
 #include "Koi/Engine/Logging/LogHistory.h"
 #include <imgui.h>
 #include <array>

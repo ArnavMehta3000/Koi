@@ -1,7 +1,6 @@
 #pragma once
 #include "Components/Lanes.h"
 #include "Koi/Engine/ECS/System.h"
-#include "Koi/Engine/Interop/ComponentInspector.h"
 #include "Koi/Engine/Math/Ease.h"
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
@@ -21,13 +20,6 @@ namespace game
 		rfl::Skip<koi::i32>     Lane = 1;
 		rfl::Skip<koi::Vector3> From;
 		rfl::Skip<koi::f32>     T    = 1.0f;
-	};
-
-	class PlayerMoverInspector final : public koi::IComponentInspector
-	{
-	public:
-		[[nodiscard]] std::string_view Key() const override { return PlayerMover::kKey; }
-		void Draw(koi::Entity e) override;
 	};
 
 	class PlayerMoverSystem final : public koi::System<koi::Transform, PlayerMover>

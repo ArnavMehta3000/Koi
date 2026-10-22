@@ -21,9 +21,6 @@ namespace koi
 		Loaded,        // resident in an AssetCache
 	};
 
-	// ImGui drag-drop payload id for an asset dragged out of the Assets panel
-	inline constexpr const char* kAssetDragDropType = "KOI_ASSET";
-
 	struct AssetTypeInfo
 	{
 		AssetKind                         Kind;

@@ -1,6 +1,5 @@
 #include "Components/Obstacle.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"
-#include "Koi/Engine/Interop/ReflectInspector.h"
 #include "Koi/Engine/Math/Scalar.h"
 #include <algorithm>
 
@@ -8,15 +7,6 @@ KOI_LOG_CATEGORY(ObstacleSpawner);
 
 namespace game
 {
-	void ObstacleSpawnerInspector::Draw(koi::Entity e)
-	{
-		ObstacleSpawner* s = e.try_get_mut<ObstacleSpawner>();
-		if (!s) return;
-
-		DrawLaneSpheres(s->Positions, -1);
-		koi::utils::DrawReflected(*s);
-	}
-
 	void ObstacleSpawnSystem::Each(const koi::SystemContext& ctx, koi::Entity, ObstacleSpawner& spawner)
 	{
 		if (*spawner.Elapsed == 0.0f && spawner.Seed != 0) spawner.Rng = koi::Random(spawner.Seed);

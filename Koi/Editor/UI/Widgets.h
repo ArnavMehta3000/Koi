@@ -9,8 +9,11 @@
 #include <string>
 #include <string_view>
 
-namespace koi::utils
+namespace koi::editor::utils
 {
+	// ImGui drag-drop payload id for an asset dragged out of the Assets panel
+	inline constexpr const char* kAssetDragDropType = "KOI_ASSET";
+
 	// Bold face for headings, set by the editor once its fonts are loaded; null keeps the current font
 	inline ImFont* s_headingFont = nullptr;
 

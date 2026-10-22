@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Editor/Inspectors/ComponentInspector.h"
 #include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Interop/ComponentInspector.h"
 #include <memory>
 #include <utility>
 #include <vector>

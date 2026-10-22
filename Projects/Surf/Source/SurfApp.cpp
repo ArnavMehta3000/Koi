@@ -3,8 +3,6 @@
 #include "Components/PlayerMover.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
-#include "Koi/Engine/Interop/EditorContext.h"
-#include "Koi/Engine/Interop/ReflectInspector.h"
 
 std::unique_ptr<koi::AppBase> koi::AppBase::Create([[maybe_unused]] koi::CommandLine& cmd)
 {
@@ -27,15 +25,5 @@ namespace game
 		registry.Register<PlayerMoverSystem>();
 		registry.Register<ObstacleSpawnSystem>();
 		registry.Register<ObstacleMoveSystem>();
-	}
-
-	void SurfApp::OnInit()
-	{
-		if (koi::IEditorContext* editor = GetEditorContext())
-		{
-			editor->RegisterInspector<PlayerMoverInspector>();
-			editor->RegisterInspector<ObstacleSpawnerInspector>();
-			editor->RegisterInspector<koi::ReflectedInspector<Obstacle>>();
-		}
 	}
 }

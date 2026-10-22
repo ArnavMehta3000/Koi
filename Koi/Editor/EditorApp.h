@@ -1,15 +1,17 @@
 #pragma once
-#include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Interop/AppHost.h"
-#include "Koi/Engine/Interop/RendererOverlay.h"
-#include "Koi/Engine/Interop/EditorContext.h"
-#include "Koi/Engine/Interop/Reloadable.h"
+#include "Koi/Editor/Core/EditorContext.h"
+#include "Koi/Editor/Core/EditorExtension.h"
 #include "Koi/Editor/ImGui/ImGuiLayer.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Panels/PanelHost.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/StatusBar.h"
 #include "Koi/Editor/Toasts.h"
+#include "Koi/Engine/Core/Types.h"
+#include "Koi/Engine/Graphics/RendererOverlay.h"
+#include "Koi/Engine/Graphics/RenderView.h"
+#include "Koi/Engine/Runtime/AppHost.h"
+#include "Koi/Engine/Runtime/Reloadable.h"
 #include <toml++/toml.hpp>
 #include <filesystem>
 #include <optional>
@@ -71,16 +73,19 @@ namespace koi::editor
 
 		void OnOverlayRender(CommandList& cmd) override;
 
+		[[nodiscard]] AppBase* GetGame() const override { return m_game.get(); }
 		void RegisterReloadable(IReloadable* reloadable) override;
 		void RegisterPanel(std::unique_ptr<IEditorPanel> panel) override;
 		void RegisterInspector(std::unique_ptr<IComponentInspector> inspector) override;
 		using IEditorContext::RegisterPanel;
 		using IEditorContext::RegisterInspector;
 
-		[[nodiscard]] std::optional<RenderView> GetEditorRenderView() const override;
-
 	private:
 		void Setup();
+		void StartExtensions();
+		void ShutdownExtensions();
+		[[nodiscard]] std::optional<RenderView> GetViewportView() const;
+
 		void DrawMenuBar();
 		void DrawPlayControls();
 		void DrawGizmoMenu();
@@ -118,6 +123,7 @@ namespace koi::editor
 		Toasts                          m_toasts;
 		InspectorRegistry               m_inspectors;
 		std::vector<IReloadable*>       m_reloadables;
+		std::vector<std::unique_ptr<EditorExtension>> m_extensions;
 		ViewportPanel*                  m_viewportPanel     = nullptr;
 		Selection                       m_selection{};
 		GizmoOptions                    m_gizmos{};

@@ -1,7 +1,6 @@
 #pragma once
 #include "Components/Lanes.h"
 #include "Koi/Engine/ECS/System.h"
-#include "Koi/Engine/Interop/ComponentInspector.h"
 #include "Koi/Engine/Math/Ease.h"
 #include "Koi/Engine/Math/Random.h"
 #include "Koi/Engine/Math/Transform.h"
@@ -43,13 +42,6 @@ namespace game
 		rfl::Skip<koi::Random> Rng;
 		rfl::Skip<koi::f32>    Elapsed   = 0.0f;
 		rfl::Skip<koi::f32>    Countdown = 0.0f;
-	};
-
-	class ObstacleSpawnerInspector final : public koi::IComponentInspector
-	{
-	public:
-		[[nodiscard]] std::string_view Key() const override { return ObstacleSpawner::kKey; }
-		void Draw(koi::Entity e) override;
 	};
 
 	class ObstacleSpawnSystem final : public koi::System<ObstacleSpawner>

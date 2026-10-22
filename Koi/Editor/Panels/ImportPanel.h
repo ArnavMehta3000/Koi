@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Editor/Assets/TextureImporter.h"
-#include "Koi/Engine/Interop/EditorPanel.h"
+#include "Koi/Editor/Core/EditorPanel.h"
 #include <string>
 #include <IconsFontAwesome6.h>
 

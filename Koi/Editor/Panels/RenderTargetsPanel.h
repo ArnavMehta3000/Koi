@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Interop/EditorPanel.h"
+#include "Koi/Editor/Core/EditorPanel.h"
 #include <IconsFontAwesome6.h>
 
 namespace koi { class Renderer; }

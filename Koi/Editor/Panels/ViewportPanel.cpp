@@ -1,18 +1,18 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/Selection.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
+#include "Koi/Engine/Graphics/RHI/CommandList.h"
+#include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Math/MathSerializer.h"
-#include "Koi/Engine/Graphics/RHI/CommandList.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -106,13 +106,13 @@ namespace koi::editor
 		}
 		else
 		{
-			static constexpr koi::utils::Segment kGizmoOps[] =
+			static constexpr utils::Segment kGizmoOps[] =
 			{
 				{ ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, "Translate" },
 				{ ICON_FA_ROTATE,                    "Rotate"    },
 				{ ICON_FA_EXPAND,                    "Scale"     },
 			};
-			static constexpr koi::utils::Segment kGizmoSpaces[] =
+			static constexpr utils::Segment kGizmoSpaces[] =
 			{
 				{ ICON_FA_GLOBE, "World space" },
 				{ ICON_FA_CUBE,  "Local space" },
@@ -120,12 +120,12 @@ namespace koi::editor
 
 			ImGui::SameLine();
 			i32 op = static_cast<i32>(m_gizmoOp);
-			if (koi::utils::SegmentedControl("##gizmoop", op, kGizmoOps))
+			if (utils::SegmentedControl("##gizmoop", op, kGizmoOps))
 				m_gizmoOp = static_cast<GizmoOp>(op);
 
 			ImGui::SameLine();
 			i32 space = static_cast<i32>(m_gizmoSpace);
-			if (koi::utils::SegmentedControl("##gizmospace", space, kGizmoSpaces))
+			if (utils::SegmentedControl("##gizmospace", space, kGizmoSpaces))
 				m_gizmoSpace = static_cast<GizmoSpace>(space);
 		}
 
@@ -336,7 +336,7 @@ namespace koi::editor
 	toml::table ViewportPanel::SaveCameraState() const
 	{
 		toml::table camera;
-		utils::SerializeInto(camera, "target", m_controller.GetOrbitTarget());
+		koi::utils::SerializeInto(camera, "target", m_controller.GetOrbitTarget());
 		camera.insert("radius", m_controller.GetOrbitRadius());
 		camera.insert("yaw",    m_controller.GetYaw());
 		camera.insert("pitch",  m_controller.GetPitch());
@@ -350,7 +350,7 @@ namespace koi::editor
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
 		m_controller.SetOrbitTarget(
-			utils::DeserializeOr(*camera, "target", Vector3::Zero),
+			koi::utils::DeserializeOr(*camera, "target", Vector3::Zero),
 			(*camera)["radius"].value_or(10.0f),
 			(*camera)["yaw"].value_or(0.0f),
 			(*camera)["pitch"].value_or(-0.5f));

@@ -1,9 +1,8 @@
 #pragma once
+#include <imgui.h>
 #include <string_view>
 
-typedef int ImGuiWindowFlags;  // same as imgui.h, which the engine itself doesn't include
-
-namespace koi
+namespace koi::editor
 {
 	// The editor owns the panel's window; OnDraw only fills it
 	class IEditorPanel

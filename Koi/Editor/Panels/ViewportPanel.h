@@ -1,8 +1,8 @@
 #pragma once
-#include "Koi/Engine/Interop/EditorPanel.h"
-#include "Koi/Engine/Interop/ViewportTarget.h"
-#include "Koi/Engine/Graphics/Camera.h"
+#include "Koi/Editor/Core/EditorPanel.h"
 #include "Koi/Editor/EditorCameraController.h"
+#include "Koi/Engine/Graphics/Camera.h"
+#include "Koi/Engine/Graphics/RenderView.h"
 #include <IconsFontAwesome6.h>
 
 namespace toml { inline namespace v3 { class table; } }

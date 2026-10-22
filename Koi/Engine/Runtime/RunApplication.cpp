@@ -1,14 +1,14 @@
-#include "Koi/Engine/Runtime/EntryPoint.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Paths.h"
 #include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/AppHost.h"
 #include "Koi/Engine/Runtime/CommandLine.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Runtime/EntryPoint.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <toml++/toml.hpp>
 #include <filesystem>

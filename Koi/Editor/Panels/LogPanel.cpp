@@ -1,6 +1,6 @@
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
 #include <array>
@@ -219,13 +219,13 @@ namespace koi::editor
 
 	void LogPanel::DrawToolbar()
 	{
-		if (koi::utils::IconButton(ICON_FA_TRASH_CAN, "Clear"))
+		if (utils::IconButton(ICON_FA_TRASH_CAN, "Clear"))
 		{
 			Clear();
 		}
 
 		ImGui::SameLine();
-		if (koi::utils::IconButton(ICON_FA_BROOM, "Clear on Play", m_clearOnPlay))
+		if (utils::IconButton(ICON_FA_BROOM, "Clear on Play", m_clearOnPlay))
 		{
 			m_clearOnPlay = !m_clearOnPlay;
 		}
@@ -242,7 +242,7 @@ namespace koi::editor
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(ImMax(ImGui::GetContentRegionAvail().x - chipsWidth - style.ItemSpacing.x, 80.0f));
-		if (koi::utils::SearchBar("##search", m_search, "Filter messages..."))
+		if (utils::SearchBar("##search", m_search, "Filter messages..."))
 		{
 			ImStrncpy(m_textFilter.InputBuf, m_search.c_str(), IM_COUNTOF(m_textFilter.InputBuf));
 			m_textFilter.Build();
@@ -316,7 +316,7 @@ namespace koi::editor
 					m_categoryMask[i] = enabled;
 					m_filterDirty     = true;
 				}
-				ImGui::SetItemTooltip("Logs %s and above", utils::ToString(Logger::GetCategoryLevel(i)).data());
+				ImGui::SetItemTooltip("Logs %s and above", koi::utils::ToString(Logger::GetCategoryLevel(i)).data());
 				ImGui::PopID();
 			}
 		}
@@ -443,7 +443,7 @@ namespace koi::editor
 		const EditorPalette& palette = EditorPalette::Get();
 
 		ImGui::AlignTextToFramePadding();
-		ImGui::TextColored(LevelColor(record.Level), "%s  %s", LevelIcon(record.Level), utils::ToString(record.Level).data());
+		ImGui::TextColored(LevelColor(record.Level), "%s  %s", LevelIcon(record.Level), koi::utils::ToString(record.Level).data());
 		ImGui::SameLine();
 		ImGui::TextDisabled("%.3fs", record.Time);
 		ImGui::SameLine();
@@ -454,18 +454,18 @@ namespace koi::editor
 		const f32 buttons = ImGui::GetFrameHeight() * 3.0f + ImGui::GetStyle().ItemInnerSpacing.x * 2.0f;
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImMax(ImGui::GetContentRegionAvail().x - buttons, 0.0f));
-		if (koi::utils::IconButton(ICON_FA_COPY, "Copy message"))
+		if (utils::IconButton(ICON_FA_COPY, "Copy message"))
 		{
 			ImGui::SetClipboardText(record.Message.c_str());
 		}
 		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-		if (koi::utils::IconButton(ICON_FA_FILE_CODE, "Copy source"))
+		if (utils::IconButton(ICON_FA_FILE_CODE, "Copy source"))
 		{
 			const std::string location = std::string(source.Path) + ":" + std::to_string(record.Line);
 			ImGui::SetClipboardText(location.c_str());
 		}
 		ImGui::SameLine(0.0f, ImGui::GetStyle().ItemInnerSpacing.x);
-		if (koi::utils::IconButton(ICON_FA_XMARK, "Close"))
+		if (utils::IconButton(ICON_FA_XMARK, "Close"))
 		{
 			Select(kNoSelection);
 			return;
