@@ -86,7 +86,7 @@ namespace koi::editor
 		m_panels.Emplace<GridPanel>(renderer);
 		m_logPanel = &m_panels.Emplace<LogPanel>();
 		m_panels.Emplace<ProfilerPanel>();
-		m_viewportPanel     = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
+		m_viewportPanel = &m_panels.Emplace<ViewportPanel>(renderer, *m_game, m_selection);
 		m_panels.Emplace<AssetsPanel>(*m_assetDatabase, m_selection, *m_importQueue);
 		m_importPanel = &m_panels.Emplace<ImportPanel>(*m_importQueue, *m_assetDatabase);
 

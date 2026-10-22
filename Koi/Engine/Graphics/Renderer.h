@@ -56,10 +56,6 @@ namespace koi
 		using PipelineBuildFunc = void (*)(Renderer&, FeatureList&);
 		void SetPipeline(PipelineBuildFunc build);  // Clears the feature list and rebuilds it
 
-	private:
-		void RegisterMaterialTemplates();
-
-	public:
 		// Per-frame wiring, driven from the view the app host resolved
 		void SetupFrame(const RenderView& view, World& world);
 
@@ -75,14 +71,15 @@ namespace koi
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
 		void Reload(const ReloadRequest& request) override;
+		void RegisterMaterialTemplates();
 
+	private:
 		struct FrameContext
 		{
 			CommandAllocator Allocator;
 			CommandList      List;
 		};
 
-	private:
 		std::unique_ptr<GfxDevice>       m_device;
 		CommandQueue                     m_graphicsQueue;
 		std::optional<RenderWindow>      m_renderWindow;

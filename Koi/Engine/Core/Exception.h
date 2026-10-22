@@ -5,7 +5,6 @@
 
 namespace koi
 {
-	// Carries the stack of where the error really happened when it's rethrown somewhere else
 	class Exception : public std::runtime_error
 	{
 	public:
