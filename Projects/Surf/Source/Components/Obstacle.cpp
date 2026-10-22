@@ -4,6 +4,8 @@
 #include "Koi/Engine/Math/Scalar.h"
 #include <algorithm>
 
+KOI_LOG_CATEGORY(ObstacleSpawner);
+
 namespace game
 {
 	void ObstacleSpawnerInspector::Draw(koi::Entity e)
@@ -36,6 +38,8 @@ namespace game
 			.WithMesh(spawner.Mesh)
 			.WithMaterial(spawner.Material)
 			.With(Obstacle{ .Speed = speed, .DespawnZ = spawner.DespawnZ, .PopDuration = spawner.PopDuration });
+
+		KOI_LOG(ObstacleSpawner, Info, "Spawning with speed: {}", speed);
 	}
 
 	void ObstacleMoveSystem::Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& transform, Obstacle& obstacle)
