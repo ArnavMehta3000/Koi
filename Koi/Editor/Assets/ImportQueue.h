@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Editor/Assets/ModelImporter.h"
 #include "Koi/Editor/Assets/TextureImporter.h"
+#include <functional>
 #include <future>
 #include <memory>
 #include <utility>
@@ -61,8 +62,8 @@ namespace koi::editor
 
 		[[nodiscard]] bool IsBusy() const { return !m_batches.empty(); }
 
-		// True once after files are added or a reimport starts, so the editor can bring the Import panel forward
-		[[nodiscard]] bool ConsumeAttention() { return std::exchange(m_wantsAttention, false); }
+		// Runs when files are added or a reimport starts, so the Import panel can come forward
+		void OnAttention(std::function<void()> callback) { m_onAttention = std::move(callback); }
 
 		// Collects finished batches and refreshes the asset database once they're all in
 		void Update();
@@ -83,6 +84,6 @@ namespace koi::editor
 		std::vector<std::shared_ptr<ImportItem>> m_pending;
 		std::vector<std::shared_ptr<ImportItem>> m_history;
 		std::vector<Batch>                       m_batches;
-		bool                                     m_wantsAttention = false;
+		std::function<void()>                    m_onAttention;
 	};
 }

@@ -178,7 +178,7 @@ namespace koi::editor
 
 		if (added > 0)
 		{
-			m_wantsAttention = true;
+			if (m_onAttention) m_onAttention();
 			KOI_LOG(Import, Info, "{} file(s) ready to import. Check their settings in the Import panel", added);
 		}
 	}
@@ -212,7 +212,7 @@ namespace koi::editor
 			return false;
 		}
 
-		m_wantsAttention = true;
+		if (m_onAttention) m_onAttention();
 
 		auto item        = std::make_shared<ImportItem>();
 		item->Source     = source;

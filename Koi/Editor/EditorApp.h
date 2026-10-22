@@ -23,9 +23,8 @@ namespace koi::editor
 {
 	namespace fs = std::filesystem;
 
-	class ImportPanel;
 	class ImportQueue;
-	class PanelHost;
+	class PanelManager;
 	class PlaySession;
 	class Reloader;
 	class Toasts;
@@ -88,9 +87,9 @@ namespace koi::editor
 		void DrawCameraFrustum();
 		void DrawShadowVolume();
 
-		// Per-project editor state (camera) in <project>/.koi/Editor.toml
+		// Per-project editor state in <project>/.koi/Editor.toml, one [panels.<Name>] table per panel
 		[[nodiscard]] fs::path EditorStatePath() const;
-		bool LoadEditorState();
+		void LoadEditorState();
 		void SaveEditorState() const;
 
 	private:
@@ -105,12 +104,11 @@ namespace koi::editor
 		GizmoOptions             m_gizmos{};
 
 		// Owned by m_context, cached for access
-		PanelHost*     m_panels        = nullptr;
+		PanelManager*     m_panels        = nullptr;
 		ImportQueue*   m_importQueue   = nullptr;
 		PlaySession*   m_play          = nullptr;
 		Reloader*      m_reloader      = nullptr;
 		Toasts*        m_toasts        = nullptr;
-		ImportPanel*   m_importPanel   = nullptr;
 		ViewportPanel* m_viewportPanel = nullptr;
 	};
 }

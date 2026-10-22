@@ -11,7 +11,7 @@
 #include "Koi/Editor/Panels/ImportPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
-#include "Koi/Editor/Panels/PanelHost.h"
+#include "Koi/Editor/Core/PanelManager.h"
 #include "Koi/Editor/Panels/ProfilerPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
@@ -36,7 +36,6 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 
 #include <fstream>
@@ -86,16 +85,16 @@ namespace koi::editor
 		m_context.Add<InspectorRegistry>()->RegisterBuiltins();
 		m_play = m_context.Add<PlaySession>();
 
-		m_panels = m_context.Add<PanelHost>();
-		m_panels->Emplace<WorldOutlinePanel>();
-		m_panels->Emplace<InspectorPanel>();
-		m_panels->Emplace<RenderTargetsPanel>();
-		m_panels->Emplace<GridPanel>();
-		m_panels->Emplace<LogPanel>();
-		m_panels->Emplace<ProfilerPanel>();
-		m_viewportPanel = m_panels->Emplace<ViewportPanel>();
-		m_panels->Emplace<AssetsPanel>();
-		m_importPanel = m_panels->Emplace<ImportPanel>();
+		m_panels = m_context.Add<PanelManager>();
+		m_panels->Add<WorldOutlinePanel>();
+		m_panels->Add<InspectorPanel>();
+		m_panels->Add<RenderTargetsPanel>();
+		m_panels->Add<GridPanel>();
+		m_panels->Add<LogPanel>();
+		m_panels->Add<ProfilerPanel>();
+		m_viewportPanel = m_panels->Add<ViewportPanel>();
+		m_panels->Add<AssetsPanel>();
+		m_panels->Add<ImportPanel>();
 
 		// Files dragged in from Explorer land in the Import panel to have their settings checked
 		Engine::Get().GetWindow().SetDropCallback([this](std::span<const fs::path> files) { m_importQueue->AddFiles(files); });
@@ -109,11 +108,7 @@ namespace koi::editor
 		m_imgui.Init(Engine::Get().GetWindow());
 		m_panels->RegisterSettingsHandler();
 
-		if (!LoadEditorState())
-		{
-			// Failed to load editor state (camera), set editor camera to cover scene bounds
-			m_viewportPanel->FrameBounds(m_game->GetWorld().GetBounds());
-		}
+		LoadEditorState();
 
 		KOI_LOG(Editor, Info, "Editor initialized");
 	}
@@ -142,42 +137,35 @@ namespace koi::editor
 		return m_config.CookedOutput.parent_path() / "Editor.toml";  // <project>/.koi/Editor.toml
 	}
 
-	bool EditorApp::LoadEditorState()
+	void EditorApp::LoadEditorState()
 	{
-		const fs::path path = EditorStatePath();
-		if (!fs::exists(path)) return false;
-
-		try
+		toml::table root;
+		if (const fs::path path = EditorStatePath(); fs::exists(path))
 		{
-			const toml::table root = toml::parse_file(path.string());
-
-			if (const toml::node* grid = root.get(GridPass::Settings::kKey))
+			try
 			{
-				if (GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<GridPass>())
-				{
-					if (auto settings = Serializer<GridPass::Settings>::Deserialize(*grid))
-						pass->GetSettings() = *settings;
-				}
+				root = toml::parse_file(path.string());
 			}
+			catch (const toml::parse_error& e)
+			{
+				KOI_LOG(Editor, Warn, "Editor state '{}' did not parse: {}", path.string(), e.description());
+			}
+		}
 
-			return m_viewportPanel->LoadCameraState(root);
-		}
-		catch (const toml::parse_error& e)
-		{
-			KOI_LOG(Editor, Warn, "Editor state '{}' did not parse: {}", path.string(), e.description());
-			return false;
-		}
+		// Every panel loads, even from nothing, so each can fall back to its own defaults
+		const toml::table* panels = root["panels"].as_table();
+		m_panels->LoadState(panels ? *panels : toml::table{});
 	}
 
 	void EditorApp::SaveEditorState() const
 	{
 		const fs::path path = EditorStatePath();
 
-		toml::table root;
-		root.insert("camera", m_viewportPanel->SaveCameraState());
+		toml::table panels;
+		m_panels->SaveState(panels);
 
-		if (const GridPass* pass = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<GridPass>())
-			root.insert(GridPass::Settings::kKey, Serializer<GridPass::Settings>::Serialize(pass->GetSettings()));
+		toml::table root;
+		root.insert("panels", std::move(panels));
 
 		std::error_code ec;
 		fs::create_directories(path.parent_path(), ec);
@@ -203,7 +191,6 @@ namespace koi::editor
 
 		m_viewportPanel->Update(dt, input);
 		m_importQueue->Update();
-		if (m_importQueue->ConsumeAttention()) m_importPanel->Focus();
 
 		// The game always ticks. What play state gates is the world's simulation, and
 		// World::Update decides that itself, so nothing here has to know the difference

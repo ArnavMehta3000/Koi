@@ -3,7 +3,7 @@
 
 namespace
 {
-	// Only editor builds compile this folder. Reach editor services through ctx.Get<T>(), e.g. InspectorRegistry, PanelHost
+	// Only editor builds compile this folder. Reach editor services through ctx.Get<T>(), e.g. InspectorRegistry, PanelManager
 	class {{Name}}Editor final : public koi::editor::EditorExtension
 	{
 	public:
