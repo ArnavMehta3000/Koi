@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Engine/ECS/World.h"
 #include <string>
@@ -13,14 +13,13 @@ namespace koi::editor
 
 	// The entity tree. Selecting here drives the Inspector panel; they're split so
 	// each can be shown, hidden, or docked independently from the Windows menu
-	class WorldOutlinePanel : public IEditorPanel
+	class WorldOutlinePanel : public Panel
 	{
 	public:
+		static constexpr PanelInfo kInfo{ .Name = "World Outline", .Icon = ICON_FA_SITEMAP, .Closable = false };
+
 		explicit WorldOutlinePanel(EditorContext* ctx);
 
-		[[nodiscard]] std::string_view GetName() const override { return "World Outline"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_SITEMAP; }
-		[[nodiscard]] bool IsClosable() const override { return false; }
 		void OnDraw() override;
 
 	private:

@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include <IconsFontAwesome6.h>
 
 namespace koi
@@ -12,14 +12,17 @@ namespace koi::editor
 {
 	// Settings for the ground grid. Edits the pass's own Settings, which is the single
 	// source of truth, so the Gizmos menu toggle and this panel cannot disagree
-	class GridPanel : public IEditorPanel
+	class GridPanel : public Panel
 	{
 	public:
+		static constexpr PanelInfo kInfo{ .Name = "Grid", .Icon = ICON_FA_BORDER_ALL };
+
 		GridPanel();
 
-		[[nodiscard]] std::string_view GetName() const override { return "Grid"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_BORDER_ALL; }
 		void OnDraw() override;
+
+		void SaveState(toml::table& state) const override;
+		void LoadState(const toml::table& state) override;
 
 	private:
 		[[nodiscard]] GridPass* FindPass() const;

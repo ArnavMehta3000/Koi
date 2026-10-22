@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include "Koi/Editor/EditorCameraController.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/RenderView.h"
@@ -47,18 +47,20 @@ namespace koi::editor
 		R1280x720,
 	};
 
-	class ViewportPanel : public IEditorPanel
+	class ViewportPanel : public Panel
 	{
 	public:
+		static constexpr PanelInfo kInfo{ .Name = "Viewport", .Icon = ICON_FA_DISPLAY, .Padding = false, .Closable = false };
+
 		explicit ViewportPanel(EditorContext* ctx);
 		~ViewportPanel() override;
 
-		[[nodiscard]] std::string_view GetName() const override { return "Viewport"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_DISPLAY; }
 		void OnUpdate() override;
 		void OnDraw() override;
-		[[nodiscard]] bool HasWindowPadding() const override { return false; }
-		[[nodiscard]] bool IsClosable() const override { return false; }
+
+		// The orbit camera; frames the scene when nothing was saved
+		void SaveState(toml::table& state) const override;
+		void LoadState(const toml::table& state) override;
 
 		[[nodiscard]] inline const ViewportTarget* GetTarget() const { return m_valid ? &m_target : nullptr; }
 		[[nodiscard]] inline const Camera& GetCamera() const { return m_camera; }
@@ -67,9 +69,6 @@ namespace koi::editor
 		const ViewportTarget* PrepareFrame();
 		void FrameBounds(const BoundingBox& bounds);
 
-		// Orbit camera state, persisted per project across editor sessions
-		[[nodiscard]] toml::table SaveCameraState() const;
-		bool LoadCameraState(const toml::table& table);
 		void Update(f32 dt, InputManager& input);
 
 	private:

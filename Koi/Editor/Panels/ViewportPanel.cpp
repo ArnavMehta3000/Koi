@@ -340,20 +340,24 @@ namespace koi::editor
 		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, -0.5f);
 	}
 
-	toml::table ViewportPanel::SaveCameraState() const
+	void ViewportPanel::SaveState(toml::table& state) const
 	{
 		toml::table camera;
 		koi::utils::SerializeInto(camera, "target", m_controller.GetOrbitTarget());
 		camera.insert("radius", m_controller.GetOrbitRadius());
 		camera.insert("yaw",    m_controller.GetYaw());
 		camera.insert("pitch",  m_controller.GetPitch());
-		return camera;
+		state.insert("camera", std::move(camera));
 	}
 
-	bool ViewportPanel::LoadCameraState(const toml::table& table)
+	void ViewportPanel::LoadState(const toml::table& state)
 	{
-		const toml::table* camera = table["camera"].as_table();
-		if (!camera) return false;
+		const toml::table* camera = state["camera"].as_table();
+		if (!camera)
+		{
+			FrameBounds(m_game->GetWorld().GetBounds());
+			return;
+		}
 
 		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
 		m_controller.SetOrbitTarget(
@@ -361,7 +365,6 @@ namespace koi::editor
 			(*camera)["radius"].value_or(10.0f),
 			(*camera)["yaw"].value_or(0.0f),
 			(*camera)["pitch"].value_or(-0.5f));
-		return true;
 	}
 
 	void ViewportPanel::Update(f32 dt, InputManager& input)

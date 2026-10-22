@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include "Koi/Engine/Diagnostics/FrameStats.h"
 #include <KoiProfiler.h>
 #include <vector>
@@ -13,12 +13,11 @@ struct koi::prof::TaskTraits<koi::FrameStatSample>
 
 namespace koi::editor
 {
-	class ProfilerPanel : public IEditorPanel
+	class ProfilerPanel : public Panel
 	{
 	public:
-		[[nodiscard]] inline std::string_view GetName() const override { return "Profiler"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_GAUGE_HIGH; }
-		[[nodiscard]] ImGuiWindowFlags GetWindowFlags() const override { return ImGuiWindowFlags_NoScrollbar; }
+		static constexpr PanelInfo kInfo{ .Name = "Profiler", .Icon = ICON_FA_GAUGE_HIGH, .WindowFlags = ImGuiWindowFlags_NoScrollbar };
+
 		void OnUpdate() override;
 		void OnDraw() override;
 

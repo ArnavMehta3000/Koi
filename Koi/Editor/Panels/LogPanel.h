@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include "Koi/Engine/Logging/LogHistory.h"
 #include <imgui.h>
 #include <array>
@@ -11,13 +11,13 @@ namespace koi::editor
 {
 	class EditorContext;
 
-	class LogPanel : public IEditorPanel
+	class LogPanel : public Panel
 	{
 	public:
+		static constexpr PanelInfo kInfo{ .Name = "Log", .Icon = ICON_FA_TERMINAL };
+
 		explicit LogPanel(EditorContext* ctx);
 
-		[[nodiscard]] inline std::string_view GetName() const override { return "Log"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_TERMINAL; }
 		void OnDraw() override;
 
 	private:

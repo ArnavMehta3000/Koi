@@ -54,12 +54,7 @@ namespace koi::editor
 		: m_queue(ctx->Get<ImportQueue>())
 		, m_database(ctx->Get<AssetDatabase>())
 	{
-	}
-
-	void ImportPanel::OnUpdate()
-	{
-		if (std::exchange(m_focusPending, false))
-			ImGui::SetNextWindowFocus();
+		m_queue->OnAttention([this] { Focus(); });
 	}
 
 	void ImportPanel::OnDraw()

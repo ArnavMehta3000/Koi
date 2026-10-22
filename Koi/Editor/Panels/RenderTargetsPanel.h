@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include <IconsFontAwesome6.h>
 
 namespace koi { class Renderer; }
@@ -7,13 +7,13 @@ namespace koi { class Renderer; }
 namespace koi::editor
 {
 	// Every texture version the render graph wrote last frame, captured and visualized one at a time
-	class RenderTargetsPanel : public IEditorPanel
+	class RenderTargetsPanel : public Panel
 	{
 	public:
+		static constexpr PanelInfo kInfo{ .Name = "Render Targets", .Icon = ICON_FA_LAYER_GROUP };
+
 		RenderTargetsPanel();
 
-		[[nodiscard]] std::string_view GetName() const override { return "Render Targets"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_LAYER_GROUP; }
 		void OnDraw() override;
 
 	private:

@@ -3,6 +3,7 @@
 #include "Koi/Engine/Graphics/RenderPasses/GridPass.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include <imgui.h>
 
 namespace koi::editor
@@ -15,6 +16,25 @@ namespace koi::editor
 	GridPass* GridPanel::FindPass() const
 	{
 		return m_renderer ? m_renderer->GetFeatures().Find<GridPass>() : nullptr;
+	}
+
+	void GridPanel::SaveState(toml::table& state) const
+	{
+		if (const GridPass* pass = FindPass())
+		{
+			state = Serializer<GridPass::Settings>::Serialize(pass->GetSettings());
+		}
+	}
+
+	void GridPanel::LoadState(const toml::table& state)
+	{
+		GridPass* pass = FindPass();
+		if (!pass || state.empty()) return;
+
+		if (auto settings = Serializer<GridPass::Settings>::Deserialize(state))
+		{
+			pass->GetSettings() = *settings;
+		}
 	}
 
 	void GridPanel::OnDraw()

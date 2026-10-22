@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Editor/Assets/TextureImporter.h"
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include <string>
 #include <IconsFontAwesome6.h>
 
@@ -10,18 +10,14 @@ namespace koi::editor
 	class EditorContext;
 	class ImportQueue;
 
-	class ImportPanel : public IEditorPanel
+	class ImportPanel : public Panel
 	{
 	public:
+		static constexpr PanelInfo kInfo{ .Name = "Import", .Icon = ICON_FA_FILE_IMPORT };
+
 		explicit ImportPanel(EditorContext* ctx);
 
-		[[nodiscard]] std::string_view GetName() const override { return "Import"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_FILE_IMPORT; }
-		void OnUpdate() override;
 		void OnDraw() override;
-
-		// Opens the panel and brings it to the front on the next frame
-		void Focus() { SetOpen(true); m_focusPending = true; }
 
 	private:
 		void DrawDestination(const char* id, std::string& folder);
@@ -33,7 +29,6 @@ namespace koi::editor
 	private:
 		ImportQueue*   m_queue    = nullptr;
 		AssetDatabase* m_database = nullptr;
-		TextureKind    m_allKind      = TextureKind::Color;
-		bool           m_focusPending = false;
+		TextureKind    m_allKind  = TextureKind::Color;
 	};
 }

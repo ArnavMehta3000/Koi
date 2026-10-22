@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Core/Panel.h"
 #include "Koi/Editor/Selection.h"
 #include <imgui.h>
 #include <string>
@@ -14,14 +14,13 @@ namespace koi::editor
 	struct AssetEntry;
 
 	// Queries the asset database to draw
-	class AssetsPanel : public IEditorPanel
+	class AssetsPanel : public Panel
 	{
 	public:
+		static constexpr PanelInfo kInfo{ .Name = "Assets", .Icon = ICON_FA_FOLDER_OPEN, .WindowFlags = ImGuiWindowFlags_MenuBar };
+
 		explicit AssetsPanel(EditorContext* ctx);
 
-		[[nodiscard]] std::string_view GetName() const override { return "Assets"; }
-		[[nodiscard]] const char* GetIcon() const override { return ICON_FA_FOLDER_OPEN; }
-		[[nodiscard]] ImGuiWindowFlags GetWindowFlags() const override { return ImGuiWindowFlags_MenuBar; }
 		void OnDraw() override;
 
 	private:
