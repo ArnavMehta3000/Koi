@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Editor/Core/EditorPanel.h"
 #include "Koi/Engine/Diagnostics/FrameStats.h"
-#include "Koi/Engine/Interop/EditorPanel.h"
 #include <KoiProfiler.h>
 #include <vector>
 #include <IconsFontAwesome6.h>

@@ -11,7 +11,7 @@ rule("KoiGame")
 
 		target:set("kind", "binary")
 		target:set("installdir", path.join(root, "Packaged"))
-		target:add("deps", "Koi.Engine", "ImGui")
+		target:add("deps", "Koi.Engine")
 		target:add("includedirs", path.join(root, "Source"))
 		target:add("extrafiles",
 			path.join(root, target:name() .. ".koi.toml"),
@@ -26,6 +26,7 @@ rule("KoiGame")
 		if with_editor then
 			target:set("basename", target:name() .. "-Editor")
 			target:add("deps", "Koi.Editor")
+			target:add("files", path.join(root, "Editor/**.cpp"))  -- the game's EditorExtensions, see KOI_EDITOR_EXTENSION
 			target:add("files", path.join(launcher, "EditorMain.cpp"))
 			target:add("defines",
 				'KOI_PROJECT_DIR="'  .. path.unix(root) .. '"',

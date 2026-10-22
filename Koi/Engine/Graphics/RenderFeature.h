@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Graphics/RenderGraph/RenderGraph.h"
 #include "Koi/Engine/Graphics/RenderPasses/PassData.h"
-#include "Koi/Engine/Interop/ViewportTarget.h"
+#include "Koi/Engine/Graphics/RenderView.h"
 #include <concepts>
 #include <memory>
 #include <string_view>

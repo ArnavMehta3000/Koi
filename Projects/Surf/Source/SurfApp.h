@@ -8,6 +8,5 @@ namespace game
 	public:
 		void OnRegisterComponents() override;
 		void OnRegisterSystems() override;
-		void OnInit() override;
 	};
 }

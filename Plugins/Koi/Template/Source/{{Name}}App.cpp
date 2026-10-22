@@ -14,7 +14,7 @@ void {{Name}}App::OnRegisterComponents()
 
 void {{Name}}App::OnInit()
 {
-	// Register flecs systems and editor inspectors here
+	// Editor-only code (inspectors, panels) goes in Editor/{{Name}}Editor.cpp
 }
 
 void {{Name}}App::OnTick(koi::f32 /*dt*/)

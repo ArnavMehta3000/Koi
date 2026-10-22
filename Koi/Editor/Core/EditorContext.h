@@ -1,25 +1,27 @@
 #pragma once
-#include "Koi/Engine/Interop/ComponentInspector.h"
-#include "Koi/Engine/Interop/EditorPanel.h"
-#include "Koi/Engine/Interop/ViewportTarget.h"
+#include "Koi/Editor/Core/EditorPanel.h"
+#include "Koi/Editor/Inspectors/ComponentInspector.h"
 #include <memory>
-#include <optional>
 #include <utility>
 
 namespace koi
 {
+	class AppBase;
 	class IReloadable;
+}
 
+namespace koi::editor
+{
 	class IEditorContext
 	{
 	public:
 		virtual ~IEditorContext() = default;
 
+		[[nodiscard]] virtual AppBase* GetGame() const = 0;
+
 		virtual void RegisterReloadable(IReloadable* reloadable) = 0;
 		virtual void RegisterPanel(std::unique_ptr<IEditorPanel> panel) = 0;
 		virtual void RegisterInspector(std::unique_ptr<IComponentInspector> inspector) = 0;
-
-		[[nodiscard]] virtual std::optional<RenderView> GetEditorRenderView() const = 0;
 
 		template<typename T, typename... Args>
 		T& RegisterPanel(Args&&... args)

@@ -1,9 +1,9 @@
 #include "Koi/Editor/Inspectors/MaterialInspector.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/MaterialWriter.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <IconsFontAwesome6.h>
 #include <imgui.h>
@@ -51,7 +51,7 @@ namespace koi::editor
 			f32* field = FloatFieldFor(param.Name, constants);
 			if (!field) return false;
 
-			koi::utils::PropertyLabel(DisplayName(param.Name).c_str());
+			utils::PropertyLabel(DisplayName(param.Name).c_str());
 			const std::string id = "##" + std::string(param.Name);
 			switch (param.Type)
 			{
@@ -79,12 +79,12 @@ namespace koi::editor
 			return;
 		}
 
-		if (koi::utils::BeginPropertyGrid("##material"))
+		if (utils::BeginPropertyGrid("##material"))
 		{
-			koi::utils::PropertyLabel("Template");
+			utils::PropertyLabel("Template");
 			ImGui::TextDisabled("%s", target->Name.c_str());
 
-			koi::utils::PropertyLabel("Double Sided");
+			utils::PropertyLabel("Double Sided");
 			if (ImGui::Checkbox("##double_sided", &m_source.DoubleSided)) m_dirty = true;
 
 			for (const MaterialParam& param : target->Parameters)
@@ -92,7 +92,7 @@ namespace koi::editor
 				if (param.Type == MaterialParamType::Texture) DrawTextureSlot(database, param);
 				else if (DrawFloats(param, m_source.Constants)) m_dirty = true;
 			}
-			koi::utils::EndPropertyGrid();
+			utils::EndPropertyGrid();
 		}
 
 		ImGui::Spacing();
@@ -125,9 +125,9 @@ namespace koi::editor
 		const std::string name  = bound ? bound->Name : (key.IsValid() ? key.Path() : std::string());
 		const std::string id(param.Name);
 
-		koi::utils::PropertyLabel(DisplayName(param.Name).c_str());
+		utils::PropertyLabel(DisplayName(param.Name).c_str());
 		std::string dropped;
-		if (!koi::utils::AssetField(id.c_str(), koi::utils::AssetKindIcon(AssetKind::Texture), name, key.IsValid() ? key.Path() : std::string_view(), dropped, true)) return;
+		if (!utils::AssetField(id.c_str(), utils::AssetKindIcon(AssetKind::Texture), name, key.IsValid() ? key.Path() : std::string_view(), dropped, true)) return;
 
 		if (dropped.empty())
 		{

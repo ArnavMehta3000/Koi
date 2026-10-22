@@ -2,8 +2,6 @@
 #include "Components/PlayerController.h"
 #include "Components/Spin.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Interop/EditorContext.h"
-#include "Koi/Engine/Interop/ReflectInspector.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
@@ -22,15 +20,6 @@ void SandboxApp::OnRegisterSystems()
 {
 	RegisterSpinSystem();
 	RegisterPlayerControllerSystem();
-}
-
-void SandboxApp::OnInit()
-{
-	if (koi::IEditorContext* editor = GetEditorContext())
-	{
-		editor->RegisterInspector<SpinInspector>();
-		editor->RegisterInspector<koi::ReflectedInspector<PlayerController>>();
-	}
 }
 
 void SandboxApp::OnTick(koi::f32 /*dt*/)

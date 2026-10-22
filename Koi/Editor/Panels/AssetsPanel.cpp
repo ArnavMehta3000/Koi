@@ -2,9 +2,9 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -118,10 +118,10 @@ namespace koi::editor
 	{
 		if (!ImGui::BeginMenuBar()) return;
 
-		if (koi::utils::IconButton(ICON_FA_ARROWS_ROTATE, "Refresh")) m_database.Refresh();
+		if (utils::IconButton(ICON_FA_ARROWS_ROTATE, "Refresh")) m_database.Refresh();
 
 		ImGui::SetNextItemWidth(240.0f);
-		koi::utils::SearchBar("##Search", m_search, "Search all folders...");
+		utils::SearchBar("##Search", m_search, "Search all folders...");
 
 		ImGui::EndMenuBar();
 	}
@@ -146,7 +146,7 @@ namespace koi::editor
 			// Dropping a row here moves the file. Only project folders can be written to
 			if (ImGui::BeginDragDropTarget())
 			{
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kAssetDragDropType))
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(utils::kAssetDragDropType))
 				{
 					const std::string dropped(static_cast<const char*>(payload->Data));
 					if (const AssetEntry* entry = m_database.Find(dropped); entry && entry->Writable)
@@ -192,7 +192,7 @@ namespace koi::editor
 
 	void AssetsPanel::DrawRow(const AssetEntry& entry)
 	{
-		const AssetTypeInfo* type  = utils::FindAssetTypeByKind(entry.Kind);
+		const AssetTypeInfo* type  = koi::utils::FindAssetTypeByKind(entry.Kind);
 		const AssetState     state = ResolveState(entry);
 
 		ImGui::TableNextRow();
@@ -205,7 +205,7 @@ namespace koi::editor
 		if (type) ImGui::TextDisabled("%.*s", static_cast<int>(type->Name.size()), type->Name.data());
 
 		ImGui::TableNextColumn();
-		const std::string_view label = utils::ToString(state);
+		const std::string_view label = koi::utils::ToString(state);
 		ImGui::TextColored(StateColor(state), "%.*s", static_cast<int>(label.size()), label.data());
 
 		ImGui::PopID();
@@ -242,14 +242,14 @@ namespace koi::editor
 
 		const bool selected = (entry.VirtualPath == m_selection.GetAsset());
 
-		const std::string label = std::string(koi::utils::AssetKindIcon(entry.Kind)) + "  " + entry.Name;
+		const std::string label = std::string(utils::AssetKindIcon(entry.Kind)) + "  " + entry.Name;
 		if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 			SelectAsset(entry.VirtualPath);
 
 		// Payload is the virtual path; the receiving side resolves it back through the database
 		if (ImGui::BeginDragDropSource())
 		{
-			ImGui::SetDragDropPayload(kAssetDragDropType, entry.VirtualPath.c_str(),
+			ImGui::SetDragDropPayload(utils::kAssetDragDropType, entry.VirtualPath.c_str(),
 				entry.VirtualPath.size() + 1);
 			ImGui::TextUnformatted(entry.Name.c_str());
 			ImGui::EndDragDropSource();
@@ -270,7 +270,7 @@ namespace koi::editor
 
 		if (ImGui::MenuItem("Rename", nullptr, false, editable))
 		{
-			const std::string_view extension = utils::AssetExtensionOf(entry.Name);
+			const std::string_view extension = koi::utils::AssetExtensionOf(entry.Name);
 			m_renamingPath       = entry.VirtualPath;
 			m_renameBuffer       = entry.Name.substr(0, entry.Name.size() - extension.size());
 			m_renameFocusPending = true;

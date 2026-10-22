@@ -1,28 +1,11 @@
 #include "Components/Spin.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
-#include <imgui.h>
 #include <numbers>
 
 namespace
 {
 	constexpr koi::f32 kDegToRad = static_cast<koi::f32>(std::numbers::pi) / 180.0f;
-}
-
-void SpinInspector::Draw(koi::Entity e)
-{
-	Spin* spin = e.try_get_mut<Spin>();
-	if (!spin) return;
-
-	if (!koi::utils::BeginPropertyGrid("##spin")) return;
-
-	koi::utils::PropertyLabel("Axis");
-	koi::utils::DragAxes("##Axis", &spin->Axis.x, 3, 0.01f);
-	koi::utils::PropertyLabel("Speed");
-	ImGui::DragFloat("##Speed", &spin->Speed, 1.0f, -1440.0f, 1440.0f, "%.1f deg/s");
-
-	koi::utils::EndPropertyGrid();
 }
 
 void SpinSystem::Each(const koi::SystemContext& ctx, koi::Entity, koi::Transform& xform, const Spin& spin)

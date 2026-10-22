@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Editor/Inspectors/ComponentInspector.h"
 #include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/Interop/ComponentInspector.h"
 #include "Koi/Engine/Math/Transform.h"
 
 namespace koi::editor

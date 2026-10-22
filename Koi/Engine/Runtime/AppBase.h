@@ -1,10 +1,10 @@
 #pragma once
 #include "Koi/Engine/Core/Assert.h"
-#include "Koi/Engine/Interop/AppHost.h"
-#include "Koi/Engine/Interop/ViewportTarget.h"
+#include "Koi/Engine/Graphics/RenderView.h"
 #include "Koi/Engine/Logging/LoggerConfig.h"
 #include "Koi/Engine/Platform/InputActions.h"
 #include "Koi/Engine/Platform/Window.h"
+#include "Koi/Engine/Runtime/AppHost.h"
 #include <map>
 #include <memory>
 #include <optional>
@@ -13,7 +13,6 @@ namespace koi
 {
 	class CommandLine;
 	class Engine;
-	class IEditorContext;
 	class World;
 
 	struct AppCreateDesc
@@ -65,13 +64,11 @@ namespace koi
 		virtual void OnBeginPlay() {}
 		virtual void OnEndPlay() {}
 
-		[[nodiscard]] IEditorContext* GetEditorContext() const { return m_editorContext; }
-		void SetEditorContext(IEditorContext* context) { m_editorContext = context; }
+		// For a host that owns the render target (the editor): renders the world into view, then runs OnRender
+		void HostRenderInto(const std::optional<RenderView>& view);
 
-		// Resolves the render target for this frame and the camera to view it through.
-		// The target's aspect is only known here, so the world's camera is projected
-		// against it rather than against the window
-		[[nodiscard]] std::optional<RenderView> GetRenderView() const;
+		// The window's back buffer, seen through the world's camera projected against the window's aspect
+		[[nodiscard]] std::optional<RenderView> GetWindowView() const;
 
 		// Replaces the world with a scene named in [scenes.list]
 		bool LoadScene(std::string_view name);
@@ -82,9 +79,8 @@ namespace koi
 	private:
 		AppCreateDesc          m_desc;
 		std::unique_ptr<World> m_world;
-		Engine*                m_engine        = nullptr;
-		Window*                m_window        = nullptr;
-		IEditorContext*        m_editorContext = nullptr;
+		Engine*                m_engine = nullptr;
+		Window*                m_window = nullptr;
 
 		static inline AppBase* s_instance = nullptr;
 	};

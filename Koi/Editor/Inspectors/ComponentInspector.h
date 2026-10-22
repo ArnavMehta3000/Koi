@@ -2,7 +2,7 @@
 #include "Koi/Engine/ECS/World.h"
 #include <string_view>
 
-namespace koi
+namespace koi::editor
 {
 	// Draws one component's editor UI
 	class IComponentInspector

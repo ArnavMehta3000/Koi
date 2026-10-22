@@ -4,7 +4,6 @@
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderWindow.h"
-#include "Koi/Engine/Interop/EditorContext.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
@@ -46,7 +45,12 @@ namespace koi
 
 	void AppBase::HostRender()
 	{
-		if (const std::optional<RenderView> view = GetRenderView())
+		HostRenderInto(GetWindowView());
+	}
+
+	void AppBase::HostRenderInto(const std::optional<RenderView>& view)
+	{
+		if (view)
 			m_engine->GetSubsystem<Renderer>().SetupFrame(*view, *m_world);
 
 		OnRender();
@@ -105,13 +109,8 @@ namespace koi
 		return true;
 	}
 
-	std::optional<RenderView> AppBase::GetRenderView() const
+	std::optional<RenderView> AppBase::GetWindowView() const
 	{
-		// Editor owns both the camera and the target (viewport RT)
-		if (m_editorContext)
-			return m_editorContext->GetEditorRenderView();
-
-		// Standalone: render the world's camera straight into the swapchain
 		RenderWindow* rw = m_engine->GetSubsystem<Renderer>().GetMainRenderWindow();
 		if (!rw || rw->GetHeight() == 0) return std::nullopt;
 

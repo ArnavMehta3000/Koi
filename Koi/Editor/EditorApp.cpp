@@ -13,6 +13,7 @@
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
+#include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
@@ -25,14 +26,13 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Interop/ImGuiWidgets.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Runtime/ReflectSerializer.h"
-#include "Koi/Engine/Runtime/Serializer.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include "Koi/Engine/Runtime/ReflectSerializer.h"
+#include "Koi/Engine/Runtime/Serializer.h"
 #include <IconsFontAwesome6.h>
 #include <imgui_internal.h>
 #include <fstream>
@@ -68,15 +68,12 @@ namespace koi::editor
 		// Register the renderer as reloadable so that it can recompile shaders and rebuild pipelines
 		RegisterReloadable(&renderer);
 
-		// Register the editor context with the game so that it can register panels and reloadables
-		m_game->SetEditorContext(this);
-
 		// Scan content and reconcile the manifest before any panel can query it
 		m_assetDatabase = std::make_unique<AssetDatabase>(m_config.EngineSource, m_config.ProjectSource);
 		m_assetDatabase->Refresh();
 		m_importQueue = std::make_unique<ImportQueue>(*m_assetDatabase);
 
-		// Game/user project can expect built in inspectors to existat init-time
+		// Extensions can expect the built-in inspectors to exist at startup
 		m_inspectors.RegisterBuiltins();
 
 		// Register default editor panels
@@ -98,6 +95,7 @@ namespace koi::editor
 	{
 		Setup();
 		m_game->HostInit();
+		StartExtensions();
 		m_imgui.Init(Engine::Get().GetWindow());
 		m_panels.RegisterSettingsHandler();
 
@@ -108,6 +106,25 @@ namespace koi::editor
 		}
 
 		KOI_LOG(Editor, Info, "Editor initialized");
+	}
+
+	void EditorApp::StartExtensions()
+	{
+		for (const EditorExtensionRegistry::Entry& entry : EditorExtensionRegistry::All())
+		{
+			KOI_LOG(Editor, Debug, "Starting editor extension '{}'", entry.Name);
+			m_extensions.push_back(entry.Create());
+			m_extensions.back()->OnStartup(*this);
+		}
+	}
+
+	void EditorApp::ShutdownExtensions()
+	{
+		for (auto it = m_extensions.rbegin(); it != m_extensions.rend(); ++it)
+		{
+			(*it)->OnShutdown();
+		}
+		m_extensions.clear();
 	}
 
 	fs::path EditorApp::EditorStatePath() const
@@ -158,7 +175,7 @@ namespace koi::editor
 		std::ofstream out(path, std::ios::trunc);
 		if (out)
 		{
-			out << utils::TomlDocument(root);
+			out << koi::utils::TomlDocument(root);
 		}
 		else
 		{
@@ -198,7 +215,7 @@ namespace koi::editor
 		ZoneScoped;
 		m_viewportPanel->PrepareFrame();
 
-		m_game->HostRender();
+		m_game->HostRenderInto(GetViewportView());
 
 		QueueGizmos();
 	}
@@ -284,6 +301,7 @@ namespace koi::editor
 		m_importQueue.reset();  // cancels running imports and waits for them
 
 		SaveEditorState();
+		ShutdownExtensions();
 		m_game->HostShutdown();
 		m_imgui.Shutdown();
 		KOI_LOG(Editor, Info, "Editor shut down");
@@ -321,7 +339,7 @@ namespace koi::editor
 
 	void EditorApp::RegisterInspector(std::unique_ptr<IComponentInspector> inspector) { m_inspectors.Add(std::move(inspector)); }
 
-	std::optional<RenderView> EditorApp::GetEditorRenderView() const
+	std::optional<RenderView> EditorApp::GetViewportView() const
 	{
 		const ViewportTarget* target = m_viewportPanel->GetTarget();
 		if (!target || target->Height == 0) return std::nullopt;
@@ -453,7 +471,7 @@ namespace koi::editor
 		const f32 width = ImGui::GetFrameHeight() * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
 		ImGui::SetCursorPosX(ImMax(ImGui::GetCursorPosX(), (ImGui::GetWindowWidth() - width) * 0.5f));
 
-		if (koi::utils::IconButton(ICON_FA_PLAY, "Play (Ctrl+P)", state == PlayState::Playing, palette.Playing))
+		if (utils::IconButton(ICON_FA_PLAY, "Play (Ctrl+P)", state == PlayState::Playing, palette.Playing))
 		{
 			if (state == PlayState::Edit)
 				Play();
@@ -462,11 +480,11 @@ namespace koi::editor
 		}
 
 		ImGui::BeginDisabled(state == PlayState::Edit);
-		if (koi::utils::IconButton(ICON_FA_PAUSE, "Pause (Ctrl+Shift+P)", state == PlayState::Paused, palette.Paused))
+		if (utils::IconButton(ICON_FA_PAUSE, "Pause (Ctrl+Shift+P)", state == PlayState::Paused, palette.Paused))
 		{
 			TogglePause();
 		}
-		if (koi::utils::IconButton(ICON_FA_STOP, "Stop (Ctrl+P)"))
+		if (utils::IconButton(ICON_FA_STOP, "Stop (Ctrl+P)"))
 		{
 			Stop();
 		}

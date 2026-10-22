@@ -5,10 +5,10 @@
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Interop/AppHost.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
+#include "Koi/Engine/Runtime/AppHost.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
 
 namespace koi

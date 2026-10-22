@@ -1,20 +1,10 @@
 #include "Components/PlayerMover.h"
-#include "Koi/Engine/Interop/ReflectInspector.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
 
 namespace game
 {
-	void PlayerMoverInspector::Draw(koi::Entity e)
-	{
-		PlayerMover* mover = e.try_get_mut<PlayerMover>();
-		if (!mover) return;
-
-		DrawLaneSpheres(mover->Positions, *mover->Lane);
-		koi::utils::DrawReflected(*mover);
-	}
-
 	void PlayerMoverSystem::Each(const koi::SystemContext& ctx, koi::Entity, koi::Transform& transform, PlayerMover& mover)
 	{
 		const koi::InputManager& input = koi::Engine::Get().GetSubsystem<koi::InputManager>();

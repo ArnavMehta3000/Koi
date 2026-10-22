@@ -1,6 +1,6 @@
 #pragma once
+#include "Koi/Editor/Core/EditorPanel.h"
 #include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Interop/EditorPanel.h"
 #include <memory>
 #include <string>
 #include <utility>
