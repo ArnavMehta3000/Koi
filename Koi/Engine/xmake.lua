@@ -1,7 +1,7 @@
 target("Koi.Engine")
 	set_kind("static")
-
-	add_options("LogLevel", "WithEditor")
+	set_group("Koi")
+	add_options("LogLevel")
 
 	add_deps("SimpleMath", { public = true })
 
@@ -29,6 +29,7 @@ target("Koi.Engine")
 	add_includedirs(base_config_dir, { public = true })
 	add_headerfiles(base_config_dir, { public = true })
 	set_configvar("ENGINE_DIR", path.unix(path.join(os.projectdir(), "Koi", "Engine")))
+	set_configvar("WITH_EDITOR", is_mode("editor-.*") and 1 or 0)
 	add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in")
 
 	if is_plat("windows") then

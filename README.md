@@ -13,18 +13,24 @@ git clone  https://github.com/your-username/Koi.git
 Requires [xmake](https://xmake.io) 3.0.8 or newer.
 
 ```sh
-xmake                        # build (default: debug)
+xmake                        # build (default: editor-debug)
 xmake run koi-runtime        # build and run the Sandbox app
 ```
 
 ### Build configurations
 
+Each mode is a build flavour plus what the game exe is: `editor-*` builds `<Game>-Editor.exe`, `game-*` the standalone `<Game>.exe`.
+
 | Mode | Description |
 |---|---|
-| `debug` | Full debug info, `KOI_DEBUG` defined |
-| `release` | Optimized, no debug info |
-| `releasedbg` | Optimized with debug info |
-| `profile` | Release + Tracy profiling (`KOI_ENABLE_PROFILING`, `TRACY_ENABLE`) |
+| `editor-debug` | Editor, unoptimized (default) |
+| `editor-releasedbg` | Editor, optimized |
+| `editor-profile` | Editor, optimized + Tracy profiling (`KOI_ENABLE_PROFILING`) |
+| `game-debug` | Standalone game, unoptimized |
+| `game-release` | Standalone game, optimized; what `xmake install` packages |
+| `game-profile` | Standalone game, optimized + Tracy profiling |
+
+All modes keep a PDB.
 
 Switch modes with:
 
@@ -38,9 +44,8 @@ xmake
 | Option | Values | Description |
 |---|---|---|
 | `--LogLevel` | `0`–`4` | Compile-time log floor (0=trace, 1=debug, 2=info, 3=warn, 4=error) |
-| `--WithEditor` | `0` / `1` | Build the editor (`koi-editor`) instead of the standalone runtime (`koi-runtime`) |
 
-Example: `xmake f -m debug --LogLevel=0`
+Example: `xmake f -m editor-debug --LogLevel=0`
 
 ## Dependencies
 

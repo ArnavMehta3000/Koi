@@ -50,7 +50,7 @@ local function cmd_new(name)
 	cprint("${green}Created ${bright}%s${clear}${green} at %s", name, dst)
 	print("")
 	print("  xmake run " .. name .. "                          editor")
-	print("  xmake f --WithEditor=0 && xmake run " .. name .. "   standalone (Cook from the editor first)")
+	print("  xmake f -m game-debug && xmake run " .. name .. "     standalone (Cook from the editor first)")
 	print("  xmake install " .. name .. "                      package to Projects/" .. name .. "/Packaged")
 end
 

@@ -1,8 +1,7 @@
-local _we = get_config("WithEditor")
-if _we == 1 or _we == "1" or _we == true then
-
 target("Koi.Editor")
+	set_group("Koi")
 	set_kind("static")
+	set_default(is_mode("editor-.*"))
 	add_deps("Koi.Engine", "ImGui", "ImGuizmo", "KoiProfiler", { public = true })
 
 	add_packages("directxtex", "fastgltf", "stb")  -- importers only: the runtime reads Koi's own formats
@@ -16,5 +15,3 @@ target("Koi.Editor")
 	add_files("Content/DefaultLayout.ini", { rule = "utils.bin2obj" })
 	add_files("Content/Fonts/*.ttf", { rule = "utils.bin2obj" })
 target_end()
-
-end

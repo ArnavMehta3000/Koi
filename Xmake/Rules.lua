@@ -4,8 +4,7 @@ includes("ShaderRule.lua")
 -- its source dirs. Standalone it runs from cooked content beside the exe (or the rundir)
 rule("KoiGame")
 	on_load(function(target)
-		local _we         = get_config("WithEditor")
-		local with_editor = (_we == 1 or _we == "1" or _we == true)
+		local with_editor = is_mode("editor-.*")
 		local root        = target:scriptdir()
 		local launcher    = path.join(os.projectdir(), "Launcher")
 
@@ -34,7 +33,7 @@ rule("KoiGame")
 		else
 			target:add("files", path.join(launcher, "RuntimeMain.cpp"))
 			target:set("rundir", path.join(root, ".koi", "Cooked"))
-			if not is_mode("debug", "releasedbg") then
+			if not is_mode("game-debug") then
 				target:add("rules", "win.sdk.application")
 			end
 		end
@@ -43,8 +42,7 @@ rule("KoiGame")
 	-- The editor mounts each target's compiled shaders beside its source tree. autogendir() is relative to
 	-- the repo, and the editor runs from elsewhere, hence absolute
 	on_config(function(target)
-		local _we = get_config("WithEditor")
-		if not (_we == 1 or _we == "1" or _we == true) then return end
+		if not is_mode("editor-.*") then return end
 
 		local engine = assert(target:dep("Koi.Engine"), "%s doesn't depend on Koi.Engine", target:name())
 		target:add("defines",
@@ -54,9 +52,8 @@ rule("KoiGame")
 
 	-- `xmake install <Game>` assembles a self-contained folder: exe + cooked Engine/ + Project/
 	on_install(function(target)
-		local _we = get_config("WithEditor")
-		if _we == 1 or _we == "1" or _we == true then
-			cprint("${yellow}%s: Ensure assets are cooked with editor, then configure with --WithEditor=0 to package the game. Failed to install (bad config: --WithEditor=1)", target:name())
+		if is_mode("editor-.*") then
+			cprint("${yellow}%s: can't package an editor build. Cook from the editor, then `xmake f -m game-release` and install again", target:name())
 			return
 		end
 
@@ -83,22 +80,6 @@ rule("KoiGame")
 		--os.tryrm(path.join(dst, "Project"))
 		--os.tryrm(path.join(dst, path.filename(target:targetfile())))
 		--os.tryrm(path.join(dst, path.filename(target:symbolfile())))
-	end)
-rule_end()
-
--- Generate RDI file using raddbg/radbin
-rule("GenerateRDI")
-	after_build(function(target)
-		if target:kind() == "binary"  and  (target:get("mode") ~= "release")then
-
-			import("lib.detect.find_program")
-
-			local program = find_program("radbin")
-			if program then
-				local cmd = program .. " --rdi " .. target:targetfile()
-				os.exec(cmd)
-			end
-		end
 	end)
 rule_end()
 
