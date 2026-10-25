@@ -10,6 +10,9 @@ namespace koi
 
 namespace koi::editor
 {
+	class EditorContext;
+	class UndoStack;
+
 	// Settings for the ground grid. Edits the pass's own Settings, which is the single
 	// source of truth, so the Gizmos menu toggle and this panel cannot disagree
 	class GridPanel : public Panel
@@ -17,7 +20,7 @@ namespace koi::editor
 	public:
 		static constexpr PanelInfo kInfo{ .Name = "Grid", .Icon = ICON_FA_BORDER_ALL };
 
-		GridPanel();
+		explicit GridPanel(EditorContext* ctx);
 
 		void OnDraw() override;
 
@@ -27,6 +30,7 @@ namespace koi::editor
 	private:
 		[[nodiscard]] GridPass* FindPass() const;
 
-		Renderer* m_renderer = nullptr;
+		Renderer*  m_renderer = nullptr;
+		UndoStack* m_undo     = nullptr;
 	};
 }
