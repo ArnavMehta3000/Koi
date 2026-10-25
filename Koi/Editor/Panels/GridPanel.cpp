@@ -1,4 +1,6 @@
 #include "Koi/Editor/Panels/GridPanel.h"
+#include "Koi/Editor/Core/EditorContext.h"
+#include "Koi/Editor/Undo/UndoStack.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RenderPasses/GridPass.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -8,8 +10,9 @@
 
 namespace koi::editor
 {
-	GridPanel::GridPanel()
+	GridPanel::GridPanel(EditorContext* ctx)
 		: m_renderer(&Engine::Get().GetSubsystem<Renderer>())
+		, m_undo(ctx->Get<UndoStack>())
 	{
 	}
 
@@ -49,6 +52,7 @@ namespace koi::editor
 		}
 
 		GridPass::Settings& s = pass->GetSettings();
+		UndoWatch<ValueAt<GridPass::Settings>> watch = m_undo->Watch("Grid Settings", ValueAt(&s));
 
 		ImGui::Checkbox("Enabled", &s.Enabled);
 		ImGui::BeginDisabled(!s.Enabled);
