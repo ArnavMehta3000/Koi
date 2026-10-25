@@ -22,6 +22,7 @@
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/Toasts.h"
 #include "Koi/Editor/UI/Widgets.h"
+#include "Koi/Editor/Undo/UndoStack.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/DebugDraw.h"
@@ -86,6 +87,7 @@ namespace koi::editor
 		// Extensions can expect the built-in inspectors to exist at startup
 		m_context.Add<InspectorRegistry>()->RegisterBuiltins();
 		m_play = m_context.Add<PlaySession>();
+		m_undo = m_context.Add<UndoStack>();
 		m_commands = m_context.Add<CommandRegistry>();
 		RegisterCommands();
 
@@ -113,6 +115,14 @@ namespace koi::editor
 			.Execute = [this] { SaveScene(); } });
 		m_commands->Register({ .Id = "file.cook", .Label = "Cook", .Icon = ICON_FA_BOX,
 			.Execute = [this] { Cook(); } });
+
+		const auto canEdit = [] { return Engine::Get().GetPlayState() == PlayState::Edit && !ImGui::GetIO().WantTextInput; };
+
+		// Edit commands | Ctrl+Z gets through in play the way Ctrl+P does
+		m_commands->Register({ .Id = "edit.undo", .Label = "Undo", .Icon = ICON_FA_ROTATE_LEFT, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_Z,
+			.Execute = [this] { m_undo->Undo(); }, .CanExecute = [this, canEdit] { return canEdit() && m_undo->CanUndo(); } });
+		m_commands->Register({ .Id = "edit.redo", .Label = "Redo", .Icon = ICON_FA_ROTATE_RIGHT, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_Y,
+			.Execute = [this] { m_undo->Redo(); }, .CanExecute = [this, canEdit] { return canEdit() && m_undo->CanRedo(); } });
 
 		// Play commands
 		m_commands->Register({ .Id = "play.toggle", .Label = "Play / Stop", .Icon = ICON_FA_PLAY, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_P,
@@ -218,6 +228,7 @@ namespace koi::editor
 
 		// Requested during the ImGui frame; runs here, before any command list is recording
 		m_reloader->Flush();
+		m_context.Tick(dt);
 
 		m_viewportPanel->Update(dt, input);
 		m_importQueue->Update();
@@ -429,6 +440,13 @@ namespace koi::editor
 		{
 			m_commands->MenuItem("file.save");
 			m_commands->MenuItem("file.cook");
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::BeginMenu("Edit"))
+		{
+			m_commands->MenuItem("edit.undo");
+			m_commands->MenuItem("edit.redo");
 			ImGui::EndMenu();
 		}
 

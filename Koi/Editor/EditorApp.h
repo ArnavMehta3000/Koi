@@ -28,6 +28,7 @@ namespace koi::editor
 	class PlaySession;
 	class Reloader;
 	class Toasts;
+	class UndoStack;
 	class ViewportPanel;
 
 	struct EditorConfig
@@ -110,6 +111,7 @@ namespace koi::editor
 		PlaySession*     m_play          = nullptr;
 		Reloader*        m_reloader      = nullptr;
 		Toasts*          m_toasts        = nullptr;
+		UndoStack*       m_undo          = nullptr;
 		ViewportPanel*   m_viewportPanel = nullptr;
 	};
 }

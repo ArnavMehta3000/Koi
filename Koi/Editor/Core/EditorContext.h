@@ -46,6 +46,11 @@ namespace koi::editor
 				entry.Shutdown = [](void* p) { static_cast<T*>(p)->OnShutdown(); };
 			}
 
+			if constexpr (requires(T& t, f32 dt) { t.OnTick(dt); })
+			{
+				entry.Tick = [](void* p, f32 dt) { static_cast<T*>(p)->OnTick(dt); };
+			}
+
 			return raw;
 		}
 
@@ -67,6 +72,7 @@ namespace koi::editor
 			return service;
 		}
 
+		void Tick(f32 dt);  // in insertion order
 		void Shutdown();
 
 	private:
@@ -77,6 +83,7 @@ namespace koi::editor
 			const void* Key = nullptr;
 			Owned       Service{ nullptr, nullptr };
 			void      (*Shutdown)(void*) = nullptr;
+			void      (*Tick)(void*, f32) = nullptr;
 		};
 
 		template <typename T>

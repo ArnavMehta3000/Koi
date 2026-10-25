@@ -11,6 +11,14 @@ namespace koi::editor
 		}
 	}
 
+	void EditorContext::Tick(f32 dt)
+	{
+		for (const Entry& entry : m_services)
+		{
+			if (entry.Tick) entry.Tick(entry.Service.get(), dt);
+		}
+	}
+
 	void EditorContext::Shutdown()
 	{
 		for (auto it = m_services.rbegin(); it != m_services.rend(); ++it)
