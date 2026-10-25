@@ -1,4 +1,5 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/Core/CommandRegistry.h"
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/PlaySession.h"
@@ -19,7 +20,6 @@
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <IconsFontAwesome6.h>
-#include <imgui.h>
 #include <ImGuizmo.h>
 #include <cmath>
 #include <limits>
@@ -42,6 +42,16 @@ namespace koi::editor
 		PlaySession* play = ctx->Get<PlaySession>();
 		play->OnStarted([this] { m_cameraBeforePlay = std::exchange(m_cameraMode, ViewportCamera::Game); });
 		play->OnStopped([this] { m_cameraMode = m_cameraBeforePlay; });
+
+		m_commands = ctx->Get<CommandRegistry>();
+		const auto gizmo = [this](std::string id, std::string label, const char* icon, ImGuiKey key, GizmoOp op)
+		{
+			m_commands->Register({ .Id = std::move(id), .Label = std::move(label), .Icon = icon, .Shortcut = key, .Scope = std::string(kInfo.Name),
+				.Execute = [this, op] { m_gizmoOp = op; }, .IsChecked = [this, op] { return m_gizmoOp == op; } });
+		};
+		gizmo("viewport.translate", "Gizmo: Translate", ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, ImGuiKey_W, GizmoOp::Translate);
+		gizmo("viewport.rotate",    "Gizmo: Rotate",    ICON_FA_ROTATE,                    ImGuiKey_E, GizmoOp::Rotate);
+		gizmo("viewport.scale",     "Gizmo: Scale",     ICON_FA_EXPAND,                    ImGuiKey_R, GizmoOp::Scale);
 	}
 
 	ViewportPanel::~ViewportPanel()
@@ -230,9 +240,7 @@ namespace koi::editor
 		// Right-mouse is the camera - leave the shortcuts alone while it is held
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
 		{
-			if (ImGui::Shortcut(ImGuiKey_W)) m_gizmoOp = GizmoOp::Translate;
-			if (ImGui::Shortcut(ImGuiKey_E)) m_gizmoOp = GizmoOp::Rotate;
-			if (ImGui::Shortcut(ImGuiKey_R)) m_gizmoOp = GizmoOp::Scale;
+			m_commands->PollShortcuts(kInfo.Name);
 		}
 
 		static constexpr ImGuizmo::OPERATION kOps[] =
@@ -370,7 +378,8 @@ namespace koi::editor
 	void ViewportPanel::Update(f32 dt, InputManager& input)
 	{
 		// A drag resizes every frame; report only where it ended up
-		if (m_resizeSettle > 0.0f && (m_resizeSettle -= dt) <= 0.0f)
+		m_resizeSettle -= dt;
+		if (m_resizeSettle > 0.0f && m_resizeSettle <= 0.0f)
 		{
 			KOI_LOG(Editor, Debug, "Viewport resized to {}x{}", m_target.Width, m_target.Height);
 		}

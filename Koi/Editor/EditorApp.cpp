@@ -3,6 +3,8 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/Cooker.h"
+#include "Koi/Editor/Core/CommandRegistry.h"
+#include "Koi/Editor/Core/PanelManager.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
@@ -11,7 +13,6 @@
 #include "Koi/Editor/Panels/ImportPanel.h"
 #include "Koi/Editor/Panels/InspectorPanel.h"
 #include "Koi/Editor/Panels/LogPanel.h"
-#include "Koi/Editor/Core/PanelManager.h"
 #include "Koi/Editor/Panels/ProfilerPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Editor/Panels/ViewportPanel.h"
@@ -38,6 +39,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 
+#include <format>
 #include <fstream>
 #include <IconsFontAwesome6.h>
 #include <imgui_internal.h>
@@ -84,6 +86,8 @@ namespace koi::editor
 		// Extensions can expect the built-in inspectors to exist at startup
 		m_context.Add<InspectorRegistry>()->RegisterBuiltins();
 		m_play = m_context.Add<PlaySession>();
+		m_commands = m_context.Add<CommandRegistry>();
+		RegisterCommands();
 
 		m_panels = m_context.Add<PanelManager>();
 		m_panels->Add<WorldOutlinePanel>();
@@ -98,6 +102,32 @@ namespace koi::editor
 
 		// Files dragged in from Explorer land in the Import panel to have their settings checked
 		Engine::Get().GetWindow().SetDropCallback([this](std::span<const fs::path> files) { m_importQueue->AddFiles(files); });
+	}
+
+	void EditorApp::RegisterCommands()
+	{
+		const auto notEditing = [] { return Engine::Get().GetPlayState() != PlayState::Edit; };
+
+		// File commands
+		m_commands->Register({ .Id = "file.save", .Label = "Save Scene", .Icon = ICON_FA_FLOPPY_DISK, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_S,
+			.Execute = [this] { SaveScene(); } });
+		m_commands->Register({ .Id = "file.cook", .Label = "Cook", .Icon = ICON_FA_BOX,
+			.Execute = [this] { Cook(); } });
+
+		// Play commands
+		m_commands->Register({ .Id = "play.toggle", .Label = "Play / Stop", .Icon = ICON_FA_PLAY, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_P,
+			.Execute = [this] { m_play->TogglePlay(); } });
+		m_commands->Register({ .Id = "play.pause", .Label = "Pause / Resume", .Icon = ICON_FA_PAUSE, .Shortcut = ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_P,
+			.Execute = [this] { m_play->TogglePause(); }, .CanExecute = notEditing });
+
+		// Requested here, run before the next frame records
+		m_commands->Register({ .Id = "reload.changed", .Label = "Reload Changed Shaders", .Icon = ICON_FA_ARROWS_ROTATE, .Shortcut = ImGuiKey_F5,
+			.Execute = [this] { m_reloader->Request({ .Scope = ReloadScope::Changed }); } });
+		m_commands->Register({ .Id = "reload.all", .Label = "Reload All Shaders", .Icon = ICON_FA_ARROWS_ROTATE, .Shortcut = ImGuiMod_Shift | ImGuiKey_F5,
+			.Execute = [this] { m_reloader->Request({ .Scope = ReloadScope::All }); } });
+
+		m_commands->Register({ .Id = "palette.open", .Label = "Command Palette", .Icon = ICON_FA_MAGNIFYING_GLASS, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_K,
+			.Execute = [this] { m_commands->OpenPalette(); } });
 	}
 
 	void EditorApp::HostInit()
@@ -368,7 +398,10 @@ namespace koi::editor
 			});
 			m_panels->DrawAll();
 			m_toasts->Draw();
-			PollShortcuts();
+
+			// Polled after the panels with global routing, so play controls still fire while the game owns the keyboard
+			m_commands->PollShortcuts();
+			m_commands->DrawPalette();
 		}
 
 		// Panels above asked for the targets they sample; satisfy all of them in one batch before ImGui::Image reads them
@@ -388,39 +421,14 @@ namespace koi::editor
 		m_imgui.EndFrame(cmd);
 	}
 
-	// Global shortcuts go through ImGui's routing
-	void EditorApp::PollShortcuts()
-	{
-		if (ImGui::Shortcut(ImGuiMod_Shift | ImGuiKey_F5, ImGuiInputFlags_RouteGlobal))  // Shift+F5: reload everything
-			m_reloader->Request({ .Scope = ReloadScope::All });
-		else if (ImGui::Shortcut(ImGuiKey_F5, ImGuiInputFlags_RouteGlobal))  //F5: Reload what is changed
-			m_reloader->Request({ .Scope = ReloadScope::Changed });
-
-		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_S, ImGuiInputFlags_RouteGlobal))  // Saving
-		{
-			SaveScene();
-		}
-
-		if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_P, ImGuiInputFlags_RouteGlobal))
-		{
-			m_play->TogglePause();
-		}
-		else if (ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_P, ImGuiInputFlags_RouteGlobal))
-		{
-			m_play->TogglePlay();
-		}
-	}
-
 	void EditorApp::DrawMenuBar()
 	{
 		if (!ImGui::BeginMainMenuBar()) return;
 
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
-				SaveScene();
-			if (ImGui::MenuItem("Cook"))
-				Cook();
+			m_commands->MenuItem("file.save");
+			m_commands->MenuItem("file.cook");
 			ImGui::EndMenu();
 		}
 
@@ -433,6 +441,8 @@ namespace koi::editor
 			DrawGizmoMenu();
 			ImGui::Separator();
 			m_imgui.DrawAppearanceMenu();
+			ImGui::Separator();
+			m_commands->MenuItem("palette.open");
 			ImGui::EndMenu();
 		}
 
@@ -448,7 +458,11 @@ namespace koi::editor
 		const f32 width = ImGui::GetFrameHeight() * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
 		ImGui::SetCursorPosX(ImMax(ImGui::GetCursorPosX(), (ImGui::GetWindowWidth() - width) * 0.5f));
 
-		if (utils::IconButton(ICON_FA_PLAY, "Play (Ctrl+P)", state == PlayState::Playing, palette.Playing))
+		// Copied: the names share one ImGui buffer
+		const std::string playShortcut  = CommandRegistry::ShortcutName(*m_commands->Find("play.toggle"));
+		const std::string pauseShortcut = CommandRegistry::ShortcutName(*m_commands->Find("play.pause"));
+
+		if (utils::IconButton(ICON_FA_PLAY, std::format("Play ({})", playShortcut).c_str(), state == PlayState::Playing, palette.Playing))
 		{
 			if (state == PlayState::Edit)
 				m_play->Play();
@@ -457,11 +471,11 @@ namespace koi::editor
 		}
 
 		ImGui::BeginDisabled(state == PlayState::Edit);
-		if (utils::IconButton(ICON_FA_PAUSE, "Pause (Ctrl+Shift+P)", state == PlayState::Paused, palette.Paused))
+		if (utils::IconButton(ICON_FA_PAUSE, std::format("Pause ({})", pauseShortcut).c_str(), state == PlayState::Paused, palette.Paused))
 		{
 			m_play->TogglePause();
 		}
-		if (utils::IconButton(ICON_FA_STOP, "Stop (Ctrl+P)"))
+		if (utils::IconButton(ICON_FA_STOP, std::format("Stop ({})", playShortcut).c_str()))
 		{
 			m_play->Stop();
 		}

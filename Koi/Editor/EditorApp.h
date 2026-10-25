@@ -3,7 +3,6 @@
 #include "Koi/Editor/Core/EditorExtension.h"
 #include "Koi/Editor/ImGui/ImGuiLayer.h"
 #include "Koi/Editor/StatusBar.h"
-#include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Graphics/RendererOverlay.h"
 #include "Koi/Engine/Graphics/RenderView.h"
 #include "Koi/Engine/Runtime/AppHost.h"
@@ -23,6 +22,7 @@ namespace koi::editor
 {
 	namespace fs = std::filesystem;
 
+	class CommandRegistry;
 	class ImportQueue;
 	class PanelManager;
 	class PlaySession;
@@ -70,6 +70,7 @@ namespace koi::editor
 
 	private:
 		void Setup();
+		void RegisterCommands();
 		void StartExtensions();
 		void ShutdownExtensions();
 		[[nodiscard]] std::optional<RenderView> GetViewportView() const;
@@ -77,7 +78,6 @@ namespace koi::editor
 		void DrawMenuBar();
 		void DrawPlayControls();
 		void DrawGizmoMenu();
-		void PollShortcuts();
 		void SaveScene();
 		void Cook();
 
@@ -104,11 +104,12 @@ namespace koi::editor
 		GizmoOptions             m_gizmos{};
 
 		// Owned by m_context, cached for access
-		PanelManager*     m_panels        = nullptr;
-		ImportQueue*   m_importQueue   = nullptr;
-		PlaySession*   m_play          = nullptr;
-		Reloader*      m_reloader      = nullptr;
-		Toasts*        m_toasts        = nullptr;
-		ViewportPanel* m_viewportPanel = nullptr;
+		PanelManager*    m_panels        = nullptr;
+		CommandRegistry* m_commands      = nullptr;
+		ImportQueue*     m_importQueue   = nullptr;
+		PlaySession*     m_play          = nullptr;
+		Reloader*        m_reloader      = nullptr;
+		Toasts*          m_toasts        = nullptr;
+		ViewportPanel*   m_viewportPanel = nullptr;
 	};
 }
