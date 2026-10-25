@@ -39,7 +39,7 @@ rule("KoiShaders")
 		local root           = path.directory(path.directory(shaderdir))  -- what VFS <scheme>:// points at
 		local enginedir      = path.join(os.projectdir(), "Koi", "Engine")
 		local outdir         = path.join(target:autogendir(), "Built", "Shaders")
-		local isdebug        = is_mode("debug")
+		local isdebug        = is_mode(".*-debug")
 
 		local function find_dxc()
 			for _, owner in ipairs({ target, target:dep("Koi.Engine") }) do
