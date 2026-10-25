@@ -120,7 +120,7 @@ namespace koi::editor
 		m_commands->Register({ .Id = "play.pause", .Label = "Pause / Resume", .Icon = ICON_FA_PAUSE, .Shortcut = ImGuiMod_Ctrl | ImGuiMod_Shift | ImGuiKey_P,
 			.Execute = [this] { m_play->TogglePause(); }, .CanExecute = notEditing });
 
-		// Requested here, run before the next frame records
+		// Hot-reload commands | Requested here, run before the next frame records
 		m_commands->Register({ .Id = "reload.changed", .Label = "Reload Changed Shaders", .Icon = ICON_FA_ARROWS_ROTATE, .Shortcut = ImGuiKey_F5,
 			.Execute = [this] { m_reloader->Request({ .Scope = ReloadScope::Changed }); } });
 		m_commands->Register({ .Id = "reload.all", .Label = "Reload All Shaders", .Icon = ICON_FA_ARROWS_ROTATE, .Shortcut = ImGuiMod_Shift | ImGuiKey_F5,
