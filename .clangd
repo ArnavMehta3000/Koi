@@ -16,6 +16,10 @@ CompileFlags:
     - /Fd*
     - /Fo*
     - /Zi
+    - /Yu*
+    - /Yc*
+    - /Fp*
+    - /FI*
 
 Diagnostics:
   UnusedIncludes: None

@@ -10,6 +10,7 @@ target("Koi.Editor")
 	add_includedirs("$(projectdir)", { public = true })
 	add_headerfiles("**.h", { public = true })
 	add_files("**.cpp")
+	set_pcxxheader("Pch.h")
 
 	add_rules("utils.bin2obj")
 	add_files("Content/DefaultLayout.ini", { rule = "utils.bin2obj" })
