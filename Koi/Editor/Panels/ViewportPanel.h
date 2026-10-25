@@ -17,6 +17,7 @@ namespace koi
 
 namespace koi::editor
 {
+	class CommandRegistry;
 	class EditorContext;
 	class Selection;
 
@@ -84,6 +85,7 @@ namespace koi::editor
 		Renderer*         m_renderer;
 		AppBase*          m_game      = nullptr;
 		Selection*        m_selection = nullptr;
+		CommandRegistry*  m_commands  = nullptr;
 		ViewportTarget    m_target{};
 		bool              m_valid           = false;
 		u32               m_desiredWidth    = 1280;
