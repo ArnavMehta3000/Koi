@@ -82,7 +82,7 @@ namespace koi::editor
 
 				if (ImGui::Selectable(label.c_str(), selected) && !selected)
 				{
-					capture.Watch(TargetCapture::Target{ .Name = out.Name, .Version = out.Version });
+					capture.Watch(TargetCapture::Target{ .Name = std::string(out.Name), .Version = out.Version });
 					if (const Texture* tex = device.Get(out.Texture))
 					{
 						capture.GetSettings() = DefaultsFor(tex->Desc.Format);

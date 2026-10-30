@@ -31,9 +31,11 @@ namespace koi
 	{
 		if (!texture) return {};
 
+		auto& pass = m_graph.m_passes[m_passIndex];
+		KOI_ASSERT(pass.ColorCount < MAX_RENDER_TARGETS, "Too many color targets in one pass");
+
 		const RGTexture written = m_graph.Declare(m_passIndex, texture, RenderGraph::Access::ColorTarget);
-		m_graph.m_passes[m_passIndex].ColorTargets.push_back({ .Resource = texture.Index, .Load = load, .Clear = clear });
-		KOI_ASSERT(m_graph.m_passes[m_passIndex].ColorTargets.size() <= MAX_RENDER_TARGETS, "Too many color targets in one pass");
+		pass.ColorTargets[pass.ColorCount++] = { .Resource = texture.Index, .Load = load, .Clear = clear };
 		return written;
 	}
 
@@ -104,12 +106,23 @@ namespace koi
 	{
 		m_resources.clear();
 		m_passes.clear();
+		m_uses.clear();
 		m_blackboard.Clear();
+	}
+
+	const std::string& RenderGraph::Intern(std::string_view name)
+	{
+		auto it = m_names.find(name);
+		if (it == m_names.end())
+		{
+			it = m_names.emplace(name).first;
+		}
+		return *it;
 	}
 
 	RGTexture RenderGraph::CreateTexture(const TextureDesc& desc, std::string_view name)
 	{
-		Resource& r = m_resources.emplace_back(Resource{ .Name = std::string(name), .Desc = desc });
+		Resource& r = m_resources.emplace_back(Resource{ .Name = Intern(name), .Desc = desc });
 
 		// Every intermediate stays viewable in the editor
 		r.Desc.Usage |= TextureUsage::ShaderRead;
@@ -122,7 +135,7 @@ namespace koi
 		const koi::Texture* tex = m_device->Get(texture);
 		if (!tex) return {};
 
-		Resource& r = m_resources.emplace_back(Resource{ .Name = std::string(name), .Desc = tex->Desc, .Texture = texture, .Imported = true });
+		Resource& r = m_resources.emplace_back(Resource{ .Name = Intern(name), .Desc = tex->Desc, .Texture = texture, .Imported = true });
 		r.Desc.DebugName = {};
 		return { .Index = static_cast<u16>(m_resources.size() - 1) };
 	}
@@ -140,8 +153,7 @@ namespace koi
 
 	u32 RenderGraph::BeginPass(std::string_view name)
 	{
-		const char* interned = m_names.emplace(name).first->c_str();
-		m_passes.push_back(Pass{ .Name = interned });
+		m_passes.push_back(Pass{ .Name = Intern(name).c_str(), .FirstUse = static_cast<u32>(m_uses.size()) });
 		return static_cast<u32>(m_passes.size() - 1);
 	}
 
@@ -151,7 +163,10 @@ namespace koi
 		Resource& r = m_resources[texture.Index];
 		KOI_ASSERT(texture.Version == r.Version, "Pass uses a stale version of a graph texture");
 
-		m_passes[passIndex].Uses.push_back({ texture, access });
+		Pass& pass = m_passes[passIndex];
+		KOI_ASSERT(pass.FirstUse + pass.UseCount == m_uses.size(), "Uses must be declared during the pass's own setup");
+		m_uses.push_back({ texture, access });
+		++pass.UseCount;
 
 		// Shader read or depth/render target
 		const TextureUsage needed = access == Access::ShaderRead  ? TextureUsage::ShaderRead
@@ -175,22 +190,22 @@ namespace koi
 
 	void RenderGraph::BindTargets(CommandList& cmd, const Pass& pass)
 	{
-		if (pass.ColorTargets.empty() && !pass.DepthTarget) return;
+		if (pass.ColorCount == 0 && !pass.DepthTarget) return;
 
 		std::array<TextureHandle, MAX_RENDER_TARGETS> colors{};
-		for (const auto& [i, att] : std::views::enumerate(pass.ColorTargets))
+		for (const auto& [i, att] : std::views::enumerate(pass.Colors()))
 		{
 			colors[i] = m_resources[att.Resource].Texture;
 		}
 
 		const TextureHandle depth = pass.DepthTarget ? m_resources[pass.DepthTarget->Resource].Texture : TextureHandle();
-		cmd.SetRenderTarget(std::span(colors.data(), pass.ColorTargets.size()), depth);
+		cmd.SetRenderTarget(std::span(colors.data(), pass.ColorCount), depth);
 
-		const u16 sizeFrom = pass.ColorTargets.empty() ? pass.DepthTarget->Resource : pass.ColorTargets.front().Resource;
+		const u16 sizeFrom = pass.ColorCount == 0 ? pass.DepthTarget->Resource : pass.ColorTargets.front().Resource;
 		const TextureDesc& size = m_resources[sizeFrom].Desc;
 		cmd.SetViewportAndScissor(size.Width, size.Height);
 
-		for (const auto& [i, att] : std::views::enumerate(pass.ColorTargets))
+		for (const auto& [i, att] : std::views::enumerate(pass.Colors()))
 		{
 			if (att.Load == LoadOp::Clear)
 			{
@@ -207,8 +222,8 @@ namespace koi
 
 	TargetFormats RenderGraph::FormatsOf(const Pass& pass) const
 	{
-		TargetFormats formats{ .ColorCount = static_cast<u32>(pass.ColorTargets.size()) };
-		for (const auto& [i, att] : std::views::enumerate(pass.ColorTargets))
+		TargetFormats formats{ .ColorCount = pass.ColorCount };
+		for (const auto& [i, att] : std::views::enumerate(pass.Colors()))
 		{
 			formats.Colors[i] = m_resources[att.Resource].Desc.Format;
 		}
@@ -237,7 +252,7 @@ namespace koi
 		{
 			KOI_GPU_ZONE_TRANSIENT(cmd, passZone, pass.Name);
 
-			for (const Use& use : pass.Uses)
+			for (const Use& use : UsesOf(pass))
 			{
 				const TextureHandle texture = m_resources[use.Texture.Index].Texture;
 				const D3D12_RESOURCE_STATES state = use.Access == Access::ShaderRead  ? kShaderRead
@@ -248,7 +263,7 @@ namespace koi
 			}
 			cmd.FlushBarriers();
 
-			KOI_ASSERT(!pass.Compute || (pass.ColorTargets.empty() && !pass.DepthTarget), "Compute passes write through Write(), not targets");
+			KOI_ASSERT(!pass.Compute || (pass.ColorCount == 0 && !pass.DepthTarget), "Compute passes write through Write(), not targets");
 			BindTargets(cmd, pass);
 
 			if (pass.Execute)
@@ -277,10 +292,12 @@ namespace koi
 		if (!m_observer || m_notifying) return;
 		m_notifying = true;
 
-		// Copied: the observer may add passes, which can reallocate m_passes
-		const std::vector<Use> uses = m_passes[passIndex].Uses;
-		for (const Use& use : uses)
+		// Indexed: the observer may add passes, which can reallocate m_passes and m_uses
+		const u32 first = m_passes[passIndex].FirstUse;
+		const u32 count = m_passes[passIndex].UseCount;
+		for (u32 i = first; i < first + count; ++i)
 		{
+			const Use use = m_uses[i];
 			if (use.Access == Access::ShaderRead) continue;
 
 			const RGTexture written
@@ -288,20 +305,20 @@ namespace koi
 				.Index = use.Texture.Index,
 				.Version = static_cast<u16>(use.Texture.Version + 1)
 			};
-			const std::string name = m_resources[use.Texture.Index].Name;  // the observer may grow m_resources
-
-			m_observer->OnWrite(*this, name, written);
+			m_observer->OnWrite(*this, m_resources[use.Texture.Index].Name, written);
 		}
 		m_notifying = false;
 	}
 
 	void RenderGraph::Inspect()
 	{
-		m_inspection.Passes.clear();
-		for (const Pass& pass : m_passes)
+		// Resized, not cleared, so each pass's Writes keeps its capacity across frames
+		m_inspection.Passes.resize(m_passes.size());
+		for (const auto& [pass, info] : std::views::zip(m_passes, m_inspection.Passes))
 		{
-			RGInspection::Pass& info = m_inspection.Passes.emplace_back(RGInspection::Pass{ .Name = pass.Name });
-			for (const Use& use : pass.Uses)
+			info.Name = pass.Name;
+			info.Writes.clear();
+			for (const Use& use : UsesOf(pass))
 			{
 				if (use.Access == Access::ShaderRead) continue;
 

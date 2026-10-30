@@ -3,6 +3,7 @@
 #include "Koi/Editor/Selection.h"
 #include "Koi/Engine/ECS/World.h"
 #include <string>
+#include <vector>
 #include <IconsFontAwesome6.h>
 
 namespace koi { class AppBase; }
@@ -29,5 +30,7 @@ namespace koi::editor
 		EntityID    m_renaming = 0;  // 0 = nothing being renamed
 		std::string m_renameBuffer;
 		bool        m_focusRename = false;
+
+		std::vector<Entity> m_order;  // per-draw scratch, kept for its capacity
 	};
 }

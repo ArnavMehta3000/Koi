@@ -8,6 +8,7 @@
 #include <functional>
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -21,8 +22,8 @@ namespace koi
 	{
 		struct Output  // Pass output
 		{
-			std::string   Name;
-			u16           Version = 0;
+			std::string_view Name;  // interned by the graph
+			u16              Version = 0;
 			TextureHandle Texture;
 		};
 
@@ -51,7 +52,7 @@ namespace koi
 
 		struct Resource
 		{
-			std::string   Name;
+			std::string_view Name;  // interned
 			TextureDesc   Desc;
 			TextureHandle Texture;
 			u16           Version = 0;
@@ -75,11 +76,15 @@ namespace koi
 		struct Pass
 		{
 			const char* Name = nullptr;  // interned, GPU zones keep the pointer
-			std::vector<Use>                              Uses;
-			std::vector<Attachment>                       ColorTargets;
+			u32                                           FirstUse = 0;  // into m_uses, contiguous per pass
+			u32                                           UseCount = 0;
+			std::array<Attachment, MAX_RENDER_TARGETS>    ColorTargets{};
+			u32                                           ColorCount = 0;
 			std::optional<Attachment>                     DepthTarget;
 			bool                                          Compute = false;
 			std::move_only_function<void(CommandList&, const TargetFormats&)> Execute;
+
+			[[nodiscard]] std::span<const Attachment> Colors() const { return { ColorTargets.data(), ColorCount }; }
 		};
 
 	public:
@@ -130,6 +135,8 @@ namespace koi
 		inline void SetObserver(IRGObserver* observer) noexcept { m_observer = observer; }
 
 	private:
+		[[nodiscard]] const std::string& Intern(std::string_view name);
+		[[nodiscard]] std::span<const Use> UsesOf(const Pass& pass) const { return { m_uses.data() + pass.FirstUse, pass.UseCount }; }
 		[[nodiscard]] u32 BeginPass(std::string_view name);
 		[[nodiscard]] RGTexture Declare(u32 passIndex, RGTexture texture, Access access);
 		void BindTargets(CommandList& cmd, const Pass& pass);
@@ -143,6 +150,7 @@ namespace koi
 		TransientPool                      m_pool;
 		std::vector<Resource>              m_resources;
 		std::vector<Pass>                  m_passes;
+		std::vector<Use>                   m_uses;
 		std::set<std::string, std::less<>> m_names;
 		RGBlackboard                       m_blackboard;
 		RGInspection                       m_inspection;

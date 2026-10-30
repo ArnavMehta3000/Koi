@@ -24,10 +24,10 @@ namespace koi::editor
 			return ICON_FA_CUBE;
 		}
 
-		// Children of `parent` (roots when invalid) in outliner order
-		std::vector<Entity> SortedChildren(ECS& ecs, Entity parent)
+		// Appends the children of `parent` (roots when invalid) in outliner order, returns where they start
+		size_t AppendSortedChildren(ECS& ecs, Entity parent, std::vector<Entity>& out)
 		{
-			std::vector<Entity> out;
+			const size_t first = out.size();
 			if (parent.is_alive())
 			{
 				parent.children([&](Entity e) { out.push_back(e); });
@@ -37,21 +37,31 @@ namespace koi::editor
 				ecs.each<Transform>([&](Entity e, Transform&) { if (!e.parent()) out.push_back(e); });
 			}
 
-			std::ranges::sort(out, {}, [](Entity e) { return World::OrderKey(e); });
-			return out;
+			std::ranges::sort(out.begin() + first, out.end(), {}, [](Entity e) { return World::OrderKey(e); });
+			return first;
+		}
+
+		// Calls `fn` on each sorted child; indexed since `fn` may append below them
+		template <typename Fn>
+		void ForEachSortedChild(ECS& ecs, Entity parent, std::vector<Entity>& scratch, Fn&& fn)
+		{
+			const size_t first = AppendSortedChildren(ecs, parent, scratch);
+			const size_t last  = scratch.size();
+			for (size_t i = first; i < last; ++i) fn(scratch[i]);
+			scratch.resize(first);
 		}
 
 		// Depth-first renumber after any structural edit
-		void Renumber(ECS& ecs)
+		void Renumber(ECS& ecs, std::vector<Entity>& scratch)
 		{
 			u32 next = 0;
 			auto visit = [&](this auto&& self, Entity parent) -> void
 			{
-				for (Entity e : SortedChildren(ecs, parent))
+				ForEachSortedChild(ecs, parent, scratch, [&](Entity e)
 				{
 					e.set<SceneOrder>({ next++ });
 					self(e);
-				}
+				});
 			};
 			visit(Entity{});
 		}
@@ -174,7 +184,7 @@ namespace koi::editor
 
 			if (open)
 			{
-				for (Entity child : SortedChildren(ecs, entity)) self(child);
+				ForEachSortedChild(ecs, entity, m_order, self);
 				ImGui::TreePop();
 			}
 		};
@@ -210,7 +220,7 @@ namespace koi::editor
 
 		ImGui::Separator();
 
-		for (Entity root : SortedChildren(ecs, Entity{})) DrawNode(root);
+		ForEachSortedChild(ecs, Entity{}, m_order, DrawNode);
 
 		if (pendingDrop)
 		{
@@ -236,6 +246,6 @@ namespace koi::editor
 			renumber = true;
 		}
 
-		if (renumber) Renumber(ecs);
+		if (renumber) Renumber(ecs, m_order);
 	}
 }

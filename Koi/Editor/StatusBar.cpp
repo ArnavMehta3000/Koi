@@ -5,7 +5,6 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <array>
-#include <filesystem>
 #include <format>
 
 namespace koi::editor
@@ -40,30 +39,31 @@ namespace koi::editor
 			ImGui::TextColored(text, "%s", kStateLabels[static_cast<size_t>(info.State)]);
 
 			ImGui::Separator();
-			const std::string scene = info.ScenePath.empty() ? "Untitled" : std::filesystem::path(info.ScenePath).filename().string();
-			ImGui::TextColored(text, "%s", scene.c_str());
+			const std::string_view scene = info.ScenePath.empty() ? "Untitled" : info.ScenePath.substr(info.ScenePath.find_last_of("/\\") + 1);
+			ImGui::TextColored(text, "%.*s", static_cast<int>(scene.size()), scene.data());
 			if (!info.ScenePath.empty())
 			{
 				ImGui::SetItemTooltip("%.*s", static_cast<int>(info.ScenePath.size()), info.ScenePath.data());
 			}
 
 			// Right-aligned group, measured first so it hugs the edge
-			std::vector<Item> right;
+			std::array<Item, 2> right;
+			size_t count = 0;
 			if (info.Importing)
 			{
-				right.push_back({ ICON_FA_SPINNER "  Importing", text });
+				right[count++] = { ICON_FA_SPINNER "  Importing", text };
 			}
-			right.push_back({ std::format("{:.0f} fps", ImGui::GetIO().Framerate), text });
+			right[count++] = { std::format("{:.0f} fps", ImGui::GetIO().Framerate), text };
 
 			const f32 spacing = ImGui::GetStyle().ItemSpacing.x * 2.0f;
 			f32 width = 0.0f;
-			for (const Item& item : right)
+			for (size_t i = 0; i < count; ++i)
 			{
-				width += ImGui::CalcTextSize(item.Text.c_str()).x + spacing;
+				width += ImGui::CalcTextSize(right[i].Text.c_str()).x + spacing;
 			}
 
 			ImGui::SameLine(ImMax(ImGui::GetCursorPosX(), ImGui::GetWindowWidth() - width));
-			for (size_t i = 0; i < right.size(); ++i)
+			for (size_t i = 0; i < count; ++i)
 			{
 				if (i > 0)
 				{
