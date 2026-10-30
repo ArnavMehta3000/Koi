@@ -5,6 +5,8 @@
 #include "Koi/Editor/PlaySession.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/UI/Widgets.h"
+#include "Koi/Editor/Undo/ComponentOf.h"
+#include "Koi/Editor/Undo/UndoStack.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/World.h"
@@ -36,6 +38,7 @@ namespace koi::editor
 		: m_renderer(&Engine::Get().GetSubsystem<Renderer>())
 		, m_game(ctx->GetGame())
 		, m_selection(ctx->Get<Selection>())
+		, m_undo(ctx->Get<UndoStack>())
 		, m_controller(&m_camera, CameraMode::Orbit)
 	{
 		// Show the game camera by default; the toolbar can still switch back mid-play
@@ -247,6 +250,9 @@ namespace koi::editor
 		{
 			ImGuizmo::TRANSLATE, ImGuizmo::ROTATE, ImGuizmo::SCALE
 		};
+		static constexpr std::string_view kLabels[] = { "Move", "Rotate", "Scale" };
+
+		const auto watch = m_undo->Watch(kLabels[static_cast<u32>(m_gizmoOp)], ComponentOf<Transform>(selected));
 
 		ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
 		ImGuizmo::SetRect(x, y, width, height);

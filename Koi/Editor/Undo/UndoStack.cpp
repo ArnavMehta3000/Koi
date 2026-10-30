@@ -4,6 +4,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
+#include <ImGuizmo.h>
 
 namespace koi::editor
 {
@@ -32,7 +33,8 @@ namespace koi::editor
 
 	void UndoStack::OnTick(f32)
 	{
-		if (!ImGui::IsAnyItemActive()) m_open = false;
+		// ImGuizmo never takes an ImGui active id, so a held gizmo has to be checked on its own
+		if (!ImGui::IsAnyItemActive() && !ImGuizmo::IsUsing()) m_open = false;
 	}
 
 	UndoStack::IRecord* UndoStack::OpenStep(u64 identity, const void* type)
