@@ -20,6 +20,7 @@ namespace koi::editor
 	class CommandRegistry;
 	class EditorContext;
 	class Selection;
+	class UndoStack;
 
 	enum class GizmoOp : u8
 	{
@@ -86,6 +87,7 @@ namespace koi::editor
 		AppBase*          m_game      = nullptr;
 		Selection*        m_selection = nullptr;
 		CommandRegistry*  m_commands  = nullptr;
+		UndoStack*        m_undo      = nullptr;
 		ViewportTarget    m_target{};
 		bool              m_valid           = false;
 		u32               m_desiredWidth    = 1280;
