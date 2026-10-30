@@ -20,6 +20,7 @@ includes("Packages/StdUUID.lua")
 includes("Packages/STB.lua")
 includes("Packages/TomlPlusPlus.lua")
 includes("Packages/Tracy.lua")
+includes("Packages/TracyTools.lua")
 
 local kTomlPlusPlus = "f22f035fe2d63e2be3d266d8f100e7812a9ab9bd"
 
@@ -36,7 +37,12 @@ add_requires("spdlog 79524ddd08a4ec981b7fea76afd08ee05f83755d")          -- v1.1
 add_requires("stb 31c1ad37456438565541f4919958214b6e762fb4")
 add_requires("stduuid 3afe7193facd5d674de709fccc44d5055e144d7a")         -- v1.2.3
 add_requires("toml++ " .. kTomlPlusPlus)
-add_requires("tracy-profiler 05cceee0df3b8d7c6fa87e9638af311dbabc63cb")  -- v0.13.1
+add_requires("tracy-profiler 30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c")  -- v0.14.1
+
+-- The viewer must speak the client's protocol, so bump both together. `xmake koi tracy` launches it
+if is_mode(".*-profile") then
+	add_requires("tracy-tools 0.14.1")
+end
 
 -- Dependencies of the packages above
 add_requireconfs("fastgltf.simdjson",  { override = true, version = "f5de14f09256982933af2849beb43778bd421ca7" })  -- v4.6.11

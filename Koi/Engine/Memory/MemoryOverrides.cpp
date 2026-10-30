@@ -18,7 +18,7 @@ namespace
 		if (p)
 		{
 			koi::internal::g_allocationCount.fetch_add(1, std::memory_order_relaxed);
-			TracySecureAlloc(p, size);
+			TracyAlloc(p, size);
 		}
 		return p;
 	}
@@ -26,7 +26,7 @@ namespace
 	void Free(void* p) noexcept
 	{
 		if (!p) return;
-		TracySecureFree(p);
+		TracyFree(p);
 		::_aligned_free(p);
 	}
 

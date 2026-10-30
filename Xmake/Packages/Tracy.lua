@@ -9,19 +9,12 @@ package("tracy-profiler")
 	add_includedirs("include", "include/tracy")
 	add_syslinks("ws2_32", "dbghelp")
 
-	-- The only options Koi changes from Tracy's defaults; the client must see the same defines
-	local kOptions = { "TRACY_CALLSTACK", "TRACY_NO_CALLSTACK_INLINES", "TRACY_FIBERS" }
-	add_defines(table.unpack(kOptions))
-
+	-- The client is always built enabled; Koi defines TRACY_ENABLE itself, in profile modes only
 	on_install("windows", function (package)
 		io.replace("CMakeLists.txt", [[/$<IF:$<CONFIG:Release>,,$<CONFIG>>]], "", { plain = true })
 
-		local configs = {}
+		local configs = { "-DTRACY_ENABLE=ON", "-DBUILD_SHARED_LIBS=OFF" }
 		table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
-		table.insert(configs, "-DBUILD_SHARED_LIBS=OFF")
-		for _, option in ipairs(kOptions) do
-			table.insert(configs, "-D" .. option .. "=ON")
-		end
 		import("package.tools.cmake").install(package, configs)
 	end)
 
@@ -30,8 +23,8 @@ package("tracy-profiler")
 			#define TRACY_ENABLE
 			#include <tracy/Tracy.hpp>
 			void test() {
-				TracyFiberEnter("Fiber");
+				FrameMark;
 			}
-		]]}, { configs = { languages = "c++14" } }))
+		]]}, { configs = { languages = "c++17" } }))
 	end)
 package_end()

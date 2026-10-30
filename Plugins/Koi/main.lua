@@ -54,6 +54,18 @@ local function cmd_new(name)
 	print("  xmake install " .. name .. "                      package to Projects/" .. name .. "/Packaged")
 end
 
+-- The viewer comes from the tracy-tools package, which only profile modes require
+local function cmd_tracy()
+	local tools = project.required_package("tracy-tools")
+	assert(tools and tools:installdir(), "Tracy is only installed in profile modes: run `xmake f -m editor-profile` (or game-profile) first")
+
+	local viewer = path.join(tools:installdir(), "bin", "tracy-profiler.exe")
+	assert(os.isfile(viewer), "%s is missing, run `xmake require --force tracy-tools`", viewer)
+
+	cprint("${green}Opening Tracy${clear} ${dim}%s", path.directory(viewer))
+	os.execv(viewer, {}, { detach = true })
+end
+
 function main()
 	config.load()
 	local command = option.get("command") or "list"
@@ -61,7 +73,9 @@ function main()
 		cmd_new(option.get("name"))
 	elseif command == "list" then
 		cmd_list()
+	elseif command == "tracy" then
+		cmd_tracy()
 	else
-		raise("unknown command '%s' (expected new or list)", command)
+		raise("unknown command '%s' (expected new, list or tracy)", command)
 	end
 end
