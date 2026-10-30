@@ -1,46 +1,28 @@
 package("Flecs")
-    set_homepage("https://github.com/SanderMertens/flecs")
-    set_description("A fast entity component system (ECS) for C & C++")
-    set_license("MIT")
+	set_homepage("https://github.com/SanderMertens/flecs")
+	set_description("A fast entity component system (ECS) for C & C++")
+	set_license("MIT")
 
-    add_urls("https://github.com/SanderMertens/flecs/archive/refs/tags/$(version).tar.gz",
-             "https://github.com/SanderMertens/flecs.git")
+	add_urls("https://github.com/SanderMertens/flecs.git")
 
-    add_versions("v4.1.6", "6357C687C756F72F2F5432767578814539182F6D849A68D5741804450CDC050A")
-    add_versions("v4.1.5", "8b94f56dfdda0b3c86110f651a4e0ec1c59030db43bb4810ae296a0630682ab9")
+	add_deps("cmake")
+	add_defines("flecs_STATIC")
+	add_syslinks("wsock32", "ws2_32", "Dbghelp")
 
-    add_deps("cmake")
+	on_install("windows", function (package)
+		local configs = { "-DFLECS_STATIC=ON", "-DFLECS_SHARED=OFF" }
+		table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
+		table.insert(configs, "-DFLECS_PIC=" .. (package:config("pic") and "ON" or "OFF"))
+		import("package.tools.cmake").install(package, configs)
 
-    if is_plat("windows", "mingw") then
-        add_syslinks("wsock32", "ws2_32", "Dbghelp")
-    elseif is_plat("linux") then
-        add_syslinks("pthread")
-    elseif is_plat("bsd") then
-        add_syslinks("execinfo", "pthread")
-    end
+		os.trycp(path.join(package:builddir(), "flecs.pdb"), package:installdir("lib"))
+	end)
 
-    on_load("windows", "mingw", function (package)
-        if not package:config("shared") then
-            package:add("defines", "flecs_STATIC")
-        end
-    end)
-
-    on_install(function (package)
-        local configs = {}
-        table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:debug() and "Debug" or "Release"))
-        table.insert(configs, "-DFLECS_STATIC=" .. (package:config("shared") and "OFF" or "ON"))
-        table.insert(configs, "-DFLECS_SHARED=" .. (package:config("shared") and "ON" or "OFF"))
-        table.insert(configs, "-DFLECS_PIC=" .. (package:config("pic") and "ON" or "OFF"))
-        import("package.tools.cmake").install(package, configs)
-
-        local pdb = path.join(package:builddir(), "flecs.pdb")
-        os.trycp(pdb, package:installdir(package:config("shared") and "bin" or "lib"))
-    end)
-
-    on_test(function (package)
-        assert(package:check_cxxsnippets({test = [[
-            void test() {
-                flecs::world ecs;
-            }
-        ]]}, {configs = {languages = "c++17"}, includes = "flecs.h"}))
-    end)
+	on_test(function (package)
+		assert(package:check_cxxsnippets({ test = [[
+			void test() {
+				flecs::world ecs;
+			}
+		]]}, { configs = { languages = "c++17" }, includes = "flecs.h" }))
+	end)
+package_end()

@@ -13,8 +13,8 @@ target("Koi.Engine")
 		"dxc",
 		"tracy-profiler",
 		"glfw",
-		"tracy",
 		"Flecs",
+		"box3d",
 		"reflect-cpp",
 		"directx-headers", { public = true })
 
