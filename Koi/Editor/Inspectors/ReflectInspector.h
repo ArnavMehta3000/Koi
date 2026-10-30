@@ -104,11 +104,9 @@ namespace koi::editor
 
 	// Drop-in inspector for a component that has no custom widgets
 	template <typename T>
-	class ReflectedInspector final : public IComponentInspector
+	class ReflectedInspector final : public ComponentInspector<T>
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return T::kKey; }
-
 		void Draw(Entity e) override
 		{
 			if (T* value = e.try_get_mut<T>()) utils::DrawReflected(*value);

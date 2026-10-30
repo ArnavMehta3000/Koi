@@ -22,19 +22,6 @@ namespace koi::editor
 
 		AssetCache<GPUMesh>&  Meshes()    { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
 		AssetCache<Material>& Materials() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>(); }
-		GfxDevice&            Device()    { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
-
-		// Acquire before remove: if the new key is the one already held, the extra reference
-		// keeps the asset resident across the removal that releases the old handle
-		template<typename Ref, typename T>
-		static void Reacquire(Entity e, AssetCache<T>& cache, const AssetKey& key)
-		{
-			const AssetHandle<T> handle = cache.Acquire(Device(), key);
-			if (!handle) return;
-
-			e.remove<Ref>();  // World's on_remove hook releases whatever was there
-			e.set<Ref>({ handle });
-		}
 
 		// A property row holding an asset slot; returns the dropped path when it is the right kind
 		static std::optional<std::string> AssetRow(const char* label, std::string_view current, AssetKind kind)
@@ -95,7 +82,7 @@ namespace koi::editor
 		// The old handle was just released, so meshRef is stale - resume next frame
 		if (const auto dropped = AssetRow("Mesh", Meshes().GetPath(meshRef->Handle), AssetKind::Mesh))
 		{
-			Reacquire<MeshRef>(e, Meshes(), AssetKey(*dropped));
+			ComponentOf<MeshRef>(e).Write(AssetKey(*dropped));
 			utils::EndPropertyGrid();
 			return;
 		}
@@ -122,7 +109,7 @@ namespace koi::editor
 
 		if (dropped)
 		{
-			Reacquire<MaterialRef>(e, Materials(), AssetKey(*dropped));
+			ComponentOf<MaterialRef>(e).Write(AssetKey(*dropped));
 			return;
 		}
 

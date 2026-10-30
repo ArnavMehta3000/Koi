@@ -10,11 +10,9 @@
 namespace
 {
 	// Speed gets a custom range and unit; a component without such needs can use ReflectedInspector<T> instead
-	class SpinInspector final : public koi::editor::IComponentInspector
+	class SpinInspector final : public koi::editor::ComponentInspector<Spin>
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return Spin::kKey; }
-
 		void Draw(koi::Entity e) override
 		{
 			Spin* spin = e.try_get_mut<Spin>();

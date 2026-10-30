@@ -7,10 +7,9 @@ namespace koi::editor
 {
 	class InspectorRegistry;
 
-	class TransformInspector final : public IComponentInspector
+	class TransformInspector final : public ComponentInspector<Transform>
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return Transform::kKey; }
 		void Draw(Entity e) override;
 
 	private:
@@ -20,31 +19,27 @@ namespace koi::editor
 		Quaternion m_eulerRot = Quaternion::Identity;
 	};
 
-	class MeshInspector final : public IComponentInspector
+	class MeshInspector final : public ComponentInspector<MeshRef>
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return MeshRef::kKey; }
 		void Draw(Entity e) override;
 	};
 
-	class MaterialRefInspector final : public IComponentInspector
+	class MaterialRefInspector final : public ComponentInspector<MaterialRef>
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return MaterialRef::kKey; }
 		void Draw(Entity e) override;
 	};
 
-	class CameraInspector final : public IComponentInspector
+	class CameraInspector final : public ComponentInspector<CameraComponent>
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return CameraComponent::kKey; }
 		void Draw(Entity e) override;
 	};
 
-	class LightInspector final : public IComponentInspector
+	class LightInspector final : public ComponentInspector<Light>
 	{
 	public:
-		[[nodiscard]] std::string_view Key() const override { return Light::kKey; }
 		void Draw(Entity e) override;
 	};
 }

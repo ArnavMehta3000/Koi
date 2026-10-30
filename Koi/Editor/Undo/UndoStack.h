@@ -48,13 +48,33 @@ namespace koi::editor
 		std::optional<typename S::Value> Before;
 		std::optional<typename S::Value> After;
 
-		void Undo() { Source.Write(Before); }
-		void Redo() { Source.Write(After); }
+		void Undo() { Apply(Before, After); }
+		void Redo() { Apply(After, Before); }
 		void Absorb(ValueChange&& newer) { After = std::move(newer.After); }
+
+	private:
+		// Reflected values only write back the fields this step changed, so runtime state and later edits survive
+		void Apply(const std::optional<typename S::Value>& to, const std::optional<typename S::Value>& from)
+		{
+			if constexpr (ReflectedComponent<typename S::Value>)
+			{
+				std::optional<typename S::Value> live = Source.Read();
+				if (to && from && live)
+				{
+					UndoCopyChanged(*live, *to, *from);
+					Source.Write(live);
+					return;
+				}
+			}
+			Source.Write(to);
+		}
 	};
 
 	template <UndoSource S>
 	class UndoWatch;
+
+	// A watch whose source type is erased, for callers that only know it at runtime. Empty when not recording
+	using UndoScope = std::unique_ptr<void, void (*)(void*)>;
 
 	// Edit-mode history
 	class UndoStack : public NonCopyable
@@ -66,6 +86,9 @@ namespace koi::editor
 		// Diffs the source on scope exit and records a step if it changed
 		template <UndoSource S>
 		[[nodiscard]] UndoWatch<S> Watch(std::string_view label, S source);
+
+		template <UndoSource S>
+		[[nodiscard]] UndoScope Scope(std::string_view label, S source);
 
 		template <UndoRecord R>
 		void Record(std::string_view label, R record, u64 identity = 0)
@@ -178,5 +201,12 @@ namespace koi::editor
 	UndoWatch<S> UndoStack::Watch(std::string_view label, S source)
 	{
 		return UndoWatch<S>(this, label, std::move(source));
+	}
+
+	template <UndoSource S>
+	UndoScope UndoStack::Scope(std::string_view label, S source)
+	{
+		if (!IsRecording()) return UndoScope(nullptr, nullptr);
+		return UndoScope(new UndoWatch<S>(this, label, std::move(source)), [](void* p) { delete static_cast<UndoWatch<S>*>(p); });
 	}
 }

@@ -2,6 +2,7 @@
 #include "Koi/Editor/Core/Panel.h"
 #include "Koi/Editor/Inspectors/MaterialInspector.h"
 #include "Koi/Editor/Selection.h"
+#include "Koi/Editor/Undo/UndoStack.h"
 #include <IconsFontAwesome6.h>
 
 namespace koi::editor
@@ -20,9 +21,12 @@ namespace koi::editor
 		void OnDraw() override;
 
 	private:
+		[[nodiscard]] UndoScope WatchComponent(std::string_view verb, std::string_view key, Entity e) const;
+
 		Selection*         m_selection  = nullptr;
 		InspectorRegistry* m_inspectors = nullptr;
 		AssetDatabase*     m_database   = nullptr;
+		UndoStack*         m_undo       = nullptr;
 		MaterialInspector  m_materials;
 	};
 }
