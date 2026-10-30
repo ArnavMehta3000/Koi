@@ -45,4 +45,20 @@ namespace koi::editor
 			static_assert(false, "Give T an operator==, kReflect, or an UndoTraits<T>::Equal");
 		}
 	}
+
+	// Copies into `live` each field where `to` and `from` differ, leaving the others as they are now
+	template <ReflectedComponent T>
+	void UndoCopyChanged(T& live, const T& to, const T& from)
+	{
+		const auto dst = rfl::to_view(live);
+		const auto lhs = rfl::to_view(to);
+		const auto rhs = rfl::to_view(from);
+		[&]<int... I>(std::integer_sequence<int, I...>)
+		{
+			([&]
+			{
+				if (!UndoEqual(*lhs.template get<I>(), *rhs.template get<I>())) *dst.template get<I>() = *lhs.template get<I>();
+			}(), ...);
+		}(std::make_integer_sequence<int, static_cast<int>(rfl::num_fields<T>)>{});
+	}
 }

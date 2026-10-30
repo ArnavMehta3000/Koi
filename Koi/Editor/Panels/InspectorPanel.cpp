@@ -3,6 +3,7 @@
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/UI/Widgets.h"
+#include "Koi/Editor/Undo/UndoStack.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include <IconsFontAwesome6.h>
 #include <imgui.h>
@@ -24,7 +25,16 @@ namespace koi::editor
 		: m_selection(ctx->Get<Selection>())
 		, m_inspectors(ctx->Get<InspectorRegistry>())
 		, m_database(ctx->Get<AssetDatabase>())
+		, m_undo(ctx->Get<UndoStack>())
 	{
+	}
+
+	UndoScope InspectorPanel::WatchComponent(std::string_view verb, std::string_view key, Entity e) const
+	{
+		IComponentInspector* inspector = m_inspectors->Find(key);
+		if (!inspector) return UndoScope(nullptr, nullptr);
+
+		return inspector->Watch(*m_undo, std::format("{} {}", verb, Capitalize(key)), e);
 	}
 
 	void InspectorPanel::OnDraw()
@@ -63,7 +73,10 @@ namespace koi::editor
 			{
 				if (type->Has(selected)) continue;
 				if (ImGui::Selectable(Capitalize(type->Key()).c_str()))
+				{
+					UndoScope watch = WatchComponent("Add", type->Key(), selected);
 					type->Add(selected);
+				}
 			}
 			ImGui::EndPopup();
 		}
@@ -89,15 +102,21 @@ namespace koi::editor
 
 			if (remove)
 			{
+				UndoScope watch = WatchComponent("Remove", key, selected);
 				type->Remove(selected);
 			}
 			else if (expanded)
 			{
-				// A component is free to have no inspector; it still serializes and can be removed
+				// A component is free to have no inspector; it still serializes and can be removed, just not undoably
 				if (IComponentInspector* inspector = m_inspectors->Find(key))
+				{
+					UndoScope watch = inspector->Watch(*m_undo, "Edit " + Capitalize(key), selected);
 					inspector->Draw(selected);
+				}
 				else
+				{
 					ImGui::TextDisabled("No inspector registered");
+				}
 			}
 
 			ImGui::Spacing();

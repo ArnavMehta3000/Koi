@@ -9,11 +9,9 @@ namespace game
 {
 	namespace
 	{
-		class PlayerMoverInspector final : public koi::editor::IComponentInspector
+		class PlayerMoverInspector final : public koi::editor::ComponentInspector<PlayerMover>
 		{
 		public:
-			[[nodiscard]] std::string_view Key() const override { return PlayerMover::kKey; }
-
 			void Draw(koi::Entity e) override
 			{
 				PlayerMover* mover = e.try_get_mut<PlayerMover>();
@@ -24,11 +22,9 @@ namespace game
 			}
 		};
 
-		class ObstacleSpawnerInspector final : public koi::editor::IComponentInspector
+		class ObstacleSpawnerInspector final : public koi::editor::ComponentInspector<ObstacleSpawner>
 		{
 		public:
-			[[nodiscard]] std::string_view Key() const override { return ObstacleSpawner::kKey; }
-
 			void Draw(koi::Entity e) override
 			{
 				ObstacleSpawner* spawner = e.try_get_mut<ObstacleSpawner>();
