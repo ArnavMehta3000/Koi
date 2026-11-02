@@ -89,7 +89,7 @@ namespace koi::editor
 
 	void CameraController::Update(f32 dt, const InputManager& input)
 	{
-		const bool toggleDown = input.IsKeyDown(ToggleKey);
+		const bool toggleDown = input.GetKeyboard().IsDown(ToggleKey);
 
 		if (toggleDown && !m_prevToggleKey)
 			ToggleMode();
@@ -105,13 +105,13 @@ namespace koi::editor
 
 	void CameraController::UpdateFirstPerson(f32 dt, const InputManager& input)
 	{
-		const bool rmb    = input.IsMouseButtonDown(kFPVMoveButton);
+		const bool rmb    = input.GetMouse().IsButtonDown(kFPVMoveButton);
 		m_wantsCursorLock = rmb;
 
 		// Mouse look - only while right mouse is held
 		if (rmb)
 		{
-			const Vector2 delta = input.GetMouseDelta();
+			const Vector2 delta = input.GetMouse().GetDelta();
 			m_yaw   += delta.x * FpLookSensitivity;
 			m_pitch -= delta.y * FpLookSensitivity; // invert Y: drag up = look up
 			m_pitch  = std::clamp(m_pitch, -PitchLimit, PitchLimit);
@@ -129,21 +129,21 @@ namespace koi::editor
 
 		// WASD + vertical movement
 		const f32 speed = FpMoveSpeed
-			* (input.IsModifierDown(kFPVSpeedModifier) ? FpSpeedBoost : 1.0f)
+			* (input.GetKeyboard().IsModifierDown(kFPVSpeedModifier) ? FpSpeedBoost : 1.0f)
 			* dt;
 
-		if (input.IsKeyDown(kFPVMoveForwardKey))  m_fpPosition = m_fpPosition + forward * speed;
-		if (input.IsKeyDown(kFPVMoveBackwardKey)) m_fpPosition = m_fpPosition - forward * speed;
-		if (input.IsKeyDown(kFPVMoveRightKey))    m_fpPosition = m_fpPosition + right * speed;
-		if (input.IsKeyDown(kFPVMoveLeftKey))     m_fpPosition = m_fpPosition - right * speed;
+		if (input.GetKeyboard().IsDown(kFPVMoveForwardKey))  m_fpPosition = m_fpPosition + forward * speed;
+		if (input.GetKeyboard().IsDown(kFPVMoveBackwardKey)) m_fpPosition = m_fpPosition - forward * speed;
+		if (input.GetKeyboard().IsDown(kFPVMoveRightKey))    m_fpPosition = m_fpPosition + right * speed;
+		if (input.GetKeyboard().IsDown(kFPVMoveLeftKey))     m_fpPosition = m_fpPosition - right * speed;
 
-		if (input.IsKeyDown(kFPVMoveUpKey) || input.IsKeyDown(kFPVMoveUpAltKey))  // Up
+		if (input.GetKeyboard().IsDown(kFPVMoveUpKey) || input.GetKeyboard().IsDown(kFPVMoveUpAltKey))  // Up
 			m_fpPosition = m_fpPosition + worldUp * speed;
-		if (input.IsKeyDown(kFPVMoveDownKey) || input.IsKeyDown(kFPVMoveDownAltKey))  // Down
+		if (input.GetKeyboard().IsDown(kFPVMoveDownKey) || input.GetKeyboard().IsDown(kFPVMoveDownAltKey))  // Down
 			m_fpPosition = m_fpPosition - worldUp * speed;
 
 		// Scroll = dolly (move along forward axis)
-		if (const f32 scroll = input.GetScrollDelta().y; scroll != 0.0f)
+		if (const f32 scroll = input.GetMouse().GetScroll().y; scroll != 0.0f)
 			m_fpPosition = m_fpPosition + forward * (scroll * FpScrollDollySpeed);
 
 		ApplyView();
@@ -153,10 +153,10 @@ namespace koi::editor
 	{
 		m_wantsCursorLock = false;
 
-		const Vector2 delta = input.GetMouseDelta();
+		const Vector2 delta = input.GetMouse().GetDelta();
 
 		// LMB drag - orbit (yaw / pitch)
-		if (input.IsMouseButtonDown(kORBMoveButton))
+		if (input.GetMouse().IsButtonDown(kORBMoveButton))
 		{
 			m_yaw   += delta.x * OrbitSensitivity;
 			m_pitch -= delta.y * OrbitSensitivity;
@@ -165,7 +165,7 @@ namespace koi::editor
 		}
 
 		// MMB drag - pan (translate target in the camera's local XY plane)
-		if (input.IsMouseButtonDown(kORBPanButton))
+		if (input.GetMouse().IsButtonDown(kORBPanButton))
 		{
 			// Recompute right/up vectors from view basis
 			Vector3 right, upDir;
@@ -178,7 +178,7 @@ namespace koi::editor
 		}
 
 		// Scroll - zoom by adjusting orbit radius
-		if (const f32 scroll = input.GetScrollDelta().y; scroll != 0.0f)
+		if (const f32 scroll = input.GetMouse().GetScroll().y; scroll != 0.0f)
 		{
 			m_orbitRadius -= scroll * m_orbitRadius * OrbitZoomSpeed;
 			m_orbitRadius  = std::clamp(m_orbitRadius, OrbitMinRadius, OrbitMaxRadius);

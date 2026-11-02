@@ -390,9 +390,9 @@ namespace koi::editor
 			KOI_LOG(Editor, Debug, "Viewport resized to {}x{}", m_target.Width, m_target.Height);
 		}
 
-		const bool anyMouseDown = input.IsMouseButtonDown(MouseButton::Left)
-			|| input.IsMouseButtonDown(MouseButton::Right)
-			|| input.IsMouseButtonDown(MouseButton::Middle);
+		const bool anyMouseDown = input.GetMouse().IsButtonDown(MouseButton::Left)
+			|| input.GetMouse().IsButtonDown(MouseButton::Right)
+			|| input.GetMouse().IsButtonDown(MouseButton::Middle);
 
 		if (m_isHovered && anyMouseDown && !m_gizmoActive) m_isCapturingInput = true;
 		else if (!anyMouseDown) m_isCapturingInput = false;
