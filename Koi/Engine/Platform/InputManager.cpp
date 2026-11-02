@@ -3,6 +3,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Runtime/Engine.h"
 
 #include <algorithm>
 #include <cmath>
@@ -67,7 +68,11 @@ namespace koi
 
 		m_keyboard.BeginFrame();
 		m_mouse.BeginFrame();
-		m_gamepad.Poll();
+
+		const Engine& engine = Engine::Get();
+		if (engine.GetPlayState() == PlayState::Edit) m_gamepad.SetRumble({});
+		m_gamepad.Poll(m_appActive && m_gameFocused && engine.IsPlaying());
+
 		EvaluateActions();
 	}
 
@@ -81,8 +86,9 @@ namespace koi
 
 		case WM_ACTIVATEAPP:
 			// Key-ups that land while another app is in front never reach us
-			if (msg.WParam == FALSE) m_keyboard.ReleaseAll();
-			m_mouse.OnAppActivated(msg.WParam != FALSE);
+			m_appActive = msg.WParam != FALSE;
+			if (!m_appActive) m_keyboard.ReleaseAll();
+			m_mouse.OnAppActivated(m_appActive);
 			return std::nullopt;
 
 		default:

@@ -1,5 +1,6 @@
 -- Koi's own targets
 includes("Packages/SimpleMath.lua")
+includes("Packages/GameInput.lua")
 includes("Packages/ImGui.lua")
 includes("Packages/KoiProfiler.lua")
 
