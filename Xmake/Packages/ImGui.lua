@@ -12,7 +12,6 @@ target("ImGui")  -- Custom ImGui package
 	add_files("$(projectdir)/External/ImGui/**.cpp"            , { public = true })
 	add_headerfiles("$(projectdir)/External/ImGui/**.h"        , { public = true })
 
-	add_packages("glfw")
 	add_syslinks("imm32")
 
 	remove_files("$(projectdir)/External/ImGui/misc/fonts/binary_to_compressed_c.cpp")

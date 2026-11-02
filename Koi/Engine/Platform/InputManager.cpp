@@ -4,16 +4,16 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 
-#ifndef GLFW_INCLUDE_NONE
-	#define GLFW_INCLUDE_NONE
-#endif
-#include <GLFW/glfw3.h>
-
 #include <algorithm>
 #include <cmath>
 
 namespace koi
 {
+	namespace
+	{
+		HWND HandleOf(const Window* window) { return window ? static_cast<HWND>(window->GetNativeHandle()) : nullptr; }
+	}
+
 	InputManager::InputManager()
 	{
 		KOI_ASSERT(s_instance == nullptr, "InputManager already exists");
@@ -22,13 +22,17 @@ namespace koi
 
 	InputManager::~InputManager()
 	{
-		if (m_glfwWindow)
+		if (m_window)
 		{
-			auto* w = static_cast<GLFWwindow*>(m_glfwWindow);
-			::glfwSetKeyCallback(w, nullptr);
-			::glfwSetMouseButtonCallback(w, nullptr);
-			::glfwSetCursorPosCallback(w, nullptr);
-			::glfwSetScrollCallback(w, nullptr);
+			m_window->RemoveMessageHook(m_hookId);
+
+			const RAWINPUTDEVICE devices[]
+			{
+				{ .usUsagePage = 0x01, .usUsage = 0x02, .dwFlags = RIDEV_REMOVE, .hwndTarget = nullptr },
+				{ .usUsagePage = 0x01, .usUsage = 0x06, .dwFlags = RIDEV_REMOVE, .hwndTarget = nullptr },
+			};
+			::RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
+			::ClipCursor(nullptr);
 		}
 		s_instance = nullptr;
 	}
@@ -37,34 +41,30 @@ namespace koi
 	{
 		ZoneScoped;
 
-		Window& window = ctx.MainWindow;
-		GLFWwindow* glfwWnd = window.GetGLFWWindow();
-		KOI_ASSERT(glfwWnd, "Window has a null GLFWwindow");
-		m_glfwWindow = glfwWnd;
+		m_window = &ctx.MainWindow;
+		const HWND hwnd = HandleOf(m_window);
+		KOI_ASSERT(hwnd, "Window has no native HWND");
 
 		m_config = ctx.Input;
 		m_actions.assign(m_config.Actions.size(), ActionState{});
 
-		// Seed cursor position so the first frame's delta is zero.
-		f64 x, y;
-		::glfwGetCursorPos(glfwWnd, &x, &y);
-		m_mousePos = { static_cast<f32>(x), static_cast<f32>(y) };
+		// Mouse (usage 2) and keyboard (usage 6) on the generic desktop page, delivered while the app is in the foreground
+		const RAWINPUTDEVICE devices[]
+		{
+			{ .usUsagePage = 0x01, .usUsage = 0x02, .dwFlags = 0, .hwndTarget = hwnd },
+			{ .usUsagePage = 0x01, .usUsage = 0x06, .dwFlags = 0, .hwndTarget = hwnd },
+		};
+		if (!::RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE)))
+		{
+			KOI_LOG(Input, Error, "Failed to register raw input devices (error {})", ::GetLastError());
+		}
 
-		::glfwSetKeyCallback(glfwWnd,
-			[](GLFWwindow*, i32 key, i32 /*scancode*/, i32 action, i32 mods) noexcept
-			{ s_instance->OnKey(key, action, mods); });
+		m_hookId = m_window->AddMessageHook([this](const WindowMessage& msg) { return OnMessage(msg); });
 
-		::glfwSetMouseButtonCallback(glfwWnd,
-			[](GLFWwindow*, i32 btn, i32 action, i32 mods) noexcept
-			{ s_instance->OnMouseButton(btn, action, mods); });
-
-		::glfwSetCursorPosCallback(glfwWnd,
-			[](GLFWwindow*, f64 x, f64 y) noexcept
-			{ s_instance->OnCursorPos(x, y); });
-
-		::glfwSetScrollCallback(glfwWnd,
-			[](GLFWwindow*, f64 dx, f64 dy) noexcept
-			{ s_instance->OnScroll(dx, dy); });
+		if (POINT cursor{}; ::GetCursorPos(&cursor) && ::ScreenToClient(hwnd, &cursor))
+		{
+			m_mousePos = Vector2(static_cast<f32>(cursor.x), static_cast<f32>(cursor.y));
+		}
 
 		KOI_LOG(Input, Debug, "InputManager initialized");
 	}
@@ -89,45 +89,10 @@ namespace koi
 
 		m_padDownPrev = m_padDown;
 
-		GLFWgamepadstate state{};
-		m_gamepadConnected = ::glfwJoystickIsGamepad(GLFW_JOYSTICK_1) && ::glfwGetGamepadState(GLFW_JOYSTICK_1, &state);
-		if (!m_gamepadConnected)
-		{
-			m_padDown.fill(false);
-			m_padAxes.fill(0.0f);
-			return;
-		}
-
-		for (u32 i = 0; i < kMaxGamepadButton; ++i)
-		{
-			m_padDown[i] = state.buttons[i] == GLFW_PRESS;
-		}
-
-		// Sticks: radial deadzone, rescaled so the edge of the zone reads as zero
-		const auto stick = [&](GamepadAxis x, GamepadAxis y)
-		{
-			Vector2 v(state.axes[static_cast<u32>(x)], state.axes[static_cast<u32>(y)]);
-			const f32 length   = v.Length();
-			const f32 deadzone = m_config.Gamepad.StickDeadzone;
-
-			if (length <= deadzone) v = Vector2::Zero;
-			else v = v * ((length - deadzone) / ((1.0f - deadzone) * length));
-
-			m_padAxes[static_cast<u32>(x)] = std::clamp(v.x, -1.0f, 1.0f);
-			m_padAxes[static_cast<u32>(y)] = std::clamp(v.y, -1.0f, 1.0f);
-		};
-		stick(GamepadAxis::LeftX,  GamepadAxis::LeftY);
-		stick(GamepadAxis::RightX, GamepadAxis::RightY);
-
-		// Triggers: GLFW reports [-1, 1] with -1 released; map to [0, 1] past the deadzone
-		const auto trigger = [&](GamepadAxis axis)
-		{
-			const f32 raw      = (state.axes[static_cast<u32>(axis)] + 1.0f) * 0.5f;
-			const f32 deadzone = m_config.Gamepad.TriggerDeadzone;
-			m_padAxes[static_cast<u32>(axis)] = raw <= deadzone ? 0.0f : (raw - deadzone) / (1.0f - deadzone);
-		};
-		trigger(GamepadAxis::LeftTrigger);
-		trigger(GamepadAxis::RightTrigger);
+		// [TODO]: GameInput
+		m_gamepadConnected = false;
+		m_padDown.fill(false);
+		m_padAxes.fill(0.0f);
 	}
 
 	f32 InputManager::Evaluate(const InputBinding& binding) const noexcept
@@ -273,42 +238,177 @@ namespace koi
 
 	void InputManager::SetCursorVisible(bool visible)
 	{
-		if (m_glfwWindow)
-			::glfwSetInputMode(static_cast<GLFWwindow*>(m_glfwWindow), GLFW_CURSOR,
-				visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
+		m_cursorHidden = !visible;
+		if (m_cursorHidden && IsCursorOverClient()) ::SetCursor(nullptr);
 	}
 
+	// Locked = hidden and pinned to the client centre; deltas keep flowing from raw input
 	void InputManager::SetCursorLocked(bool locked)
 	{
-		if (m_glfwWindow)
-			::glfwSetInputMode(static_cast<GLFWwindow*>(m_glfwWindow), GLFW_CURSOR,
-				locked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+		m_cursorLocked = locked;
+		SetCursorVisible(!locked);
+
+		if (locked) ApplyCursorClip();
+		else ::ClipCursor(nullptr);
 	}
 
-	void InputManager::OnKey(i32 key, i32 action, i32 mods) noexcept
+	void InputManager::ApplyCursorClip() const
 	{
-		if (key < 0 || key >= static_cast<i32>(kMaxKeyCode)) return;
-		if (action == GLFW_REPEAT) return;
-		m_keyDown[static_cast<u32>(key)] = (action == GLFW_PRESS);
-		m_modifiers = EnumFlag<Modifier>(static_cast<u8>(mods));
+		const HWND hwnd = HandleOf(m_window);
+		RECT client{};
+		if (!hwnd || !::GetClientRect(hwnd, &client)) return;
+
+		POINT centre{ (client.left + client.right) / 2, (client.top + client.bottom) / 2 };
+		::ClientToScreen(hwnd, &centre);
+		const RECT clip{ centre.x, centre.y, centre.x + 1, centre.y + 1 };
+		::ClipCursor(&clip);
 	}
 
-	void InputManager::OnMouseButton(i32 btn, i32 action, i32 mods) noexcept
+	bool InputManager::IsCursorOverClient() const noexcept
 	{
-		if (btn < 0 || btn >= static_cast<i32>(kMaxMouseButton)) return;
-		m_mouseDown[static_cast<u32>(btn)] = (action == GLFW_PRESS);
-		m_modifiers = EnumFlag<Modifier>(static_cast<u8>(mods));
+		if (m_cursorLocked) return true;
+
+		const HWND hwnd = HandleOf(m_window);
+		POINT cursor{};
+		if (!hwnd || !::GetCursorPos(&cursor) || ::WindowFromPoint(cursor) != hwnd) return false;
+
+		RECT client{};
+		::GetClientRect(hwnd, &client);
+		::ScreenToClient(hwnd, &cursor);
+		return ::PtInRect(&client, cursor);
 	}
 
-	void InputManager::OnCursorPos(f64 x, f64 y) noexcept
+	std::optional<i64> InputManager::OnMessage(const WindowMessage& msg)
 	{
-		const Vector2 newPos = { static_cast<f32>(x), static_cast<f32>(y) };
-		m_mouseDelta         = m_mouseDelta + (newPos - m_mousePos);
-		m_mousePos           = newPos;
+		switch (msg.Msg)
+		{
+		case WM_INPUT:
+			OnRawInput(msg.LParam);
+			break;  // DefWindowProc still has to clean up after WM_INPUT
+
+		case WM_MOUSEMOVE:
+			m_mousePos = Vector2(static_cast<f32>(static_cast<i16>(LOWORD(msg.LParam))), static_cast<f32>(static_cast<i16>(HIWORD(msg.LParam))));
+			break;
+
+		case WM_SETCURSOR:
+			if (m_cursorHidden && LOWORD(msg.LParam) == HTCLIENT)
+			{
+				::SetCursor(nullptr);
+				return TRUE;
+			}
+			break;
+
+		case WM_ACTIVATEAPP:
+			// Key-ups that land while another app is in front never reach us
+			if (msg.WParam == FALSE)
+			{
+				ReleaseAll();
+				::ClipCursor(nullptr);
+			}
+			else if (m_cursorLocked)
+			{
+				ApplyCursorClip();
+			}
+			break;
+
+		case WM_MOVE:
+		case WM_SIZE:
+			if (m_cursorLocked) ApplyCursorClip();
+			break;
+		}
+		return std::nullopt;
 	}
 
-	void InputManager::OnScroll(f64 dx, f64 dy) noexcept
+	void InputManager::OnRawInput(i64 handle)
 	{
-		m_scrollAccum = m_scrollAccum + Vector2(static_cast<f32>(dx), static_cast<f32>(dy));
+		RAWINPUT raw{};
+		UINT size = sizeof(raw);
+		if (::GetRawInputData(reinterpret_cast<HRAWINPUT>(handle), RID_INPUT, &raw, &size, sizeof(RAWINPUTHEADER)) == static_cast<UINT>(-1))
+		{
+			return;
+		}
+
+		if (raw.header.dwType == RIM_TYPEKEYBOARD)
+		{
+			const RAWKEYBOARD& kb = raw.data.keyboard;
+			if (kb.MakeCode == KEYBOARD_OVERRUN_MAKE_CODE || kb.VKey == 0xFF) return;  // 0xFF: fake key inside an escape sequence
+
+			KeyCode key = KeyCode::Pause;  // E1 1D 45, the only E1 sequence
+			if (kb.VKey != VK_PAUSE)
+			{
+				const u16 scancode = kb.MakeCode != 0
+					? static_cast<u16>(kb.MakeCode | ((kb.Flags & RI_KEY_E0) ? 0xE000 : 0))
+					: static_cast<u16>(::MapVirtualKeyW(kb.VKey, MAPVK_VK_TO_VSC_EX));
+				key = utils::KeyCodeFromScancode(scancode);
+			}
+
+			const i32 index = static_cast<i32>(key);
+			if (index < 0 || index >= static_cast<i32>(kMaxKeyCode)) return;
+
+			m_keyDown[static_cast<u32>(index)] = (kb.Flags & RI_KEY_BREAK) == 0;
+			UpdateModifiers();
+			return;
+		}
+
+		if (raw.header.dwType != RIM_TYPEMOUSE) return;
+		const RAWMOUSE& mouse = raw.data.mouse;
+
+		if (mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
+		{
+			const bool virtualDesk = mouse.usFlags & MOUSE_VIRTUAL_DESKTOP;
+			const Vector2 extent(
+				static_cast<f32>(::GetSystemMetrics(virtualDesk ? SM_CXVIRTUALSCREEN : SM_CXSCREEN)),
+				static_cast<f32>(::GetSystemMetrics(virtualDesk ? SM_CYVIRTUALSCREEN : SM_CYSCREEN)));
+			const Vector2 position = Vector2(static_cast<f32>(mouse.lLastX), static_cast<f32>(mouse.lLastY)) / 65535.0f * extent;
+
+			if (m_hasAbsolute) m_mouseDelta = m_mouseDelta + (position - m_lastAbsolute);
+			m_lastAbsolute = position;
+			m_hasAbsolute  = true;
+		}
+		else
+		{
+			m_mouseDelta = m_mouseDelta + Vector2(static_cast<f32>(mouse.lLastX), static_cast<f32>(mouse.lLastY));
+		}
+
+		const USHORT flags = mouse.usButtonFlags;
+		if (flags == 0) return;
+
+		// Presses only count over our own client area, so title bar drags and floating editor windows stay out
+		const bool overClient = IsCursorOverClient();
+		for (u32 i = 0; i < 5; ++i)
+		{
+			if (overClient && (flags & (RI_MOUSE_BUTTON_1_DOWN << (2 * i)))) m_mouseDown[i] = true;
+			if (flags & (RI_MOUSE_BUTTON_1_UP << (2 * i)))                  m_mouseDown[i] = false;
+		}
+
+		if (overClient)
+		{
+			const f32 wheel = static_cast<f32>(static_cast<SHORT>(mouse.usButtonData)) / WHEEL_DELTA;
+			if (flags & RI_MOUSE_WHEEL)  m_scrollAccum.y += wheel;
+			if (flags & RI_MOUSE_HWHEEL) m_scrollAccum.x -= wheel;
+		}
+		UpdateModifiers();
+	}
+
+	void InputManager::UpdateModifiers() noexcept
+	{
+		const auto down = [this](KeyCode a, KeyCode b) { return m_keyDown[static_cast<u32>(a)] || m_keyDown[static_cast<u32>(b)]; };
+
+		u8 mods = 0;
+		if (down(KeyCode::LeftShift,   KeyCode::RightShift))   mods |= static_cast<u8>(Modifier::Shift);
+		if (down(KeyCode::LeftControl, KeyCode::RightControl)) mods |= static_cast<u8>(Modifier::Control);
+		if (down(KeyCode::LeftAlt,     KeyCode::RightAlt))     mods |= static_cast<u8>(Modifier::Alt);
+		if (down(KeyCode::LeftSuper,   KeyCode::RightSuper))   mods |= static_cast<u8>(Modifier::Super);
+		if (::GetKeyState(VK_CAPITAL) & 1) mods |= static_cast<u8>(Modifier::CapsLock);
+		if (::GetKeyState(VK_NUMLOCK) & 1) mods |= static_cast<u8>(Modifier::NumLock);
+		m_modifiers = EnumFlag<Modifier>(mods);
+	}
+
+	void InputManager::ReleaseAll() noexcept
+	{
+		m_keyDown.fill(false);
+		m_mouseDown.fill(false);
+		m_hasAbsolute = false;
+		UpdateModifiers();
 	}
 }

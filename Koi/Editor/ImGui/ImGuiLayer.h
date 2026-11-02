@@ -40,6 +40,8 @@ namespace koi::editor
 		f32   m_fontScale = 1.0f;  // on top of the DPI scale, saved in imgui.ini
 		f32   m_fontScaleEdit = 1.0f;  // slider value, applied on release so the menu doesn't resize under the mouse
 		PlayState m_playState{};
+		Window* m_window    = nullptr;
+		u32   m_hookId      = 0;
 		bool  m_initialized = false;
 	};
 }

@@ -11,7 +11,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 
 #include <backends/imgui_impl_dx12.h>
-#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_win32.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
@@ -32,6 +32,8 @@ extern "C" const char _binary_MapleMonoBold_ttf_start[];
 extern "C" const char _binary_MapleMonoBold_ttf_end[];
 extern "C" const char _binary_FontAwesomeSolid_ttf_start[];
 extern "C" const char _binary_FontAwesomeSolid_ttf_end[];
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 namespace koi::editor
 {
@@ -136,7 +138,13 @@ namespace koi::editor
 			ImGui::LoadIniSettingsFromMemory(layout.data(), layout.size());
 		}
 
-		ImGui_ImplGlfw_InitForOther(window.GetGLFWWindow(), true);
+		ImGui_ImplWin32_Init(window.GetNativeHandle());
+		m_window = &window;
+		m_hookId = window.AddMessageHook([](const WindowMessage& msg) -> std::optional<i64>
+		{
+			if (const LRESULT result = ImGui_ImplWin32_WndProcHandler(msg.Hwnd, msg.Msg, msg.WParam, msg.LParam)) return result;
+			return std::nullopt;
+		});
 
 		ImGui_ImplDX12_InitInfo initInfo{};
 		initInfo.Device               = device.GetNative();
@@ -149,7 +157,7 @@ namespace koi::editor
 		ImGui_ImplDX12_Init(&initInfo);
 
 		m_initialized = true;
-		KOI_LOG(Editor, Debug, "ImGui (DX12 + GLFW) initialized");
+		KOI_LOG(Editor, Debug, "ImGui (DX12 + Win32) initialized");
 	}
 
 	void ImGuiLayer::Shutdown()
@@ -157,8 +165,9 @@ namespace koi::editor
 		if (!m_initialized) return;
 
 		Engine::Get().GetSubsystem<Renderer>().GetDevice().WaitForIdle();
+		m_window->RemoveMessageHook(m_hookId);
 		ImGui_ImplDX12_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
+		ImGui_ImplWin32_Shutdown();
 		ImGui::DestroyContext();
 		m_initialized = false;
 
@@ -181,10 +190,10 @@ namespace koi::editor
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		}
 
-		{ ZoneScopedN("Backend DX12"); ImGui_ImplDX12_NewFrame(); }
-		{ ZoneScopedN("Backend GLFW"); ImGui_ImplGlfw_NewFrame(); }
-		{ ZoneScopedN("Core");         ImGui::NewFrame();         }
-		{ ZoneScopedN("ImGuizmo");     ImGuizmo::BeginFrame();    }
+		{ ZoneScopedN("Backend DX12");  ImGui_ImplDX12_NewFrame(); }
+		{ ZoneScopedN("Backend Win32"); ImGui_ImplWin32_NewFrame(); }
+		{ ZoneScopedN("Core");          ImGui::NewFrame();         }
+		{ ZoneScopedN("ImGuizmo");      ImGuizmo::BeginFrame();    }
 	}
 
 	void ImGuiLayer::EndFrame(CommandList& cmd)
