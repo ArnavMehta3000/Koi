@@ -4,10 +4,12 @@
 #include "Koi/Engine/Platform/InputCodes.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
 #include <array>
+#include <optional>
 
 namespace koi
 {
 	class Window;
+	struct WindowMessage;
 
 	class InputManager : public NonCopyable
 	{
@@ -55,10 +57,12 @@ namespace koi
 		[[nodiscard]] inline bool IsGameFocused() const noexcept { return m_gameFocused; }
 
 	private:
-		void OnKey(i32 key, i32 action, i32 mods) noexcept;
-		void OnMouseButton(i32 btn, i32 action, i32 mods) noexcept;
-		void OnCursorPos(f64 x, f64 y) noexcept;
-		void OnScroll(f64 dx, f64 dy) noexcept;
+		std::optional<i64> OnMessage(const WindowMessage& msg);
+		void OnRawInput(i64 handle);
+		void ReleaseAll() noexcept;
+		void UpdateModifiers() noexcept;
+		void ApplyCursorClip() const;
+		[[nodiscard]] bool IsCursorOverClient() const noexcept;
 
 		void PollGamepad();
 		void EvaluateActions();
@@ -95,8 +99,13 @@ namespace koi
 		Vector2 m_mouseDelta{};
 		Vector2 m_scrollDelta{};
 		Vector2 m_scrollAccum{};
+		Vector2 m_lastAbsolute{};  // absolute-mode devices (remote desktop, pens) report positions, not deltas
+		bool    m_hasAbsolute = false;
 
-		void* m_glfwWindow = nullptr;
+		Window* m_window       = nullptr;
+		u32     m_hookId       = 0;
+		bool    m_cursorHidden = false;
+		bool    m_cursorLocked = false;
 
 		static inline InputManager* s_instance = nullptr;
 	};

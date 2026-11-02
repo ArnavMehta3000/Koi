@@ -6,7 +6,7 @@
 
 namespace koi
 {
-	// Key values match GLFW_KEY_* internally
+	// Physical keys, named after the US layout: KeyCode::W is the key left of E on any layout
 	enum class KeyCode : i32
 	{
 		Unknown = -1,
@@ -95,7 +95,6 @@ namespace koi
 		Count  = 8,
 	};
 
-	// Modifier values match GLFW_MOD_* internally - do not rely on the numeric values in game code.
 	enum class Modifier : u8
 	{
 		None     = 0x00,
@@ -111,7 +110,6 @@ KOI_ENABLE_ENUM_FLAGS(koi::Modifier);
 
 namespace koi
 {
-	// Values match GLFW_GAMEPAD_BUTTON_* / GLFW_GAMEPAD_AXIS_* internally
 	enum class GamepadButton : u8
 	{
 		A, B, X, Y,
@@ -134,5 +132,8 @@ namespace koi
 		[[nodiscard]] std::optional<KeyCode>       ParseKeyCode(std::string_view name);
 		[[nodiscard]] std::optional<GamepadButton> ParseGamepadButton(std::string_view name);
 		[[nodiscard]] std::optional<GamepadAxis>   ParseGamepadAxis(std::string_view name);
+
+		// PS/2 set 1 scancode, 0xE0xx for extended keys
+		[[nodiscard]] KeyCode KeyCodeFromScancode(u16 scancode) noexcept;
 	}
 }

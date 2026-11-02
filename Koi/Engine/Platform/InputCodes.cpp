@@ -77,6 +77,50 @@ namespace koi
 			}
 			return value <= max ? std::optional(value) : std::nullopt;
 		}
+
+		// Indexed by make code, +0x100 for E0-prefixed keys
+		constexpr std::array<KeyCode, 0x200> kScancodes = []
+		{
+			std::array<KeyCode, 0x200> t{};
+			t.fill(KeyCode::Unknown);
+
+			using enum KeyCode;
+			constexpr KeyCode row1[] = { Escape, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9, Num0, Minus, Equal, Backspace, Tab };
+			constexpr KeyCode row2[] = { Q, W, E, R, T, Y, U, I, O, P, LeftBracket, RightBracket, Enter, LeftControl };
+			constexpr KeyCode row3[] = { A, S, D, F, G, H, J, K, L, Semicolon, Apostrophe, GraveAccent, LeftShift, Backslash };
+			constexpr KeyCode row4[] = { Z, X, C, V, B, N, M, Comma, Period, Slash, RightShift, KPMultiply, LeftAlt, Space, CapsLock };
+			constexpr KeyCode pad[]  = { NumLock, ScrollLock, KP7, KP8, KP9, KPSubtract, KP4, KP5, KP6, KPAdd, KP1, KP2, KP3, KP0, KPDecimal };
+
+			const auto run = [&t](u16 first, const auto& keys) { for (KeyCode key : keys) t[first++] = key; };
+			run(0x01, row1);
+			run(0x10, row2);
+			run(0x1E, row3);
+			run(0x2C, row4);
+			run(0x45, pad);
+			for (u16 i = 0; i < 10; ++i) t[0x3B + i] = static_cast<KeyCode>(static_cast<i32>(F1)  + i);
+			for (u16 i = 0; i < 11; ++i) t[0x64 + i] = static_cast<KeyCode>(static_cast<i32>(F13) + i);
+
+			t[0x54] = PrintScreen;  // Alt+PrintScreen
+			t[0x56] = World2;       // ISO key between left shift and Z
+			t[0x57] = F11;
+			t[0x58] = F12;
+			t[0x59] = KPEqual;
+			t[0x76] = F24;
+
+			t[0x11C] = KPEnter;     t[0x11D] = RightControl; t[0x135] = KPDivide;  t[0x137] = PrintScreen;
+			t[0x138] = RightAlt;    t[0x145] = NumLock;      t[0x146] = Pause;     t[0x147] = Home;
+			t[0x148] = Up;          t[0x149] = PageUp;       t[0x14B] = Left;      t[0x14D] = Right;
+			t[0x14F] = End;         t[0x150] = Down;         t[0x151] = PageDown;  t[0x152] = Insert;
+			t[0x153] = Delete;      t[0x15B] = LeftSuper;    t[0x15C] = RightSuper; t[0x15D] = Menu;
+			return t;
+		}();
+	}
+
+	KeyCode utils::KeyCodeFromScancode(u16 scancode) noexcept
+	{
+		const u16 high = scancode >> 8;
+		if (high != 0 && high != 0xE0) return KeyCode::Unknown;
+		return kScancodes[(scancode & 0xFF) | (high ? 0x100 : 0)];
 	}
 
 	std::optional<KeyCode> utils::ParseKeyCode(std::string_view name)

@@ -12,7 +12,6 @@ includes("Packages/DirectXTex.lua")
 includes("Packages/dxc.lua")
 includes("Packages/FastGLTF.lua")
 includes("Packages/Flecs.lua")
-includes("Packages/GLFW.lua")
 includes("Packages/ReflectCpp.lua")
 includes("Packages/SimdJson.lua")
 includes("Packages/Spdlog.lua")
@@ -31,7 +30,6 @@ add_requires("directxtex 32b2a8ef351ab08f822f6c0937fa37e07484714a")      -- jul2
 add_requires("dxc 1.9.2602")                                             -- release binaries
 add_requires("fastgltf 0d1b67a28c4950ea2deb796702006dcbe31e02b3")        -- v0.9.0
 add_requires("Flecs fb55f3c25660425cfe1bc4cf5e6bff8b3f18a9b8")           -- v4.1.6
-add_requires("glfw 7b6aead9fb88b3623e3b3725ebb42670cbe4c579")            -- 3.4
 add_requires("reflect-cpp 1327ef1d0b403f1424776da4c47bf0c7a6b0feaa")     -- v0.25.0
 add_requires("spdlog 79524ddd08a4ec981b7fea76afd08ee05f83755d")          -- v1.17.0
 add_requires("stb 31c1ad37456438565541f4919958214b6e762fb4")

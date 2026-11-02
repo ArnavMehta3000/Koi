@@ -12,7 +12,6 @@ target("Koi.Engine")
 		"toml++",
 		"dxc",
 		"tracy-profiler",
-		"glfw",
 		"Flecs",
 		"box3d",
 		"reflect-cpp",
@@ -36,6 +35,7 @@ target("Koi.Engine")
 	if is_plat("windows") then
 		add_syslinks(
 		"user32",
+		"shell32",
 		"dwmapi",
 		"d3d12",
 		"dxgi",

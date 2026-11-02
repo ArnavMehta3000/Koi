@@ -53,7 +53,6 @@ Fetched automatically via xmake-repo:
 
 | Package | Purpose |
 |---|---|
-| `glfw` | Window creation and input |
 | `directx-headers` | D3D12 / DXGI headers |
 | `dxc` | HLSL shader compiler |
 | `stb` | Image loading |
@@ -68,7 +67,7 @@ Vendored in `External/` and built from source:
 | Library | Purpose |
 |---|---|
 | `SimpleMath` | Math types (DirectX Toolkit, over DirectXMath) |
-| `ImGui` | Editor UI (docking branch, GLFW + DX12 backends) |
+| `ImGui` | Editor UI (docking branch, Win32 + DX12 backends) |
 
 ## Project file
 

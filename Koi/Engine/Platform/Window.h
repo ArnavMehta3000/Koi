@@ -1,13 +1,13 @@
-// Contains GLFW wrapper window class
-
 #pragma once
 #include "Koi/Engine/Core/Types.h"
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <span>
 #include <string>
+#include <vector>
 
-struct GLFWwindow;
+struct HWND__;
 
 namespace koi
 {
@@ -29,23 +29,29 @@ namespace koi
 		bool VSync         = true;
 	};
 
-	class Window : NonCopyable
+	// A Win32 message as the window procedure got it
+	struct WindowMessage
+	{
+		HWND__* Hwnd;
+		u32     Msg;
+		u64     WParam;
+		i64     LParam;
+	};
+
+	class Window : NonCopyable, NonMovable
 	{
 	public:
 		using ResizeCallback = std::function<void(u32, u32)>;
-		using CloseCallback = std::function<void()>;
-		using FocusCallback = std::function<void(bool)>;
-		using DropCallback  = std::function<void(std::span<const std::filesystem::path>)>;
+		using CloseCallback  = std::function<void()>;
+		using DropCallback   = std::function<void(std::span<const std::filesystem::path>)>;
+		using MessageHook    = std::function<std::optional<i64>(const WindowMessage&)>;  // a value marks the message handled
 
 	public:
 		explicit Window(const WindowDesc& desc);
 		~Window();
 
-		Window(Window&& other) noexcept;
-		Window& operator=(Window&& other) noexcept;
-
-		[[nodiscard]] bool ShouldClose() const noexcept;
-		void RequestClose();
+		[[nodiscard]] bool ShouldClose() const noexcept { return m_shouldClose; }
+		void RequestClose() noexcept { m_shouldClose = true; }
 
 		void SetMode(WindowMode newMode);
 		void SetTitle(std::string_view title);
@@ -65,9 +71,12 @@ namespace koi
 		inline void SetCloseCallback(CloseCallback cb) { m_onClose = std::move(cb); }
 		inline void SetDropCallback(DropCallback cb) { m_onDrop = std::move(cb); }  // files dragged in from Explorer
 
+		// Hooks see every message before the window does, in the order they were added
+		u32  AddMessageHook(MessageHook hook);
+		void RemoveMessageHook(u32 id);
+
 		[[nodiscard]] inline WindowMode GetMode() const noexcept { return m_mode; }
-		[[nodiscard]] inline void* GetNativeHandle() const noexcept { return m_nativeHandle; }
-		[[nodiscard]] inline GLFWwindow* GetGLFWWindow() const noexcept { return m_window; }
+		[[nodiscard]] inline void* GetNativeHandle() const noexcept { return m_hwnd; }
 		[[nodiscard]] inline u32 GetWidth() const noexcept { return m_width; }
 		[[nodiscard]] inline u32 GetHeight() const noexcept { return m_height; }
 		[[nodiscard]] inline f32 AspectRatio() const noexcept { return static_cast<f32>(m_width) / static_cast<f32>(m_height); }
@@ -80,29 +89,35 @@ namespace koi
 	private:
 		void Create(const WindowDesc& desc);
 		void Destroy();
+		void ApplyMode(WindowMode mode);
 
-		static void OnResize(GLFWwindow* w, i32 width, i32 height) noexcept;
-		static void OnClose(GLFWwindow* w) noexcept;
-		static void OnFocus(GLFWwindow* w, i32 focused) noexcept;
-		static void OnDrop(GLFWwindow* w, i32 count, const char** paths) noexcept;
+		// WindowProc.cpp
+		static i64 __stdcall WndProc(HWND__* hwnd, u32 msg, u64 wParam, i64 lParam) noexcept;
+		i64 HandleMessage(u32 msg, u64 wParam, i64 lParam);
+		i64 HitTest(i32 x, i32 y) const noexcept;
 
 	private:
-		GLFWwindow*   m_window       = nullptr;
-		void*         m_nativeHandle = nullptr;
-		u32           m_width        = 0;
-		u32           m_height       = 0;
-		WindowMode    m_mode         = WindowMode::Windowed;
-		std::string   m_title;
+		struct Hook { u32 Id; MessageHook Fn; };
 
+		HWND__*        m_hwnd        = nullptr;
+		u32            m_width       = 0;
+		u32            m_height      = 0;
+		WindowMode     m_mode        = WindowMode::Windowed;
+		bool           m_resizable   = true;
+		bool           m_shouldClose = false;
+		std::string    m_title;
+
+		// Outer rect to return to when leaving a fullscreen mode
 		i32 m_savedX = 0;
 		i32 m_savedY = 0;
 		i32 m_savedW = 0;
 		i32 m_savedH = 0;
 
-		ResizeCallback m_onResize;
-		CloseCallback  m_onClose;
-		FocusCallback  m_onFocus;
-		DropCallback   m_onDrop;
+		ResizeCallback    m_onResize;
+		CloseCallback     m_onClose;
+		DropCallback      m_onDrop;
+		std::vector<Hook> m_hooks;
+		u32               m_nextHookId = 1;
 
 		static inline u32 s_windowCount = 0;
 	};
