@@ -52,7 +52,7 @@ axes = [ "Gamepad.LeftX" ]
 [input.actions.MoveZ]
 negative = [ "S", "Down" ]
 positive = [ "W", "Up" ]
-axes = [ "-Gamepad.LeftY" ]
+axes = [ "Gamepad.LeftY" ]
 
 [input.actions.Turn]
 negative = [ "Q" ]

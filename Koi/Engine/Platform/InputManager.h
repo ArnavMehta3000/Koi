@@ -59,6 +59,7 @@ namespace koi
 		std::vector<ActionState> m_actions;
 
 		bool    m_gameFocused = true;
+		bool    m_appActive   = true;
 		Window* m_window      = nullptr;
 		u32     m_hookId      = 0;
 

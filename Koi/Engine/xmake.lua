@@ -4,6 +4,7 @@ target("Koi.Engine")
 	add_options("LogLevel")
 
 	add_deps("SimpleMath", { public = true })
+	add_deps("GameInput")
 
 	add_packages(
 		"cli11",
