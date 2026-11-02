@@ -341,6 +341,7 @@ namespace koi
 			throw std::runtime_error("Failed to create the GLFW window");
 		}
 		::glfwDefaultWindowHints();
+		::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);  // Without this ImGui window creation fails (HR: access denied at swapchain creation time)
 
 		if (desc.Mode == WindowMode::WindowedFullscreen)
 		{
