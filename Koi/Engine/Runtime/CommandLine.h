@@ -10,7 +10,7 @@ namespace koi
 {
 	namespace fs = std::filesystem;
 
-	class CommandLine : private CLI::App
+	class CommandLine : public CLI::App
 	{
 	public:
 		CommandLine(const std::string& desc = "Koi Engine", const std::string& name = "")
