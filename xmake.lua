@@ -36,6 +36,7 @@ add_rules("KoiMode", "Natvis")
 
 includes("Koi/Engine")
 includes("Koi/Editor")
+includes("Tests")
 
 -- A game project is any folder under Samples/ or Projects/ carrying <Name>/<Name>.koi.toml
 for _, marker in ipairs(table.join(os.files("Samples/*/*.koi.toml"), os.files("Projects/*/*.koi.toml"))) do
