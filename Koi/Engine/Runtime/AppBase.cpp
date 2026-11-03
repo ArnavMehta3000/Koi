@@ -67,12 +67,14 @@ namespace koi
 
 	void AppBase::HostBeginPlay()
 	{
+		m_world->BeginPlay();
 		OnBeginPlay();
 	}
 
 	void AppBase::HostEndPlay()
 	{
 		OnEndPlay();
+		m_world->EndPlay();
 	}
 
 	void AppBase::LoadStartupScene()
@@ -105,7 +107,12 @@ namespace koi
 			return false;
 		}
 
+		const bool inPlay = m_engine->GetPlayState() != PlayState::Edit;
+		if (inPlay) m_world->EndPlay();
+
 		*m_world = std::move(*loaded);
+
+		if (inPlay) m_world->BeginPlay();
 		return true;
 	}
 

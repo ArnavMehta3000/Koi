@@ -57,6 +57,9 @@ namespace koi
 		// Steps FixedUpdate systems as many times as dt covers, then runs the frame pipeline once
 		void Update(f32 dt);
 
+		void BeginPlay();
+		void EndPlay();
+
 		// A throw can't unwind through flecs, so systems park it here and Update rethrows it after the pipeline
 		void ReportSystemFailure(std::string_view system, std::string_view what, std::stacktrace trace);
 		[[nodiscard]] bool HasSystemFailure() const { return m_systemFailure.has_value(); }
@@ -78,11 +81,11 @@ namespace koi
 			std::stacktrace Trace;
 		};
 
+		std::vector<std::unique_ptr<ISystem>> m_systems;
 		ECS    m_ecs;
 		Entity m_root;
 		Entity m_fixedPipeline;          // runs only FixedUpdate systems; the default pipeline skips them
 		f32    m_fixedAccumulator = 0.0f;
-		std::vector<std::unique_ptr<ISystem>> m_systems;
 		std::string m_sourcePath;        // virtual path this world was loaded from, empty if none
 		BoundingBox m_bounds{ {}, {} };  // zero extents until meshes resolve
 		Camera m_camera;                 // derived from the primary camera entity by ResolveCamera

@@ -29,6 +29,10 @@ namespace koi
 		[[nodiscard]] virtual SystemPhase      Phase() const { return SystemPhase::Update; }
 
 		virtual void Build(World& world) = 0;
+
+		// Bracket a play session. EndPlay runs before Stop restores the edit-time world
+		virtual void OnBeginPlay(World& /*world*/) {}
+		virtual void OnEndPlay(World& /*world*/) {}
 	};
 
 	namespace internal

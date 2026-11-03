@@ -33,11 +33,11 @@ namespace koi
 	World::~World() = default;
 
 	World::World(World&& other) noexcept
-		: m_ecs(std::move(other.m_ecs))
+		: m_systems(std::move(other.m_systems))
+		, m_ecs(std::move(other.m_ecs))
 		, m_root(other.m_root)
 		, m_fixedPipeline(other.m_fixedPipeline)
 		, m_fixedAccumulator(other.m_fixedAccumulator)
-		, m_systems(std::move(other.m_systems))
 		, m_sourcePath(std::move(other.m_sourcePath))
 		, m_bounds(other.m_bounds)
 		, m_camera(other.m_camera)
@@ -367,6 +367,25 @@ namespace koi
 		{
 			SystemFailure failure = *std::exchange(m_systemFailure, std::nullopt);
 			throw Exception(failure.Message, std::move(failure.Trace));
+		}
+	}
+
+	void World::BeginPlay()
+	{
+		ZoneScoped;
+		m_fixedAccumulator = 0.0f;
+		for (const std::unique_ptr<ISystem>& system : m_systems)
+		{
+			system->OnBeginPlay(*this);
+		}
+	}
+
+	void World::EndPlay()
+	{
+		ZoneScoped;
+		for (auto it = m_systems.rbegin(); it != m_systems.rend(); ++it)
+		{
+			(*it)->OnEndPlay(*this);
 		}
 	}
 
