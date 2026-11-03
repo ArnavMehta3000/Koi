@@ -4,7 +4,7 @@ target("Koi.Tests")
 	set_default(false)
 
 	add_deps("Koi.Engine")
-	add_packages("doctest", "toml++", "stduuid", "spdlog", "reflect-cpp", "tracy-profiler", "Flecs")
+	add_packages("doctest", "toml++", "stduuid", "spdlog", "reflect-cpp", "tracy-profiler", "Flecs", "box3d")
 
 	add_files("**.cpp")
 
