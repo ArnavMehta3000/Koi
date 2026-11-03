@@ -11,6 +11,7 @@ KOI_LOG_CATEGORY_IN(Scene,    Engine)
 KOI_LOG_CATEGORY_IN(Render,   Engine)
 KOI_LOG_CATEGORY_IN(RHI,      Engine)
 KOI_LOG_CATEGORY_IN(Shaders,  Engine)
+KOI_LOG_CATEGORY_IN(Physics,  Engine)
 
 KOI_LOG_CATEGORY_IN(Editor,   Editor)
 KOI_LOG_CATEGORY_IN(AssetDB,  Editor)
