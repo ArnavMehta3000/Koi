@@ -34,9 +34,9 @@ namespace koi
 
 		GBufferData out
 		{
-			.Albedo   = target(Format::R8G8B8A8_UNORM,     "Albedo"),
-			.Normals  = target(Format::R16G16B16A16_UNORM, "Normals"),
-			.Material = target(Format::R8G8B8A8_UNORM,     "Material"),
+			.Albedo   = target(Format::R8G8B8A8_UNORM_SRGB, "Albedo"),
+			.Normals  = target(Format::R16G16B16A16_UNORM,  "Normals"),
+			.Material = target(Format::R8G8B8A8_UNORM,      "Material"),
 		};
 		RGTexture depth = target(Format::D32_FLOAT, "Depth");
 

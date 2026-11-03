@@ -14,7 +14,7 @@ namespace koi
 
 	struct GBufferData
 	{
-		RGTexture Albedo;    // RGB + AO (RGBA8_UNORM)
+		RGTexture Albedo;    // RGB + AO (RGBA8_UNORM_SRGB: encoded on write, decoded on read)
 		RGTexture Normals;   // XYZ + MatID (RGBA16_UNORM)
 		RGTexture Material;  // Roughness/Metallic/Specular + unused A (RGBA8_UNORM)
 	};
