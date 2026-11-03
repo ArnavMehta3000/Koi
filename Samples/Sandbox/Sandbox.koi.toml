@@ -5,6 +5,7 @@ author  = "Arnav"
 
 [window]
 title  = "Koi - Sandbox"
+mode   = "windowed"  # windowed | borderless | fullscreen; the editor is always windowed
 width  = 1280
 height = 720
 vsync  = false

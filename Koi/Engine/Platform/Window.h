@@ -15,8 +15,7 @@ namespace koi
 	{
 		Windowed,
 		Borderless,
-		WindowedFullscreen,
-		ExclusiveFullscreen
+		Fullscreen,  // borderless, covering the monitor
 	};
 
 	struct WindowDesc

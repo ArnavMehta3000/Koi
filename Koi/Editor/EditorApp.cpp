@@ -49,8 +49,11 @@ namespace koi::editor
 	EditorApp::EditorApp(std::unique_ptr<AppBase> game, EditorConfig config)
 		: m_game(std::move(game))
 		, m_config(std::move(config))
+		, m_desc(m_game->GetDesc())
 		, m_context(m_game.get())
 	{
+		m_desc.WindowDesc.Mode = WindowMode::Windowed;
+
 		KOI_LOG(Editor, Debug, "Initializing Editor");
 		KOI_LOG(Editor, Debug, "\tEngine source path: {}" , m_config.EngineSource.string());
 		KOI_LOG(Editor, Debug, "\tProject source path: {}", m_config.ProjectSource.string());
@@ -58,7 +61,7 @@ namespace koi::editor
 		KOI_LOG(Editor, Debug, "\tCook output path: {}"   , m_config.CookedOutput.string());
 	}
 
-	const AppCreateDesc& EditorApp::GetDesc() const { return m_game->GetDesc(); }
+	const AppCreateDesc& EditorApp::GetDesc() const { return m_desc; }
 
 	EditorApp::~EditorApp() = default;
 

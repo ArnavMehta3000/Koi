@@ -4,6 +4,7 @@ version = "0.1.0"
 
 [window]
 title  = "{{Name}}"
+mode   = "windowed"  # windowed | borderless | fullscreen; the editor is always windowed
 width  = 1280
 height = 720
 vsync  = true

@@ -112,7 +112,6 @@ namespace koi
 			return;
 		}
 
-		// [TODO]: ExclusiveFullscreen should go through IDXGISwapChain::SetFullscreenState(TRUE)
 		MONITORINFO info{ .cbSize = sizeof(MONITORINFO) };
 		::GetMonitorInfoW(::MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST), &info);
 		const RECT& r = info.rcMonitor;

@@ -26,6 +26,16 @@ namespace koi::internal
 		return AppBase::Create(cmd);
 	}
 
+	static WindowMode ParseWindowMode(std::string_view mode)
+	{
+		if (mode == "windowed")   return WindowMode::Windowed;
+		if (mode == "borderless") return WindowMode::Borderless;
+		if (mode == "fullscreen") return WindowMode::Fullscreen;
+
+		KOI_LOG(Engine, Warn, "[window] mode = '{}' is not windowed, borderless or fullscreen; using windowed", mode);
+		return WindowMode::Windowed;
+	}
+
 	static AppCreateDesc LoadProjectDesc(const fs::path& projectFile)
 	{
 		ZoneScoped;
@@ -66,6 +76,7 @@ namespace koi::internal
 			.WindowDesc =
 			{
 				.Title  = project["window"]["title"].value_or("Koi"),
+				.Mode   = ParseWindowMode(project["window"]["mode"].value_or("windowed")),
 				.Width  = project["window"]["width"].value_or(1280u),
 				.Height = project["window"]["height"].value_or(720u),
 				.VSync  = project["window"]["vsync"].value_or(true),

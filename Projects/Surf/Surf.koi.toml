@@ -4,6 +4,7 @@ version = "0.1.0"
 
 [window]
 title  = "Koi Surfing Game"
+mode   = "fullscreen"
 width  = 1280
 height = 720
 vsync  = false

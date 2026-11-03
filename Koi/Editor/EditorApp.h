@@ -5,6 +5,7 @@
 #include "Koi/Editor/StatusBar.h"
 #include "Koi/Engine/Graphics/RendererOverlay.h"
 #include "Koi/Engine/Graphics/RenderView.h"
+#include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/AppHost.h"
 #include <filesystem>
 #include <memory>
@@ -13,7 +14,6 @@
 
 namespace koi
 {
-	class AppBase;
 	class Engine;
 	class CommandList;
 }
@@ -97,6 +97,7 @@ namespace koi::editor
 
 		std::unique_ptr<AppBase> m_game;
 		EditorConfig             m_config{};
+		AppCreateDesc            m_desc;
 		EditorContext            m_context;
 		EdExtensions             m_extensions;
 		ImGuiLayer               m_imgui;

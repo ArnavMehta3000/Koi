@@ -41,7 +41,7 @@ The first build adds `.koi/` (logs, crash dumps, editor layout, cooked output). 
 | Table | |
 |---|---|
 | `[project]` | `name`, `version`, `author` |
-| `[window]` | `title`, `width`, `height`, `vsync` |
+| `[window]` | `title`, `mode` (`windowed` / `borderless` / `fullscreen`; standalone only, the editor stays windowed), `width`, `height`, `vsync` |
 | `[logging]` | `file`, `level`, `history`, `console`, `debug_sink` (see [Logging](Logging.md)) |
 | `[logging.categories]` | Per-category levels, e.g. `RHI = "Info"` |
 | `[scenes]` | `startup` scene name, plus `[scenes.list]` mapping names to `project://...scene.toml` |
