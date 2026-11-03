@@ -157,21 +157,16 @@ namespace koi::internal
 		return exeDir;
 	}
 
-	static void MountCooked(CommandLine& cmd, const fs::path& exeDir)
+	static void MountCooked(const fs::path& contentRoot)
 	{
-		const fs::path contentRoot = FindCookedRoot(exeDir);
 		const fs::path projectRoot = contentRoot / "Project";
 		const fs::path engineRoot  = contentRoot / "Engine";
-
-		if (cmd.GetProjectFile().empty())
-			cmd.OverrideProjectFile(projectRoot / "Project.koi.toml");
 
 		auto& vfs = VirtualFileSystem::Get();
 		vfs.Mount("engine",  std::make_unique<FilesystemMount>(engineRoot));
 		vfs.Mount("project", std::make_unique<FilesystemMount>(projectRoot));
 
 		KOI_LOG(Engine, Debug, "Cooked VFS mounts:");
-		KOI_LOG(Engine, Debug, "\tProject file : {}", cmd.GetProjectFile().string());
 		KOI_LOG(Engine, Debug, "\tengine  <- {}", engineRoot.string());
 		KOI_LOG(Engine, Debug, "\tproject <- {}", projectRoot.string());
 	}
@@ -213,18 +208,27 @@ namespace koi::internal
 			const fs::path savedDir = (isEditor ? desc.ProjectDir : exeDir) / ".koi";
 			CrashHandler::SetDumpDir(savedDir / "Crashes");
 
+			const fs::path cookedRoot = isEditor ? fs::path() : FindCookedRoot(exeDir);
+			if (cmd->GetProjectFile().empty())
+			{
+				cmd->OverrideProjectFile(isEditor ? desc.ProjectFile : cookedRoot / "Project" / "Project.koi.toml");
+			}
+
+			// The project's [logging] table configures the logger before anything else logs
+			AppCreateDesc appDesc = LoadProjectDesc(cmd->GetProjectFile());
+			ResolveLogPath(appDesc.LogConfig, savedDir);
+			ApplyLogOverrides(appDesc.LogConfig, cmd->GetLogLevels());
+			Logger::Configure(appDesc.LogConfig);
+			KOI_LOG(Engine, Info, "Koi {} ({})", KOI_VERSION, KOI_BUILD_MODE);
+			KOI_LOG(Engine, Debug, "Project file: {}", cmd->GetProjectFile().string());
+
 			if (isEditor)
 			{
-				if (cmd->GetProjectFile().empty())
-				{
-					cmd->OverrideProjectFile(desc.ProjectFile);
-				}
-
 				MountSourceTree(desc);
 			}
 			else
 			{
-				MountCooked(*cmd, exeDir);
+				MountCooked(cookedRoot);
 			}
 
 			Engine engine(Engine::Desc
@@ -241,14 +245,7 @@ namespace koi::internal
 				return -1;
 			}
 
-			AppCreateDesc appDesc = LoadProjectDesc(cmd->GetProjectFile());
-			ResolveLogPath(appDesc.LogConfig, savedDir);
-			ApplyLogOverrides(appDesc.LogConfig, cmd->GetLogLevels());
 			app->SetDesc(std::move(appDesc));
-
-			// Only now is the project's [logging] table known; still single-threaded here
-			Logger::Configure(app->GetDesc().LogConfig);
-			KOI_LOG(Engine, Info, "Koi {} ({})", KOI_VERSION, KOI_BUILD_MODE);
 
 			if (desc.Adapter)
 			{

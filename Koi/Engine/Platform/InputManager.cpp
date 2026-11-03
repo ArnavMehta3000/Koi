@@ -62,7 +62,7 @@ namespace koi
 		m_gamepad.Init(m_config.Gamepad);
 		m_hookId = m_window->AddMessageHook([this](const WindowMessage& msg) { return OnMessage(msg); });
 
-		KOI_LOG(Input, Debug, "InputManager initialized");
+		KOI_LOG(Input, Debug, "InputManager initialized, {} action(s)", m_config.Actions.size());
 	}
 
 	void InputManager::BeginFrame()

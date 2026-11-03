@@ -73,7 +73,6 @@ namespace koi
 			config.Actions.push_back(std::move(action));
 		}
 
-		KOI_LOG(Input, Debug, "Input: {} action(s) loaded", config.Actions.size());
 		return config;
 	}
 }
