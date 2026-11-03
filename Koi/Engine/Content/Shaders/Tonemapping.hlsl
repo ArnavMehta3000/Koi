@@ -13,4 +13,10 @@ float3 ACES(float3 x)
 	return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
 }
 
+// The exact sRGB transfer curve. Display targets are UNORM, so the encode happens here
+float3 LinearToSRGB(float3 c)
+{
+	return select(c <= 0.0031308, c * 12.92, 1.055 * pow(c, 1.0 / 2.4) - 0.055);
+}
+
 #endif

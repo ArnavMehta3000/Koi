@@ -9,24 +9,6 @@ namespace koi
 {
 	namespace
 	{
-		// Nothing in the renderer decodes sRGB yet (the swapchain is UNORM and tonemap writes raw values),
-		// so sRGB textures are viewed as UNORM to keep the look unchanged. Flip once the output encodes sRGB
-		constexpr bool kDecodeSRGB = false;
-
-		Format WithoutSRGB(Format format)
-		{
-			switch (format)
-			{
-				case Format::BC1_UNORM_SRGB:      return Format::BC1_UNORM;
-				case Format::BC2_UNORM_SRGB:      return Format::BC2_UNORM;
-				case Format::BC3_UNORM_SRGB:      return Format::BC3_UNORM;
-				case Format::BC7_UNORM_SRGB:      return Format::BC7_UNORM;
-				case Format::R8G8B8A8_UNORM_SRGB: return Format::R8G8B8A8_UNORM;
-				case Format::B8G8R8A8_UNORM_SRGB: return Format::B8G8R8A8_UNORM;
-				default:                          return format;
-			}
-		}
-
 		GPUTexture UploadPrepared(GfxDevice& device, const ImageAsset& image)
 		{
 			const PreparedTexture& prepared = *image.Prepared;
@@ -42,7 +24,7 @@ namespace koi
 				.Height       = header.Height,
 				.DepthOrArray = header.ArraySize,
 				.MipLevels    = header.MipLevels,
-				.Format       = kDecodeSRGB ? header.Format : WithoutSRGB(header.Format),
+				.Format       = header.Format,
 				.Usage        = TextureUsage::ShaderRead,
 				.DebugName    = image.Name,
 			});

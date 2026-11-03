@@ -11,6 +11,6 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 
 	float3 hdr = hdrTex.Load(int3(pos.xy, 0)).rgb;
 
-	float3 ldr = ACES(hdr);
+	float3 ldr = LinearToSRGB(ACES(hdr));
 	return float4(ldr, 1.0);
 }

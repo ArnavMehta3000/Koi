@@ -15,5 +15,5 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 		return;
 
 	float3 hdr = hdrTex.Load(int3(id.xy, 0)).rgb;
-	ldrTex[id.xy] = float4(ACES(hdr), 1.0);
+	ldrTex[id.xy] = float4(LinearToSRGB(ACES(hdr)), 1.0);
 }
