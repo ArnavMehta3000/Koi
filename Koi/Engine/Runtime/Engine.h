@@ -34,6 +34,7 @@ namespace koi
 		{
 			bool D3DDebug      = false;
 			bool GpuValidation = false;
+			bool Headless      = false;
 		};
 
 	public:

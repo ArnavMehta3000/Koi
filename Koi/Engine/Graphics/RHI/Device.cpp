@@ -929,9 +929,14 @@ namespace koi
 			}
 		}
 
+		// No hardware GPU
 		if (!adapter)
 		{
-			throw std::runtime_error("No D3D12-capable adapter found");
+			if (FAILED(m_dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter))))
+			{
+				throw std::runtime_error("No D3D12-capable adapter found");
+			}
+			KOI_LOG(RHI, Warn, "No hardware D3D12 adapter; using WARP");
 		}
 		DX_CHECK(adapter.As(&m_adapter));
 	}
