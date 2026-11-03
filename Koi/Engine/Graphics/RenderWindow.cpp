@@ -142,7 +142,7 @@ namespace koi
 
 		const u32 flags = m_tearingAllowed ? DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING : 0;
 		DX_CHECK(m_swapChain->ResizeBuffers(
-			BACK_BUFFER_COUNT, width, height, utils::ToDXGIFormat(SWAPCHAIN_FORMAT), flags));
+			FRAMES_IN_FLIGHT, width, height, utils::ToDXGIFormat(SWAPCHAIN_FORMAT), flags));
 
 		m_width             = width;
 		m_height            = height;
@@ -158,15 +158,7 @@ namespace koi
 		const u32 syncInterval = m_vsync ? 1 : 0;
 		const u32 flags        = (!m_vsync && m_tearingAllowed) ? DXGI_PRESENT_ALLOW_TEARING : 0;
 
-		HRESULT hr = m_swapChain->Present(syncInterval, flags);
-
-		if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
-		{
-			KOI_LOG(Render, Error, "Present returned device-removed (0x{:08X})", static_cast<u32>(hr));
-			m_device->HandleDeviceLost();
-			return;
-		}
-		DX_CHECK(hr);
+		DX_CHECK(m_swapChain->Present(syncInterval, flags));  // a removed device throws with its reason
 
 		/// DevNote: Here are the steps done regarding synchronization
 		/// - After presenting buffer N, record the fence value at that moment
@@ -190,7 +182,7 @@ namespace koi
 			.Format      = utils::ToDXGIFormat(m_format),
 			.SampleDesc  = { 1, 0 },
 			.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
-			.BufferCount = BACK_BUFFER_COUNT,
+			.BufferCount = FRAMES_IN_FLIGHT,
 			.Scaling     = DXGI_SCALING_STRETCH,
 			.SwapEffect  = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 			.AlphaMode   = DXGI_ALPHA_MODE_IGNORE,
@@ -213,7 +205,7 @@ namespace koi
 		m_currentBackBuffer = m_swapChain->GetCurrentBackBufferIndex();
 
 		KOI_LOG(Render, Debug, "Swapchain created: {}x{}, {} buffers, tearing {}",
-			m_width, m_height, BACK_BUFFER_COUNT, m_tearingAllowed ? "allowed" : "unavailable");
+			m_width, m_height, FRAMES_IN_FLIGHT, m_tearingAllowed ? "allowed" : "unavailable");
 	}
 
 	void RenderWindow::AcquireBackBuffers()
@@ -228,7 +220,7 @@ namespace koi
 			.Usage  = TextureUsage::RenderTarget | TextureUsage::Present
 		};
 
-		for (u32 i = 0; i < BACK_BUFFER_COUNT; i++)
+		for (u32 i = 0; i < FRAMES_IN_FLIGHT; i++)
 		{
 			ComPtr<dx12::Resource> buffer;
 			DX_CHECK(m_swapChain->GetBuffer(i, IID_PPV_ARGS(&buffer)));
@@ -262,7 +254,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		for (u32 i = 0; i < BACK_BUFFER_COUNT; ++i)
+		for (u32 i = 0; i < FRAMES_IN_FLIGHT; ++i)
 		{
 			if (!m_backBuffers[i]) continue;
 

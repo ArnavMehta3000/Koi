@@ -59,7 +59,7 @@ namespace koi
 			[this, &world, &camera, gbuffer, depth, shadow](RasterContext& ctx)
 			{
 				GfxDevice& device   = *m_config.Device;
-				const u32 frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
+				const u32 frameSlot = device.GetFrameSlot();
 
 				GatherLights(world, shadow.LightViewProjection, ctx.SRV(shadow.ShadowMap));
 				if (m_lights.empty() || !m_config.Resources || !ctx.SetPipeline(kLighting)) return;

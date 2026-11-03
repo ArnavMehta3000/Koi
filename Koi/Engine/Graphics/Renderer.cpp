@@ -47,7 +47,6 @@ namespace koi
 			.EnableGPUValidation = engineDesc.GpuValidation,
 		});
 
-		m_device->SetDeviceNotify(this);
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
 		m_pipelineCache.Init(*m_device);
@@ -148,7 +147,7 @@ namespace koi
 		m_shaderReadRequests.clear();
 		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
-		m_frameContext->List.Begin(m_frameSlot);
+		m_frameContext->List.Begin(m_device->GetFrameSlot());
 	}
 
 	void Renderer::RequestShaderRead(TextureHandle texture)
@@ -193,8 +192,6 @@ namespace koi
 
 		// After Present, since that waits on the back buffer fence and the payload is ready by then
 		m_device->GpuProfilerCollect();
-
-		m_frameSlot = (m_frameSlot + 1) % FRAMES_IN_FLIGHT;
 	}
 
 	void Renderer::SetPipeline(PipelineBuildFunc build)
@@ -223,16 +220,6 @@ namespace koi
 	CommandList* Renderer::GetCommandList() noexcept
 	{
 		return m_frameContext ? &m_frameContext->List : nullptr;
-	}
-
-	void Renderer::OnDeviceLost()
-	{
-		KOI_LOG(Render, Critical, "Graphics device lost");
-	}
-
-	void Renderer::OnDeviceRestored()
-	{
-		KOI_LOG(Render, Info, "Graphics device restored");
 	}
 
 	void Renderer::ReloadShaders(bool all)

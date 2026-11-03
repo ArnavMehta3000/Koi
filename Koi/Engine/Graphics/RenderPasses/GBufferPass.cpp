@@ -61,7 +61,7 @@ namespace koi
 		if (!m_config.Resources) return;
 
 		GfxDevice& device   = *m_config.Device;
-		const u32 frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
+		const u32 frameSlot = device.GetFrameSlot();
 
 		m_gatherer.Gather(world, CullVolume::FromCamera(camera.View, camera.Projection), true, m_gather);
 		FrameStats::Count("GBuffer Draws",  i64(m_gather.Draws.size()));

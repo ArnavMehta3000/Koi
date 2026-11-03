@@ -47,7 +47,7 @@ namespace koi
 			},
 			[this, &camera](RasterContext& ctx)
 			{
-				const u32 frameSlot = static_cast<u32>(m_config.Device->GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
+				const u32 frameSlot = m_config.Device->GetFrameSlot();
 
 				const DescriptorIndex constantsIndex = m_constants.Upload(frameSlot, GridConstants
 				{

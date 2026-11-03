@@ -80,6 +80,7 @@ namespace koi
 		[[nodiscard]] inline dx12::RootSignature* GetRootSignature()     const noexcept { return m_rootSignature.Get(); }
 		[[nodiscard]] inline bool                 SupportsTearing()      const noexcept { return m_supportsTearing;     }
 		[[nodiscard]] inline u64                  GetCurrentFrameIndex() const noexcept { return m_frameIndex;          }
+		[[nodiscard]] inline u32                  GetFrameSlot()         const noexcept { return static_cast<u32>(m_frameIndex % FRAMES_IN_FLIGHT); }
 		[[nodiscard]] inline DescriptorHeap&      RTVHeap()              noexcept       { return m_rtvHeap;             }
 		[[nodiscard]] inline DescriptorHeap&      DSVHeap()              noexcept       { return m_dsvHeap;             }
 		[[nodiscard]] inline DescriptorHeap&      ResourceHeap()         noexcept       { return m_resourceHeap;        }
@@ -131,8 +132,6 @@ namespace koi
 		void WaitForIdle();           // Block until GPU has completed all submitted work
 		void FlushPendingDeletions(); // Free all queued resources; caller must ensure GPU is idle
 
-		inline void SetDeviceNotify(IDeviceNotify* notify) noexcept { m_notify = notify; }
-		void HandleDeviceLost();
 
 	private:
 		void CreateFactory(bool enableDebug);
@@ -154,8 +153,6 @@ namespace koi
 			u64 FenceValue;
 			std::variant<TextureHandle, BufferHandle, PipelineHandle> Handle;
 		};
-
-		IDeviceNotify*              m_notify = nullptr;
 
 		ComPtr<dx12::Device>        m_device;
 		ComPtr<dxgi::Factory>       m_dxgiFactory;

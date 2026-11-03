@@ -24,7 +24,6 @@ namespace koi
 	class Renderer
 		: NonCopyable
 		, NonMovable
-		, public IDeviceNotify
 	{
 	public:
 		Renderer();
@@ -68,8 +67,6 @@ namespace koi
 		void ReloadShaders(bool all);
 
 	private:
-		void OnDeviceLost() override;
-		void OnDeviceRestored() override;
 		void RegisterMaterialTemplates();
 
 	private:
@@ -90,7 +87,6 @@ namespace koi
 		FeatureList                      m_features;
 		RenderGraph                      m_graph;
 		TargetCapture                    m_capture;
-		u32                              m_frameSlot = 0;
 		IRendererOverlay*                m_overlay   = nullptr;
 		DebugDrawQueue                   m_debugDraw;
 		std::vector<TextureHandle>       m_shaderReadRequests;  // per-frame, cleared in BeginFrame

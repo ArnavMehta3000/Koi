@@ -117,7 +117,7 @@ namespace koi
 	{
 		ZoneScoped;
 		GfxDevice& device    = *m_config.Device;
-		const u32  frameSlot = static_cast<u32>(device.GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
+		const u32  frameSlot = device.GetFrameSlot();
 
 		// Depth-only, so the normal matrix is never needed
 		m_gatherer.Gather(world, m_cullVolume, false, m_gather);

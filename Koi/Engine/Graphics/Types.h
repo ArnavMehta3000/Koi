@@ -8,14 +8,13 @@
 
 namespace koi
 {
-	static constexpr u32 BACK_BUFFER_COUNT      = 3;
-	static constexpr u32 FRAMES_IN_FLIGHT       = 3;
+	static constexpr u32 FRAMES_IN_FLIGHT       = 3;  // also the swapchain buffer count: each frame waits on its back buffer's fence
 	static constexpr u32 MAX_RENDER_TARGETS     = 8;  // D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT
 	static constexpr u32 MAX_VERTEX_ATTRIBUTES  = 16;
 	static constexpr u32 MAX_PUSH_CONSTANT_U32S = 32;
 
 	template <typename T>
-	using FrameArray = std::array<T, BACK_BUFFER_COUNT>;
+	using FrameArray = std::array<T, FRAMES_IN_FLIGHT>;
 
 	struct Texture;
 	struct Buffer;
@@ -110,13 +109,6 @@ namespace koi
 		u32 InputSlot                 = 0;
 		u32 ByteOffset                = 0;
 		bool PerInstance              = false;
-	};
-
-	struct IDeviceNotify
-	{
-		virtual ~IDeviceNotify() = default;
-		virtual void OnDeviceLost() = 0;
-		virtual void OnDeviceRestored() = 0;
 	};
 
 	// Where one mip of one array slice sits in a block of upload data. Also stored as-is in .ktex files

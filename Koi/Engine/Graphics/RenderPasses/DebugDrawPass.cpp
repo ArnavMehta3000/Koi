@@ -51,7 +51,7 @@ namespace koi
 				const std::span<const DebugVertex> vertices = m_config.Queue->GetVertices();
 				if (vertices.empty()) return;
 
-				const u32 frameSlot = static_cast<u32>(m_config.Device->GetCurrentFrameIndex() % FRAMES_IN_FLIGHT);
+				const u32 frameSlot = m_config.Device->GetFrameSlot();
 				const DescriptorIndex vertexBufferIndex = m_vertexBuffer.Upload(frameSlot, vertices);
 				if (vertexBufferIndex == INVALID_DESCRIPTOR || !ctx.SetPipeline(kDebugLines)) return;
 

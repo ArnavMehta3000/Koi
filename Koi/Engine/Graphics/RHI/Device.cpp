@@ -19,6 +19,22 @@ namespace koi
 	namespace
 	{
 		CD3DX12FeatureSupport g_featureSupport;
+		dx12::Device*         g_device = nullptr;  // for the removed reason when an HRESULT says the device is gone
+
+		[[nodiscard]] bool IsDeviceRemoved(HRESULT hr)
+		{
+			return hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == DXGI_ERROR_DEVICE_HUNG;
+		}
+
+		// No recovery: every handle would dangle, so this logs what DRED knows and the throw ends the app
+		void ReportDeviceRemoved()
+		{
+			const HRESULT reason = g_device->GetDeviceRemovedReason();
+			KOI_LOG(RHI, Critical, "D3D12 device removed, reason 0x{:08X} ({})", static_cast<u32>(reason), utils::FromWide(_com_error(reason).ErrorMessage()));
+
+			// TODO(device-lost): read ID3D12DeviceRemovedExtendedData1 from g_device and log the auto-breadcrumbs
+			// (last completed op per command list) and the page-fault address with its allocations
+		}
 
 		D3D12_RESOURCE_FLAGS ToD3DFlags(TextureUsageFlag flag)
 		{
@@ -77,6 +93,11 @@ namespace koi
 
 	void internal::ThrowHResult(HRESULT hr, const char* expr, const std::source_location& where)
 	{
+		if (IsDeviceRemoved(hr) && g_device)
+		{
+			ReportDeviceRemoved();
+		}
+
 		const _com_error err(hr);
 		throw GfxError(hr, std::format("{} failed with 0x{:08X} ({}) at {}:{}",
 			expr, static_cast<u32>(hr), utils::FromWide(err.ErrorMessage()), std::filesystem::path(where.file_name()).filename().string(), where.line()));
@@ -135,6 +156,7 @@ namespace koi
 		m_adapter       = nullptr;
 		m_dxgiFactory   = nullptr;
 		m_device        = nullptr;
+		g_device        = nullptr;
 
 		m_rtvHeap.Reset();
 		m_dsvHeap.Reset();
@@ -812,39 +834,6 @@ namespace koi
 		m_rootSignature->SetName(L"Bindless Root Signature");
 	}
 
-	void GfxDevice::HandleDeviceLost()
-	{
-		ZoneScoped;
-
-		KOI_LOG(RHI, Critical, "D3D12 device lost. Attempting recovery...");
-
-		if (m_notify) m_notify->OnDeviceLost();
-
-		// Drop all GPU resources and rebuild.
-		FlushDeferredDeletions(~0ull);
-		m_textures.Clear();
-		m_buffers.Clear();
-		m_pipelines.Clear();
-
-		m_rootSignature = nullptr;
-		m_graphicsQueue.Reset();
-		m_frameFence.Reset();
-		m_device.Reset();
-		m_adapter.Reset();
-		m_dxgiFactory.Reset();
-
-		CreateFactory(m_desc.EnableDebugLayer);
-		PickAdapter();
-		CreateDevice();
-		CreateQueues();
-		CreateFences();
-		CreateHeaps();
-		CreateRootSignature();
-
-		KOI_LOG(RHI, Info, "D3D12 device recreated after device loss");
-		if (m_notify) m_notify->OnDeviceRestored();
-	}
-
 	void GfxDevice::CreateFactory(bool enableDebug)
 	{
 		ZoneScoped;
@@ -961,6 +950,7 @@ namespace koi
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;
 		DX_CHECK(::D3D12CreateDevice(m_adapter.Get(), MIN_FEATURE_LEVEL, IID_PPV_ARGS(&m_device)));
 		m_device->SetName(L"Koi GfxDevice");
+		g_device = m_device.Get();
 
 		ComPtr<ID3D12InfoQueue> infoQueue;
 		if (m_desc.EnableDebugLayer && SUCCEEDED(m_device.As(&infoQueue)))
