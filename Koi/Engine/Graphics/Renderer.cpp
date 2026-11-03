@@ -235,11 +235,11 @@ namespace koi
 		KOI_LOG(Render, Info, "Graphics device restored");
 	}
 
-	void Renderer::Reload(const ReloadRequest& request)
+	void Renderer::ReloadShaders(bool all)
 	{
 		ShaderCache& shaders = ShaderCache::Get();
 
-		if (request.Scope == ReloadScope::All)
+		if (all)
 		{
 			shaders.InvalidateAll();
 			m_device->WaitForIdle();

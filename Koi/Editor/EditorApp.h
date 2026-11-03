@@ -26,7 +26,6 @@ namespace koi::editor
 	class ImportQueue;
 	class PanelManager;
 	class PlaySession;
-	class Reloader;
 	class Toasts;
 	class UndoStack;
 	class ViewportPanel;
@@ -103,13 +102,13 @@ namespace koi::editor
 		ImGuiLayer               m_imgui;
 		StatusBar                m_statusBar;
 		GizmoOptions             m_gizmos{};
+		std::optional<bool>      m_pendingShaderReload;  // true reloads all
 
 		// Owned by m_context, cached for access
 		PanelManager*    m_panels        = nullptr;
 		CommandRegistry* m_commands      = nullptr;
 		ImportQueue*     m_importQueue   = nullptr;
 		PlaySession*     m_play          = nullptr;
-		Reloader*        m_reloader      = nullptr;
 		Toasts*          m_toasts        = nullptr;
 		UndoStack*       m_undo          = nullptr;
 		ViewportPanel*   m_viewportPanel = nullptr;

@@ -11,7 +11,6 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/CommandQueue.h"
 #include "Koi/Engine/Graphics/TargetCapture.h"
-#include "Koi/Engine/Runtime/Reloadable.h"
 #include "Koi/Engine/Runtime/Subsystems.h"
 #include <memory>
 #include <optional>
@@ -26,7 +25,6 @@ namespace koi
 		: NonCopyable
 		, NonMovable
 		, public IDeviceNotify
-		, public IReloadable
 	{
 	public:
 		Renderer();
@@ -67,10 +65,11 @@ namespace koi
 		void BeginFrame();
 		void EndFrame();
 
+		void ReloadShaders(bool all);
+
 	private:
 		void OnDeviceLost() override;
 		void OnDeviceRestored() override;
-		void Reload(const ReloadRequest& request) override;
 		void RegisterMaterialTemplates();
 
 	private:

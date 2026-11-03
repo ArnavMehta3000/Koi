@@ -18,7 +18,6 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Editor/PlaySession.h"
-#include "Koi/Editor/Reloader.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/Toasts.h"
 #include "Koi/Editor/UI/Widgets.h"
@@ -76,8 +75,6 @@ namespace koi::editor
 		// Services first; panels fetch them as they're constructed, so order matters
 		m_context.Add<Selection>();
 		m_toasts   = m_context.Add<Toasts>();
-		m_reloader = m_context.Add<Reloader>();
-		m_reloader->Register(&renderer);  // recompiles shaders and rebuilds pipelines
 
 		// Scan content and reconcile the manifest before any panel can query it
 		AssetDatabase* database = m_context.Add<AssetDatabase>(m_config.EngineSource, m_config.ProjectSource);
@@ -132,9 +129,9 @@ namespace koi::editor
 
 		// Hot-reload commands | Requested here, run before the next frame records
 		m_commands->Register({ .Id = "reload.changed", .Label = "Reload Changed Shaders", .Icon = ICON_FA_ARROWS_ROTATE, .Shortcut = ImGuiKey_F5,
-			.Execute = [this] { m_reloader->Request({ .Scope = ReloadScope::Changed }); } });
+			.Execute = [this] { m_pendingShaderReload = false; } });
 		m_commands->Register({ .Id = "reload.all", .Label = "Reload All Shaders", .Icon = ICON_FA_ARROWS_ROTATE, .Shortcut = ImGuiMod_Shift | ImGuiKey_F5,
-			.Execute = [this] { m_reloader->Request({ .Scope = ReloadScope::All }); } });
+			.Execute = [this] { m_pendingShaderReload = true; } });
 
 		m_commands->Register({ .Id = "palette.open", .Label = "Command Palette", .Icon = ICON_FA_MAGNIFYING_GLASS, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_K,
 			.Execute = [this] { m_commands->OpenPalette(); } });
@@ -227,7 +224,10 @@ namespace koi::editor
 		InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 
 		// Requested during the ImGui frame; runs here, before any command list is recording
-		m_reloader->Flush();
+		if (m_pendingShaderReload)
+		{
+			Engine::Get().GetSubsystem<Renderer>().ReloadShaders(*std::exchange(m_pendingShaderReload, std::nullopt));
+		}
 		m_context.Tick(dt);
 
 		m_viewportPanel->Update(dt, input);
