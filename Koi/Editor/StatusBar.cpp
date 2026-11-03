@@ -1,5 +1,6 @@
 #include "Koi/Editor/StatusBar.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
+#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <IconsFontAwesome6.h>
 #include <imgui.h>
@@ -47,12 +48,13 @@ namespace koi::editor
 			}
 
 			// Right-aligned group, measured first so it hugs the edge
-			std::array<Item, 2> right;
+			std::array<Item, 3> right;
 			size_t count = 0;
 			if (info.Importing)
 			{
 				right[count++] = { ICON_FA_SPINNER "  Importing", text };
 			}
+			right[count++] = { KOI_BUILD_MODE, text, "Koi " KOI_VERSION };
 			right[count++] = { std::format("{:.0f} fps", ImGui::GetIO().Framerate), text };
 
 			const f32 spacing = ImGui::GetStyle().ItemSpacing.x * 2.0f;

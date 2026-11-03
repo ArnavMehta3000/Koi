@@ -248,6 +248,7 @@ namespace koi::internal
 
 			// Only now is the project's [logging] table known; still single-threaded here
 			Logger::Configure(app->GetDesc().LogConfig);
+			KOI_LOG(Engine, Info, "Koi {} ({})", KOI_VERSION, KOI_BUILD_MODE);
 
 			if (desc.Adapter)
 			{

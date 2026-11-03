@@ -1,7 +1,7 @@
 #include "Koi/Engine/Assets/AssetFile.h"
 #include "Koi/Engine/Assets/MeshFile.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
-#include "Generated/Engine/EditorConfig.h"
+#include "Koi/Engine/Core/Config.h"
 #include <doctest/doctest.h>
 #include <array>
 

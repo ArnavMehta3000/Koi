@@ -29,20 +29,23 @@ target("Koi.Engine")
 	set_configdir(config_dir)
 	add_includedirs(base_config_dir, { public = true })
 	add_headerfiles(base_config_dir, { public = true })
+
 	set_configvar("ENGINE_DIR", path.unix(path.join(os.projectdir(), "Koi", "Engine")))
-	set_configvar("WITH_EDITOR", is_mode("editor-.*") and 1 or 0)
-	add_configfiles("$(projectdir)/Xmake/ConfigFiles/**.h.in")
+	set_configvar("BUILD_MODE", get_config("mode"))
+	set_configvar("DEBUG", is_mode(".*-debug") and 1 or 0)
+	set_configvar("PROFILING", is_mode(".*-profile") and 1 or 0)
+	add_configfiles("$(projectdir)/Xmake/ConfigFiles/Config.h.in")
 
 	if is_plat("windows") then
 		add_syslinks(
-		"user32",
-		"shell32",
-		"dwmapi",
-		"d3d12",
-		"dxgi",
-		"dxguid",
-		"d3dcompiler",
-		"dbghelp", { public = true })
+			"user32",
+			"shell32",
+			"dwmapi",
+			"d3d12",
+			"dxgi",
+			"dxguid",
+			"d3dcompiler",
+			"dbghelp", { public = true })
 	end
 
 	add_extrafiles("Content/Shaders/**.hlsl")

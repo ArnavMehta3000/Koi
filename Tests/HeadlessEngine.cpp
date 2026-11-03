@@ -1,7 +1,7 @@
 #include "HeadlessEngine.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Generated/Engine/EditorConfig.h"
+#include "Koi/Engine/Core/Config.h"
 #include <memory>
 
 namespace

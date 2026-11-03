@@ -1,6 +1,6 @@
-// This file contains the LogLevel generated config and the LogLevel enum  + string conversion
+// LogLevel enum + string conversion; the compile-time floor KOI_LOG_LEVEL comes from Config.h
 #pragma once
-#include "Generated/Engine/LogLevel.h"  // Xmake generated config file
+#include "Koi/Engine/Core/Config.h"
 #include <string_view>
 
 namespace koi

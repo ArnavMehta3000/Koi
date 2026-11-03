@@ -25,7 +25,6 @@ includes("Xmake/Rules.lua")
 
 add_cxxflags("/utf-8", { public = true })
 
-add_defines("KOI_ENABLE_PROFILING=" .. (is_mode(".*-profile") and "1" or "0"))
 if is_mode(".*-profile") then
 	add_defines("TRACY_ENABLE")
 end

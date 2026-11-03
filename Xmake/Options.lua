@@ -8,10 +8,7 @@ option("LogLevel")
         3 - warn
         4 - error]])
 
-    set_configvar("LOG_LEVEL", -1)
     after_check(function(option)
-       if option:enabled() then
-            option:set("configvar", "LOG_LEVEL", option:value())
-        end
+        option:set("configvar", "LOG_LEVEL", option:value())
     end)
 option_end()

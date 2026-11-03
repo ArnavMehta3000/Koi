@@ -41,7 +41,7 @@ xmake f -m game-release
 xmake
 ```
 
-Every mode writes a PDB and has its own build directory. In profile modes, `KOI_ENABLE_PROFILING` and `TRACY_ENABLE` are on, and `xmake koi tracy` opens the matching Tracy viewer.
+Every mode writes a PDB and has its own build directory. In profile modes, `KOI_PROFILING` and `TRACY_ENABLE` are on, and `xmake koi tracy` opens the matching Tracy viewer.
 
 ### Options
 
