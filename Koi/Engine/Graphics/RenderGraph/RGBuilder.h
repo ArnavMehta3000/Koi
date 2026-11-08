@@ -19,6 +19,8 @@ namespace koi
 	public:
 		void Read(RGTexture texture);
 		[[nodiscard]] RGTexture Write(RGTexture texture);
+		void Read(RGBuffer buffer);
+		[[nodiscard]] RGBuffer Write(RGBuffer buffer);
 
 		// Bound as a render target; returns the version the pass produces
 		[[nodiscard]] RGTexture ColorTarget(RGTexture texture, LoadOp load = LoadOp::Load, const Color& clear = Color(0.0f, 0.0f, 0.0f, 1.0f));

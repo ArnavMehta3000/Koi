@@ -7,7 +7,7 @@ namespace koi
 {
 	class GfxDevice;
 
-	// Render-graph textures, recycled by desc across frames
+	// Render-graph textures and buffers, recycled by desc across frames
 	class TransientPool : NonCopyable
 	{
 	public:
@@ -15,28 +15,43 @@ namespace koi
 		void Shutdown();
 
 		[[nodiscard]] TextureHandle Acquire(const TextureDesc& desc);
+		[[nodiscard]] BufferHandle  Acquire(const BufferDesc& desc);
 		void Release(TextureHandle texture);
+		void Release(BufferHandle buffer);
 
-		// Destroys textures nothing has acquired for a while
+		// Destroys resources nothing has acquired for a while
 		void EndFrame();
 
-		[[nodiscard]] inline size_t GetTextureCount() const noexcept { return m_entries.size(); }
+		[[nodiscard]] inline size_t GetTextureCount() const noexcept { return m_textures.size(); }
+		[[nodiscard]] inline size_t GetBufferCount()  const noexcept { return m_buffers.size();  }
 
 	private:
-		[[nodiscard]] static bool Matches(const TextureDesc& a, const TextureDesc& b) noexcept;
-
-	private:
+		template <typename D, typename H>
 		struct Entry
 		{
-			TextureDesc   Desc;  // DebugName cleared, it would dangle
-			std::string   Name;
-			TextureHandle Texture;
-			u64           LastUsedFrame = 0;
-			bool          InUse         = false;
+			D           Desc;  // DebugName cleared, it would dangle
+			std::string Name;
+			H           Resource;
+			u64         LastUsedFrame = 0;
+			bool        InUse         = false;
 		};
 
-		GfxDevice*         m_device = nullptr;
-		std::vector<Entry> m_entries;
-		u64                m_frame  = 0;
+		using TextureEntry = Entry<TextureDesc, TextureHandle>;
+		using BufferEntry  = Entry<BufferDesc, BufferHandle>;
+
+		template <typename E, typename D>
+		[[nodiscard]] auto AcquireFrom(std::vector<E>& entries, const D& desc);
+
+		template <typename E, typename H>
+		static void ReleaseFrom(std::vector<E>& entries, H handle);
+
+		template <typename E>
+		void Evict(std::vector<E>& entries);
+
+	private:
+		GfxDevice*                m_device = nullptr;
+		std::vector<TextureEntry> m_textures;
+		std::vector<BufferEntry>  m_buffers;
+		u64                       m_frame  = 0;
 	};
 }

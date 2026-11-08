@@ -27,6 +27,20 @@ namespace koi
 		return m_graph.Declare(m_passIndex, texture, RenderGraph::Access::ShaderWrite);
 	}
 
+	void RGBuilder::Read(RGBuffer buffer)
+	{
+		if (buffer)
+		{
+			std::ignore = m_graph.Declare(m_passIndex, buffer, RenderGraph::Access::ShaderRead);
+		}
+	}
+
+	RGBuffer RGBuilder::Write(RGBuffer buffer)
+	{
+		if (!buffer) return {};
+		return m_graph.Declare(m_passIndex, buffer, RenderGraph::Access::ShaderWrite);
+	}
+
 	RGTexture RGBuilder::ColorTarget(RGTexture texture, LoadOp load, const Color& clear)
 	{
 		if (!texture) return {};
@@ -68,6 +82,23 @@ namespace koi
 		return tex ? tex->UAVIndex : INVALID_DESCRIPTOR;
 	}
 
+	BufferHandle PassContext::Buffer(RGBuffer buffer) const
+	{
+		return m_graph.Resolve(buffer);
+	}
+
+	DescriptorIndex PassContext::SRV(RGBuffer buffer) const
+	{
+		const koi::Buffer* buf = m_graph.GetDevice().Get(m_graph.Resolve(buffer));
+		return buf ? buf->SRVIndex : INVALID_DESCRIPTOR;
+	}
+
+	DescriptorIndex PassContext::UAV(RGBuffer buffer) const
+	{
+		const koi::Buffer* buf = m_graph.GetDevice().Get(m_graph.Resolve(buffer));
+		return buf ? buf->UAVIndex : INVALID_DESCRIPTOR;
+	}
+
 	bool PassContext::Bind(const std::expected<BoundPipeline, PipelineError>& pipeline)
 	{
 		if (!pipeline) return false;
@@ -105,6 +136,7 @@ namespace koi
 	void RenderGraph::Reset()
 	{
 		m_resources.clear();
+		m_buffers.clear();
 		m_passes.clear();
 		m_uses.clear();
 		m_blackboard.Clear();
@@ -146,9 +178,41 @@ namespace koi
 		return m_resources[texture.Index].Desc;
 	}
 
+	RGBuffer RenderGraph::CreateBuffer(const BufferDesc& desc, std::string_view name)
+	{
+		KOI_ASSERT(desc.Stride > 0 && desc.Size >= desc.Stride, "Graph buffers are structured: give them a stride");
+
+		BufferResource& r = m_buffers.emplace_back(BufferResource{ .Name = Intern(name), .Desc = desc });
+		r.Desc.Usage    |= BufferUsage::Storage;
+		r.Desc.Memory    = MemoryUsage::GpuOnly;
+		r.Desc.DebugName = {};
+		return { .Index = static_cast<u16>(m_buffers.size() - 1) };
+	}
+
+	RGBuffer RenderGraph::ImportBuffer(BufferHandle buffer, std::string_view name)
+	{
+		const koi::Buffer* buf = m_device->Get(buffer);
+		if (!buf) return {};
+
+		BufferResource& r = m_buffers.emplace_back(BufferResource{ .Name = Intern(name), .Desc = buf->Desc, .Buffer = buffer, .Imported = true });
+		r.Desc.DebugName = {};
+		return { .Index = static_cast<u16>(m_buffers.size() - 1) };
+	}
+
+	const BufferDesc& RenderGraph::GetDesc(RGBuffer buffer) const
+	{
+		KOI_ASSERT(buffer.Index < m_buffers.size(), "Invalid graph buffer");
+		return m_buffers[buffer.Index].Desc;
+	}
+
 	TextureHandle RenderGraph::Resolve(RGTexture texture) const
 	{
 		return texture && texture.Index < m_resources.size() ? m_resources[texture.Index].Texture : TextureHandle();
+	}
+
+	BufferHandle RenderGraph::Resolve(RGBuffer buffer) const
+	{
+		return buffer && buffer.Index < m_buffers.size() ? m_buffers[buffer.Index].Buffer : BufferHandle();
 	}
 
 	u32 RenderGraph::BeginPass(std::string_view name)
@@ -162,11 +226,7 @@ namespace koi
 		KOI_ASSERT(texture.Index < m_resources.size(), "Invalid graph texture");
 		Resource& r = m_resources[texture.Index];
 		KOI_ASSERT(texture.Version == r.Version, "Pass uses a stale version of a graph texture");
-
-		Pass& pass = m_passes[passIndex];
-		KOI_ASSERT(pass.FirstUse + pass.UseCount == m_uses.size(), "Uses must be declared during the pass's own setup");
-		m_uses.push_back({ texture, access });
-		++pass.UseCount;
+		PushUse(passIndex, { .Index = texture.Index, .Version = texture.Version, .Access = access });
 
 		// Shader read or depth/render target
 		const TextureUsage needed = access == Access::ShaderRead  ? TextureUsage::ShaderRead
@@ -186,6 +246,34 @@ namespace koi
 
 		++r.Version;
 		return { .Index = texture.Index, .Version = r.Version };
+	}
+
+	RGBuffer RenderGraph::Declare(u32 passIndex, RGBuffer buffer, Access access)
+	{
+		KOI_ASSERT(buffer.Index < m_buffers.size(), "Invalid graph buffer");
+		BufferResource& r = m_buffers[buffer.Index];
+		KOI_ASSERT(buffer.Version == r.Version, "Pass uses a stale version of a graph buffer");
+		KOI_ASSERT(access == Access::ShaderRead || access == Access::ShaderWrite, "Buffers are only read or written by shaders");
+		PushUse(passIndex, { .Index = buffer.Index, .Version = buffer.Version, .Access = access, .IsBuffer = true });
+
+		if (r.Imported)
+		{
+			const bool uavReady = r.Desc.Usage.Has(BufferUsage::Storage) && r.Desc.Memory == MemoryUsage::GpuOnly;
+			KOI_ASSERT(access == Access::ShaderRead || uavReady, "Imported buffer was not created for shader writes");
+		}
+
+		if (access == Access::ShaderRead) return buffer;
+
+		++r.Version;
+		return { .Index = buffer.Index, .Version = r.Version };
+	}
+
+	void RenderGraph::PushUse(u32 passIndex, const Use& use)
+	{
+		Pass& pass = m_passes[passIndex];
+		KOI_ASSERT(pass.FirstUse + pass.UseCount == m_uses.size(), "Uses must be declared during the pass's own setup");
+		m_uses.push_back(use);
+		++pass.UseCount;
 	}
 
 	void RenderGraph::BindTargets(CommandList& cmd, const Pass& pass)
@@ -248,18 +336,45 @@ namespace koi
 			r.Texture        = m_pool.Acquire(desc);
 		}
 
+		for (BufferResource& r : m_buffers)
+		{
+			if (r.Imported) continue;
+
+			BufferDesc desc = r.Desc;
+			desc.DebugName  = r.Name;
+			r.Buffer        = m_pool.Acquire(desc);
+		}
+
+		// Back-to-back UAV writes need a UAV barrier, a transition would be a no-op
+		const auto barrier = [&](auto handle, auto* resource, D3D12_RESOURCE_STATES state)
+		{
+			if (resource && state == D3D12_RESOURCE_STATE_UNORDERED_ACCESS && resource->CurrentState == state)
+			{
+				cmd.UAVBarrier(handle);
+			}
+			cmd.TransitionBarrier(handle, state);
+		};
+
 		for (Pass& pass : m_passes)
 		{
 			KOI_GPU_ZONE_TRANSIENT(cmd, passZone, pass.Name);
 
 			for (const Use& use : UsesOf(pass))
 			{
-				const TextureHandle texture = m_resources[use.Texture.Index].Texture;
 				const D3D12_RESOURCE_STATES state = use.Access == Access::ShaderRead  ? kShaderRead
 				                                  : use.Access == Access::ShaderWrite ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 				                                  : use.Access == Access::ColorTarget ? D3D12_RESOURCE_STATE_RENDER_TARGET
 				                                  :                                     D3D12_RESOURCE_STATE_DEPTH_WRITE;
-				cmd.TransitionBarrier(texture, state);
+				if (use.IsBuffer)
+				{
+					const BufferHandle buffer = m_buffers[use.Index].Buffer;
+					barrier(buffer, m_device->Get(buffer), state);
+				}
+				else
+				{
+					const TextureHandle texture = m_resources[use.Index].Texture;
+					barrier(texture, m_device->Get(texture), state);
+				}
 			}
 			cmd.FlushBarriers();
 
@@ -282,6 +397,13 @@ namespace koi
 				m_pool.Release(r.Texture);
 			}
 		}
+		for (const BufferResource& r : m_buffers)
+		{
+			if (!r.Imported && r.Buffer)
+			{
+				m_pool.Release(r.Buffer);
+			}
+		}
 		m_pool.EndFrame();
 		Reset();
 	}
@@ -298,14 +420,14 @@ namespace koi
 		for (u32 i = first; i < first + count; ++i)
 		{
 			const Use use = m_uses[i];
-			if (use.Access == Access::ShaderRead) continue;
+			if (use.Access == Access::ShaderRead || use.IsBuffer) continue;
 
 			const RGTexture written
 			{
-				.Index = use.Texture.Index,
-				.Version = static_cast<u16>(use.Texture.Version + 1)
+				.Index = use.Index,
+				.Version = static_cast<u16>(use.Version + 1)
 			};
-			m_observer->OnWrite(*this, m_resources[use.Texture.Index].Name, written);
+			m_observer->OnWrite(*this, m_resources[use.Index].Name, written);
 		}
 		m_notifying = false;
 	}
@@ -320,10 +442,10 @@ namespace koi
 			info.Writes.clear();
 			for (const Use& use : UsesOf(pass))
 			{
-				if (use.Access == Access::ShaderRead) continue;
+				if (use.Access == Access::ShaderRead || use.IsBuffer) continue;
 
-				const Resource& r = m_resources[use.Texture.Index];
-				info.Writes.push_back({ .Name = r.Name, .Version = static_cast<u16>(use.Texture.Version + 1), .Texture = r.Texture });
+				const Resource& r = m_resources[use.Index];
+				info.Writes.push_back({ .Name = r.Name, .Version = static_cast<u16>(use.Version + 1), .Texture = r.Texture });
 			}
 		}
 	}

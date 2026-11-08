@@ -22,6 +22,9 @@ namespace koi
 		[[nodiscard]] TextureHandle Texture(RGTexture texture) const;
 		[[nodiscard]] DescriptorIndex SRV(RGTexture texture) const;
 		[[nodiscard]] DescriptorIndex UAV(RGTexture texture) const;
+		[[nodiscard]] BufferHandle Buffer(RGBuffer buffer) const;
+		[[nodiscard]] DescriptorIndex SRV(RGBuffer buffer) const;
+		[[nodiscard]] DescriptorIndex UAV(RGBuffer buffer) const;
 
 		template <RootConstantBlock T>
 		inline void SetRootConstants(const T& constants)

@@ -409,6 +409,24 @@ namespace koi
 				},
 			};
 			m_device->CreateShaderResourceView(buf.Resource.Get(), &srvDesc, m_resourceHeap.CpuHandle(buf.SRVIndex));
+
+			if (desc.Memory == MemoryUsage::GpuOnly)
+			{
+				buf.UAVIndex = m_resourceHeap.Allocate();
+
+				D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc
+				{
+					.Format        = DXGI_FORMAT_UNKNOWN,
+					.ViewDimension = D3D12_UAV_DIMENSION_BUFFER,
+					.Buffer =
+					{
+						.FirstElement        = 0,
+						.NumElements         = srvDesc.Buffer.NumElements,
+						.StructureByteStride = desc.Stride,
+					},
+				};
+				m_device->CreateUnorderedAccessView(buf.Resource.Get(), nullptr, &uavDesc, m_resourceHeap.CpuHandle(buf.UAVIndex));
+			}
 		}
 
 		// Bindless: CBV so the buffer is addressable via ResourceDescriptorHeap[] as ConstantBuffer<T>.

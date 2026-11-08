@@ -52,17 +52,28 @@ namespace koi
 
 		struct Resource
 		{
-			std::string_view Name;  // interned
+			std::string_view Name;
 			TextureDesc   Desc;
 			TextureHandle Texture;
 			u16           Version = 0;
 			bool          Imported = false;
 		};
 
+		struct BufferResource
+		{
+			std::string_view Name;
+			BufferDesc   Desc;
+			BufferHandle Buffer;
+			u16          Version = 0;
+			bool         Imported = false;
+		};
+
 		struct Use
 		{
-			RGTexture Texture;
-			Access    Access;
+			u16    Index   = 0;
+			u16    Version = 0;
+			Access Access;
+			bool   IsBuffer = false;
 		};
 
 		struct Attachment
@@ -98,6 +109,11 @@ namespace koi
 		[[nodiscard]] RGTexture ImportTexture(TextureHandle texture, std::string_view name);
 		[[nodiscard]] const TextureDesc& GetDesc(RGTexture texture) const;
 
+		// Always structured buffer, R+W from shaders. Contents start undefined
+		[[nodiscard]] RGBuffer CreateBuffer(const BufferDesc& desc, std::string_view name);
+		[[nodiscard]] RGBuffer ImportBuffer(BufferHandle buffer, std::string_view name);
+		[[nodiscard]] const BufferDesc& GetDesc(RGBuffer buffer) const;
+
 		template <PassKind Kind, std::invocable<RGBuilder&> Setup, std::invocable<typename Kind::Context&> Exec>
 		void AddPass(std::string_view name, Setup&& setup, Exec&& exec)
 		{
@@ -127,6 +143,7 @@ namespace koi
 		void Execute(CommandList& cmd);
 
 		[[nodiscard]] TextureHandle Resolve(RGTexture texture) const;
+		[[nodiscard]] BufferHandle Resolve(RGBuffer buffer) const;
 		[[nodiscard]] inline RGBlackboard& GetBlackboard() noexcept { return m_blackboard; }
 		[[nodiscard]] inline const RGInspection& GetInspection() const noexcept { return m_inspection; }
 		[[nodiscard]] inline GfxDevice& GetDevice() const noexcept { return *m_device; }
@@ -139,6 +156,8 @@ namespace koi
 		[[nodiscard]] std::span<const Use> UsesOf(const Pass& pass) const { return { m_uses.data() + pass.FirstUse, pass.UseCount }; }
 		[[nodiscard]] u32 BeginPass(std::string_view name);
 		[[nodiscard]] RGTexture Declare(u32 passIndex, RGTexture texture, Access access);
+		[[nodiscard]] RGBuffer Declare(u32 passIndex, RGBuffer buffer, Access access);
+		void PushUse(u32 passIndex, const Use& use);
 		void BindTargets(CommandList& cmd, const Pass& pass);
 		[[nodiscard]] TargetFormats FormatsOf(const Pass& pass) const;
 		void Inspect();
@@ -149,6 +168,7 @@ namespace koi
 		PipelineCache*                     m_pipelines = nullptr;
 		TransientPool                      m_pool;
 		std::vector<Resource>              m_resources;
+		std::vector<BufferResource>        m_buffers;
 		std::vector<Pass>                  m_passes;
 		std::vector<Use>                   m_uses;
 		std::set<std::string, std::less<>> m_names;

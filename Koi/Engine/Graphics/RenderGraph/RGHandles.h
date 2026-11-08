@@ -19,4 +19,5 @@ namespace koi
 	};
 
 	using RGTexture = RGHandle<struct RGTextureTag>;
+	using RGBuffer  = RGHandle<struct RGBufferTag>;
 }
