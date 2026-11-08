@@ -117,7 +117,7 @@ Xmake fetches everything. Each package uses a recipe in `Xmake/Packages/` that w
 | `box3d` | Physics (just being wired up) |
 | `tracy-profiler`, `tracy-tools` | Profiling (the tools only install in profile modes) |
 | `directxtex` | Texture import and BC compression (editor only) |
-| `fastgltf` (+ `simdjson`) | glTF import (editor only) |
+| `fastgltf` (+ `simdjson`, `simdutf`) | glTF import (editor only) |
 | `stb` | Image loading (editor only) |
 
 Kept in `External/` and built from source:

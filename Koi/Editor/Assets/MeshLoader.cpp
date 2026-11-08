@@ -175,8 +175,8 @@ namespace koi::editor
 			sub.IndexOffset = static_cast<u32>(allIndices.size());
 			sub.MaterialIndex = static_cast<i32>(primitive.materialIndex.value_or(-1));
 
-			fastgltf::Attribute* posAccessor = primitive.findAttribute("POSITION");
-			if (!posAccessor || posAccessor == primitive.attributes.end())
+			auto posAccessor = primitive.findAttribute("POSITION");
+			if (posAccessor == primitive.attributes.end())
 			{
 				KOI_LOG(Import, Warn, "Primitive in mesh '{}' has no POSITION attribute, skipping", mesh.Name);
 				continue;
@@ -196,7 +196,7 @@ namespace koi::editor
 				});
 
 			// Normals
-			if (fastgltf::Attribute* normAttr = primitive.findAttribute("NORMAL"); normAttr != primitive.attributes.end())
+			if (auto normAttr = primitive.findAttribute("NORMAL"); normAttr != primitive.attributes.end())
 			{
 				fastgltf::Accessor& acc = Asset->accessors[normAttr->accessorIndex];
 				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(*Asset, acc,
@@ -211,7 +211,7 @@ namespace koi::editor
 			}
 
 			// UV
-			if (fastgltf::Attribute* uvAttr = primitive.findAttribute("TEXCOORD_0"); uvAttr != primitive.attributes.end())
+			if (auto uvAttr = primitive.findAttribute("TEXCOORD_0"); uvAttr != primitive.attributes.end())
 			{
 				fastgltf::Accessor& acc = Asset->accessors[uvAttr->accessorIndex];
 				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(*Asset, acc,
@@ -227,7 +227,7 @@ namespace koi::editor
 
 			// Tangent
 			bool hasTangent = false;
-			if (fastgltf::Attribute* tanAttr = primitive.findAttribute("TANGENT"); tanAttr != primitive.attributes.end())
+			if (auto tanAttr = primitive.findAttribute("TANGENT"); tanAttr != primitive.attributes.end())
 			{
 				fastgltf::Accessor& acc = Asset->accessors[tanAttr->accessorIndex];
 				fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec4>(*Asset, acc,
@@ -404,14 +404,14 @@ namespace koi::editor
 			// the same GPU texture instead of a second copy
 			auto& uri = std::get<fastgltf::sources::URI>(gltfImage.data);
 
-			if (uri.fileByteOffset != 0 || !uri.uri.isLocalPath())
+			if (uri.fileByteOffset != 0 || !uri.uri->isLocalPath())
 			{
-				throw std::runtime_error(std::format("image {} isn't a plain local file", uri.uri.string()));
+				throw std::runtime_error(std::format("image {} isn't a plain local file", uri.uri->string()));
 			}
 
 			// Using virtual path to prevent texture loading process try to query from VFS path
-			img.Path = VirtualBase + "/" + uri.uri.fspath().generic_string();
-			img.Name = uri.uri.fspath().filename().string();
+			img.Path = VirtualBase + "/" + uri.uri->fspath().generic_string();
+			img.Name = uri.uri->fspath().filename().string();
 		}
 		else
 		{
