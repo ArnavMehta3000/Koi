@@ -162,5 +162,6 @@ namespace koi
 		Register<MaterialComponentType>();
 		Register<ComponentType<CameraComponent>>(20);
 		Register<ComponentType<Light>>(30);
+		Register<ComponentType<PostProcess>>(40);
 	}
 }

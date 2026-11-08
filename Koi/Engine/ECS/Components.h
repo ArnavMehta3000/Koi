@@ -37,6 +37,17 @@ namespace koi
 		bool Primary = true;     // the camera the world renders from
 	};
 
+	struct AutoExposureSettings
+	{
+		bool Enabled              = true;
+		f32  MinLogLuminance      = -8.0f;
+		f32  MaxLogLuminance      = 4.0f;
+		f32  KeyValue             = 0.18f;  // the average luminance the frame is exposed to
+		f32  ExposureCompensation = 0.0f;   // EV
+
+		bool operator==(const AutoExposureSettings&) const = default;
+	};
+
 	// Values match the TONEMAPPER_* constants in Shaders/Interop/PostProcess.hlsli
 	enum class Tonemapper : u8
 	{
@@ -54,6 +65,16 @@ namespace koi
 
 		bool operator==(const TonemapSettings&) const = default;
 	};
+
+	struct PostProcess
+	{
+		static constexpr std::string_view kKey = "post_process";
+		static constexpr bool kReflect = true;
+
+		AutoExposureSettings AutoExposure;
+		TonemapSettings      Tonemap;
+	};
+
 	enum class LightType : u8
 	{
 		Directional,

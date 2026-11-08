@@ -21,6 +21,7 @@ namespace koi
 
 	class EntityBuilder;
 	class ISystem;
+	struct PostProcess;
 
 	class World
 	{
@@ -68,6 +69,9 @@ namespace koi
 		// Null if the world has no primary camera
 		[[nodiscard]] const Camera* ResolveCamera(f32 aspect);
 		[[nodiscard]] const GPUMesh* GetMesh(MeshHandle handle) const;
+
+		// The first PostProcess component in query order, else default
+		[[nodiscard]] const PostProcess& ResolvePostProcess() const;
 
 
 	private:
