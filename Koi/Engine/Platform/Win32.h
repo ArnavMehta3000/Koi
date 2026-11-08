@@ -1,7 +1,7 @@
 // Custom & cleaner Windows.h
 #pragma once
 
-#include <SdkDdkVer.h>
+#include <sdkddkver.h>
 
 // Major Win32 'type-stripping' defines are written in the xmake (applied project-wide)
 #include <Windows.h>

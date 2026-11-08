@@ -1,5 +1,5 @@
 #pragma once
-#include <Tracy/tracy/Tracy.hpp>
+#include <tracy/tracy/Tracy.hpp>
 #include "Koi/Engine/Diagnostics/FrameStats.h"
 
 namespace koi

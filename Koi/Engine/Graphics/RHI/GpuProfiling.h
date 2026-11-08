@@ -2,7 +2,7 @@
 #include "Koi/Engine/Graphics/RHI/DX12Common.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/GpuTimers.h"
-#include <Tracy/tracy/TracyD3D12.hpp>
+#include <tracy/tracy/TracyD3D12.hpp>
 
 // GPU timestamp zones on the graphics queue, for Tracy and the editor Profiler. `cmd` is a koi::CommandList
 #define KOI_GPU_ZONE(cmd, name) \

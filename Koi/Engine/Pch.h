@@ -22,6 +22,6 @@
 #include <dxgi1_6.h>
 
 #include <spdlog/logger.h>
-#include <Tracy/tracy/Tracy.hpp>
+#include <tracy/tracy/Tracy.hpp>
 #include <flecs.h>
 #include <toml++/toml.hpp>

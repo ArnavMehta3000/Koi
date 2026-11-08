@@ -946,10 +946,15 @@ namespace koi
 		ZoneScoped;
 
 		ComPtr<ID3D12DeviceRemovedExtendedDataSettings2> dredSettings;
-		DX_CHECK(::D3D12GetDebugInterface(IID_PPV_ARGS(&dredSettings)));
-
-		dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-		dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+		if (SUCCEEDED(::D3D12GetDebugInterface(IID_PPV_ARGS(&dredSettings))))
+		{
+			dredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+			dredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+		}
+		else
+		{
+			KOI_LOG(RHI, Warn, "DRED unavailable; device-removed reports won't have breadcrumbs");
+		}
 
 		KOI_LOG(RHI, Debug, "Creating D3D12 device");
 		static constexpr D3D_FEATURE_LEVEL MIN_FEATURE_LEVEL = D3D_FEATURE_LEVEL_11_0;

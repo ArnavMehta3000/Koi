@@ -38,7 +38,8 @@ namespace koi
 		};
 
 	public:
-		explicit Engine(const Desc& desc = {});
+		Engine() : Engine(Desc{}) {}
+		explicit Engine(const Desc& desc);
 		~Engine();
 
 		[[nodiscard]] static Engine& Get() { return *s_instance; }

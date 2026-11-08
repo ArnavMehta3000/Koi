@@ -24,7 +24,7 @@ namespace koi
 		static ShaderCompiler& Get();
 
 		// When outIncludes is given, it receives every file resolved through #include during this compile, in the order DXC asked for them
-		ComPtr<IDxcBlob> CompileFromFile(const fs::path& filePath, const Args& args = {}, std::vector<fs::path>* outIncludes = nullptr, ShaderInfo* outInfo = nullptr);
+		ComPtr<IDxcBlob> CompileFromFile(const fs::path& filePath, const Args& args, std::vector<fs::path>* outIncludes = nullptr, ShaderInfo* outInfo = nullptr);
 
 		// From a reflection blob: a .refl file (dxc -Fre) or DXC_OUT_REFLECTION
 		[[nodiscard]] ShaderInfo Reflect(std::span<const byte> reflection) const;
