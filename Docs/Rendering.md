@@ -2,7 +2,7 @@
 
 The `Renderer` runs a **pipeline**: an ordered list of **features**. Every frame, each feature records passes into a **render graph**. The graph creates temporary textures, inserts barriers, binds render targets and then executes the passes.
 
-The engine's default is `DeferredPipeline::Build`: Shadow → GBuffer → Lighting → Tonemap → Grid → DebugDraw → Blit. The source for each one is in `Koi/Engine/Graphics/RenderPasses/`.
+The engine's default is `DeferredPipeline::Build`: Shadow → GBuffer → Lighting → AutoExposure → Tonemap → Grid → DebugDraw → Blit. The source for each one is in `Koi/Engine/Graphics/RenderPasses/`.
 
 ## Swapping the pipeline
 
@@ -46,6 +46,7 @@ Features never point at each other. They share data through the graph's blackboa
 | `GBufferData` | GBuffer | Albedo, normals, material |
 | `SceneDepth` | GBuffer | D32 depth |
 | `SceneColor` | Lighting | Lit HDR color |
+| `ExposureData` | AutoExposure | One-float buffer the tonemapper scales `SceneColor` by. Missing when auto exposure is off |
 | `DisplayColor` | Tonemap | Tonemapped LDR color. Overlays draw on this, and Blit copies it to the output |
 
 Use `bb.TryGet<T>()` for data that might be missing, `bb.Get<T>()` when it must be there, and `bb.Add(T{...})` to publish your own. Any struct works as an entry, so you can define your own types to pass between your features.
@@ -87,14 +88,15 @@ What you can declare in setup:
 
 | | |
 |---|---|
-| `b.Read(tex)` | Read in a shader (SRV) |
-| `b.Write(tex)` | Write from a compute shader (UAV) |
+| `b.Read(tex)` / `b.Read(buf)` | Read in a shader (SRV) |
+| `b.Write(tex)` / `b.Write(buf)` | Write from a compute shader (UAV) |
+| `b.CopyFrom(buf)` | Copy out of it in execute, e.g. into a readback buffer |
 | `b.ColorTarget(tex, load, clear)` | Render target for a raster pass |
 | `b.DepthTarget(tex, load, clearDepth)` | Depth target for a raster pass |
 
-Make new textures with `graph.CreateTexture(desc, name)`. The graph allocates them for the frame and reuses the memory afterwards. To bring in a texture you own, use `graph.ImportTexture`.
+Make new textures with `graph.CreateTexture(desc, name)` and buffers with `graph.CreateBuffer(desc, name)`. The graph allocates them for the frame and reuses the memory afterwards. Graph buffers are always structured (set a `Stride`) and start with undefined contents, so clear them in a pass first. To bring in a resource you own, use `graph.ImportTexture` / `graph.ImportBuffer`. Two writes in a row to the same resource get a UAV barrier between them automatically.
 
-In execute, `ctx.SRV(tex)` and `ctx.UAV(tex)` give you bindless descriptor indices to put in your root constants. Raster passes draw with `Draw` / `DrawIndexed`, and compute passes use `Dispatch`.
+In execute, `ctx.SRV(res)` and `ctx.UAV(res)` give you bindless descriptor indices to put in your root constants. Raster passes draw with `Draw` / `DrawIndexed`, and compute passes use `Dispatch`. `ctx.CopyBuffer(dst, offset, buf, size)` copies a `CopyFrom` buffer into one the graph doesn't track; `AutoExposurePass` uses it to read its histogram back for the editor.
 
 ## Pipelines and shaders
 
@@ -121,6 +123,17 @@ Shaders go in your project's `Content/Shaders/Shaders.json` (see [Shaders](Shade
 
 F5 in the editor recompiles changed shaders and rebuilds their pipelines, so you don't need to restart.
 
+## Post-process settings
+
+Settings that belong to the scene live in the `PostProcess` component, one nested struct per effect (`AutoExposure`, `Tonemap`). A feature reads them with `world.ResolvePostProcess()`: the first `PostProcess` in the world wins, and without one the struct defaults apply. There are no project-level settings; a scene that wants different values adds the component:
+
+```toml
+[entity.post_process.tonemap]
+operator = 'AgX'  # ACES | AgX | PBRNeutral | Hable | Reinhard | None
+```
+
+A new effect adds its own struct to `PostProcess` (give it an `operator==` for undo) and a section to `PostProcessInspector`.
+
 ## Exposing settings to the editor
 
-Give your feature a settings struct with `kKey` and `kReflect = true`. An editor panel can then draw it with `utils::DrawReflected` and save it with `Serializer<T>`. `GridPass::Settings` and `Koi/Editor/Panels/GridPanel.cpp` are a full example. See [Editor extensions](EditorExtensions.md).
+For editor-only settings that aren't scene content, give your feature a settings struct with `kKey` and `kReflect = true`. An editor panel can then draw it with `utils::DrawReflected` and save it with `Serializer<T>`. `GridPass::Settings` and `Koi/Editor/Panels/GridPanel.cpp` are a full example. See [Editor extensions](EditorExtensions.md).
