@@ -37,7 +37,7 @@ namespace koi
 
 		DisplayColor* color = bb.TryGet<DisplayColor>();
 		SceneDepth*   depth = bb.TryGet<SceneDepth>();
-		if (!m_settings.Enabled || !color || !depth) return;
+		if (!m_settings.Enabled || !view.Flags.Has(ViewFlags::Grid) || !color || !depth) return;
 
 		graph.AddPass<RasterPass>("Grid",
 			[&](RGBuilder& b)

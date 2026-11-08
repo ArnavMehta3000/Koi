@@ -380,8 +380,10 @@ namespace koi::editor
 		// Game view swaps the camera but keeps the same viewport texture. The scene
 		// camera tracks the panel's aspect itself, so only the game one is projected here
 		const Camera* camera = &m_viewportPanel->GetCamera();
+		EnumFlag<ViewFlags> flags = ViewFlags::Grid;
 		if (m_viewportPanel->IsGameCamera())
 		{
+			flags.Unset(ViewFlags::Grid);
 			const f32 aspect = static_cast<f32>(target->Width) / static_cast<f32>(target->Height);
 
 			// No primary camera in the world yet
@@ -389,7 +391,7 @@ namespace koi::editor
 				camera = gameCamera;
 		}
 
-		return RenderView{ .Camera = camera, .Target = *target };
+		return RenderView{ .Camera = camera, .Target = *target, .Flags = flags };
 	}
 
 	void EditorApp::OnOverlayRender(CommandList& cmd)

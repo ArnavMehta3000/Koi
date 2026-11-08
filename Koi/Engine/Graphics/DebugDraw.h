@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Content/Shaders/Interop/DebugDraw.hlsli"
 #include "Koi/Engine/Math/Transform.h"
 #include <span>
@@ -31,11 +32,20 @@ namespace koi
 	{
 		[[nodiscard]] DebugDrawQueue& Queue();
 
+#if KOI_DEBUG_DRAW
 		inline void Line(const Vector3& a, const Vector3& b, const Color& color)   { Queue().Line(a, b, color); }
 		inline void Box(const BoundingBox& box, const Color& color)                { Queue().Box(box, color); }
 		inline void Box(const BoundingOrientedBox& box, const Color& color)        { Queue().Box(box, color); }
 		inline void Sphere(const Vector3& c, f32 radius, const Color& color)       { Queue().Sphere(c, radius, color); }
 		inline void Frustum(const Matrix& viewProjection, const Color& color)      { Queue().Frustum(viewProjection, color); }
 		inline void Axes(const Transform& transform, f32 length = 1.0f)            { Queue().Axes(transform, length); }
+#else
+		inline void Line(const Vector3&, const Vector3&, const Color&)             {}
+		inline void Box(const BoundingBox&, const Color&)                          {}
+		inline void Box(const BoundingOrientedBox&, const Color&)                  {}
+		inline void Sphere(const Vector3&, f32, const Color&)                      {}
+		inline void Frustum(const Matrix&, const Color&)                           {}
+		inline void Axes(const Transform&, f32 = 1.0f)                             {}
+#endif
 	}
 }

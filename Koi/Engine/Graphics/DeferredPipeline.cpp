@@ -37,19 +37,23 @@ namespace koi
 
 		features.Add<TonemapPass>();
 
+#if KOI_WITH_EDITOR
 		// Over the tonemapped image, under the debug lines
 		features.Add<GridPass>(GridPass::Config
 		{
 			.Device    = &renderer.GetDevice(),
 			.Resources = &renderer.GetDefaultResources(),
 		});
+#endif
 
+#if KOI_DEBUG_DRAW
 		features.Add<DebugDrawPass>(DebugDrawPass::Config
 		{
 			.Device    = &renderer.GetDevice(),
 			.Resources = &renderer.GetDefaultResources(),
 			.Queue     = &renderer.GetDebugDraw(),
 		});
+#endif
 
 		features.Add<BlitPass>();
 	}
