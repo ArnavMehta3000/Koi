@@ -37,6 +37,23 @@ namespace koi
 		bool Primary = true;     // the camera the world renders from
 	};
 
+	// Values match the TONEMAPPER_* constants in Shaders/Interop/PostProcess.hlsli
+	enum class Tonemapper : u8
+	{
+		ACES,
+		AgX,
+		PBRNeutral,
+		Hable,
+		Reinhard,
+		None,  // clamped, for checking exposure on its own
+	};
+
+	struct TonemapSettings
+	{
+		Tonemapper Operator = Tonemapper::ACES;
+
+		bool operator==(const TonemapSettings&) const = default;
+	};
 	enum class LightType : u8
 	{
 		Directional,

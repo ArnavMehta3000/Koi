@@ -14,6 +14,6 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	if (id.x >= width || id.y >= height)
 		return;
 
-	float3 hdr = hdrTex.Load(int3(id.xy, 0)).rgb;
-	ldrTex[id.xy] = float4(LinearToSRGB(ACES(hdr)), 1.0);
+	float3 hdr = hdrTex.Load(int3(id.xy, 0)).rgb * exposure;
+	ldrTex[id.xy] = float4(LinearToSRGB(Tonemap(hdr, g_root.Operator)), 1.0);
 }

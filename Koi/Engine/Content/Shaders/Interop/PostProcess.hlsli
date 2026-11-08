@@ -4,6 +4,13 @@
 
 KOI_INTEROP_BEGIN
 
+static const u32 TONEMAPPER_ACES        = 0;
+static const u32 TONEMAPPER_AGX         = 1;
+static const u32 TONEMAPPER_PBR_NEUTRAL = 2;
+static const u32 TONEMAPPER_HABLE       = 3;
+static const u32 TONEMAPPER_REINHARD    = 4;
+static const u32 TONEMAPPER_NONE        = 5;
+
 struct TonemapRootConstants
 {
 	DescriptorIndex HDRTextureIndex;  // SRV
