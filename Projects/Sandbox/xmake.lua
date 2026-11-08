@@ -1,6 +1,5 @@
 target("Sandbox")
 	add_rules("KoiGame")
-	set_default(false)
 	add_files("Source/**.cpp")
 	add_headerfiles("Source/**.h")
 target_end()

@@ -55,5 +55,5 @@ Koi/Editor/         editor code
 Xmake/              modes, options, rules, package recipes
 Plugins/Koi/        the `xmake koi` plugin and the project template
 External/           vendored libraries
-Samples/, Projects/ games
+Projects/           games
 ```

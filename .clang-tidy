@@ -15,4 +15,4 @@ Checks: >
   modernize-use-equals-delete,
   modernize-use-emplace,
   misc-redundant-expression
-HeaderFilterRegex: '.*[\\/](Koi[\\/](Engine|Editor)|Samples|Projects|Launcher)[\\/].*'
+HeaderFilterRegex: '.*[\\/](Koi[\\/](Engine|Editor)|Projects|Launcher)[\\/].*'

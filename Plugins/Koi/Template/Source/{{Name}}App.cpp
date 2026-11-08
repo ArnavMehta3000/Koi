@@ -9,7 +9,7 @@ std::unique_ptr<koi::AppBase> koi::AppBase::Create([[maybe_unused]] koi::Command
 
 void {{Name}}App::OnRegisterComponents()
 {
-	// Register game components here (see Samples/Sandbox/Source/Components)
+	// Register game components here (see Projects/Sandbox/Source/Components)
 }
 
 void {{Name}}App::OnInit()

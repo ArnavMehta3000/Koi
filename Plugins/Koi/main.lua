@@ -4,15 +4,13 @@ import("core.project.project")
 
 local template_dir = path.join(os.scriptdir(), "Template")
 
--- Every <dir>/<Name>/<Name>.koi.toml under Samples/ and Projects/
+-- Every Projects/<Name>/<Name>.koi.toml
 local function discover()
 	local found = {}
-	for _, group in ipairs({ "Samples", "Projects" }) do
-		for _, marker in ipairs(os.files(path.join(os.projectdir(), group, "*", "*.koi.toml"))) do
-			local name = path.basename(marker):gsub("%.koi$", "")
-			if name == path.filename(path.directory(marker)) then
-				table.insert(found, { name = name, group = group, dir = path.directory(marker) })
-			end
+	for _, marker in ipairs(os.files(path.join(os.projectdir(), "Projects", "*", "*.koi.toml"))) do
+		local name = path.basename(marker):gsub("%.koi$", "")
+		if name == path.filename(path.directory(marker)) then
+			table.insert(found, { name = name, dir = path.directory(marker) })
 		end
 	end
 	return found
@@ -25,7 +23,7 @@ local function cmd_list()
 		return
 	end
 	for _, p in ipairs(projects) do
-		cprint("  ${bright}%-20s${clear} %s/  ${dim}%s", p.name, p.group, p.dir)
+		cprint("  ${bright}%-20s${clear} ${dim}%s", p.name, p.dir)
 	end
 end
 

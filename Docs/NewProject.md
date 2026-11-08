@@ -9,9 +9,9 @@ The name must be a valid identifier (letters, digits, underscores) and can't mat
 
 ## How projects are found
 
-A project is any `Samples/<Name>/` or `Projects/<Name>/` folder that holds a `<Name>.koi.toml`, where the folder name and the file name match. The root `xmake.lua` finds those files and includes each project's `xmake.lua`. The engine never refers to a game by name.
+A project is any `Projects/<Name>/` folder that holds a `<Name>.koi.toml`, where the folder name and the file name match. The root `xmake.lua` finds those files and includes each project's `xmake.lua`. The engine never refers to a game by name.
 
-`Projects/` is gitignored, so your game can be its own repo inside it. A plain `xmake` builds `Projects/` but skips `Samples/`. Build a sample by name: `xmake build Sandbox`.
+A plain `xmake` builds every project. `Sandbox` is where engine features are tried out, one scene each; make a new project only for a separate game or something that needs its own setup. Build one by name: `xmake build Sandbox`.
 
 ## What you get
 
@@ -34,7 +34,7 @@ The first build adds `.koi/` (logs, crash dumps, editor layout, cooked output). 
 - `Editor/` builds only in `editor-*` modes. Inspectors and panels go here and register through `KOI_EDITOR_EXTENSION`. See [Editor extensions](EditorExtensions.md).
 - `Content/` is mounted at `project://Content/...`. Drop glTFs and images onto the editor to import them. See [Assets](Assets.md).
 
-`AppBase` has hooks to override: `OnRegisterComponents`, `OnRegisterSystems`, `OnInit`, `OnTick`, `OnRender`, `OnBeginPlay`, `OnEndPlay` and `OnShutdown`. Register components and systems in their own hooks, not in `OnInit`. [Components](Components.md) walks through a full component: the struct, its registration and its system. `Samples/Sandbox` has working examples, and [Customization](Customization.md) lists everything else a game can change.
+`AppBase` has hooks to override: `OnRegisterComponents`, `OnRegisterSystems`, `OnInit`, `OnTick`, `OnRender`, `OnBeginPlay`, `OnEndPlay` and `OnShutdown`. Register components and systems in their own hooks, not in `OnInit`. [Components](Components.md) walks through a full component: the struct, its registration and its system. `Projects/Sandbox` has working examples, and [Customization](Customization.md) lists everything else a game can change.
 
 ## The project file
 

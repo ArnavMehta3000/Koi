@@ -20,7 +20,7 @@ cd Koi
 xmake run Sandbox        # builds and launches Sandbox-Editor.exe
 ```
 
-A plain `xmake` builds the engine and your own projects in `Projects/`. It skips the samples, so build those by name.
+A plain `xmake` builds the engine and every project in `Projects/`.
 Run `GenerateProjectFiles.bat` to generate a Visual Studio solution.
 
 ## Build modes
@@ -59,7 +59,7 @@ No exe needs arguments. The optional flags are `-p <project.toml>`, `--d3ddebug`
 
 ## Projects
 
-A project is any folder `Samples/<Name>/` or `Projects/<Name>/` that holds a `<Name>.koi.toml`. Xmake finds it from that file. `Samples/` is tracked in this repo. `Projects/` is where I am testing a dummy Subway Surfers style game (meant to be gitignored)
+A project is any folder `Projects/<Name>/` that holds a `<Name>.koi.toml`. Xmake finds it from that file. `Sandbox` is the testbed for engine features, one scene per feature; `Surf` is a small Subway Surfers style game.
 
 ```sh
 xmake koi new MyGame     # scaffold Projects/MyGame from Plugins/Koi/Template
