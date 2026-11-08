@@ -37,10 +37,11 @@ Import   = "Debug"
 Cook     = "Info"
 
 [scenes]
-startup = "Main"
+startup = "PostProcess"
 
 [scenes.list]
-Main = "project://Content/Scenes/Main.scene.toml"
+Main        = "project://Content/Scenes/Main.scene.toml"
+PostProcess = "project://Content/Scenes/PostProcess.scene.toml"
 
 [input]
 stick_deadzone = 0.2

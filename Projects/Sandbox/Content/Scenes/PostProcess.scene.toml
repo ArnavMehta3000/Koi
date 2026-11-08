@@ -1,0 +1,63 @@
+[[entity]]
+name = 'Sponza'
+
+    [entity.mesh]
+    id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
+
+    [entity.transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Camera'
+
+    [entity.camera]
+    far = 100.0
+    fov_y = 0.826169
+    near = 0.05
+    primary = true
+
+    [entity.transform]
+    position = [ -8.7, 1.35, -0.3 ]
+    rotation = [ 0.0, 0.707107, 0.0, -0.707107 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Sun'
+
+    [entity.light]
+    casts_shadows = true
+    color = [ 1.0, 0.927912, 0.877451 ]
+    intensity = 2.8
+    range = 0.0
+    shadow_bias = 0.0015
+    shadow_extent = 16.5
+    type = 'Directional'
+
+    [entity.spin]
+    axis = [ 0.5, 1.0, 0.0 ]
+    speed = 90.0
+
+    [entity.transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ -0.130167, 0.731659, 0.642978, -0.185235 ]
+    scale = [ 0.999996, 0.999993, 0.999991 ]
+
+[[entity]]
+name = 'Post Process'
+
+    [entity.post_process.auto_exposure]
+    enabled = false
+    exposure_compensation = 0.0
+    key_value = 0.2
+    max_log_luminance = 2.0
+    min_log_luminance = -7.15
+
+    [entity.post_process.tonemap]
+    operator = 'PBRNeutral'
+
+    [entity.transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
