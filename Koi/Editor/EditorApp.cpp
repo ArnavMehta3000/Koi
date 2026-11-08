@@ -115,6 +115,8 @@ namespace koi::editor
 			.Execute = [this] { SaveScene(); } });
 		m_commands->Register({ .Id = "file.cook", .Label = "Cook", .Icon = ICON_FA_BOX,
 			.Execute = [this] { Cook(); } });
+		m_commands->Register({ .Id = "file.exit", .Label = "Exit", .Icon = ICON_FA_RIGHT_FROM_BRACKET,
+			.Execute = [] { Engine::Get().RequestExit(); } });
 
 		const auto canEdit = [] { return Engine::Get().GetPlayState() == PlayState::Edit && !ImGui::GetIO().WantTextInput; };
 
@@ -445,6 +447,8 @@ namespace koi::editor
 		{
 			m_commands->MenuItem("file.save");
 			m_commands->MenuItem("file.cook");
+			ImGui::Separator();
+			m_commands->MenuItem("file.exit");
 			ImGui::EndMenu();
 		}
 
