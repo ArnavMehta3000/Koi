@@ -47,6 +47,23 @@ TEST_CASE("Light keys are snake_case and enums round-trip")
 	CHECK(out.CastsShadows);
 }
 
+TEST_CASE("PostProcess nests settings as subtables and fills missing keys")
+{
+	const PostProcess in{ .AutoExposure = { .Enabled = false, .ExposureCompensation = -1.5f } };
+	const toml::table saved = Serializer<PostProcess>::Serialize(in);
+	REQUIRE(saved["auto_exposure"].is_table());
+	CHECK(saved["auto_exposure"]["exposure_compensation"].value<double>() == doctest::Approx(-1.5));
+
+	CHECK(RoundTrip(in).AutoExposure == in.AutoExposure);
+	CHECK(RoundTrip(PostProcess{ .Tonemap = { .Operator = Tonemapper::AgX } }).Tonemap.Operator == Tonemapper::AgX);
+
+	const toml::table partial = toml::parse("[auto_exposure]\nkey_value = 0.25\n");
+	const std::optional<PostProcess> loaded = Serializer<PostProcess>::Deserialize(partial);
+	REQUIRE(loaded);
+	CHECK(loaded->AutoExposure.KeyValue == 0.25f);
+	CHECK(loaded->AutoExposure.MinLogLuminance == AutoExposureSettings{}.MinLogLuminance);
+}
+
 TEST_CASE("Missing keys fall back to field defaults")
 {
 	const toml::table partial{ { "intensity", 5.0 } };

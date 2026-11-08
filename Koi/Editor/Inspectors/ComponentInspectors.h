@@ -42,4 +42,10 @@ namespace koi::editor
 	public:
 		void Draw(Entity e) override;
 	};
+
+	class PostProcessInspector final : public ComponentInspector<PostProcess>
+	{
+	public:
+		void Draw(Entity e) override;
+	};
 }

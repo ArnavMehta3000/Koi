@@ -1,5 +1,7 @@
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
+#include "Koi/Editor/Inspectors/ReflectInspector.h"
 #include "Koi/Editor/UI/Widgets.h"
+#include "Koi/Engine/Graphics/RenderPasses/AutoExposurePass.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
@@ -9,6 +11,9 @@
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
+#include <algorithm>
+#include <array>
+#include <cmath>
 #include <filesystem>
 #include <numbers>
 #include <optional>
@@ -22,6 +27,37 @@ namespace koi::editor
 
 		AssetCache<GPUMesh>&  Meshes()    { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
 		AssetCache<Material>& Materials() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>(); }
+
+		// Bins 1..N-1 as bars (bin 0 is the excluded black pixels), with a line at the average the exposure targets
+		void DrawExposureHistogram(const AutoExposurePass::Stats& stats)
+		{
+			constexpr u32 kBars = HISTOGRAM_BIN_COUNT - 1;
+			std::array<f32, kBars> bars{};
+			f32 peak = 1.0f;
+			for (u32 i = 0; i < kBars; ++i)
+			{
+				bars[i] = static_cast<f32>(stats.Bins[i + 1]);
+				peak    = std::max(peak, bars[i]);
+			}
+
+			const ImVec2 size(ImGui::GetContentRegionAvail().x, 90.0f);
+			ImGui::PlotHistogram("##histogram", bars.data(), static_cast<int>(kBars), 0, nullptr, 0.0f, peak, size);
+
+			const AutoExposureSettings& s = stats.Settings;
+			const f32 range   = std::max(s.MaxLogLuminance - s.MinLogLuminance, 0.01f);
+			const f32 target  = s.KeyValue * std::exp2(s.ExposureCompensation);
+			const f32 avgLum  = target / std::max(stats.Exposure, 1e-6f);
+			const f32 t       = std::clamp((std::log2(avgLum) - s.MinLogLuminance) / range, 0.0f, 1.0f);
+
+			const ImVec2 min = ImGui::GetItemRectMin();
+			const ImVec2 max = ImGui::GetItemRectMax();
+			const f32    x   = min.x + (t * (kBars - 1) + 0.5f) / kBars * (max.x - min.x);
+			ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y), ImVec2(x, max.y), ImGui::GetColorU32(ImGuiCol_PlotLinesHovered), 2.0f);
+			ImGui::SetItemTooltip("Log luminance from %.1f to %.1f. The line is the frame's average", s.MinLogLuminance, s.MaxLogLuminance);
+
+			ImGui::TextDisabled("Exposure x%.3f (%+.2f EV)   Avg luminance %.4f   Black pixels %u",
+				stats.Exposure, std::log2(std::max(stats.Exposure, 1e-6f)), avgLum, stats.Bins[0]);
+		}
 
 		// A property row holding an asset slot; returns the dropped path when it is the right kind
 		static std::optional<std::string> AssetRow(const char* label, std::string_view current, AssetKind kind)
@@ -177,6 +213,55 @@ namespace koi::editor
 				ImGui::DragFloat("##ShadowExtent", &light->ShadowExtent, 0.5f, 0.0f, 10000.0f, "%.1f");
 			}
 		}
+
+		utils::EndPropertyGrid();
+	}
+
+	void PostProcessInspector::Draw(Entity e)
+	{
+		PostProcess* post = e.try_get_mut<PostProcess>();
+		if (!post) return;
+
+		ImGui::SeparatorText("Auto Exposure");
+		if (!utils::BeginPropertyGrid("##autoexposure")) return;
+
+		AutoExposureSettings& ae = post->AutoExposure;
+		utils::PropertyLabel("Enabled", "Off leaves the image at exposure 1");
+		ImGui::Checkbox("##Enabled", &ae.Enabled);
+
+		ImGui::BeginDisabled(!ae.Enabled);
+		utils::PropertyLabel("Min Log Luminance", "Darker pixels are left out of the average");
+		ImGui::DragFloat("##MinLog", &ae.MinLogLuminance, 0.05f, -20.0f, ae.MaxLogLuminance - 0.1f, "%.2f EV");
+		utils::PropertyLabel("Max Log Luminance", "Brighter pixels count as this bright");
+		ImGui::DragFloat("##MaxLog", &ae.MaxLogLuminance, 0.05f, ae.MinLogLuminance + 0.1f, 20.0f, "%.2f EV");
+		utils::PropertyLabel("Key Value", "The average luminance the frame is exposed to. 0.18 is middle grey");
+		ImGui::DragFloat("##Key", &ae.KeyValue, 0.005f, 0.01f, 1.0f, "%.3f");
+		utils::PropertyLabel("Compensation");
+		ImGui::DragFloat("##Compensation", &ae.ExposureCompensation, 0.05f, -10.0f, 10.0f, "%+.2f EV");
+		ImGui::EndDisabled();
+		utils::EndPropertyGrid();
+
+		if (ae.Enabled)
+		{
+			if (AutoExposurePass* pass = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<AutoExposurePass>())
+			{
+				pass->RequestStats();
+				if (auto stats = pass->GetStats(); stats.Valid)
+				{
+					DrawExposureHistogram(stats);
+				}
+				else
+				{
+					ImGui::TextDisabled("Waiting for the GPU...");
+				}
+			}
+		}
+
+		ImGui::SeparatorText("Tonemapping");
+		if (!utils::BeginPropertyGrid("##tonemap")) return;
+
+		utils::PropertyLabel("Operator", "None clamps, to judge exposure on its own");
+		utils::DrawReflectedEnum("##Operator", post->Tonemap.Operator);
 
 		utils::EndPropertyGrid();
 	}
