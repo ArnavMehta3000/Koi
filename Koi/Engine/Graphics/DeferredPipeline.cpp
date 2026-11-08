@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/DeferredPipeline.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Graphics/RenderPasses/AutoExposurePass.h"
 #include "Koi/Engine/Graphics/RenderPasses/BlitPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/DebugDrawPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
@@ -35,6 +36,10 @@ namespace koi
 			.Resources = &renderer.GetDefaultResources(),
 		});
 
+		features.Add<AutoExposurePass>(AutoExposurePass::Config
+		{
+			.Device = &renderer.GetDevice(),
+		});
 		features.Add<TonemapPass>();
 
 #if KOI_WITH_EDITOR

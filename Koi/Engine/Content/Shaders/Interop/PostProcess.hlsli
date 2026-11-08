@@ -15,8 +15,34 @@ struct TonemapRootConstants
 {
 	DescriptorIndex HDRTextureIndex;  // SRV
 	DescriptorIndex LDRTextureIndex;  // UAV
+	DescriptorIndex ExposureIndex;    // SRV, one float; INVALID_DESCRIPTOR = exposure 1
+	u32             Operator;         // TONEMAPPER_*
 };
-KOI_CHECK_SIZE(TonemapRootConstants, 8);
+KOI_CHECK_SIZE(TonemapRootConstants, 16);
+
+// Bin 0 holds pixels darker than MinLogLuminance and stays out of the average
+static const u32 HISTOGRAM_BIN_COUNT = 256;
+
+struct HistogramRootConstants
+{
+	DescriptorIndex HDRTextureIndex;  // SRV
+	DescriptorIndex HistogramIndex;   // UAV
+	f32             MinLogLuminance;
+	f32             InvLogLuminanceRange;
+};
+KOI_CHECK_SIZE(HistogramRootConstants, 16);
+
+struct ExposureRootConstants
+{
+	DescriptorIndex HistogramIndex;  // SRV
+	DescriptorIndex ExposureIndex;   // UAV
+	f32             MinLogLuminance;
+	f32             LogLuminanceRange;
+	f32             PixelCount;
+	f32             KeyValue;
+	f32             ExposureCompensation;  // EV
+};
+KOI_CHECK_SIZE(ExposureRootConstants, 28);
 
 struct BlitRootConstants
 {

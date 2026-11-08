@@ -10,9 +10,11 @@
 		{ "source": "LightingVS.hlsl" },
 		{ "source": "LightingPS.hlsl" },
 		{ "source": "ShadowVS.hlsl" },
-		{ "source": "TonemapVS.hlsl" },
-		{ "source": "TonemapPS.hlsl" },
+		{ "source": "FullscreenVS.hlsl" },
 		{ "source": "TonemapCS.hlsl" },
+		{ "source": "HistogramClearCS.hlsl" },
+		{ "source": "HistogramBuildCS.hlsl" },
+		{ "source": "ExposureReduceCS.hlsl" },
 		{ "source": "BlitPS.hlsl" }
 	]
 }

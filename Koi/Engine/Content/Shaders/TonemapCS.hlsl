@@ -14,6 +14,13 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	if (id.x >= width || id.y >= height)
 		return;
 
+	float exposure = 1.0;
+	if (g_root.ExposureIndex != INVALID_DESCRIPTOR)
+	{
+		StructuredBuffer<float> exposureBuf = ResourceDescriptorHeap[g_root.ExposureIndex];
+		exposure = exposureBuf[0];
+	}
+
 	float3 hdr = hdrTex.Load(int3(id.xy, 0)).rgb * exposure;
 	ldrTex[id.xy] = float4(LinearToSRGB(Tonemap(hdr, g_root.Operator)), 1.0);
 }
