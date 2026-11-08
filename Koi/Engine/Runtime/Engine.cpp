@@ -176,6 +176,12 @@ namespace koi
 			Tick(host);
 			EndFrame();
 			FrameMark;
+
+			if (m_desc.Timeout > 0.0 && m_timer.GetTotalTime() >= m_desc.Timeout)
+			{
+				KOI_LOG(Engine, Info, "--timeout {}s reached, exiting", m_desc.Timeout);
+				RequestExit();
+			}
 		}
 	}
 }

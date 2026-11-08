@@ -36,6 +36,7 @@ target("Koi.Engine")
 	set_configvar("PROFILING", is_mode(".*-profile") and 1 or 0)
 	set_configvar("WITH_EDITOR", is_mode("editor-.*") and 1 or 0)
 	set_configvar("DEBUG_DRAW", is_mode("game-release") and 0 or 1)
+	set_configvar("RELEASE", is_mode("game-release") and 1 or 0)
 	add_configfiles("$(projectdir)/Xmake/ConfigFiles/Config.h.in")
 
 	if is_plat("windows") then

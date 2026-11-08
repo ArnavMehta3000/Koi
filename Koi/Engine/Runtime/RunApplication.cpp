@@ -234,7 +234,8 @@ namespace koi::internal
 			Engine engine(Engine::Desc
 			{
 				.D3DDebug      = cmd->IsD3DDebugEnabled(),
-				.GpuValidation = cmd->IsGpuValidationEnabled()
+				.GpuValidation = cmd->IsGpuValidationEnabled(),
+				.Timeout       = cmd->GetTimeout(),
 			});
 
 			KOI_LOG(Engine, Debug, "Creating application instance");

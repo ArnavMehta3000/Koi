@@ -6,6 +6,7 @@
 #define KOI_DEBUG      ${DEBUG}
 #define KOI_PROFILING  ${PROFILING}
 #define KOI_LOG_LEVEL  ${LOG_LEVEL}
+#define KOI_RELEASE    ${RELEASE}
 
 #define KOI_WITH_EDITOR ${WITH_EDITOR}
 #define KOI_DEBUG_DRAW  ${DEBUG_DRAW}

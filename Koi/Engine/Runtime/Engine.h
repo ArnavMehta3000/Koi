@@ -35,6 +35,7 @@ namespace koi
 			bool D3DDebug      = false;
 			bool GpuValidation = false;
 			bool Headless      = false;
+			f64  Timeout       = 0.0;  // seconds until RequestExit, 0 = never
 		};
 
 	public:
