@@ -8,7 +8,7 @@ namespace koi
 	{
 		constexpr RasterPipeline kBlit
 		{
-			.VertexShader = "engine://Content/Shaders/TonemapVS",  // the full-screen triangle
+			.VertexShader = "engine://Content/Shaders/FullscreenVS",
 			.PixelShader  = "engine://Content/Shaders/BlitPS",
 			.Rasterizer   = RasterizerDesc::CullNone(),
 			.DepthStencil = DepthStencilDesc::None(),

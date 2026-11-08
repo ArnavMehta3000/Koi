@@ -29,6 +29,11 @@ namespace koi
 		RGTexture Color;
 	};
 
+	struct ExposureData
+	{
+		RGBuffer Exposure;  // one float the tonemapper scales SceneColor by
+	};
+
 	struct DisplayColor  // tonemapped LDR; overlays draw on it
 	{
 		RGTexture Color;
