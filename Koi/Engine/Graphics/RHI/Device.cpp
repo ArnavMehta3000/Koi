@@ -389,6 +389,10 @@ namespace koi
 			CD3DX12_RANGE readRange(0, 0);
 			DX_CHECK(buf.Resource->Map(0, &readRange, &buf.MappedPtr));
 		}
+		else if (desc.Memory == MemoryUsage::GpuToCpu)
+		{
+			DX_CHECK(buf.Resource->Map(0, nullptr, &buf.MappedPtr));
+		}
 
 		// Bindless: structured-buffer SRV so the buffer is addressable via ResourceDescriptorHeap[]
 		if (desc.Usage.Has(BufferUsage::Storage) && desc.Stride > 0)

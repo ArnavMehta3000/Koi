@@ -41,6 +41,14 @@ namespace koi
 		return m_graph.Declare(m_passIndex, buffer, RenderGraph::Access::ShaderWrite);
 	}
 
+	void RGBuilder::CopyFrom(RGBuffer buffer)
+	{
+		if (buffer)
+		{
+			(void)m_graph.Declare(m_passIndex, buffer, RenderGraph::Access::CopySource);
+		}
+	}
+
 	RGTexture RGBuilder::ColorTarget(RGTexture texture, LoadOp load, const Color& clear)
 	{
 		if (!texture) return {};
@@ -97,6 +105,11 @@ namespace koi
 	{
 		const koi::Buffer* buf = m_graph.GetDevice().Get(m_graph.Resolve(buffer));
 		return buf ? buf->UAVIndex : INVALID_DESCRIPTOR;
+	}
+
+	void PassContext::CopyBuffer(BufferHandle dst, u64 dstOffset, RGBuffer src, u64 size)
+	{
+		m_cmd.CopyBuffer(dst, dstOffset, m_graph.Resolve(src), 0, size);
 	}
 
 	bool PassContext::Bind(const std::expected<BoundPipeline, PipelineError>& pipeline)
@@ -253,16 +266,16 @@ namespace koi
 		KOI_ASSERT(buffer.Index < m_buffers.size(), "Invalid graph buffer");
 		BufferResource& r = m_buffers[buffer.Index];
 		KOI_ASSERT(buffer.Version == r.Version, "Pass uses a stale version of a graph buffer");
-		KOI_ASSERT(access == Access::ShaderRead || access == Access::ShaderWrite, "Buffers are only read or written by shaders");
+		KOI_ASSERT(access == Access::ShaderRead || access == Access::ShaderWrite || access == Access::CopySource, "Buffers are read, written or copied from");
 		PushUse(passIndex, { .Index = buffer.Index, .Version = buffer.Version, .Access = access, .IsBuffer = true });
 
 		if (r.Imported)
 		{
 			const bool uavReady = r.Desc.Usage.Has(BufferUsage::Storage) && r.Desc.Memory == MemoryUsage::GpuOnly;
-			KOI_ASSERT(access == Access::ShaderRead || uavReady, "Imported buffer was not created for shader writes");
+			KOI_ASSERT(access != Access::ShaderWrite || uavReady, "Imported buffer was not created for shader writes");
 		}
 
-		if (access == Access::ShaderRead) return buffer;
+		if (access != Access::ShaderWrite) return buffer;
 
 		++r.Version;
 		return { .Index = buffer.Index, .Version = r.Version };
@@ -364,6 +377,7 @@ namespace koi
 				const D3D12_RESOURCE_STATES state = use.Access == Access::ShaderRead  ? kShaderRead
 				                                  : use.Access == Access::ShaderWrite ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 				                                  : use.Access == Access::ColorTarget ? D3D12_RESOURCE_STATE_RENDER_TARGET
+				                                  : use.Access == Access::CopySource  ? D3D12_RESOURCE_STATE_COPY_SOURCE
 				                                  :                                     D3D12_RESOURCE_STATE_DEPTH_WRITE;
 				if (use.IsBuffer)
 				{

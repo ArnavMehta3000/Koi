@@ -26,6 +26,9 @@ namespace koi
 		[[nodiscard]] DescriptorIndex SRV(RGBuffer buffer) const;
 		[[nodiscard]] DescriptorIndex UAV(RGBuffer buffer) const;
 
+		// src must be declared with CopyFrom; dst is a buffer the graph does not track
+		void CopyBuffer(BufferHandle dst, u64 dstOffset, RGBuffer src, u64 size);
+
 		template <RootConstantBlock T>
 		inline void SetRootConstants(const T& constants)
 		{

@@ -48,7 +48,7 @@ namespace koi
 	{
 		friend class RGBuilder;
 
-		enum class Access : u8 { ShaderRead, ShaderWrite, ColorTarget, DepthTarget };
+		enum class Access : u8 { ShaderRead, ShaderWrite, ColorTarget, DepthTarget, CopySource };
 
 		struct Resource
 		{
