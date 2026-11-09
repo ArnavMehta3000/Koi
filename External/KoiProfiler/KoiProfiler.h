@@ -61,6 +61,9 @@
 	#define IMGUI_DEFINE_MATH_OPERATORS // must come before the first imgui.h include
 #endif
 #include "imgui.h"
+#if IMGUI_VERSION_NUM < 19300
+	#error "KoiProfiler requires Dear ImGui 1.93.0 or newer (AddLineH, AddLineV and the 1.92.8 AddRect/PathStroke signatures)"
+#endif
 #ifndef KOI_PROFILER_NO_SETTINGS
 	#include "imgui_internal.h" // imgui.ini settings handler
 #endif
@@ -1121,8 +1124,8 @@ namespace koi::prof
 			}
 			if (BudgetTime > 0.0f && BudgetTime <= maxTime)
 			{
-				const float budgetY = std::floor(pos.y + size.y - BudgetTime / maxTime * size.y) + 0.5f;
-				drawList->AddLine(ImVec2(pos.x, budgetY), ImVec2(pos.x + size.x, budgetY), internal::ScaleAlpha(Style.BudgetColor, 0.5f));
+				const float budgetY = std::floor(pos.y + size.y - BudgetTime / maxTime * size.y);
+				drawList->AddLineH(pos.x, pos.x + size.x, budgetY, internal::ScaleAlpha(Style.BudgetColor, 0.5f));
 			}
 			for (size_t pointIndex = 0; pointIndex < count; pointIndex++)
 			{
@@ -1131,7 +1134,7 @@ namespace koi::prof
 				const float y = pos.y + size.y - std::min(value / maxTime, 1.0f) * size.y;
 				drawList->PathLineTo(ImVec2(x, y));
 			}
-			drawList->PathStroke(color, ImDrawFlags_None, 1.0f);
+			drawList->PathStroke(color, 1.0f);
 		}
 #endif
 
@@ -1822,7 +1825,7 @@ namespace koi::prof
 				}
 				else
 				{
-					drawList->AddLine(ImVec2(graphPos.x + 1.0f, y), ImVec2(graphPos.x + graphSize.x - 1.0f, y), lineColor);
+					drawList->AddLineH(graphPos.x + 1.0f, graphPos.x + graphSize.x - 1.0f, y, lineColor);
 				}
 			}
 		}
@@ -1900,7 +1903,8 @@ namespace koi::prof
 				const float budgetY = graphPos.y + graphSize.y - 1.0f - BudgetTime * pixelsPerSecond;
 				if (budgetY > graphPos.y)
 				{
-					drawList->AddLine(ImVec2(graphPos.x + 1.0f, budgetY), ImVec2(graphPos.x + graphSize.x - 1.0f, budgetY), Style.BudgetColor, Style.BudgetThickness);
+					// Centered half a pixel below the budget edge, as AddLine drew it before 1.93
+					drawList->AddLineH(graphPos.x + 1.0f, graphPos.x + graphSize.x - 1.0f, budgetY + 0.5f, Style.BudgetColor, Style.BudgetThickness, ImDrawFlags_StrokeCenter);
 				}
 				else
 				{
@@ -1931,7 +1935,7 @@ namespace koi::prof
 					continue;
 				}
 				const uint32_t color = m_markers[markerIndex].Color != 0 ? m_markers[markerIndex].Color : Style.MarkerColor;
-				drawList->AddLine(ImVec2(x, graphPos.y + 1.0f), ImVec2(x, graphPos.y + graphSize.y - 1.0f), color);
+				drawList->AddLineV(x, graphPos.y + 1.0f, graphPos.y + graphSize.y - 1.0f, color);
 				drawList->AddTriangleFilled(ImVec2(x, graphPos.y + 1.0f), ImVec2(x + flagSize * 2.0f, graphPos.y + 1.0f + flagSize), ImVec2(x, graphPos.y + 1.0f + flagSize * 2.0f), color);
 			}
 		}
@@ -1992,8 +1996,8 @@ namespace koi::prof
 
 				ImVec2 leftMin = legendPos + ImVec2(Style.LegendLeftMarkerMargin, legendSize.y);
 				ImVec2 leftMax = leftMin + ImVec2(Style.LegendLeftMarkerWidth, 0.0f);
-				leftMin.y -= task.Start * pixelsPerSecond;
-				leftMax.y -= task.End * pixelsPerSecond;
+				leftMin.y = std::round(leftMin.y - task.Start * pixelsPerSecond); // whole pixels; ImGui 1.93 anti-aliases fractional rects
+				leftMax.y = std::round(leftMax.y - task.End * pixelsPerSecond);
 
 				const ImVec2 rightMin = legendPos + ImVec2(Style.LegendLeftMarkerMargin + Style.LegendLeftMarkerWidth + Style.LegendMarkerLinkWidth, legendSize.y - Style.LegendRightMarkerMargin - (Style.LegendRightMarkerHeight + Style.LegendRightMarkerSpacing) * float(entry.OnScreenIndex));
 				const ImVec2 rightMax = rightMin + ImVec2(Style.LegendRightMarkerWidth, -Style.LegendRightMarkerHeight);
@@ -2037,8 +2041,8 @@ namespace koi::prof
 
 		static void RenderTaskMarker(ImDrawList* drawList, ImVec2 leftMin, ImVec2 leftMax, ImVec2 rightMin, ImVec2 rightMax, uint32_t color)
 		{
-			drawList->AddRectFilled(leftMin, leftMax, color);
-			drawList->AddRectFilled(rightMin, rightMax, color);
+			drawList->AddRectFilled(ImVec2(leftMin.x, leftMax.y), ImVec2(leftMax.x, leftMin.y), color);
+			drawList->AddRectFilled(ImVec2(rightMin.x, rightMax.y), ImVec2(rightMax.x, rightMin.y), color);
 			const std::array<ImVec2, 4> points = {
 				ImVec2(leftMax.x, leftMin.y),
 				ImVec2(leftMax.x, leftMax.y),
@@ -3050,7 +3054,7 @@ namespace koi::prof
 			drawList->AddRectFilled(position, position + size, background, style.WindowRounding);
 			if (style.WindowBorderSize > 0.0f)
 			{
-				drawList->AddRect(position, position + size, ImGui::GetColorU32(ImGuiCol_Border), style.WindowRounding, ImDrawFlags_None, style.WindowBorderSize);
+				drawList->AddRect(position, position + size, ImGui::GetColorU32(ImGuiCol_Border), style.WindowRounding, style.WindowBorderSize);
 			}
 
 			const float valueX = position.x + style.WindowPadding.x + labelWidth + columnGap;
@@ -3567,15 +3571,15 @@ namespace koi::prof
 
 			if (frameBudget > 0.0f)
 			{
-				const float budgetY = std::floor(position.y + size.y - frameBudget / maxTime * size.y) + 0.5f;
-				drawList->AddLine(ImVec2(position.x, budgetY), ImVec2(position.x + size.x, budgetY), IM_COL32(255, 32, 32, 128));
+				const float budgetY = std::floor(position.y + size.y - frameBudget / maxTime * size.y);
+				drawList->AddLineH(position.x, position.x + size.x, budgetY, IM_COL32(255, 32, 32, 128));
 			}
 			for (size_t pointIndex = 0; pointIndex < count; pointIndex++)
 			{
 				const float x = position.x + size.x * float(pointIndex) / float(count - 1);
 				drawList->PathLineTo(ImVec2(x, position.y + size.y - frameTimeAt(pointIndex) / maxTime * size.y));
 			}
-			drawList->PathStroke(ImGui::GetColorU32(ImGuiCol_PlotLines), ImDrawFlags_None, 1.0f);
+			drawList->PathStroke(ImGui::GetColorU32(ImGuiCol_PlotLines), 1.0f);
 		}
 #endif
 
