@@ -22,7 +22,7 @@ namespace koi::editor
 		void OnDraw() override;
 
 	private:
-		prof::ProfilerWindow       m_window;
+		prof::ProfilerWindow       m_window{ { .Layout = prof::TrackLayout::SideBySide } };
 		std::vector<prof::Counter> m_counters;  // reused staging for LoadCounters
 	};
 }

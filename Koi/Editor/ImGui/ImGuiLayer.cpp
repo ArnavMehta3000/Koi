@@ -132,11 +132,8 @@ namespace koi::editor
 
 		// If there is no local layout file, load default from memory
 		const char* iniPath = io.IniFilename ? io.IniFilename : "imgui.ini";
-		if (std::error_code ec; !std::filesystem::exists(iniPath, ec))
-		{
-			const std::string_view layout = DefaultLayout();
-			ImGui::LoadIniSettingsFromMemory(layout.data(), layout.size());
-		}
+		std::error_code ec;
+		m_loadDefaultLayout = !std::filesystem::exists(iniPath, ec);
 
 		ImGui_ImplWin32_Init(window.GetNativeHandle());
 		m_window = &window;
@@ -188,6 +185,12 @@ namespace koi::editor
 		else
 		{
 			io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+		}
+
+		if (std::exchange(m_loadDefaultLayout, false))
+		{
+			const std::string_view layout = DefaultLayout();
+			ImGui::LoadIniSettingsFromMemory(layout.data(), layout.size());
 		}
 
 		{ ZoneScopedN("Backend DX12");  ImGui_ImplDX12_NewFrame(); }

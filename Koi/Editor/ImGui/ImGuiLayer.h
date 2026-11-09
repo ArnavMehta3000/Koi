@@ -43,5 +43,6 @@ namespace koi::editor
 		Window* m_window    = nullptr;
 		u32   m_hookId      = 0;
 		bool  m_initialized = false;
+		bool  m_loadDefaultLayout = false;  // on the first frame, once every settings handler is registered
 	};
 }
