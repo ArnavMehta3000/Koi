@@ -7,15 +7,19 @@ namespace koi
 	class PhysicsSystem : public TaskSystem
 	{
 	public:
+		~PhysicsSystem() override;
 		std::string_view Name() const override { return "PhysicsSystem"; }
 		SystemPhase Phase() const override { return SystemPhase::FixedUpdate; }
 
-		void Run(const SystemContext& ctx);
+		void Run(const SystemContext& ctx) override;
 		void OnBeginPlay(World& world) override;
 		void OnEndPlay(World& world) override;
 
 	private:
-		bool m_worldValid = false;
+		void CreatePhysicsWorld();
+		void DestroyPhysicsWorld();
+
+	private:
 		b3WorldId m_b3WorldId = b3_nullWorldId;
 	};
 }
