@@ -105,6 +105,49 @@ TEST_CASE("PhysicsSettings saves snake_case keys and fills missing ones")
 	CHECK(filled->SubSteps == 2);
 }
 
+TEST_CASE("RigidBody saves its settings but never its runtime body")
+{
+	RigidBody in{ .Type = BodyType::Kinematic, .GravityScale = 0.5f, .LockRotation = { true, false, true } };
+	in.BodyId = b3BodyId{ .index1 = 7, .world0 = 0, .generation = 1 };
+
+	const toml::table saved = Serializer<RigidBody>::Serialize(in);
+	CHECK(saved.contains("gravity_scale"));
+	CHECK(saved.contains("lock_rotation"));
+	CHECK_FALSE(saved.contains("body_id"));
+
+	const std::optional<RigidBody> out = Serializer<RigidBody>::Deserialize(saved);
+	REQUIRE(out);
+	CHECK(out->Type == BodyType::Kinematic);
+	CHECK(out->GravityScale == doctest::Approx(0.5f));
+	CHECK(out->LockRotation == std::array{ true, false, true });
+	CHECK(B3_IS_NULL(out->BodyId.get()));
+}
+
+TEST_CASE("Collider round-trips its shape and fills missing keys with the defaults")
+{
+	const Collider in{ .Shape = ColliderShape::Capsule, .Radius = 0.25f, .HalfHeight = 1.0f, .IsSensor = true, .SensorEvents = false };
+	const toml::table saved = Serializer<Collider>::Serialize(in);
+	CHECK(saved.contains("half_height"));
+	CHECK(saved.contains("is_sensor"));
+	CHECK_FALSE(saved.contains("shape_id"));
+
+	const std::optional<Collider> out = Serializer<Collider>::Deserialize(saved);
+	REQUIRE(out);
+	CHECK(out->Shape == ColliderShape::Capsule);
+	CHECK(out->Radius == doctest::Approx(0.25f));
+	CHECK(out->HalfHeight == doctest::Approx(1.0f));
+	CHECK(out->IsSensor);
+	CHECK_FALSE(out->SensorEvents);
+
+	const toml::table partial{ { "shape", "Sphere" } };
+	const std::optional<Collider> filled = Serializer<Collider>::Deserialize(partial);
+	REQUIRE(filled);
+	CHECK(filled->Shape == ColliderShape::Sphere);
+	CHECK(filled->HalfExtents == Vector3(0.5f, 0.5f, 0.5f));
+	CHECK(filled->SensorEvents);
+	CHECK_FALSE(filled->ContactEvents);
+}
+
 // Box3D asserts on a stale or null world id, so any unguarded path aborts the run
 TEST_CASE("Play and Stop pair up safely, however often they come")
 {
