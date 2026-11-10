@@ -16,4 +16,18 @@ namespace koi
 
 		[[nodiscard]] static const PhysicsSettings& Resolve(const World& world);
 	};
+
+	enum class BodyType : u8
+	{
+		Static,
+		Kinematic,
+		Dynamic,
+	};
+
+	enum class ColliderShape : u8
+	{
+		Box,
+		Sphere,
+		Capsule,
+	};
 }
