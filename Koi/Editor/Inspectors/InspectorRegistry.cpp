@@ -1,5 +1,7 @@
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
+#include "Koi/Editor/Inspectors/ReflectInspector.h"
+#include "Koi/Engine/Physics/PhysicsComponents.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
 
@@ -35,5 +37,6 @@ namespace koi::editor
 		Emplace<CameraInspector>();
 		Emplace<LightInspector>();
 		Emplace<PostProcessInspector>();
+		Emplace<ReflectedInspector<PhysicsSettings>>();
 	}
 }
