@@ -17,6 +17,9 @@ namespace koi::internal
 	[[nodiscard]] inline b3Pos ToB3Pos(const Vector3& v) { return ToB3(v); }
 #endif
 
+	[[nodiscard]] inline void* EntityToUserData(u64 entity)    { return reinterpret_cast<void*>(static_cast<uintptr_t>(entity)); }
+	[[nodiscard]] inline u64   UserDataToEntity(const void* p) { return static_cast<u64>(reinterpret_cast<uintptr_t>(p)); }
+
 	[[nodiscard]] inline b3WorldTransform ToB3(const Transform& xform)
 	{
 		return { ToB3Pos(xform.Position), ToB3(xform.Rotation) };

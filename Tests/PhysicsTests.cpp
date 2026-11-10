@@ -167,3 +167,104 @@ TEST_CASE("Play and Stop pair up safely, however often they come")
 	w.World->BeginPlay();
 	w.World.reset();  // destroyed mid-play: the system's destructor cleans up
 }
+
+namespace
+{
+	u64 EntityOf(b3BodyId body) { return static_cast<u64>(reinterpret_cast<uintptr_t>(b3Body_GetUserData(body))); }
+}
+
+TEST_CASE("The first fixed step gives a RigidBody and its Collider a body that points back at the entity")
+{
+	PlayingWorld w;
+	w.World->BeginPlay();
+	const Entity crate = w.World->Spawn().With(RigidBody{ .Type = BodyType::Kinematic }).With(Collider{}).Build();
+
+	w.World->Update(World::kFixedStep);
+
+	const b3BodyId body   = crate.get<RigidBody>().BodyId.get();
+	const b3ShapeId shape = crate.get<Collider>().ShapeId.get();
+	REQUIRE(b3Body_IsValid(body));
+	REQUIRE(b3Shape_IsValid(shape));
+	CHECK(b3Body_GetType(body) == b3_kinematicBody);
+	CHECK(B3_ID_EQUALS(b3Shape_GetBody(shape), body));
+	CHECK(EntityOf(body) == crate.id());
+	CHECK(b3Shape_GetType(shape) == b3_hullShape);
+
+	w.World->EndPlay();
+}
+
+TEST_CASE("A Collider without a RigidBody gets a static body")
+{
+	PlayingWorld w;
+	w.World->BeginPlay();
+	const Entity wall = w.World->Spawn().With(Collider{ .IsSensor = true }).Build();
+
+	w.World->Update(World::kFixedStep);
+
+	const b3ShapeId shape = wall.get<Collider>().ShapeId.get();
+	REQUIRE(b3Shape_IsValid(shape));
+	CHECK(b3Body_GetType(b3Shape_GetBody(shape)) == b3_staticBody);
+	CHECK(b3Shape_IsSensor(shape));
+
+	w.World->EndPlay();
+}
+
+TEST_CASE("Shapes bake in the entity's scale")
+{
+	PlayingWorld w;
+	w.World->BeginPlay();
+	const Entity ball = w.World->Spawn().With(Collider{ .Shape = ColliderShape::Sphere, .Radius = 0.5f, .Offset = Vector3(1.0f, 0.0f, 0.0f) }).Build();
+	ball.set<Transform>({ .Scale = Vector3(2.0f, 3.0f, -1.0f) });
+	const Entity flat = w.World->Spawn().With(Collider{}).Build();
+	flat.set<Transform>({ .Scale = Vector3(1.0f, 0.0f, 1.0f) });
+
+	w.World->Update(World::kFixedStep);
+
+	const b3Sphere sphere = b3Shape_GetSphere(ball.get<Collider>().ShapeId.get());
+	CHECK(sphere.radius == doctest::Approx(1.5f));
+	CHECK(sphere.center.x == doctest::Approx(2.0f));
+	CHECK(b3Shape_IsValid(flat.get<Collider>().ShapeId.get()));  // zero scale is clamped, not an assert
+
+	w.World->EndPlay();
+}
+
+TEST_CASE("A duplicated entity gets its own body instead of sharing its source's")
+{
+	PlayingWorld w;
+	w.World->BeginPlay();
+	const Entity original = w.World->Spawn().With(RigidBody{}).With(Collider{}).Build();
+	w.World->Update(World::kFixedStep);
+
+	const Entity copy = w.World->Spawn().With(RigidBody(original.get<RigidBody>())).With(Collider(original.get<Collider>())).Build();
+	w.World->Update(World::kFixedStep);
+
+	const b3BodyId originalBody = original.get<RigidBody>().BodyId.get();
+	const b3BodyId copyBody     = copy.get<RigidBody>().BodyId.get();
+	REQUIRE(b3Body_IsValid(copyBody));
+	CHECK_FALSE(B3_ID_EQUALS(originalBody, copyBody));
+	CHECK(EntityOf(originalBody) == original.id());
+	CHECK(EntityOf(copyBody) == copy.id());
+	CHECK(B3_ID_EQUALS(b3Shape_GetBody(copy.get<Collider>().ShapeId.get()), copyBody));
+	CHECK(b3Body_GetShapeCount(originalBody) == 1);
+
+	w.World->EndPlay();
+}
+
+TEST_CASE("A dynamic body falls under the scene's PhysicsSettings gravity")
+{
+	PlayingWorld w;
+	(void)w.World->Spawn("Physics").With(PhysicsSettings{ .Gravity = Vector3(0.0f, -2.0f, 0.0f) });
+	const Entity rock = w.World->Spawn().With(RigidBody{}).With(Collider{ .Shape = ColliderShape::Sphere }).At(Vector3(0.0f, 10.0f, 0.0f)).Build();
+	w.World->BeginPlay();
+
+	for (int step = 0; step < 60; ++step)
+	{
+		w.World->Update(World::kFixedStep);
+	}
+
+	// Created and stepped in the same Run, so one second of fall: 0.5 * 2 * 1^2
+	const f32 fallen = 10.0f - b3Body_GetPosition(rock.get<RigidBody>().BodyId.get()).y;
+	CHECK(fallen == doctest::Approx(1.0f).epsilon(0.05));
+
+	w.World->EndPlay();
+}

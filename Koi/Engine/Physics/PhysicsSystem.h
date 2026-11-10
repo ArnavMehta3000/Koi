@@ -20,6 +20,7 @@ namespace koi
 	private:
 		void CreatePhysicsWorld(const PhysicsSettings& settings);
 		void DestroyPhysicsWorld();
+		void SetupBodies(World& world);
 
 	private:
 		b3WorldId m_b3WorldId = b3_nullWorldId;
