@@ -70,7 +70,7 @@ namespace koi
 		};
 
 	public:
-		explicit GfxDevice(const GfxDevice::Desc& desc = {});
+		explicit GfxDevice(const GfxDevice::Desc& desc);
 		~GfxDevice();
 
 		[[nodiscard]] inline dx12::Device*        GetNative()            const noexcept { return m_device.Get ();       }
