@@ -165,5 +165,7 @@ namespace koi
 		Register<ComponentType<Light>>(30);
 		Register<ComponentType<PostProcess>>(40);
 		Register<ComponentType<PhysicsSettings>>(45);
+		Register<ComponentType<RigidBody>>(46);
+		Register<ComponentType<Collider>>(47);
 	}
 }

@@ -38,5 +38,7 @@ namespace koi::editor
 		Emplace<LightInspector>();
 		Emplace<PostProcessInspector>();
 		Emplace<ReflectedInspector<PhysicsSettings>>();
+		Emplace<ReflectedInspector<RigidBody>>();
+		Emplace<ReflectedInspector<Collider>>();
 	}
 }
