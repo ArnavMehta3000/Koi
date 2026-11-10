@@ -6,6 +6,7 @@
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"
+#include "Koi/Engine/ECS/ObserverRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
@@ -28,12 +29,14 @@ namespace koi
 
 		ConfigureComponentHooks();
 		BuildSystems();
+		BuildObservers();
 	}
 
 	World::~World() = default;
 
 	World::World(World&& other) noexcept
 		: m_systems(std::move(other.m_systems))
+		, m_observers(std::move(other.m_observers))
 		, m_ecs(std::move(other.m_ecs))
 		, m_root(other.m_root)
 		, m_fixedPipeline(other.m_fixedPipeline)
@@ -55,6 +58,7 @@ namespace koi
 		m_fixedPipeline    = other.m_fixedPipeline;
 		m_fixedAccumulator = other.m_fixedAccumulator;
 		m_systems          = std::move(other.m_systems);
+		m_observers        = std::move(other.m_observers);
 		m_sourcePath       = std::move(other.m_sourcePath);
 		m_bounds           = other.m_bounds;
 		m_camera           = other.m_camera;
@@ -90,6 +94,16 @@ namespace koi
 		{
 			system->Build(*this);
 			KOI_LOG(ECS, Trace, "Built system '{}'", system->Name());
+		}
+	}
+
+	void World::BuildObservers()
+	{
+		m_observers = ObserverRegistry::Get().Instantiate();
+		for (const std::unique_ptr<IObserver>& observer : m_observers)
+		{
+			observer->Build(*this);
+			KOI_LOG(ECS, Trace, "Built observer '{}'", observer->Name());
 		}
 	}
 
@@ -378,11 +392,19 @@ namespace koi
 		{
 			system->OnBeginPlay(*this);
 		}
+		for (const std::unique_ptr<IObserver>& observer : m_observers)
+		{
+			observer->OnBeginPlay(*this);
+		}
 	}
 
 	void World::EndPlay()
 	{
 		ZoneScoped;
+		for (auto it = m_observers.rbegin(); it != m_observers.rend(); ++it)
+		{
+			(*it)->OnEndPlay(*this);
+		}
 		for (auto it = m_systems.rbegin(); it != m_systems.rend(); ++it)
 		{
 			(*it)->OnEndPlay(*this);

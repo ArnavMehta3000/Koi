@@ -8,6 +8,7 @@
 #include <stacktrace>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -20,6 +21,7 @@ namespace koi
 	using EntityID = flecs::entity_t;
 
 	class EntityBuilder;
+	class IObserver;
 	class ISystem;
 	struct PostProcess;
 
@@ -61,6 +63,26 @@ namespace koi
 		void BeginPlay();
 		void EndPlay();
 
+		template<typename Event>
+		void Emit(Entity e, const Event& event = {})
+		{
+			// Unregistered means no observer was ever built for it
+			if (!e.is_alive() || !flecs::_::type<Event>::registered(m_ecs.c_ptr())) return;
+
+			ecs_event_desc_t desc
+			{
+				.event  = flecs::_::type<Event>::id(m_ecs.c_ptr()),
+				.ids    = ecs_get_type(m_ecs.c_ptr(), e.id()),
+				.entity = e.id(),
+			};
+
+			if constexpr (!std::is_empty_v<Event>)
+			{
+				desc.const_param = &event;
+			}
+			::ecs_enqueue(m_ecs.c_ptr(), &desc);
+		}
+
 		// A throw can't unwind through flecs, so systems park it here and Update rethrows it after the pipeline
 		void ReportSystemFailure(std::string_view system, std::string_view what, std::stacktrace trace);
 		[[nodiscard]] bool HasSystemFailure() const { return m_systemFailure.has_value(); }
@@ -77,6 +99,7 @@ namespace koi
 	private:
 		void ConfigureComponentHooks();
 		void BuildSystems();
+		void BuildObservers();
 
 	private:
 		struct SystemFailure
@@ -85,7 +108,8 @@ namespace koi
 			std::stacktrace Trace;
 		};
 
-		std::vector<std::unique_ptr<ISystem>> m_systems;
+		std::vector<std::unique_ptr<ISystem>>   m_systems;
+		std::vector<std::unique_ptr<IObserver>> m_observers;
 		ECS    m_ecs;
 		Entity m_root;
 		Entity m_fixedPipeline;          // runs only FixedUpdate systems; the default pipeline skips them
