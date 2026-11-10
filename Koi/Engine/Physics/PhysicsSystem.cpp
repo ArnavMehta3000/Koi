@@ -1,5 +1,6 @@
 #include "Koi/Engine/Physics/PhysicsSystem.h"
 #include "Koi/Engine/Physics/PhysicsComponents.h"
+#include "Koi/Engine/Physics/Box3DConvert.h"
 #include "Koi/Engine/Logging/LogCategories.h"
 #include <box3d/box3d.h>
 
@@ -17,13 +18,11 @@ namespace koi
 
 		const PhysicsSettings& settings = PhysicsSettings::Resolve(ctx.World);
 
-		const b3Vec3 grav = ::b3World_GetGravity(m_b3WorldId);
-		if (grav.x != settings.Gravity.x
-			|| grav.y != settings.Gravity.y
-			|| grav.z != settings.Gravity.z)
+		const b3Vec3 b3Grav = ::b3World_GetGravity(m_b3WorldId);
+		if (internal::ToKoi(b3Grav) != settings.Gravity)
 		{
 			// User updated component gravity, update world gravity
-			::b3World_SetGravity(m_b3WorldId, b3Vec3{ settings.Gravity.x, settings.Gravity.y, settings.Gravity.z });
+			::b3World_SetGravity(m_b3WorldId, internal::ToB3(settings.Gravity));
 		}
 
 		::b3World_Step(m_b3WorldId, ctx.DeltaTime, settings.SubSteps);
@@ -36,7 +35,7 @@ namespace koi
 		KOI_LOG(Physics, Info, "PhysicsSystem::OnBeginPlay");
 	}
 
-	void PhysicsSystem::OnEndPlay(World& /*world*/)
+	void PhysicsSystem::OnEndPlay(World& world)
 	{
 		DestroyPhysicsWorld();
 		KOI_LOG(Physics, Info, "PhysicsSystem::OnEndPlay");
@@ -45,7 +44,8 @@ namespace koi
 	void PhysicsSystem::CreatePhysicsWorld(const PhysicsSettings& settings)
 	{
 		b3WorldDef worldDef = ::b3DefaultWorldDef();
-		worldDef.gravity = { settings.Gravity.x, settings.Gravity.y, settings.Gravity.z };
+		worldDef.gravity = internal::ToB3(settings.Gravity);
+
 		m_b3WorldId = ::b3CreateWorld(&worldDef);
 	}
 
