@@ -6,6 +6,8 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <Koi/Engine/ECS/SystemRegistry.h>
+#include <Koi/Engine/Physics/PhysicsSystem.h>
 
 namespace koi
 {
@@ -27,6 +29,9 @@ namespace koi
 		KOI_LOG(Engine, Info, "Initializing application: {}", m_desc.AppName);
 
 		m_world = std::make_unique<World>();
+
+		// Setup internal components/systems before user's
+		SystemRegistry::Get().Register<PhysicsSystem>();
 
 		OnRegisterComponents();
 		OnRegisterSystems();
