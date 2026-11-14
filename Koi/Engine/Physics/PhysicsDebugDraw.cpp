@@ -21,7 +21,7 @@ namespace koi
 	{
 		if (!PhysicsSettings::Resolve(ctx.World).DrawColliders) return;
 
-		ctx.World.GetECS().Each<const Transform, const Collider>([](const Transform& xform, const Collider& collider)
+		ctx.World.GetECS().Each<const WorldTransform, const Collider>([](const WorldTransform& xform, const Collider& collider)
 		{
 			const b3ShapeId shapeId = collider.ShapeId.get();
 			if (!::b3Shape_IsValid(shapeId)) return;

@@ -258,21 +258,22 @@ namespace koi::editor
 		ImGuizmo::SetRect(x, y, width, height);
 		ImGuizmo::AllowAxisFlip(false);  // keep handles fixed to world axes instead of flipping toward the camera
 
-		Matrix matrix = xform->ToMatrix();
+		// The gizmo works in world space; the edit lands on the local Transform
+		const Entity parent = selected.GetParent();
+		const WorldTransform* parentWorld = parent ? parent.TryGet<const WorldTransform>() : nullptr;
+		const WorldTransform* current = selected.TryGet<const WorldTransform>();
+
+		Matrix matrix = current ? current->World : xform->ToMatrix();
 		if (ImGuizmo::Manipulate(&m_camera.View._11,
 		                         &m_camera.Projection._11,
 		                         kOps[static_cast<u32>(m_gizmoOp)],
 		                         m_gizmoSpace == GizmoSpace::Local ? ImGuizmo::LOCAL : ImGuizmo::WORLD,
 		                         &matrix._11))
 		{
-			Vector3 scale, position;
-			Quaternion rotation;
-			if (matrix.Decompose(scale, rotation, position))
+			*xform = WorldTransform::ToLocal(matrix, parentWorld);
+			if (WorldTransform* cached = selected.TryGet<WorldTransform>())
 			{
-				xform->Position = position;
-				xform->Rotation = rotation;
-				xform->Scale    = scale;
-				selected.Modified<Transform>();
+				*cached = WorldTransform::Compose(*xform, parentWorld);
 			}
 		}
 
@@ -313,14 +314,14 @@ namespace koi::editor
 		f32 best = std::numeric_limits<f32>::max();
 
 		world.GetECS()
-			.Query<const Transform, const MeshRef>()
-			.Each([&](Entity e, const Transform& xform, const MeshRef& meshRef)
+			.Query<const WorldTransform, const MeshRef>()
+			.Each([&](Entity e, const WorldTransform& xform, const MeshRef& meshRef)
 		{
 			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 			if (!mesh) return;
 
 			// Bounds are model-space, so the ray goes to the mesh rather than the box to the world
-			const Matrix worldMatrix = xform.ToMatrix();
+			const Matrix& worldMatrix = xform.World;
 
 			if (std::abs(worldMatrix.Determinant()) < 1e-12f) return;
 

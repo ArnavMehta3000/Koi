@@ -89,7 +89,7 @@ namespace koi
 		ZoneScoped;
 		m_lights.clear();
 
-		world.GetECS().Each<const Transform, const Light>([&](const Transform& xform, const Light& light)
+		world.GetECS().Each<const WorldTransform, const Light>([&](const WorldTransform& xform, const Light& light)
 		{
 			// Directional lights use the entity's forward; point lights use its position
 			Vector3 forward = Matrix::CreateFromQuaternion(xform.Rotation).Forward();

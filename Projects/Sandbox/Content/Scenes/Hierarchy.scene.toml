@@ -1,0 +1,166 @@
+[[entity]]
+name = 'Camera'
+
+    [entity.camera]
+    far = 1000.0
+    fov_y = 0.9
+    near = 0.05
+    primary = true
+
+    [entity.transform]
+    position = [ 0.0, 4.0, 14.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Sun'
+
+    [entity.light]
+    casts_shadows = true
+    color = [ 1.0, 0.95, 0.9 ]
+    intensity = 3.0
+    range = 0.0
+    shadow_bias = 0.0015
+    shadow_extent = 20.0
+    type = 'Directional'
+
+    [entity.transform]
+    position = [ 0.0, 10.0, 0.0 ]
+    rotation = [ -0.5, 0.3, 0.15, 0.8 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Physics'
+
+    [entity.physics_settings]
+    draw_colliders = true
+    gravity = [ 0.0, -9.81, 0.0 ]
+    sub_steps = 4
+
+    [entity.transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Floor'
+
+    [entity.collider]
+    contact_events = false
+    density = 1.0
+    friction = 0.6
+    half_extents = [ 0.5, 0.5, 0.5 ]
+    half_height = 0.25
+    is_sensor = false
+    offset = [ 0.0, 0.0, 0.0 ]
+    radius = 0.5
+    restitution = 0.2
+    sensor_events = false
+    shape = 'Box'
+
+    [entity.mesh]
+    id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
+
+    [entity.transform]
+    position = [ 0.0, -0.5, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 30.0, 1.0, 30.0 ]
+
+[[entity]]
+name = 'Spinner'
+
+    [entity.mesh]
+    id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
+
+    [entity.spin]
+    axis = [ 0.0, 1.0, 0.0 ]
+    speed = 45.0
+
+    [entity.transform]
+    position = [ -4.0, 2.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.258819, 0.965926 ]
+    scale = [ 1.5, 1.5, 1.5 ]
+
+[[entity]]
+name = 'Arm'
+parent = 'Spinner'
+
+    [entity.mesh]
+    id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
+
+    [entity.transform]
+    position = [ 1.5, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 0.3, 0.3 ]
+
+[[entity]]
+name = 'Hand'
+parent = 'Arm'
+
+    [entity.mesh]
+    id = '5bbca827-62e3-52c1-acca-9a2a45322624'
+
+    [entity.spin]
+    axis = [ 1.0, 0.0, 0.0 ]
+    speed = 180.0
+
+    [entity.transform]
+    position = [ 0.8, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.707107, 0.707107 ]
+    scale = [ 0.4, 1.5, 1.5 ]
+
+[[entity]]
+name = 'Falling Crate'
+
+    [entity.collider]
+    contact_events = false
+    density = 1.0
+    friction = 0.6
+    half_extents = [ 0.5, 0.5, 0.5 ]
+    half_height = 0.25
+    is_sensor = false
+    offset = [ 0.0, 0.0, 0.0 ]
+    radius = 0.5
+    restitution = 0.2
+    sensor_events = false
+    shape = 'Box'
+
+    [entity.mesh]
+    id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
+
+    [entity.rigid_body]
+    angular_damping = 0.0
+    gravity_scale = 1.0
+    linear_damping = 0.0
+    lock_position = [ false, false, false ]
+    lock_rotation = [ false, false, false ]
+    type = 'Dynamic'
+
+    [entity.transform]
+    position = [ 4.0, 6.0, 0.0 ]
+    rotation = [ 0.2, 0.3, 0.1, 0.926 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+name = 'Crate Antenna'
+parent = 'Falling Crate'
+
+    [entity.mesh]
+    id = '5bbca827-62e3-52c1-acca-9a2a45322624'
+
+    [entity.transform]
+    position = [ 0.0, 1.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 0.2, 0.6, 0.2 ]
+
+[[entity]]
+name = 'Crate Side'
+parent = 'Falling Crate'
+
+    [entity.mesh]
+    id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
+
+    [entity.transform]
+    position = [ 0.75, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 0.5, 0.5, 0.5 ]
