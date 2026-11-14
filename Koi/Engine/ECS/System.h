@@ -5,15 +5,6 @@
 
 namespace koi
 {
-	enum class SystemPhase : u8
-	{
-		PreUpdate,
-		FixedUpdate,
-		Update,
-		PostUpdate,
-		PreRender,
-	};
-
 	struct SystemContext
 	{
 		World& World;
@@ -37,23 +28,6 @@ namespace koi
 
 	namespace internal
 	{
-		// The tag FixedUpdate systems run under. It is deliberately not a flecs Phase, so the
-		// default pipeline skips them and World::Update runs them through its own
-		struct FixedUpdateTag {};
-
-		template<typename Builder>
-		void ApplyPhase(Builder& builder, SystemPhase phase)
-		{
-			switch (phase)
-			{
-			case SystemPhase::PreUpdate:   builder.kind(flecs::PreUpdate);  break;
-			case SystemPhase::FixedUpdate: builder.template kind<FixedUpdateTag>(); break;
-			case SystemPhase::Update:      builder.kind(flecs::OnUpdate);   break;
-			case SystemPhase::PostUpdate:  builder.kind(flecs::PostUpdate); break;
-			case SystemPhase::PreRender:   builder.kind(flecs::PreStore);   break;
-			}
-		}
-
 		// False when the body threw, or was skipped because an earlier system already had
 		template<typename Body>
 		bool RunGuarded(World& world, std::string_view system, Body&& body)
@@ -86,21 +60,16 @@ namespace koi
 
 		void Build(World& world) override
 		{
-			auto builder = world.GetECS().system<Components...>(std::string(Name()).c_str());
-			internal::ApplyPhase(builder, Phase());
-
-			// run() wraps every matched table, so the profiler sees one entry per system, not per entity
-			builder.run([this](flecs::iter& it)
+			ECS* ecs = &world.GetECS();
+			ecs->AddSystem(Phase(), [this, ecs](f32 dt)
 			{
 				KOI_SCOPE_TRANSIENT(Name());
-				if (!internal::RunGuarded(World::From(it.world()), Name(), [&] { while (it.next()) it.each(); }))
+				World& world = ecs->GetWorld();
+				const SystemContext ctx{ world, dt };
+				internal::RunGuarded(world, Name(), [&]
 				{
-					it.fini();
-				}
-			},
-			[this](flecs::iter& it, size_t index, Components&... components)
-			{
-				Each(SystemContext{ World::From(it.world()), it.delta_time() }, it.entity(index), components...);
+					ecs->Each<Components...>([&](Entity e, Components&... components) { Each(ctx, e, components...); });
+				});
 			});
 		}
 	};
@@ -113,14 +82,12 @@ namespace koi
 
 		void Build(World& world) override
 		{
-			auto builder = world.GetECS().system(std::string(Name()).c_str());
-			internal::ApplyPhase(builder, Phase());
-
-			builder.run([this](flecs::iter& it)
+			ECS* ecs = &world.GetECS();
+			ecs->AddSystem(Phase(), [this, ecs](f32 dt)
 			{
 				KOI_SCOPE_TRANSIENT(Name());
-				World& world = World::From(it.world());
-				internal::RunGuarded(world, Name(), [&] { Run(SystemContext{ world, it.delta_time() }); });
+				World& world = ecs->GetWorld();
+				internal::RunGuarded(world, Name(), [&] { Run(SystemContext{ world, dt }); });
 			});
 		}
 	};

@@ -62,8 +62,8 @@ namespace koi
 		bool    found  = false;
 
 		world.GetECS()
-			.query<const Transform, const Light>()
-			.each([&](const Transform& xform, const Light& light)
+			.Query<const Transform, const Light>()
+			.Each([&](const Transform& xform, const Light& light)
 			{
 				if (found || !light.CastsShadows || light.Type != LightType::Directional) return;
 

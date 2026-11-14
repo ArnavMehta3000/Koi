@@ -8,7 +8,7 @@ namespace koi
 		// Return first found or default (if there is no entity with physics setting component on it)
 
 		const PhysicsSettings* found = nullptr;
-		world.GetECS().query<const PhysicsSettings>().each([&](const PhysicsSettings& settings)
+		world.GetECS().Each<const PhysicsSettings>([&](const PhysicsSettings& settings)
 		{
 			if (!found) found = &settings;
 		});

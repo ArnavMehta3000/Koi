@@ -54,17 +54,17 @@ namespace koi
 			[[nodiscard]] std::string_view Key() const override { return MeshRef::kKey; }
 			[[nodiscard]] i32 DrawOrder() const override { return 10; }
 
-			[[nodiscard]] bool Has(Entity e) const override { return e.has<MeshRef>(); }
+			[[nodiscard]] bool Has(Entity e) const override { return e.Has<MeshRef>(); }
 
 			// Default to a box so a freshly added component has something visible
 			void Add(Entity e) const override
 			{
 				const MeshHandle handle = Meshes().Acquire(Device(), AssetKey(std::string(kDefaultMesh)));
-				if (handle) e.set<MeshRef>({ handle });
+				if (handle) e.Set<MeshRef>({ handle });
 			}
 
 			// World's MeshRef on_remove hook hands the cache reference back
-			void Remove(Entity e) const override { e.remove<MeshRef>(); }
+			void Remove(Entity e) const override { e.Remove<MeshRef>(); }
 
 			void Load(Entity e, const toml::table& entityTable) const override
 			{
@@ -72,12 +72,12 @@ namespace koi
 				if (!meshTable) return;
 
 				const MeshHandle handle = Meshes().Acquire(Device(), ReadAssetRef(*meshTable, "mesh"));
-				if (handle) e.set<MeshRef>({ handle });
+				if (handle) e.Set<MeshRef>({ handle });
 			}
 
 			void Save(Entity e, toml::table& entityTable) const override
 			{
-				const MeshRef* meshRef = e.try_get<MeshRef>();
+				const MeshRef* meshRef = e.TryGet<const MeshRef>();
 				if (!meshRef) return;
 
 				toml::table meshTable;
@@ -93,15 +93,15 @@ namespace koi
 			[[nodiscard]] std::string_view Key() const override { return MaterialRef::kKey; }
 			[[nodiscard]] i32 DrawOrder() const override { return 11; }
 
-			[[nodiscard]] bool Has(Entity e) const override { return e.has<MaterialRef>(); }
+			[[nodiscard]] bool Has(Entity e) const override { return e.Has<MaterialRef>(); }
 
 			void Add(Entity e) const override
 			{
 				const MaterialHandle handle = Materials().Acquire(Device(), AssetKey(std::string(kDefaultMaterial)));
-				if (handle) e.set<MaterialRef>({ handle });
+				if (handle) e.Set<MaterialRef>({ handle });
 			}
 
-			void Remove(Entity e) const override { e.remove<MaterialRef>(); }
+			void Remove(Entity e) const override { e.Remove<MaterialRef>(); }
 
 			void Load(Entity e, const toml::table& entityTable) const override
 			{
@@ -109,12 +109,12 @@ namespace koi
 				if (!table) return;
 
 				const MaterialHandle handle = Materials().Acquire(Device(), ReadAssetRef(*table, "material"));
-				if (handle) e.set<MaterialRef>({ handle });
+				if (handle) e.Set<MaterialRef>({ handle });
 			}
 
 			void Save(Entity e, toml::table& entityTable) const override
 			{
-				const MaterialRef* ref = e.try_get<MaterialRef>();
+				const MaterialRef* ref = e.TryGet<const MaterialRef>();
 				if (!ref) return;
 
 				toml::table table;

@@ -21,7 +21,7 @@ namespace koi
 		template<typename T>
 		EntityBuilder& With(T&& component)
 		{
-			m_entity.set<std::remove_cvref_t<T>>(std::forward<T>(component));
+			m_entity.Set<std::remove_cvref_t<T>>(std::forward<T>(component));
 			return *this;
 		}
 
@@ -30,6 +30,6 @@ namespace koi
 
 	private:
 		Entity    m_entity;
-		Transform m_transform;  // written whole on every change, which stays valid while flecs is deferring
+		Transform m_transform;  // written whole on every change, which stays valid while structural changes are deferred
 	};
 }

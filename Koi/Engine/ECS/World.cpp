@@ -15,6 +15,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
 #include <fstream>
+#include <unordered_map>
 
 namespace koi
 {
@@ -22,10 +23,7 @@ namespace koi
 	{
 		ZoneScoped;
 
-		m_root = m_ecs.entity("WorldRoot");
-
-		m_ecs.set_ctx(this);
-		m_fixedPipeline = m_ecs.pipeline().with(flecs::System).with<internal::FixedUpdateTag>().build();
+		m_ecs  = std::make_unique<ECS>(*this);
 
 		ConfigureComponentHooks();
 		BuildSystems();
@@ -38,15 +36,12 @@ namespace koi
 		: m_systems(std::move(other.m_systems))
 		, m_observers(std::move(other.m_observers))
 		, m_ecs(std::move(other.m_ecs))
-		, m_root(other.m_root)
-		, m_fixedPipeline(other.m_fixedPipeline)
 		, m_fixedAccumulator(other.m_fixedAccumulator)
 		, m_sourcePath(std::move(other.m_sourcePath))
 		, m_bounds(other.m_bounds)
 		, m_camera(other.m_camera)
 	{
-		// System callbacks find their World through the flecs context, so it must follow the move
-		if (m_ecs.c_ptr()) m_ecs.set_ctx(this);
+		if (m_ecs) m_ecs->SetWorld(*this);
 	}
 
 	World& World::operator=(World&& other) noexcept
@@ -54,8 +49,6 @@ namespace koi
 		if (this == &other) return *this;
 
 		m_ecs              = std::move(other.m_ecs);
-		m_root             = other.m_root;
-		m_fixedPipeline    = other.m_fixedPipeline;
 		m_fixedAccumulator = other.m_fixedAccumulator;
 		m_systems          = std::move(other.m_systems);
 		m_observers        = std::move(other.m_observers);
@@ -63,27 +56,20 @@ namespace koi
 		m_bounds           = other.m_bounds;
 		m_camera           = other.m_camera;
 
-		if (m_ecs.c_ptr()) m_ecs.set_ctx(this);
+		if (m_ecs) m_ecs->SetWorld(*this);
 		return *this;
-	}
-
-	World& World::From(const flecs::world& ecs)
-	{
-		World* world = static_cast<World*>(ecs.get_ctx());
-		KOI_ASSERT(world, "flecs world is not owned by a koi::World");
-		return *world;
 	}
 
 	std::pair<u64, u64> World::OrderKey(Entity e)
 	{
-		const SceneOrder* order = e.try_get<SceneOrder>();
-		return { order ? order->Index : ~0ull, e.id() };
+		const SceneOrder* order = e.TryGet<const SceneOrder>();
+		return { order ? order->Index : ~0ull, e.GetId() };
 	}
 
 	EntityBuilder World::Spawn(std::string_view name)
 	{
-		Entity e = name.empty() ? m_ecs.entity() : m_ecs.entity(std::string(name).c_str());
-		e.set<Transform>({});
+		const Entity e = m_ecs->Spawn(name);
+		e.Set<Transform>({});
 		return EntityBuilder(e);
 	}
 
@@ -111,7 +97,7 @@ namespace koi
 	{
 		// Whatever drops a MeshRef - a removed component, a destroyed entity, a torn-down
 		// world - gives the cache reference back here, so no call site has to remember to
-		m_ecs.component<MeshRef>().on_remove([](Entity, MeshRef& mesh)
+		m_ecs->OnRemove<MeshRef>([](Entity, MeshRef& mesh)
 		{
 			if (!mesh.Handle) return;
 
@@ -120,7 +106,7 @@ namespace koi
 				.Release(engine.GetSubsystem<Renderer>().GetDevice(), mesh.Handle);
 		});
 
-		m_ecs.component<MaterialRef>().on_remove([](Entity, MaterialRef& material)
+		m_ecs->OnRemove<MaterialRef>([](Entity, MaterialRef& material)
 		{
 			if (!material.Handle) return;
 
@@ -175,6 +161,7 @@ namespace koi
 		// so an entity can reference a parent declared later in the file
 		struct PendingParent { Entity Child; std::string ParentName; };
 		std::vector<PendingParent> pendingParents;
+		std::unordered_map<std::string, Entity> byName;
 
 		const auto components = ComponentRegistry::Get().All();
 		u32 index = 0;
@@ -187,13 +174,13 @@ namespace koi
 
 			// Create entity
 			const std::string name = (*entityTable)["name"].value_or<std::string>("Entity_" + std::to_string(i));
-			if (m_ecs.lookup(name.c_str()))
+			const Entity e = m_ecs->Spawn(name);
+			if (!byName.try_emplace(name, e).second)
 			{
-				KOI_LOG(Scene, Warn, "Scene entity [{}] '{}' duplicates an earlier name. Flecs will merge them into one entity", i, name);
+				KOI_LOG(Scene, Warn, "Scene entity [{}] '{}' duplicates an earlier name; children naming it attach to the first", i, name);
 			}
 
-			Entity e = m_ecs.entity(name.c_str());
-			e.set<SceneOrder>({ i });
+			e.Set<SceneOrder>({ i });
 
 			// Load components (use registry for this)
 			for (const std::unique_ptr<IComponentType>& component : components)
@@ -216,9 +203,9 @@ namespace koi
 		// Pass 2: resolve parent links now that every named entity exists
 		for (const PendingParent& link : pendingParents)
 		{
-			if (const Entity parent = m_ecs.lookup(link.ParentName.c_str()))
+			if (const auto parent = byName.find(link.ParentName); parent != byName.end())
 			{
-				link.Child.child_of(parent);
+				link.Child.SetParent(parent->second);
 			}
 			else
 			{
@@ -228,7 +215,7 @@ namespace koi
 
 		// World bounds come from whichever meshes ended up resident
 		const AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
-		m_ecs.each<MeshRef>([&](Entity, MeshRef& mesh)
+		m_ecs->Each<const MeshRef>([&](const MeshRef& mesh)
 		{
 			if (const GPUMesh* gpuMesh = meshes.Get(mesh.Handle))
 			{
@@ -238,7 +225,7 @@ namespace koi
 
 		// If no deserialized camera exists, create one centered on the scene world bounds
 		bool hasCamera = false;
-		m_ecs.query<const CameraComponent>().each([&](const CameraComponent&) { hasCamera = true; });
+		m_ecs->Each<const CameraComponent>([&](const CameraComponent&) { hasCamera = true; });
 		if (!hasCamera)
 		{
 			Transform camXform;
@@ -253,9 +240,9 @@ namespace koi
 				camXform.Position = Vector3(0.0f, 1.0f, 5.0f);
 			}
 
-			m_ecs.entity("Camera")
-				.set<Transform>(camXform)
-				.set<CameraComponent>({});
+			m_ecs->Spawn("Camera")
+				.Set<Transform>(camXform)
+				.Set<CameraComponent>({});
 
 			KOI_LOG(Scene, Debug, "Scene has no camera; spawned a default one");
 		}
@@ -301,9 +288,9 @@ namespace koi
 
 		// File order follows SceneOrder
 		std::vector<Entity> ordered;
-		m_ecs.query<const Transform>().each([&](Entity e, const Transform&)
+		m_ecs->Each<const Transform>([&](Entity e, const Transform&)
 		{
-			if (e != m_root) ordered.push_back(e);
+			ordered.push_back(e);
 		});
 		std::ranges::stable_sort(ordered, {}, [](Entity e) { return OrderKey(e); });
 
@@ -313,11 +300,11 @@ namespace koi
 			toml::table entity;
 
 			// Save name
-			entity.insert("name", std::string(e.name().c_str()));
+			entity.insert("name", std::string(e.GetName()));
 
 			// Save parent
-			if (const Entity parent = e.parent(); parent && parent != m_root)
-				entity.insert("parent", std::string(parent.name().c_str()));
+			if (const Entity parent = e.GetParent(); parent)
+				entity.insert("parent", std::string(parent.GetName()));
 
 			// Save components (use registry for this)
 			for (const std::unique_ptr<IComponentType>& component : components)
@@ -340,18 +327,15 @@ namespace koi
 		// Destructing an entity fires the component hooks, which is what releases its assets
 
 		// Collect first to prevent iterator invalidation
-		std::vector<EntityID> doomed;
-		m_ecs.each<Transform>([&](Entity e, Transform&)
+		std::vector<Entity> doomed;
+		m_ecs->Each<const Transform>([&](Entity e, const Transform&)
 		{
-			if (e != m_root) doomed.push_back(e.id());
+			if (!e.GetParent()) doomed.push_back(e);  // children go with their parent
 		});
 
-		for (const EntityID id : doomed)
+		for (const Entity e : doomed)
 		{
-			if (const Entity e = m_ecs.entity(id); e.is_alive())
-			{
-				e.destruct();
-			}
+			e.Destroy();
 		}
 
 		KOI_LOG(Scene, Debug, "Cleared world ({} entities destroyed)", doomed.size());
@@ -362,7 +346,11 @@ namespace koi
 	void World::Update(f32 dt)
 	{
 		ZoneScoped;
-		if (!Engine::Get().IsPlaying()) return;
+		if (!Engine::Get().IsPlaying())
+		{
+			m_ecs->Sync();
+			return;
+		}
 
 		// Timer already clamps dt, which bounds how many fixed steps one frame can owe
 		m_fixedAccumulator += dt;
@@ -372,7 +360,7 @@ namespace koi
 			while (m_fixedAccumulator >= kFixedStep && !m_systemFailure)
 			{
 				ZoneScopedN("Fixed Step");
-				m_ecs.run_pipeline(m_fixedPipeline, kFixedStep);
+				m_ecs->RunPhase(SystemPhase::FixedUpdate, kFixedStep);
 				m_fixedAccumulator -= kFixedStep;
 				++steps;
 			}
@@ -382,7 +370,11 @@ namespace koi
 		if (!m_systemFailure)
 		{
 			KOI_SCOPE("Frame Systems");
-			m_ecs.progress(dt);
+			for (const SystemPhase phase : { SystemPhase::PreUpdate, SystemPhase::Update, SystemPhase::PostUpdate, SystemPhase::PreRender })
+			{
+				if (m_systemFailure) break;
+				m_ecs->RunPhase(phase, dt);
+			}
 		}
 
 		if (m_systemFailure)
@@ -428,7 +420,7 @@ namespace koi
 	const PostProcess& World::ResolvePostProcess() const
 	{
 		const PostProcess* found = nullptr;
-		m_ecs.query<const PostProcess>().each([&](const PostProcess& post)
+		m_ecs->Each<const PostProcess>([&](const PostProcess& post)
 		{
 			if (!found) found = &post;
 		});
@@ -441,8 +433,8 @@ namespace koi
 		ZoneScoped;
 
 		bool found = false;
-		m_ecs.query<const Transform, const CameraComponent>()
-			.each([&](const Transform& xform, const CameraComponent& cam)
+		m_ecs->Query<const Transform, const CameraComponent>()
+			.Each([&](const Transform& xform, const CameraComponent& cam)
 			{
 				if (!cam.Primary || found) return;
 				m_camera.SetProjection(cam.FovY, aspect, cam.Near, cam.Far);

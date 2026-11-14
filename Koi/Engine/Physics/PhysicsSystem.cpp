@@ -25,12 +25,12 @@ namespace koi
 		// A duplicated entity copies its source's ids, so an id only counts if it points back at this entity
 		bool OwnsBody(b3BodyId id, Entity e)
 		{
-			return ::b3Body_IsValid(id) && internal::UserDataToEntity(::b3Body_GetUserData(id)) == e.id();
+			return ::b3Body_IsValid(id) && internal::UserDataToEntity(::b3Body_GetUserData(id)) == e.GetId();
 		}
 
 		bool OwnsShape(b3ShapeId id, Entity e)
 		{
-			return ::b3Shape_IsValid(id) && internal::UserDataToEntity(::b3Shape_GetUserData(id)) == e.id();
+			return ::b3Shape_IsValid(id) && internal::UserDataToEntity(::b3Shape_GetUserData(id)) == e.GetId();
 		}
 
 		// Null when the shape was destroyed or its entity is gone
@@ -38,8 +38,8 @@ namespace koi
 		{
 			if (!::b3Shape_IsValid(shape)) return Entity{};
 
-			const Entity e(ecs.c_ptr(), internal::UserDataToEntity(::b3Shape_GetUserData(shape)));
-			return e.is_alive() ? e : Entity{};
+			const Entity e = ecs.FromId(internal::UserDataToEntity(::b3Shape_GetUserData(shape)));
+			return e.IsAlive() ? e : Entity{};
 		}
 
 		// Sent to both sides, so either one can observe it
@@ -59,7 +59,7 @@ namespace koi
 			b3BodyDef def = ::b3DefaultBodyDef();
 			def.position  = internal::ToB3Pos(xform.Position);
 			def.rotation  = internal::ToB3(xform.Rotation);
-			def.userData  = internal::EntityToUserData(e.id());
+			def.userData  = internal::EntityToUserData(e.GetId());
 			def.type      = b3_staticBody;
 
 			if (body)
@@ -80,7 +80,7 @@ namespace koi
 		b3ShapeId CreateShape(b3BodyId body, Entity e, const Transform& xform, const Collider& collider)
 		{
 			b3ShapeDef def = ::b3DefaultShapeDef();
-			def.userData                 = internal::EntityToUserData(e.id());
+			def.userData                 = internal::EntityToUserData(e.GetId());
 			def.density                  = collider.Density;
 			def.baseMaterial.friction    = collider.Friction;
 			def.baseMaterial.restitution = collider.Restitution;
@@ -132,7 +132,7 @@ namespace koi
 		ECS& ecs = world.GetECS();
 
 		// Destroy b3Body when removing RigidBody component
-		ecs.component<RigidBody>().on_remove([](Entity e, RigidBody& body)
+		ecs.OnRemove<RigidBody>([](Entity e, RigidBody& body)
 		{
 			if (OwnsBody(body.BodyId.get(), e))
 			{
@@ -141,14 +141,14 @@ namespace koi
 		});
 
 		// When a Collider is removed, destroy shape/body
-		ecs.component<Collider>().on_remove([](Entity e, Collider& collider)
+		ecs.OnRemove<Collider>([](Entity e, Collider& collider)
 		{
 			const b3ShapeId shape = collider.ShapeId.get();
 			if (!OwnsShape(shape, e)) return;
 
 			// A lone Collider's static body goes with it; a RigidBody keeps its body and only loses the shape
 			const b3BodyId body = ::b3Shape_GetBody(shape);
-			const RigidBody* rigidBody = e.try_get<RigidBody>();
+			const RigidBody* rigidBody = e.TryGet<const RigidBody>();
 			if (rigidBody && B3_ID_EQUALS(rigidBody->BodyId.get(), body))
 			{
 				::b3DestroyShape(shape, true);
@@ -225,14 +225,14 @@ namespace koi
 
 		// Rigid body first so that a collider find its partner RB
 
-		ecs.query<const Transform, RigidBody>().each([&](Entity e, const Transform& xform, RigidBody& body)
+		ecs.Each<const Transform, RigidBody>([&](Entity e, const Transform& xform, RigidBody& body)
 		{
 			if (OwnsBody(body.BodyId.get(), e)) return;
 			body.BodyId = CreateBody(m_b3WorldId, e, xform, &body);
 			++created;
 		});
 
-		ecs.query<const Transform, Collider>().each([&](Entity e, const Transform& xform, Collider& collider)
+		ecs.Each<const Transform, Collider>([&](Entity e, const Transform& xform, Collider& collider)
 		{
 			const b3ShapeId current = collider.ShapeId.get();
 			if (OwnsShape(current, e))
@@ -248,7 +248,7 @@ namespace koi
 				return;
 			}
 
-			const RigidBody* body = e.try_get<RigidBody>();
+			const RigidBody* body = e.TryGet<const RigidBody>();
 			const b3BodyId bodyId = body ? body->BodyId.get() : CreateBody(m_b3WorldId, e, xform, nullptr);
 			collider.ShapeId    = CreateShape(bodyId, e, xform, collider);
 			collider.BuiltScale = xform.Scale;
@@ -263,7 +263,7 @@ namespace koi
 	void PhysicsSystem::PushKinematics(World& world, f32 dt)
 	{
 		ZoneScoped;
-		world.GetECS().query<const Transform, const RigidBody>().each([dt](Entity e, const Transform& xform, const RigidBody& body)
+		world.GetECS().Each<const Transform, const RigidBody>([dt](Entity e, const Transform& xform, const RigidBody& body)
 		{
 			if (body.Type != BodyType::Kinematic || !OwnsBody(body.BodyId.get(), e)) return;
 			::b3Body_SetTargetTransform(body.BodyId.get(), internal::ToB3(xform), dt, true);
@@ -282,13 +282,13 @@ namespace koi
 		{
 			const b3BodyMoveEvent& move = events.moveEvents[i];
 
-			const Entity e(ecs.c_ptr(), internal::UserDataToEntity(move.userData));
-			if (!e.is_alive()) continue;
+			const Entity e = ecs.FromId(internal::UserDataToEntity(move.userData));
+			if (!e.IsAlive()) continue;
 
-			const RigidBody* body = e.try_get<RigidBody>();
+			const RigidBody* body = e.TryGet<const RigidBody>();
 			if (!body || body->Type != BodyType::Dynamic) continue;
 
-			if (Transform* xform = e.try_get_mut<Transform>())
+			if (Transform* xform = e.TryGet<Transform>())
 			{
 				xform->Position = internal::ToKoi(move.transform.p);
 				xform->Rotation = internal::ToKoi(move.transform.q);

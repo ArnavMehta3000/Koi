@@ -1,14 +1,9 @@
 #pragma once
 #include "Koi/Engine/ECS/System.h"
-#include <type_traits>
+#include <tuple>
 
 namespace koi
 {
-	// flecs' built-in events
-	struct OnAdd {};
-	struct OnSet {};
-	struct OnRemove {};
-
 	class IObserver : public NonCopyable
 	{
 	public:
@@ -26,15 +21,6 @@ namespace koi
 
 	namespace internal
 	{
-		template<typename Event, typename Builder>
-		void ApplyEvent(Builder& builder)
-		{
-			if constexpr      (std::is_same_v<Event, OnAdd>)    builder.event(flecs::OnAdd);
-			else if constexpr (std::is_same_v<Event, OnSet>)    builder.event(flecs::OnSet);
-			else if constexpr (std::is_same_v<Event, OnRemove>) builder.event(flecs::OnRemove);
-			else                                                builder.template event<Event>();
-		}
-
 		[[nodiscard]] bool IsGamePlaying();
 
 		void ReportEditObserverFailure(std::string_view observer, std::string_view what);
@@ -74,22 +60,19 @@ namespace koi
 
 		void Build(World& world) override
 		{
-			auto builder = world.GetECS().observer<Components...>(std::string(Name()).c_str());
-			internal::ApplyEvent<Event>(builder);
-
-			builder.each([this](flecs::iter& it, size_t index, Components&... components)
+			ECS* ecs = &world.GetECS();
+			ecs->Observe<Event>([this, ecs](Entity e, const Event& event)
 			{
 				if (!FiresInEdit() && !internal::IsGamePlaying()) return;
 
-				static const Event kEmpty{};
-				const Event* event = &kEmpty;
-				if constexpr (!std::is_empty_v<Event>)
-				{
-					event = it.param<Event>();
-				}
+				const std::tuple<Components*...> components{ e.TryGet<Components>()... };
+				if (std::apply([](auto*... c) { return ((c == nullptr) || ...); }, components)) return;
 
 				KOI_SCOPE_TRANSIENT(Name());
-				internal::RunObserverGuarded(World::From(it.world()), Name(), [&] { On(*event, it.entity(index), components...); });
+				internal::RunObserverGuarded(ecs->GetWorld(), Name(), [&]
+				{
+					std::apply([&](auto*... c) { On(event, e, *c...); }, components);
+				});
 			});
 		}
 	};
