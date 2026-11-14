@@ -360,7 +360,7 @@ namespace koi
 			while (m_fixedAccumulator >= kFixedStep && !m_systemFailure)
 			{
 				ZoneScopedN("Fixed Step");
-				m_ecs->RunPhase(SystemPhase::FixedUpdate, kFixedStep);
+				m_ecs->RunPhases(true, kFixedStep);
 				m_fixedAccumulator -= kFixedStep;
 				++steps;
 			}
@@ -370,11 +370,7 @@ namespace koi
 		if (!m_systemFailure)
 		{
 			KOI_SCOPE("Frame Systems");
-			for (const SystemPhase phase : { SystemPhase::PreUpdate, SystemPhase::Update, SystemPhase::PostUpdate, SystemPhase::PreRender })
-			{
-				if (m_systemFailure) break;
-				m_ecs->RunPhase(phase, dt);
-			}
+			m_ecs->RunPhases(false, dt);
 		}
 
 		if (m_systemFailure)
@@ -396,11 +392,19 @@ namespace koi
 		{
 			observer->OnBeginPlay(*this);
 		}
+
+		m_ecs->SetPlaying(true);
+		m_ecs->EmitToAll(koi::BeginPlay{});
+		m_ecs->Sync();
 	}
 
 	void World::EndPlay()
 	{
 		ZoneScoped;
+		m_ecs->EmitToAll(koi::EndPlay{});
+		m_ecs->Sync();
+		m_ecs->SetPlaying(false);
+
 		for (auto it = m_observers.rbegin(); it != m_observers.rend(); ++it)
 		{
 			(*it)->OnEndPlay(*this);

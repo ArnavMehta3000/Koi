@@ -27,23 +27,53 @@ namespace koi
 	template<typename T>
 	concept Component = std::is_object_v<T> && std::move_constructible<std::remove_const_t<T>>;
 
-	enum class SystemPhase : u8
+	// Placement of a custom phase
+	template<typename P> struct After  { using Anchor = P; static constexpr bool kAfter = true; };
+	template<typename P> struct Before { using Anchor = P; static constexpr bool kAfter = false; };
+
+	template<typename Placement = void, bool FixedStep = false>
+	struct Phase
 	{
-		PreUpdate,
-		FixedUpdate,
-		Update,
-		PostUpdate,
-		PreRender,
-		Count,
+		using PlacementType = Placement;
+		static constexpr bool kFixedStep = FixedStep;
 	};
+
+	struct FixedUpdate : Phase<void, true> {};
+	struct PreUpdate   : Phase<> {};
+	struct Update      : Phase<> {};
+	struct PostUpdate  : Phase<> {};
+	struct PreRender   : Phase<> {};
+
+	// For a system's RunsAfter / RunsBefore
+	template<typename... Systems> struct SystemList {};
+
+	// Sent to every entity when play starts or stops, and to entities spawned during play
+	struct BeginPlay {};
+	struct EndPlay {};
 
 	namespace internal
 	{
 		inline u32& ComponentCounter() { static u32 counter = 0; return counter; }
 		inline u32& EventCounter()     { static u32 counter = 0; return counter; }
+		inline u32& PhaseCounter()     { static u32 counter = 0; return counter; }
+		inline u32& SystemCounter()    { static u32 counter = 0; return counter; }
 
 		template<typename T> u32 ComponentIdOf() { static const u32 id = ComponentCounter()++; return id; }
 		template<typename T> u32 EventIdOf()     { static const u32 id = EventCounter()++;     return id; }
+		template<typename T> u32 PhaseIdOf()     { static const u32 id = PhaseCounter()++;     return id; }
+		template<typename T> u32 SystemIdOf()    { static const u32 id = SystemCounter()++;    return id; }
+
+		// Unqualified type name from the MSVC signature
+		template<typename T>
+		constexpr std::string_view TypeName()
+		{
+			std::string_view name = __FUNCSIG__;
+			name = name.substr(name.find("TypeName<") + 9);
+			name = name.substr(0, name.rfind(">("));
+			if (const size_t space = name.find(' '); space != std::string_view::npos) name.remove_prefix(space + 1);
+			if (const size_t colon = name.rfind("::"); colon != std::string_view::npos) name.remove_prefix(colon + 2);
+			return name;
+		}
 	}
 
 	// A handle to an entity in an ECS. Null when default-constructed; a const component type means read-only access
@@ -208,8 +238,6 @@ namespace koi
 	class ECS : public NonCopyable
 	{
 	public:
-		using SystemFn = std::move_only_function<void(f32)>;
-
 		explicit ECS(World& owner);
 		~ECS();
 		ECS(ECS&&) = delete;
@@ -240,8 +268,27 @@ namespace koi
 		template<typename Event> void Emit(Entity e, const Event& event = {}) { GetEventQueue<Event>().Push(e, event); }
 		template<typename Event, typename Fn> void Observe(Fn&& fn) { GetEventQueue<Event>().Subscribe(std::forward<Fn>(fn)); }
 
-		void AddSystem(SystemPhase phase, SystemFn fn);
-		void RunPhase(SystemPhase phase, f32 dt);
+		using SystemFn = std::move_only_function<void(f32)>;
+
+		struct SystemDesc
+		{
+			u32              Id = 0;
+			std::string_view Name;
+			std::vector<u32> After;
+			std::vector<u32> Before;
+			SystemFn         Run;
+		};
+
+		// Registers P (and its anchor) on first use; returns its id
+		template<typename P> u32 RegisterPhase();
+		void AddSystem(u32 phase, SystemDesc desc);
+
+		// Runs every fixed-step (or every frame) phase in order, each followed by a sync point
+		void RunPhases(bool fixedStep, f32 dt);
+
+		// While playing, spawned entities get BeginPlay
+		void SetPlaying(bool playing) { m_playing = playing; }
+		template<typename Event> void EmitToAll(const Event& event = {});
 
 		// Flushes deferred structural changes and drains events until both are empty
 		void Sync();
@@ -271,6 +318,22 @@ namespace koi
 	private:
 		template<typename Event> internal::EventQueue<Event>& GetEventQueue();
 
+		static constexpr u32 kNoPhase = ~0u;
+
+		struct PhaseData
+		{
+			std::string_view        Name;
+			bool                    FixedStep   = false;
+			u32                     Anchor      = kNoPhase;
+			bool                    AnchorAfter = true;
+			bool                    Sorted      = true;
+			std::vector<SystemDesc> Systems;
+		};
+
+		u32 InsertPhase(u32 id, std::string_view name, bool fixedStep, u32 anchor, bool after);
+		void RunPhase(PhaseData& phase, f32 dt);
+		void SortSystems(PhaseData& phase);
+
 		void Unlink(EntityHandle child);
 		void FlushCommands();
 
@@ -289,8 +352,10 @@ namespace koi
 		std::vector<std::unique_ptr<internal::PoolBase>>       m_pools;
 		std::vector<std::unique_ptr<internal::EventQueueBase>> m_events;
 		std::vector<std::move_only_function<void()>>           m_commands;
-		std::array<std::vector<SystemFn>, static_cast<size_t>(SystemPhase::Count)> m_phases;
+		std::vector<std::unique_ptr<PhaseData>>                m_phases;
+		std::vector<u32>                                       m_phaseOrder;
 		u32          m_iterating = 0;
+		bool         m_playing   = false;
 		EntityHandle m_root;
 		World*       m_owner;
 	};

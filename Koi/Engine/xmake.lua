@@ -18,7 +18,7 @@ target("Koi.Engine")
 		"directx-headers", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_headerfiles("**.h", { public = true })
+	add_headerfiles("**.h", "**.inl", { public = true })
 	add_files("**.cpp", { public = true })
 	set_pcxxheader("Pch.h")
 

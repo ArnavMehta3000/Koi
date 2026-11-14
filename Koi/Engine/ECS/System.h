@@ -11,19 +11,62 @@ namespace koi
 		f32    DeltaTime;
 	};
 
+	class ISystem;
+
+	namespace internal
+	{
+		template<typename List> struct SystemIds;
+		template<typename... Ts> struct SystemIds<SystemList<Ts...>>
+		{
+			static std::vector<u32> Get() { return { SystemIdOf<Ts>()... }; }
+		};
+
+		struct SystemTraits
+		{
+			u32              Id = 0;
+			u32              (*RegisterPhase)(ECS&) = nullptr;
+			std::vector<u32> After;
+			std::vector<u32> Before;
+		};
+	}
+
+	// A system picks its phase and ordering with member aliases that shadow these defaults:
+	// `using Phase = koi::FixedUpdate;` and `using RunsAfter = koi::SystemList<PhysicsSystem>;`
 	class ISystem : public NonCopyable
 	{
 	public:
+		using Phase      = koi::Update;
+		using RunsAfter  = SystemList<>;
+		using RunsBefore = SystemList<>;
+
 		virtual ~ISystem() = default;
 
-		[[nodiscard]] virtual std::string_view Name()  const = 0;
-		[[nodiscard]] virtual SystemPhase      Phase() const { return SystemPhase::Update; }
+		[[nodiscard]] virtual std::string_view Name() const = 0;
 
 		virtual void Build(World& world) = 0;
 
 		// Bracket a play session. EndPlay runs before Stop restores the edit-time world
 		virtual void OnBeginPlay(World& /*world*/) {}
 		virtual void OnEndPlay(World& /*world*/) {}
+
+		template<typename T>
+		void SetTraits()
+		{
+			m_traits.Id            = internal::SystemIdOf<T>();
+			m_traits.RegisterPhase = [](ECS& ecs) { return ecs.RegisterPhase<typename T::Phase>(); };
+			m_traits.After         = internal::SystemIds<typename T::RunsAfter>::Get();
+			m_traits.Before        = internal::SystemIds<typename T::RunsBefore>::Get();
+		}
+
+	protected:
+		void Schedule(ECS& ecs, ECS::SystemFn run) const
+		{
+			KOI_ASSERT(m_traits.RegisterPhase, "System built without SystemRegistry");
+			ecs.AddSystem(m_traits.RegisterPhase(ecs), { m_traits.Id, Name(), m_traits.After, m_traits.Before, std::move(run) });
+		}
+
+	private:
+		internal::SystemTraits m_traits;
 	};
 
 	namespace internal
@@ -61,7 +104,7 @@ namespace koi
 		void Build(World& world) override
 		{
 			ECS* ecs = &world.GetECS();
-			ecs->AddSystem(Phase(), [this, ecs](f32 dt)
+			Schedule(*ecs, [this, ecs](f32 dt)
 			{
 				KOI_SCOPE_TRANSIENT(Name());
 				World& world = ecs->GetWorld();
@@ -83,7 +126,7 @@ namespace koi
 		void Build(World& world) override
 		{
 			ECS* ecs = &world.GetECS();
-			ecs->AddSystem(Phase(), [this, ecs](f32 dt)
+			Schedule(*ecs, [this, ecs](f32 dt)
 			{
 				KOI_SCOPE_TRANSIENT(Name());
 				World& world = ecs->GetWorld();
