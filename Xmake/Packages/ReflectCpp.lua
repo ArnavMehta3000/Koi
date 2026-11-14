@@ -9,6 +9,14 @@ package("reflect-cpp")
 	add_deps("cmake", "toml++", "ctre")
 
 	on_install("windows", function (package)
+		-- MSVC 14.52 rejects decltype of an auto-returning function template; take decltype of the call instead
+		io.replace("include/rfl/view_t.hpp",
+			"std::invoke_result_t<decltype%(Processors<Ps%.%.%.>::template process<%s*T, internal::ptr_named_tuple_t<T>>%),%s*internal::ptr_named_tuple_t<T>>",
+			"decltype(Processors<Ps...>::template process<T>(std::declval<internal::ptr_named_tuple_t<T>>()))")
+		io.replace("include/rfl/internal/processed_t.hpp",
+			"std::invoke_result_t<decltype%(Processors<Ps%.%.%.>::template process<%s*StructType, PtrNamedTupleType>%),%s*PtrNamedTupleType>",
+			"decltype(Processors<Ps...>::template process<StructType>(std::declval<PtrNamedTupleType>()))")
+
 		local configs =
 		{
 			"-DREFLECTCPP_USE_BUNDLED_DEPENDENCIES=OFF",
