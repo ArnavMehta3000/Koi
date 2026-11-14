@@ -41,25 +41,25 @@ namespace koi
 		[[nodiscard]] i32  DrawOrder() const override { return m_drawOrder; }
 		[[nodiscard]] bool Removable() const override { return !m_required; }
 
-		[[nodiscard]] bool Has(Entity e) const override { return e.has<T>(); }
-		void Add(Entity e) const override    { e.set<T>(T{}); }
-		void Remove(Entity e) const override { e.remove<T>(); }
+		[[nodiscard]] bool Has(Entity e) const override { return e.Has<T>(); }
+		void Add(Entity e) const override    { e.Set<T>(T{}); }
+		void Remove(Entity e) const override { e.Remove<T>(); }
 
 		void Load(Entity e, const toml::table& entityTable) const override
 		{
 			if (std::optional<T> value = utils::DeserializeFrom<T>(entityTable, T::kKey))
 			{
-				e.set<T>(*value);
+				e.Set<T>(*value);
 			}
 			else if (m_required)
 			{
-				e.set<T>(T{});
+				e.Set<T>(T{});
 			}
 		}
 
 		void Save(Entity e, toml::table& entityTable) const override
 		{
-			if (const T* value = e.try_get<T>())
+			if (const T* value = e.TryGet<const T>())
 			{
 				entityTable.insert(T::kKey, Serializer<T>::Serialize(*value));
 			}

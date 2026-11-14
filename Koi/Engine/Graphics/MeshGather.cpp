@@ -23,13 +23,13 @@ namespace koi
 
 		const AssetCache<Material>& materials = Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>();
 
-		world.GetECS().each([&](Entity e, const Transform& xform, const MeshRef& meshRef)
+		world.GetECS().Each<const Transform, const MeshRef>([&](Entity e, const Transform& xform, const MeshRef& meshRef)
 		{
 			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 			if (!mesh) return;
 
 			// A MaterialRef on the entity wins over whatever the mesh's sidecar bound
-			const MaterialRef* materialRef = e.try_get<MaterialRef>();
+			const MaterialRef* materialRef = e.TryGet<const MaterialRef>();
 			const Material*    override    = materialRef ? materials.Get(materialRef->Handle) : nullptr;
 
 			const Matrix            worldMatrix = xform.ToMatrix();

@@ -1,8 +1,8 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Core/Error.h"
+#include "Koi/Engine/ECS/ECS.h"
 #include "Koi/Engine/Graphics/Camera.h"
-#include <flecs.h>
 #include <memory>
 #include <optional>
 #include <stacktrace>
@@ -16,10 +16,6 @@ namespace toml { inline namespace v3 { class table; } }
 
 namespace koi
 {
-	using ECS      = flecs::world;
-	using Entity   = flecs::entity;
-	using EntityID = flecs::entity_t;
-
 	class EntityBuilder;
 	class IObserver;
 	class ISystem;
@@ -38,7 +34,7 @@ namespace koi
 		World& operator=(World&&) noexcept;
 
 		[[nodiscard]] static Result<World> Load(std::string_view virtualPath);
-		[[nodiscard]] static World& From(const flecs::world& ecs);
+		[[nodiscard]] static World& From(const ECS& ecs) { return ecs.GetWorld(); }
 
 		// Scene file order, then creation order
 		[[nodiscard]] static std::pair<u64, u64> OrderKey(Entity e);
@@ -48,8 +44,8 @@ namespace koi
 
 		[[nodiscard]] inline const std::string& GetSourcePath() const { return m_sourcePath; }
 		[[nodiscard]] inline const BoundingBox& GetBounds()     const { return m_bounds;     }
-		[[nodiscard]] inline ECS&               GetECS()              { return m_ecs;        }
-		[[nodiscard]] inline const ECS&         GetECS()        const { return m_ecs;        }
+		[[nodiscard]] inline ECS&               GetECS()              { return *m_ecs;       }
+		[[nodiscard]] inline const ECS&         GetECS()        const { return *m_ecs;       }
 
 		// Writes back to the scene file this world was loaded from
 		Result<void> Save();
@@ -64,26 +60,9 @@ namespace koi
 		void EndPlay();
 
 		template<typename Event>
-		void Emit(Entity e, const Event& event = {})
-		{
-			// Unregistered means no observer was ever built for it
-			if (!e.is_alive() || !flecs::_::type<Event>::registered(m_ecs.c_ptr())) return;
+		void Emit(Entity e, const Event& event = {}) { m_ecs->Emit(e, event); }
 
-			ecs_event_desc_t desc
-			{
-				.event  = flecs::_::type<Event>::id(m_ecs.c_ptr()),
-				.ids    = ecs_get_type(m_ecs.c_ptr(), e.id()),
-				.entity = e.id(),
-			};
-
-			if constexpr (!std::is_empty_v<Event>)
-			{
-				desc.const_param = &event;
-			}
-			::ecs_enqueue(m_ecs.c_ptr(), &desc);
-		}
-
-		// A throw can't unwind through flecs, so systems park it here and Update rethrows it after the pipeline
+		// The first failing system parks its exception here | Update rethrows it after the phase
 		void ReportSystemFailure(std::string_view system, std::string_view what, std::stacktrace trace);
 		[[nodiscard]] bool HasSystemFailure() const { return m_systemFailure.has_value(); }
 
@@ -110,13 +89,11 @@ namespace koi
 
 		std::vector<std::unique_ptr<ISystem>>   m_systems;
 		std::vector<std::unique_ptr<IObserver>> m_observers;
-		ECS    m_ecs;
-		Entity m_root;
-		Entity m_fixedPipeline;          // runs only FixedUpdate systems; the default pipeline skips them
-		f32    m_fixedAccumulator = 0.0f;
-		std::string m_sourcePath;        // virtual path this world was loaded from, empty if none
-		BoundingBox m_bounds{ {}, {} };  // zero extents until meshes resolve
-		Camera m_camera;                 // derived from the primary camera entity by ResolveCamera
-		std::optional<SystemFailure> m_systemFailure;
+		std::unique_ptr<ECS>                    m_ecs;
+		f32                                     m_fixedAccumulator = 0.0f;
+		std::string                             m_sourcePath;        // virtual path this world was loaded from, empty if none
+		BoundingBox                             m_bounds{ {}, {} };  // zero extents until meshes resolve
+		Camera                                  m_camera;            // derived from the primary camera entity by ResolveCamera
+		std::optional<SystemFailure>            m_systemFailure;
 	};
 }

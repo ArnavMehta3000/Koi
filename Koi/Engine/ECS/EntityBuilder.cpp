@@ -17,8 +17,8 @@ namespace koi
 				.Acquire(engine.GetSubsystem<Renderer>().GetDevice(), AssetKey(std::string(virtualPath)));
 			if (!handle) return;
 
-			e.remove<Ref>();  // the World's on_remove hook releases the previous handle
-			e.set<Ref>({ handle });
+			e.Remove<Ref>();  // the World's on_remove hook releases the previous handle
+			e.Set<Ref>({ handle });
 		}
 	}
 
@@ -37,21 +37,21 @@ namespace koi
 	EntityBuilder& EntityBuilder::At(const Vector3& position)
 	{
 		m_transform.Position = position;
-		m_entity.set<Transform>(m_transform);
+		m_entity.Set<Transform>(m_transform);
 		return *this;
 	}
 
 	EntityBuilder& EntityBuilder::Rotated(const Quaternion& rotation)
 	{
 		m_transform.Rotation = rotation;
-		m_entity.set<Transform>(m_transform);
+		m_entity.Set<Transform>(m_transform);
 		return *this;
 	}
 
 	EntityBuilder& EntityBuilder::Scaled(const Vector3& scale)
 	{
 		m_transform.Scale = scale;
-		m_entity.set<Transform>(m_transform);
+		m_entity.Set<Transform>(m_transform);
 		return *this;
 	}
 }

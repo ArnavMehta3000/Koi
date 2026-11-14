@@ -23,5 +23,4 @@
 
 #include <spdlog/logger.h>
 #include <tracy/tracy/Tracy.hpp>
-#include <flecs.h>
 #include <toml++/toml.hpp>
