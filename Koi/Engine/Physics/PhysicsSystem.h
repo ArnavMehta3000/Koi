@@ -13,6 +13,7 @@ namespace koi
 		[[nodiscard]] std::string_view Name() const override { return "PhysicsSystem"; }
 		[[nodiscard]] SystemPhase Phase() const override { return SystemPhase::FixedUpdate; }
 
+		void Build(World& world) override;
 		void Run(const SystemContext& ctx) override;
 		void OnBeginPlay(World& world) override;
 		void OnEndPlay(World& world) override;
@@ -21,6 +22,9 @@ namespace koi
 		void CreatePhysicsWorld(const PhysicsSettings& settings);
 		void DestroyPhysicsWorld();
 		void SetupBodies(World& world);
+		void PushKinematics(World& world, f32 dt);
+		void PullDynamics(World& world);
+		void EmitSensorEvents(World& world);
 
 	private:
 		b3WorldId m_b3WorldId = b3_nullWorldId;

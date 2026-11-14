@@ -70,6 +70,7 @@ namespace koi
 		bool SensorEvents  = true;   // sensors can detect this shape
 		bool ContactEvents = false;  // For collision begin/end
 
-		rfl::Skip<b3ShapeId> ShapeId = b3_nullShapeId;
+		rfl::Skip<b3ShapeId> ShapeId    = b3_nullShapeId;
+		rfl::Skip<Vector3>   BuiltScale = Vector3::Zero;  // the Transform scale ShapeId was built at
 	};
 }

@@ -1,17 +1,16 @@
 #include "Koi/Engine/Physics/PhysicsSystem.h"
 #include "Koi/Engine/Physics/PhysicsComponents.h"
+#include "Koi/Engine/Physics/PhysicsEvents.h"
 #include "Koi/Engine/Physics/Box3DConvert.h"
+#include "Koi/Engine/Physics/ScaledCollider.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/LogCategories.h"
 #include <box3d/box3d.h>
-#include <algorithm>
-#include <cmath>
 
 namespace koi
 {
 	namespace
 	{
-		constexpr f32 kMinShapeExtent = 0.005f;  // Box3D asserts on degenerate shapes, e.g. a zero scale
-
 		b3BodyType ToB3BodyType(BodyType type)
 		{
 			switch (type)
@@ -32,6 +31,26 @@ namespace koi
 		bool OwnsShape(b3ShapeId id, Entity e)
 		{
 			return ::b3Shape_IsValid(id) && internal::UserDataToEntity(::b3Shape_GetUserData(id)) == e.id();
+		}
+
+		// Null when the shape was destroyed or its entity is gone
+		Entity EntityOf(ECS& ecs, b3ShapeId shape)
+		{
+			if (!::b3Shape_IsValid(shape)) return Entity{};
+
+			const Entity e(ecs.c_ptr(), internal::UserDataToEntity(::b3Shape_GetUserData(shape)));
+			return e.is_alive() ? e : Entity{};
+		}
+
+		// Sent to both sides, so either one can observe it
+		template<typename Event>
+		void EmitPair(World& world, b3ShapeId sensor, b3ShapeId visitor)
+		{
+			const Entity a = EntityOf(world.GetECS(), sensor);
+			const Entity b = EntityOf(world.GetECS(), visitor);
+
+			if (a) world.Emit(a, Event{ .Other = b });
+			if (b) world.Emit(b, Event{ .Other = a });
 		}
 
 		// No RigidBody means a static body
@@ -69,34 +88,29 @@ namespace koi
 			def.enableSensorEvents       = collider.SensorEvents;
 			def.enableContactEvents      = collider.ContactEvents;
 
-			const Vector3 scale(std::abs(xform.Scale.x), std::abs(xform.Scale.y), std::abs(xform.Scale.z));
-			const Vector3 center = collider.Offset * scale;
+			const internal::ScaledCollider shape = internal::ScaleCollider(collider, xform.Scale);
 
 			switch (collider.Shape)
 			{
 			case ColliderShape::Box:
 			{
-				const Vector3 half = collider.HalfExtents * scale;
-				const b3BoxHull box = ::b3MakeOffsetBoxHull(
-					std::max(half.x, kMinShapeExtent), std::max(half.y, kMinShapeExtent), std::max(half.z, kMinShapeExtent),
-					internal::ToB3(center));
+				const Vector3& half = shape.HalfExtents;
+				const b3BoxHull box = ::b3MakeOffsetBoxHull(half.x, half.y, half.z, internal::ToB3(shape.Center));
 				return ::b3CreateHullShape(body, &def, &box.base);
 			}
 			case ColliderShape::Sphere:
 			{
-				const f32 radius = collider.Radius * std::max({ scale.x, scale.y, scale.z });
-				const b3Sphere sphere{ .center = internal::ToB3(center), .radius = std::max(radius, kMinShapeExtent) };
+				const b3Sphere sphere{ .center = internal::ToB3(shape.Center), .radius = shape.Radius };
 				return ::b3CreateSphereShape(body, &def, &sphere);
 			}
 			case ColliderShape::Capsule:
 			{
-				const Vector3 axis(0.0f, collider.HalfHeight * scale.y, 0.0f);
-				const f32 radius = collider.Radius * std::max(scale.x, scale.z);
+				const Vector3 axis(0.0f, shape.HalfHeight, 0.0f);
 				const b3Capsule capsule
 				{
-					.center1 = internal::ToB3(center - axis),
-					.center2 = internal::ToB3(center + axis),
-					.radius  = std::max(radius, kMinShapeExtent),
+					.center1 = internal::ToB3(shape.Center - axis),
+					.center2 = internal::ToB3(shape.Center + axis),
+					.radius  = shape.Radius,
 				};
 				return ::b3CreateCapsuleShape(body, &def, &capsule);
 			}
@@ -109,6 +123,41 @@ namespace koi
 	{
 		// Covers a World destroyed mid-play, which never sees EndPlay
 		DestroyPhysicsWorld();
+	}
+
+	void PhysicsSystem::Build(World& world)
+	{
+		TaskSystem::Build(world);
+
+		ECS& ecs = world.GetECS();
+
+		// Destroy b3Body when removing RigidBody component
+		ecs.component<RigidBody>().on_remove([](Entity e, RigidBody& body)
+		{
+			if (OwnsBody(body.BodyId.get(), e))
+			{
+				::b3DestroyBody(body.BodyId.get());
+			}
+		});
+
+		// When a Collider is removed, destroy shape/body
+		ecs.component<Collider>().on_remove([](Entity e, Collider& collider)
+		{
+			const b3ShapeId shape = collider.ShapeId.get();
+			if (!OwnsShape(shape, e)) return;
+
+			// A lone Collider's static body goes with it; a RigidBody keeps its body and only loses the shape
+			const b3BodyId body = ::b3Shape_GetBody(shape);
+			const RigidBody* rigidBody = e.try_get<RigidBody>();
+			if (rigidBody && B3_ID_EQUALS(rigidBody->BodyId.get(), body))
+			{
+				::b3DestroyShape(shape, true);
+			}
+			else
+			{
+				::b3DestroyBody(body);
+			}
+		});
 	}
 
 	void PhysicsSystem::Run(const SystemContext& ctx)
@@ -125,18 +174,26 @@ namespace koi
 		}
 
 		SetupBodies(ctx.World);
+		PushKinematics(ctx.World, ctx.DeltaTime);
 
-		::b3World_Step(m_b3WorldId, ctx.DeltaTime, settings.SubSteps);
+		{
+			KOI_SCOPE("Box3D Step");
+			::b3World_Step(m_b3WorldId, ctx.DeltaTime, settings.SubSteps);
+		}
+
+		PullDynamics(ctx.World);
+		EmitSensorEvents(ctx.World);
 	}
 
 	void PhysicsSystem::OnBeginPlay(World& world)
 	{
+		ZoneScoped;
 		CreatePhysicsWorld(PhysicsSettings::Resolve(world));
 
 		KOI_LOG(Physics, Info, "PhysicsSystem::OnBeginPlay");
 	}
 
-	void PhysicsSystem::OnEndPlay(World& world)
+	void PhysicsSystem::OnEndPlay([[maybe_unused]] World& world)
 	{
 		DestroyPhysicsWorld();
 		KOI_LOG(Physics, Info, "PhysicsSystem::OnEndPlay");
@@ -152,6 +209,7 @@ namespace koi
 
 	void PhysicsSystem::DestroyPhysicsWorld()
 	{
+		ZoneScoped;
 		if (!::b3World_IsValid(m_b3WorldId)) { return; }
 
 		::b3DestroyWorld(m_b3WorldId);
@@ -160,23 +218,98 @@ namespace koi
 
 	void PhysicsSystem::SetupBodies(World& world)
 	{
+		ZoneScoped;
 		ECS& ecs = world.GetECS();
+		i64 created = 0;
+		i64 rebuilt = 0;
 
 		// Rigid body first so that a collider find its partner RB
 
-		ecs.query<const Transform, RigidBody>().each([this](Entity e, const Transform& xform, RigidBody& body)
+		ecs.query<const Transform, RigidBody>().each([&](Entity e, const Transform& xform, RigidBody& body)
 		{
 			if (OwnsBody(body.BodyId.get(), e)) return;
 			body.BodyId = CreateBody(m_b3WorldId, e, xform, &body);
+			++created;
 		});
 
-		ecs.query<const Transform, Collider>().each([this](Entity e, const Transform& xform, Collider& collider)
+		ecs.query<const Transform, Collider>().each([&](Entity e, const Transform& xform, Collider& collider)
 		{
-			if (OwnsShape(collider.ShapeId.get(), e)) return;
+			const b3ShapeId current = collider.ShapeId.get();
+			if (OwnsShape(current, e))
+			{
+				if (collider.BuiltScale.get() == xform.Scale) return;
+
+				// Box3D has no scale, so a rescaled collider gets a new shape on the same body
+				const b3BodyId bodyId = ::b3Shape_GetBody(current);
+				::b3DestroyShape(current, true);
+				collider.ShapeId    = CreateShape(bodyId, e, xform, collider);
+				collider.BuiltScale = xform.Scale;
+				++rebuilt;
+				return;
+			}
 
 			const RigidBody* body = e.try_get<RigidBody>();
 			const b3BodyId bodyId = body ? body->BodyId.get() : CreateBody(m_b3WorldId, e, xform, nullptr);
-			collider.ShapeId = CreateShape(bodyId, e, xform, collider);
+			collider.ShapeId    = CreateShape(bodyId, e, xform, collider);
+			collider.BuiltScale = xform.Scale;
+			++created;
 		});
+
+		if (created > 0) FrameStats::Count("Physics Created", created);
+		if (rebuilt > 0) FrameStats::Count("Physics Rescaled", rebuilt);
+	}
+
+	// Game code owns a kinematic Transform; a target transform gives the body a velocity, so contacts stay correct
+	void PhysicsSystem::PushKinematics(World& world, f32 dt)
+	{
+		ZoneScoped;
+		world.GetECS().query<const Transform, const RigidBody>().each([dt](Entity e, const Transform& xform, const RigidBody& body)
+		{
+			if (body.Type != BodyType::Kinematic || !OwnsBody(body.BodyId.get(), e)) return;
+			::b3Body_SetTargetTransform(body.BodyId.get(), internal::ToB3(xform), dt, true);
+		});
+	}
+
+	// Physics owns a dynamic Transform. Only bodies that moved this step are reported; scale stays the entity's
+	void PhysicsSystem::PullDynamics(World& world)
+	{
+		ZoneScoped;
+		ECS& ecs = world.GetECS();
+		const b3BodyEvents events = ::b3World_GetBodyEvents(m_b3WorldId);
+		if (events.moveCount > 0) FrameStats::Count("Physics Moved", events.moveCount);
+
+		for (i32 i = 0; i < events.moveCount; ++i)
+		{
+			const b3BodyMoveEvent& move = events.moveEvents[i];
+
+			const Entity e(ecs.c_ptr(), internal::UserDataToEntity(move.userData));
+			if (!e.is_alive()) continue;
+
+			const RigidBody* body = e.try_get<RigidBody>();
+			if (!body || body->Type != BodyType::Dynamic) continue;
+
+			if (Transform* xform = e.try_get_mut<Transform>())
+			{
+				xform->Position = internal::ToKoi(move.transform.p);
+				xform->Rotation = internal::ToKoi(move.transform.q);
+			}
+		}
+	}
+
+	void PhysicsSystem::EmitSensorEvents(World& world)
+	{
+		ZoneScoped;
+		const b3SensorEvents events = ::b3World_GetSensorEvents(m_b3WorldId);
+		if (const i64 count = events.beginCount + events.endCount; count > 0) FrameStats::Count("Sensor Events", count);
+
+		for (i32 i = 0; i < events.beginCount; ++i)
+		{
+			EmitPair<SensorBegin>(world, events.beginEvents[i].sensorShapeId, events.beginEvents[i].visitorShapeId);
+		}
+
+		for (i32 i = 0; i < events.endCount; ++i)
+		{
+			EmitPair<SensorEnd>(world, events.endEvents[i].sensorShapeId, events.endEvents[i].visitorShapeId);
+		}
 	}
 }
