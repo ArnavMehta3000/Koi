@@ -6,6 +6,7 @@ CompileFlags:
     - -fms-compatibility-version=19.30
     - -fexceptions
     - -fcxx-exceptions
+    - -Wno-missing-field-initializers
   Remove:
     - /W*
     - /w*
