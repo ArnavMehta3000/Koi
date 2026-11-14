@@ -1,9 +1,11 @@
 #pragma once
 #include "Components/Lanes.h"
+#include "Koi/Engine/ECS/Observer.h"
 #include "Koi/Engine/ECS/System.h"
 #include "Koi/Engine/Math/Ease.h"
 #include "Koi/Engine/Math/Random.h"
 #include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/Physics/PhysicsEvents.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include <string>
 
@@ -56,6 +58,17 @@ namespace game
 	public:
 		[[nodiscard]] std::string_view Name() const override { return "ObstacleMove"; }
 		void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& transform, Obstacle& obstacle) override;
+	};
+
+	// World singleton
+	struct RestartRequested {};
+
+	// The obstacle is the sensor
+	class ObstacleHitObserver final : public koi::Observer<koi::SensorBegin, const Obstacle>
+	{
+	public:
+		[[nodiscard]] std::string_view Name() const override { return "ObstacleHit"; }
+		void On(const koi::SensorBegin& event, koi::Entity e, const Obstacle& obstacle) override;
 	};
 }
 

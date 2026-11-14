@@ -1,6 +1,8 @@
 #include "Components/Obstacle.h"
+#include "Components/PlayerMover.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/Math/Scalar.h"
+#include "Koi/Engine/Physics/PhysicsComponents.h"
 #include <algorithm>
 
 KOI_LOG_CATEGORY(ObstacleSpawner);
@@ -27,9 +29,9 @@ namespace game
 			.Scaled(0.0f)
 			.WithMesh(spawner.Mesh)
 			.WithMaterial(spawner.Material)
-			.With(Obstacle{ .Speed = speed, .DespawnZ = spawner.DespawnZ, .PopDuration = spawner.PopDuration });
-
-		KOI_LOG(ObstacleSpawner, Info, "Spawning with speed: {}", speed);
+			.With(Obstacle{ .Speed = speed, .DespawnZ = spawner.DespawnZ, .PopDuration = spawner.PopDuration })
+			.With(koi::RigidBody{ .Type = koi::BodyType::Kinematic })  // ObstacleMoveSystem drives the Transform
+			.With(koi::Collider{ .IsSensor = true });
 	}
 
 	void ObstacleMoveSystem::Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& transform, Obstacle& obstacle)
@@ -41,6 +43,21 @@ namespace game
 		if (transform.Position.z > obstacle.DespawnZ)
 		{
 			e.destruct();
+		}
+	}
+
+	void ObstacleHitObserver::On(const koi::SensorBegin& event, koi::Entity e, const Obstacle& obstacle)
+	{
+		const std::string other = event.Other ? std::string(event.Other.name().c_str()) : std::string("<destroyed>");
+		const koi::Vector3& at  = e.get<koi::Transform>().Position;
+
+		KOI_LOG(ObstacleSpawner, Info, "Obstacle {} hit '{}' at ({:.2f}, {:.2f}, {:.2f}), speed {:.1f}, age {:.2f}s",
+			e.id(), other, at.x, at.y, at.z, obstacle.Speed, *obstacle.Age);
+
+		// Reloading here would swap the world mid-step, so OnTick does it
+		if (event.Other && event.Other.has<PlayerMover>())
+		{
+			e.world().add<RestartRequested>();
 		}
 	}
 }

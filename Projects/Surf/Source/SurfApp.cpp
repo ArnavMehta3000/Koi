@@ -2,7 +2,11 @@
 #include "Components/Obstacle.h"
 #include "Components/PlayerMover.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/ECS/ObserverRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
+#include "Koi/Engine/Logging/Logger.h"
+
+KOI_LOG_CATEGORY(Surf);
 
 std::unique_ptr<koi::AppBase> koi::AppBase::Create([[maybe_unused]] koi::CommandLine& cmd)
 {
@@ -25,5 +29,15 @@ namespace game
 		registry.Register<PlayerMoverSystem>();
 		registry.Register<ObstacleSpawnSystem>();
 		registry.Register<ObstacleMoveSystem>();
+
+		koi::ObserverRegistry::Get().Register<ObstacleHitObserver>();
+	}
+
+	void SurfApp::OnTick(koi::f32 /*dt*/)
+	{
+		if (!GetWorld().GetECS().has<RestartRequested>()) return;
+
+		KOI_LOG(Surf, Info, "Player hit an obstacle, restarting");
+		LoadScene("Main");
 	}
 }

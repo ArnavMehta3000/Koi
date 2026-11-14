@@ -46,6 +46,19 @@ name = 'Floor'
 [[entity]]
 name = 'Player'
 
+    [entity.collider]
+    contact_events = false
+    density = 1.0
+    friction = 0.6
+    half_extents = [ 0.5, 0.5, 0.5 ]
+    half_height = 0.25
+    is_sensor = false
+    offset = [ 0.0, 0.0, 0.0 ]
+    radius = 0.5
+    restitution = 0.0
+    sensor_events = true
+    shape = 'Capsule'
+
     [entity.'game:player_mover']
     duration = 0.15
     ease = 'OutBack'
@@ -57,10 +70,31 @@ name = 'Player'
     [entity.mesh]
     id = '5bbca827-62e3-52c1-acca-9a2a45322624'
 
+    [entity.rigid_body]
+    angular_damping = 0.0
+    gravity_scale = 1.0
+    linear_damping = 0.0
+    lock_position = [ false, false, false ]
+    lock_rotation = [ false, false, false ]
+    type = 'Kinematic'
+
     [entity.transform]
     position = [ 0.0, 0.5, 3.0 ]
     rotation = [ -0.707107, 0.0, 0.0, 0.707107 ]
     scale = [ 0.5, 1.0, 0.5 ]
+
+[[entity]]
+name = 'Physics'
+
+    [entity.physics_settings]
+    draw_colliders = true
+    gravity = [ 0.0, -9.81, 0.0 ]
+    sub_steps = 4
+
+    [entity.transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ 0.0, 0.0, 0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
 name = 'Spawner'
