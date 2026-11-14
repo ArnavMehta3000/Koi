@@ -4,6 +4,7 @@
 #include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -326,9 +327,16 @@ namespace koi::editor
 			it->Work.get();
 			for (const std::shared_ptr<ImportItem>& item : it->Items)
 			{
-				// The cache doesn't hot-swap yet, so whatever is already on screen keeps the old version
+				// The cache doesn't hot-swap yet, so whatever is already on screen keeps the old version.
+				// An unreferenced cached copy is dropped, so the next acquire reads the new file
 				AssetRegistry& assets = Engine::Get().GetSubsystem<AssetRegistry>();
+				GfxDevice& device = Engine::Get().GetSubsystem<Renderer>().GetDevice();
 				const AssetKey key(item->OutputPath);
+				if (item->Status == ImportStatus::Done)
+				{
+					if (item->Type == AssetFileType::Mesh) assets.Cache<GPUMesh>().EvictIfUnused(device, key);
+					else                                   assets.Cache<GPUTexture>().EvictIfUnused(device, key);
+				}
 				const bool resident = item->Type == AssetFileType::Mesh ? assets.Cache<GPUMesh>().IsResident(key) : assets.Cache<GPUTexture>().IsResident(key);
 				if (item->Status == ImportStatus::Done && resident)
 				{

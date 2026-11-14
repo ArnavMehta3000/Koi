@@ -162,7 +162,9 @@ namespace koi
 	void Engine::EndFrame()
 	{
 		ZoneScoped;
-		GetSubsystem<Renderer>().EndFrame();
+		Renderer& renderer = GetSubsystem<Renderer>();
+		renderer.EndFrame();
+		GetSubsystem<AssetRegistry>().Collect(renderer.GetDevice(), m_timer.GetTotalTime());
 	}
 
 	void Engine::MainLoop(IAppHost& host)

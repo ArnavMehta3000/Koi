@@ -29,6 +29,15 @@ namespace koi
 		// The VFS is mounted before the engine exists, so the index can be built straight away
 		void Init() { m_index.Rebuild(); }
 
+		static constexpr f64 kUnusedGraceSeconds = 5.0;
+
+		// Once per frame: frees what has gone unreferenced for longer than the grace period
+		void Collect(GfxDevice& device, f64 now)
+		{
+			ZoneScopedN("Asset Collect");
+			(std::get<AssetCache<Ts>>(m_caches).Collect(device, now, kUnusedGraceSeconds), ...);
+		}
+
 		void Shutdown(GfxDevice& device)
 		{
 			(std::get<AssetCache<Ts>>(m_caches).ReleaseAll(device), ...);

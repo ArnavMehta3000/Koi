@@ -3,6 +3,7 @@
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <doctest/doctest.h>
 #include <toml++/toml.hpp>
@@ -110,5 +111,8 @@ TEST_CASE("Clearing a world releases the assets only it used")
 	CHECK(meshes.IsResident(torus));
 
 	world.Clear();
+	CHECK(meshes.GetRefCount(torus) == 0);
+
+	meshes.EvictUnused(test::HeadlessEngine().GetSubsystem<Renderer>().GetDevice());
 	CHECK_FALSE(meshes.IsResident(torus));
 }

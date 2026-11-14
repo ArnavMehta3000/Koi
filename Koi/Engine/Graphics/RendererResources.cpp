@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -65,6 +66,7 @@ namespace koi
 
 	void RendererResources::RegisterFallbackAssets(GfxDevice& device)
 	{
+		ZoneScoped;
 		// This function cannot be called in Init since it requires the AssetRegistry subsystem, which is constructed after the Renderer (and these resources)
 		AssetRegistry& assets = Engine::Get().GetSubsystem<AssetRegistry>();
 
@@ -108,6 +110,7 @@ namespace koi
 		ImageAsset white{ .Name = "White", .Path = std::string(kWhiteTextureUri), .Width = 1, .Height = 1, .Channels = 4 };
 		white.Pixels.assign(4, koi::byte(0xFF));
 		WhiteTexture = textures.AcquireFrom(device, AssetKey(std::string(kWhiteTextureUri)), white);
+		textures.Pin(WhiteTexture);
 
 		const GPUTexture* whiteTexture = textures.Get(WhiteTexture);
 		WhiteTextureSRV = whiteTexture ? whiteTexture->SRVIndex : INVALID_DESCRIPTOR;
@@ -122,7 +125,7 @@ namespace koi
 
 	void RendererResources::Shutdown()
 	{
-		// The asset caches shut down first and have already released these
+		// Pinned in their caches, which shut down first and free them
 		FallbackMesh          = {};
 		FallbackTexture       = {};
 		WhiteTexture          = {};
