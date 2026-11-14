@@ -56,13 +56,13 @@ namespace koi::editor
 		// Hold a reference to everything the snapshot names. Stop tears the world down
 		// before rebuilding it, and without this the last reference to each asset would
 		// drop to zero and the same files would be re-read from disk a moment later
-		world.GetECS().each<MeshRef>([&](Entity, MeshRef& mesh)
+		world.GetECS().Each<const MeshRef>([&](const MeshRef& mesh)
 		{
 			const AssetKey key = meshes.GetKey(mesh.Handle);
 			if (key) m_pinnedMeshes.push_back(meshes.Acquire(device, key));  // Acquire increases the internal ref-count
 		});
 
-		world.GetECS().each<MaterialRef>([&](Entity, MaterialRef& material)
+		world.GetECS().Each<const MaterialRef>([&](const MaterialRef& material)
 		{
 			const AssetKey key = materials.GetKey(material.Handle);
 			if (key) m_pinnedMaterials.push_back(materials.Acquire(device, key));  // Acquire increases the internal ref-count

@@ -276,10 +276,9 @@ namespace koi::editor
 		World& world = m_game->GetWorld();
 		// A tag has no storage, so it filters the query rather than appearing as an argument
 		world.GetECS()
-			.query_builder<const Transform, const MeshRef>()
-			.with<Selected>()
-			.build()
-			.each([&](const Transform& xform, const MeshRef& meshRef)
+			.Query<const Transform, const MeshRef>()
+			.With<Selected>()
+			.Each([&](const Transform& xform, const MeshRef& meshRef)
 			{
 				const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 				if (!mesh) return;
@@ -294,7 +293,7 @@ namespace koi::editor
 
 	void EditorApp::DrawLightGizmos()
 	{
-		m_game->GetWorld().GetECS().each([](const Transform& xform, const Light& light)
+		m_game->GetWorld().GetECS().Each<const Transform, const Light>([](const Transform& xform, const Light& light)
 		{
 			const Color color(light.Color.x, light.Color.y, light.Color.z, 1.0f);
 

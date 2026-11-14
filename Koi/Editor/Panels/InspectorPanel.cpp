@@ -8,6 +8,7 @@
 #include <IconsFontAwesome6.h>
 #include <imgui.h>
 #include <cctype>
+#include <string>
 
 namespace koi::editor
 {
@@ -49,13 +50,14 @@ namespace koi::editor
 			return;
 		}
 
-		if (!selected.is_alive())
+		if (!selected.IsAlive())
 		{
 			ImGui::TextDisabled("Select a node");
 			return;
 		}
 
-		const char* name = selected.name().length() > 0 ? selected.name().c_str() : "(unnamed)";
+		const std::string nameText(selected.GetName());
+		const char* name = nameText.empty() ? "(unnamed)" : nameText.c_str();
 		ImGui::AlignTextToFramePadding();
 		utils::PushHeadingFont();
 		ImGui::TextUnformatted(name);

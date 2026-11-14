@@ -13,7 +13,7 @@ namespace koi::editor
 		template <typename Ref, typename T>
 		std::optional<AssetKey> ReadRef(Entity e)
 		{
-			const Ref* ref = e.is_alive() ? e.try_get<Ref>() : nullptr;
+			const Ref* ref = e.IsAlive() ? e.TryGet<const Ref>() : nullptr;
 			return ref ? std::optional<AssetKey>(Cache<T>().GetKey(ref->Handle)) : std::nullopt;
 		}
 
@@ -22,19 +22,19 @@ namespace koi::editor
 		template <typename Ref, typename T>
 		void WriteRef(Entity e, const std::optional<AssetKey>& key)
 		{
-			if (!e.is_alive()) return;
+			if (!e.IsAlive()) return;
 
 			if (!key)
 			{
-				e.remove<Ref>();  // World's on_remove hook releases the handle
+				e.Remove<Ref>();  // World's on_remove hook releases the handle
 				return;
 			}
 
 			const AssetHandle<T> handle = Cache<T>().Acquire(Engine::Get().GetSubsystem<Renderer>().GetDevice(), *key);
 			if (!handle) return;
 
-			e.remove<Ref>();
-			e.set<Ref>({ handle });
+			e.Remove<Ref>();
+			e.Set<Ref>({ handle });
 		}
 	}
 

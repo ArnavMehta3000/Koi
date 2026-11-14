@@ -16,25 +16,25 @@ namespace koi::editor
 
 		[[nodiscard]] std::optional<T> Read() const
 		{
-			const T* value = Target.is_alive() ? Target.try_get<T>() : nullptr;
+			const T* value = Target.IsAlive() ? Target.TryGet<const T>() : nullptr;
 			return value ? std::optional<T>(*value) : std::nullopt;
 		}
 
 		void Write(const std::optional<T>& value) const
 		{
-			if (!Target.is_alive()) return;
+			if (!Target.IsAlive()) return;
 
 			if (value)
 			{
-				Target.set<T>(*value);
+				Target.Set<T>(*value);
 			}
 			else
 			{
-				Target.remove<T>();
+				Target.Remove<T>();
 			}
 		}
 
-		[[nodiscard]] u64 Identity() const { return Target.id(); }
+		[[nodiscard]] u64 Identity() const { return Target.GetId(); }
 
 		Entity Target;
 	};
@@ -49,7 +49,7 @@ namespace koi::editor
 
 		[[nodiscard]] std::optional<AssetKey> Read() const;
 		void Write(const std::optional<AssetKey>& key) const;
-		[[nodiscard]] u64 Identity() const { return Target.id(); }
+		[[nodiscard]] u64 Identity() const { return Target.GetId(); }
 
 		Entity Target;
 	};
@@ -63,7 +63,7 @@ namespace koi::editor
 
 		[[nodiscard]] std::optional<AssetKey> Read() const;
 		void Write(const std::optional<AssetKey>& key) const;
-		[[nodiscard]] u64 Identity() const { return Target.id(); }
+		[[nodiscard]] u64 Identity() const { return Target.GetId(); }
 
 		Entity Target;
 	};
