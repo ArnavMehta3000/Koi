@@ -1,5 +1,6 @@
 #include "Koi/Engine/ECS/ECS.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {
@@ -8,10 +9,18 @@ namespace koi
 		: m_owner(&owner)
 	{
 		m_root = Spawn("Root").GetHandle();
+		RegisterPhase<FixedUpdate>();
+		RegisterPhase<PreUpdate>();
+		RegisterPhase<Update>();
+		RegisterPhase<PostUpdate>();
+		RegisterPhase<PreRender>();
 	}
 
 	ECS::~ECS()
 	{
+		KOI_SCOPE("ECS Teardown");
+		KOI_LOG(ECS, Debug, "Tearing down ECS ({} entities, {} free slots)", m_nodes.size() - m_free.size(), m_free.size());
+
 		// Destroy signals still need the pools, the hooks and whatever the systems own
 		Sync();
 		for (u32 i = 0; i < m_nodes.size(); ++i)
@@ -44,7 +53,10 @@ namespace koi
 		Node& node = m_nodes[index];
 		node.Alive = true;
 		node.Name  = name.empty() ? std::string("Entity") : std::string(name);
-		return Entity(this, EntityHandle(index, node.Generation));
+
+		const Entity e(this, EntityHandle(index, node.Generation));
+		if (m_playing) Emit<BeginPlay>(e);
+		return e;
 	}
 
 	bool ECS::IsAlive(EntityHandle handle) const
@@ -61,8 +73,12 @@ namespace koi
 
 	void ECS::FlushCommands()
 	{
+		if (m_commands.empty()) return;
+
+		KOI_SCOPE("ECS Flush");
 		while (!m_commands.empty())
 		{
+			FrameStats::Count("ECS Commands", static_cast<i64>(m_commands.size()));
 			std::vector<std::move_only_function<void()>> batch = std::exchange(m_commands, {});
 			for (auto& command : batch) command();
 		}
@@ -70,9 +86,15 @@ namespace koi
 
 	void ECS::Sync()
 	{
+		KOI_SCOPE("ECS Sync");
 		for (u32 pass = 0; ; ++pass)
 		{
-			KOI_ASSERT(pass < 64, "Events keep emitting events; sync never settles");
+			if (pass == 64)
+			{
+				KOI_LOG(ECS, Error, "Events keep emitting events; giving up on this sync after {} passes", pass);
+				KOI_ASSERT(false, "Sync never settles");
+				break;
+			}
 			FlushCommands();
 
 			bool drained = false;
@@ -84,18 +106,128 @@ namespace koi
 		}
 	}
 
-	void ECS::AddSystem(SystemPhase phase, SystemFn fn)
+	u32 ECS::InsertPhase(u32 id, std::string_view name, bool fixedStep, u32 anchor, bool after)
 	{
-		m_phases[static_cast<size_t>(phase)].push_back(std::move(fn));
+		if (id >= m_phases.size()) m_phases.resize(id + 1);
+		m_phases[id] = std::make_unique<PhaseData>(PhaseData{ .Name = name, .FixedStep = fixedStep, .Anchor = anchor, .AnchorAfter = after });
+
+		auto pos = m_phaseOrder.end();
+		if (anchor != kNoPhase)
+		{
+			pos = std::ranges::find(m_phaseOrder, anchor);
+			if (after)
+			{
+				// Land after the anchor and anything already placed after it
+				const auto placedUnder = [&](u32 phase)
+				{
+					for (u32 a = m_phases[phase]->Anchor; a != kNoPhase; a = m_phases[a]->Anchor)
+					{
+						if (a == anchor) return true;
+					}
+					return false;
+				};
+				for (++pos; pos != m_phaseOrder.end() && placedUnder(*pos); ++pos) { /* Empty on purpose */ }
+			}
+		}
+		m_phaseOrder.insert(pos, id);
+
+		KOI_LOG(ECS, Debug, "Phase '{}' registered{}{}{}", name, anchor == kNoPhase ? "" : (after ? " after '" : " before '"),
+			anchor == kNoPhase ? "" : m_phases[anchor]->Name, anchor == kNoPhase ? "" : "'");
+		return id;
 	}
 
-	void ECS::RunPhase(SystemPhase phase, f32 dt)
+	void ECS::AddSystem(u32 phase, SystemDesc desc)
 	{
-		for (SystemFn& system : m_phases[static_cast<size_t>(phase)])
+		PhaseData& data = *m_phases[phase];
+		data.Systems.push_back(std::move(desc));
+		data.Sorted = false;
+	}
+
+	void ECS::SortSystems(PhaseData& phase)
+	{
+		std::vector<SystemDesc>& systems = phase.Systems;
+		const size_t count = systems.size();
+		const auto indexOf = [&](u32 id) -> size_t
 		{
-			system(dt);
+			const auto it = std::ranges::find(systems, id, &SystemDesc::Id);
+			return it == systems.end() ? count : static_cast<size_t>(it - systems.begin());
+		};
+
+		std::vector<std::vector<size_t>> next(count);
+		std::vector<u32> waiting(count, 0);
+		for (size_t i = 0; i < count; ++i)
+		{
+			for (const u32 id : systems[i].After)
+			{
+				if (const size_t j = indexOf(id); j != count) { next[j].push_back(i); ++waiting[i]; }
+			}
+			for (const u32 id : systems[i].Before)
+			{
+				if (const size_t j = indexOf(id); j != count) { next[i].push_back(j); ++waiting[j]; }
+			}
+		}
+
+		// Kahn's algorithm: always taking the earliest registered ready system
+		std::vector<size_t> order;
+		std::vector<bool> placed(count, false);
+		while (order.size() < count)
+		{
+			size_t pick = count;
+			for (size_t i = 0; i < count && pick == count; ++i)
+			{
+				if (!placed[i] && waiting[i] == 0) pick = i;
+			}
+			if (pick == count)
+			{
+				KOI_LOG(ECS, Error, "Systems in phase '{}' have a RunsAfter/RunsBefore cycle; the rest run in registration order", phase.Name);
+				for (size_t i = 0; i < count; ++i)
+				{
+					if (!placed[i]) order.push_back(i);
+				}
+				break;
+			}
+			placed[pick] = true;
+			order.push_back(pick);
+
+			for (const size_t j : next[pick])
+			{
+				--waiting[j];
+			}
+		}
+
+		std::vector<SystemDesc> sorted;
+		sorted.reserve(count);
+		std::string names;
+		for (const size_t i : order)
+		{
+			names += names.empty() ? "" : ", ";
+			names += systems[i].Name;
+			sorted.push_back(std::move(systems[i]));
+		}
+		systems = std::move(sorted);
+		phase.Sorted = true;
+		KOI_LOG(ECS, Debug, "Phase '{}' system order: {}", phase.Name, names.empty() ? "(none)" : names);
+	}
+
+	void ECS::RunPhase(PhaseData& phase, f32 dt)
+	{
+		if (!phase.Sorted) SortSystems(phase);
+
+		KOI_SCOPE_TRANSIENT(phase.Name);
+		for (SystemDesc& system : phase.Systems)
+		{
+			system.Run(dt);
 		}
 		Sync();
+	}
+
+	void ECS::RunPhases(bool fixedStep, f32 dt)
+	{
+		for (const u32 id : m_phaseOrder)
+		{
+			PhaseData& phase = *m_phases[id];
+			if (phase.FixedStep == fixedStep) RunPhase(phase, dt);
+		}
 	}
 
 	void ECS::RemoveNow(u32 componentId, EntityHandle handle)

@@ -63,7 +63,9 @@ namespace koi
 			ECS* ecs = &world.GetECS();
 			ecs->Observe<Event>([this, ecs](Entity e, const Event& event)
 			{
-				if (!FiresInEdit() && !internal::IsGamePlaying()) return;
+				// EndPlay drains after the engine has already left play
+				constexpr bool kLifecycle = std::is_same_v<Event, BeginPlay> || std::is_same_v<Event, EndPlay>;
+				if (!kLifecycle && !FiresInEdit() && !internal::IsGamePlaying()) return;
 
 				const std::tuple<Components*...> components{ e.TryGet<Components>()... };
 				if (std::apply([](auto*... c) { return ((c == nullptr) || ...); }, components)) return;

@@ -25,7 +25,7 @@ Platform = "Info"
 Input    = "Info"
 IO       = "Info"
 Assets   = "Debug"
-ECS      = "Info"
+ECS      = "Trace"
 Scene    = "Debug"
 Render   = "Debug"
 RHI      = "Info"
@@ -37,7 +37,7 @@ Import   = "Debug"
 Cook     = "Info"
 
 [scenes]
-startup = "PostProcess"
+startup = "Main"
 
 [scenes.list]
 Main        = "project://Content/Scenes/Main.scene.toml"

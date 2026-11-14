@@ -12,7 +12,12 @@ namespace koi
 		template<typename T, typename... Args>
 		void Register(Args&&... args)
 		{
-			m_factories.push_back([=] { return std::unique_ptr<ISystem>(std::make_unique<T>(args...)); });
+			m_factories.push_back([=]
+			{
+				auto system = std::make_unique<T>(args...);
+				system->template SetTraits<T>();
+				return std::unique_ptr<ISystem>(std::move(system));
+			});
 		}
 
 		[[nodiscard]] std::vector<std::unique_ptr<ISystem>> Instantiate() const;

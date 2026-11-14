@@ -9,9 +9,10 @@ namespace koi
 	class PhysicsSystem : public TaskSystem
 	{
 	public:
+		using Phase = FixedUpdate;
+
 		~PhysicsSystem() override;
 		[[nodiscard]] std::string_view Name() const override { return "PhysicsSystem"; }
-		[[nodiscard]] SystemPhase Phase() const override { return SystemPhase::FixedUpdate; }
 
 		void Build(World& world) override;
 		void Run(const SystemContext& ctx) override;

@@ -29,6 +29,33 @@ namespace koi
 		return static_cast<internal::EventQueue<Event>&>(*m_events[id]);
 	}
 
+	template<typename P>
+	u32 ECS::RegisterPhase()
+	{
+		const u32 id = internal::PhaseIdOf<P>();
+		if (id < m_phases.size() && m_phases[id]) return id;
+
+		using Placement = typename P::PlacementType;
+		if constexpr (std::is_void_v<Placement>)
+		{
+			return InsertPhase(id, internal::TypeName<P>(), P::kFixedStep, kNoPhase, true);
+		}
+		else
+		{
+			const u32 anchor = RegisterPhase<typename Placement::Anchor>();
+			return InsertPhase(id, internal::TypeName<P>(), P::kFixedStep, anchor, Placement::kAfter);
+		}
+	}
+
+	template<typename Event>
+	void ECS::EmitToAll(const Event& event)
+	{
+		for (u32 i = 0; i < m_nodes.size(); ++i)
+		{
+			if (m_nodes[i].Alive && i != m_root.GetIndex()) Emit(Entity(this, EntityHandle(i, m_nodes[i].Generation)), event);
+		}
+	}
+
 	template<typename T>
 	void internal::Pool<T>::Erase(ECS& ecs, EntityHandle handle)
 	{

@@ -7,8 +7,8 @@ namespace koi
 	class PhysicsDebugDrawSystem : public TaskSystem
 	{
 	public:
+		using Phase = PreRender;
 		[[nodiscard]] std::string_view Name() const override { return "PhysicsDebugDraw"; }
-		[[nodiscard]] SystemPhase Phase() const override { return SystemPhase::PreRender; }
 
 		void Run(const SystemContext& ctx) override;
 	};
