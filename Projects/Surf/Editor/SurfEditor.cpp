@@ -14,7 +14,7 @@ namespace game
 		public:
 			void Draw(koi::Entity e) override
 			{
-				PlayerMover* mover = e.try_get_mut<PlayerMover>();
+				PlayerMover* mover = e.TryGet<PlayerMover>();
 				if (!mover) return;
 
 				DrawLaneSpheres(mover->Positions, *mover->Lane);
@@ -27,7 +27,7 @@ namespace game
 		public:
 			void Draw(koi::Entity e) override
 			{
-				ObstacleSpawner* spawner = e.try_get_mut<ObstacleSpawner>();
+				ObstacleSpawner* spawner = e.TryGet<ObstacleSpawner>();
 				if (!spawner) return;
 
 				DrawLaneSpheres(spawner->Positions, -1);

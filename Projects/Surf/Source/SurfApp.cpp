@@ -35,7 +35,7 @@ namespace game
 
 	void SurfApp::OnTick(koi::f32 /*dt*/)
 	{
-		if (!GetWorld().GetECS().has<RestartRequested>()) return;
+		if (!GetWorld().GetECS().Has<RestartRequested>()) return;
 
 		KOI_LOG(Surf, Info, "Player hit an obstacle, restarting");
 		LoadScene("Main");
