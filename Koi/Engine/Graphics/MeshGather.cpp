@@ -23,7 +23,7 @@ namespace koi
 
 		const AssetCache<Material>& materials = Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>();
 
-		world.GetECS().Each<const Transform, const MeshRef>([&](Entity e, const Transform& xform, const MeshRef& meshRef)
+		world.GetECS().Each<const WorldTransform, const MeshRef>([&](Entity e, const WorldTransform& xform, const MeshRef& meshRef)
 		{
 			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 			if (!mesh) return;
@@ -32,7 +32,7 @@ namespace koi
 			const MaterialRef* materialRef = e.TryGet<const MaterialRef>();
 			const Material*    override    = materialRef ? materials.Get(materialRef->Handle) : nullptr;
 
-			const Matrix            worldMatrix = xform.ToMatrix();
+			const Matrix&           worldMatrix = xform.World;
 			const DirectX::XMMATRIX worldXM     = DirectX::XMLoadFloat4x4(&worldMatrix);
 
 			// The transform is only pushed once a submesh survives, so a fully culled entity costs nothing in the object buffer

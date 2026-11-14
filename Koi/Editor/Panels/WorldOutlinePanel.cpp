@@ -229,14 +229,14 @@ namespace koi::editor
 			auto& [dragged, target, where] = *pendingDrop;
 			if (where == PendingDrop::Into)
 			{
-				dragged.SetParent(target);
+				World::Reparent(dragged, target);
 				dragged.Set<SceneOrder>({ ~0u });  // last among its new siblings until renumbered
 			}
 			else
 			{
 				// Same parent as the target, then slot in just before/after it. Fractional slots
 				// aren't possible on u32, so shift the target and everything past it by one first
-				dragged.SetParent(target.GetParent());
+				World::Reparent(dragged, target.GetParent());
 
 				const u32 slot = target.TryGet<const SceneOrder>() ? target.Get<const SceneOrder>().Index + (where == PendingDrop::After ? 1 : 0) : 0;
 				ecs.Each<SceneOrder>([&](Entity e, SceneOrder& order) { if (e != dragged && order.Index >= slot) ++order.Index; });

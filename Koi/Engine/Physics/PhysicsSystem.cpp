@@ -225,15 +225,16 @@ namespace koi
 
 		// Rigid body first so that a collider find its partner RB
 
-		ecs.Each<const Transform, RigidBody>([&](Entity e, const Transform& xform, RigidBody& body)
+		ecs.Each<const WorldTransform, RigidBody>([&](Entity e, const WorldTransform& pose, RigidBody& body)
 		{
 			if (OwnsBody(body.BodyId.get(), e)) return;
-			body.BodyId = CreateBody(m_b3WorldId, e, xform, &body);
+			body.BodyId = CreateBody(m_b3WorldId, e, pose.AsTransform(), &body);
 			++created;
 		});
 
-		ecs.Each<const Transform, Collider>([&](Entity e, const Transform& xform, Collider& collider)
+		ecs.Each<const WorldTransform, Collider>([&](Entity e, const WorldTransform& pose, Collider& collider)
 		{
+			const Transform xform = pose.AsTransform();
 			const b3ShapeId current = collider.ShapeId.get();
 			if (OwnsShape(current, e))
 			{
@@ -263,10 +264,10 @@ namespace koi
 	void PhysicsSystem::PushKinematics(World& world, f32 dt)
 	{
 		ZoneScoped;
-		world.GetECS().Each<const Transform, const RigidBody>([dt](Entity e, const Transform& xform, const RigidBody& body)
+		world.GetECS().Each<const WorldTransform, const RigidBody>([dt](Entity e, const WorldTransform& xform, const RigidBody& body)
 		{
 			if (body.Type != BodyType::Kinematic || !OwnsBody(body.BodyId.get(), e)) return;
-			::b3Body_SetTargetTransform(body.BodyId.get(), internal::ToB3(xform), dt, true);
+			::b3Body_SetTargetTransform(body.BodyId.get(), internal::ToB3(xform.AsTransform()), dt, true);
 		});
 	}
 
@@ -288,10 +289,22 @@ namespace koi
 			const RigidBody* body = e.TryGet<const RigidBody>();
 			if (!body || body->Type != BodyType::Dynamic) continue;
 
-			if (Transform* xform = e.TryGet<Transform>())
+			Transform* xform = e.TryGet<Transform>();
+			if (!xform) continue;
+
+			const Vector3    position = internal::ToKoi(move.transform.p);
+			const Quaternion rotation = internal::ToKoi(move.transform.q);
+			const Entity parent = e.GetParent();
+			if (const WorldTransform* parentWorld = parent ? parent.TryGet<const WorldTransform>() : nullptr)
 			{
-				xform->Position = internal::ToKoi(move.transform.p);
-				xform->Rotation = internal::ToKoi(move.transform.q);
+				const Transform local = WorldTransform::ToLocal(Matrix::CreateFromQuaternion(rotation) * Matrix::CreateTranslation(position), parentWorld);
+				xform->Position = local.Position;
+				xform->Rotation = local.Rotation;
+			}
+			else
+			{
+				xform->Position = position;
+				xform->Rotation = rotation;
 			}
 		}
 	}
