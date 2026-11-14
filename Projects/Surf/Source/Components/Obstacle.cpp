@@ -42,22 +42,22 @@ namespace game
 
 		if (transform.Position.z > obstacle.DespawnZ)
 		{
-			e.destruct();
+			e.Destroy();
 		}
 	}
 
 	void ObstacleHitObserver::On(const koi::SensorBegin& event, koi::Entity e, const Obstacle& obstacle)
 	{
-		const std::string other = event.Other ? std::string(event.Other.name().c_str()) : std::string("<destroyed>");
-		const koi::Vector3& at  = e.get<koi::Transform>().Position;
+		const std::string other = event.Other ? std::string(event.Other.GetName()) : std::string("<destroyed>");
+		const koi::Vector3& at  = e.Get<const koi::Transform>().Position;
 
 		KOI_LOG(ObstacleSpawner, Info, "Obstacle {} hit '{}' at ({:.2f}, {:.2f}, {:.2f}), speed {:.1f}, age {:.2f}s",
-			e.id(), other, at.x, at.y, at.z, obstacle.Speed, *obstacle.Age);
+			e.GetId(), other, at.x, at.y, at.z, obstacle.Speed, *obstacle.Age);
 
 		// Reloading here would swap the world mid-step, so OnTick does it
-		if (event.Other && event.Other.has<PlayerMover>())
+		if (event.Other && event.Other.Has<PlayerMover>())
 		{
-			e.world().add<RestartRequested>();
+			e.GetECS().Add<RestartRequested>();
 		}
 	}
 }

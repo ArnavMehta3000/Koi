@@ -15,7 +15,7 @@ namespace
 	public:
 		void Draw(koi::Entity e) override
 		{
-			Spin* spin = e.try_get_mut<Spin>();
+			Spin* spin = e.TryGet<Spin>();
 			if (!spin) return;
 
 			if (!koi::editor::utils::BeginPropertyGrid("##spin")) return;
