@@ -75,6 +75,30 @@ namespace koi
 		}
 	}
 
+	void DebugDrawQueue::Capsule(const Vector3& a, const Vector3& b, f32 radius, const Color& color)
+	{
+		Vector3 axis = b - a;
+		if (axis.LengthSquared() < 1e-8f)
+		{
+			Sphere(a, radius, color);
+			return;
+		}
+		axis.Normalize();
+
+		// Any two directions perpendicular to the axis
+		const Vector3 helper = std::abs(axis.y) < 0.99f ? Vector3::UnitY : Vector3::UnitX;
+		Vector3 side = axis.Cross(helper);
+		side.Normalize();
+		const Vector3 other = axis.Cross(side);
+
+		Sphere(a, radius, color);
+		Sphere(b, radius, color);
+		for (const Vector3& offset : { side, -side, other, -other })
+		{
+			Line(a + offset * radius, b + offset * radius, color);
+		}
+	}
+
 	void DebugDrawQueue::Frustum(const Matrix& viewProjection, const Color& color)
 	{
 		const Matrix inverse = viewProjection.Invert();

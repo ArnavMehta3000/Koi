@@ -1,5 +1,6 @@
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Core/Assert.h"
+#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -7,6 +8,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
+#include "Koi/Engine/Physics/PhysicsDebugDraw.h"
 #include "Koi/Engine/Physics/PhysicsSystem.h"
 
 namespace koi
@@ -32,6 +34,9 @@ namespace koi
 		OnRegisterSystems();
 
 		SystemRegistry::Get().Register<PhysicsSystem>();
+#if KOI_DEBUG_DRAW
+		SystemRegistry::Get().Register<PhysicsDebugDrawSystem>();
+#endif
 
 		// A World builds its systems on construction (World::BuildSystems)
 		//   so it comes after every engine registration

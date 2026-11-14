@@ -16,6 +16,7 @@ namespace koi
 
 		Vector3 Gravity  = Vector3(0.0f, -9.81f, 0.0f);
 		i32     SubSteps = 4;
+		bool    DrawColliders = false;  // not in game-release, which has no debug draw
 
 		[[nodiscard]] static const PhysicsSettings& Resolve(const World& world);
 	};
