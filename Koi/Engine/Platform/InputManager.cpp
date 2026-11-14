@@ -40,9 +40,6 @@ namespace koi
 		m_config = ctx.Input;
 		m_actions.assign(m_config.Actions.size(), ActionState{});
 
-		// Headless: no devices to listen to
-		if (!ctx.MainWindow) return;
-
 		m_window = ctx.MainWindow;
 		const HWND hwnd = static_cast<HWND>(m_window->GetNativeHandle());
 		KOI_ASSERT(hwnd, "Window has no native HWND");

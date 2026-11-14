@@ -41,15 +41,6 @@ namespace koi
 		KOI_LOG(Engine, Debug, "Engine subsystems constructed");
 
 		ComponentRegistry::Get().RegisterEngineComponents();
-
-		// Nothing will call RunApp, so everything that doesn't need the window comes up now
-		if (m_desc.Headless)
-		{
-			const InputConfig noInput{};
-			SubsystemInitContext initCtx{ .Input = noInput };
-			m_systems->InitAll(initCtx);
-			KOI_LOG(Engine, Debug, "Engine subsystems initialized headless");
-		}
 	}
 
 	Engine::~Engine()
@@ -70,8 +61,6 @@ namespace koi
 
 	void Engine::RunApp(IAppHost& host)
 	{
-		KOI_ASSERT(!m_desc.Headless, "A headless engine has no window to run an app in");
-
 		const AppCreateDesc& desc = host.GetDesc();
 		const WindowDesc& mainWndDesc = desc.WindowDesc;
 

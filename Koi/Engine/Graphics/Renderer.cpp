@@ -110,18 +110,15 @@ namespace koi
 	{
 		ZoneScoped;
 
-		// Headless has no swapchain
-		if (Window* window = ctx.MainWindow)
-		{
-			m_renderWindow.emplace(*m_device, *window, ctx.VSync);
+		Window& window = *ctx.MainWindow;
+		m_renderWindow.emplace(*m_device, window, ctx.VSync);
 
-			// Only the swapchain needs the OS event | render passes size themselves off the RenderView.
-			window->SetResizeCallback([this](u32 w, u32 h)
-			{
-				if (m_renderWindow) m_renderWindow->QueueResize(w, h);
-			});
-			KOI_LOG(Render, Debug, "Renderer: main render window initialized ({}x{}, vsync {})", window->GetWidth(), window->GetHeight(), ctx.VSync);
-		}
+		// Only the swapchain needs the OS event | render passes size themselves off the RenderView.
+		window.SetResizeCallback([this](u32 w, u32 h)
+		{
+			if (m_renderWindow) m_renderWindow->QueueResize(w, h);
+		});
+		KOI_LOG(Render, Debug, "Renderer: main render window initialized ({}x{}, vsync {})", window.GetWidth(), window.GetHeight(), ctx.VSync);
 
 		m_frameContext = std::make_unique<FrameContext>();
 		m_frameContext->Allocator.Init(*m_device, D3D12_COMMAND_LIST_TYPE_DIRECT, L"Renderer Allocator");

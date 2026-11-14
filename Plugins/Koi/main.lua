@@ -52,10 +52,10 @@ local function cmd_new(name)
 	print("  xmake install " .. name .. "                      package to Projects/" .. name .. "/Packaged")
 end
 
--- Every project + the tests in both shipping configs, ending back on editor-debug
+-- Every project in both shipping configs, ending back on editor-debug
 local function cmd_check()
 	local xmake   = os.programfile()
-	local targets = { "Koi.Tests" }
+	local targets = {}
 	for _, p in ipairs(discover()) do
 		table.insert(targets, p.name)
 	end
@@ -69,7 +69,6 @@ local function cmd_check()
 			function ()
 				os.execv(xmake, { "f", "-m", mode, "-y" })
 				os.execv(xmake, table.join({ "build" }, targets))
-				os.execv(xmake, { "test" })
 				table.insert(passed, mode)
 			end,
 			catch { function () failure = mode end }

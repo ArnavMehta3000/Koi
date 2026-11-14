@@ -13,7 +13,7 @@ namespace koi
 	// Handed to every subsystem's Init, once the main window exists
 	struct SubsystemInitContext
 	{
-		Window*            MainWindow = nullptr;  // null when headless
+		Window*            MainWindow = nullptr;
 		bool               VSync = false;
 		const InputConfig& Input;
 	};

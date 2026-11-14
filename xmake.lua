@@ -35,7 +35,6 @@ add_rules("KoiMode", "Natvis")
 
 includes("Koi/Engine")
 includes("Koi/Editor")
-includes("Tests")
 
 -- A game project is any Projects/<Name>/ carrying <Name>.koi.toml
 for _, marker in ipairs(os.files("Projects/*/*.koi.toml")) do

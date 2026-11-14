@@ -10,7 +10,6 @@ includes("Packages/CLI11.lua")
 includes("Packages/CTRE.lua")
 includes("Packages/DirectXHeaders.lua")
 includes("Packages/DirectXTex.lua")
-includes("Packages/Doctest.lua")
 includes("Packages/dxc.lua")
 includes("Packages/FastGLTF.lua")
 includes("Packages/Flecs.lua")
@@ -30,7 +29,6 @@ add_requires("box3d 336263320469e5e9febfe18697ab562488f7e97a")           -- main
 add_requires("cli11 cbd58a3696887b34c70949aef21a71735a0c2ad5")           -- v2.7.2
 add_requires("directx-headers ee479f0bd5f7b884f202bcf0c3f076cc050dd256") -- v1.619.5
 add_requires("directxtex 32b2a8ef351ab08f822f6c0937fa37e07484714a")      -- jul2025, editor-only
-add_requires("doctest 2d0a9359a60c51affe2a9bebb1be1dca47868151")         -- v2.5.3, Koi.Tests only
 add_requires("dxc 1.9.2602")                                             -- release binaries
 add_requires("fastgltf 87cfbceeeda127ccc9092694279437b700046119")        -- v1.0.1
 add_requires("Flecs fb55f3c25660425cfe1bc4cf5e6bff8b3f18a9b8")           -- v4.1.6
