@@ -366,14 +366,22 @@ namespace koi
 
 		// Timer already clamps dt, which bounds how many fixed steps one frame can owe
 		m_fixedAccumulator += dt;
-		while (m_fixedAccumulator >= kFixedStep && !m_systemFailure)
 		{
-			m_ecs.run_pipeline(m_fixedPipeline, kFixedStep);
-			m_fixedAccumulator -= kFixedStep;
+			KOI_SCOPE("Fixed Update");
+			i64 steps = 0;
+			while (m_fixedAccumulator >= kFixedStep && !m_systemFailure)
+			{
+				ZoneScopedN("Fixed Step");
+				m_ecs.run_pipeline(m_fixedPipeline, kFixedStep);
+				m_fixedAccumulator -= kFixedStep;
+				++steps;
+			}
+			FrameStats::Count("Fixed Steps", steps);
 		}
 
 		if (!m_systemFailure)
 		{
+			KOI_SCOPE("Frame Systems");
 			m_ecs.progress(dt);
 		}
 

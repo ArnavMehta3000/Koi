@@ -1,4 +1,5 @@
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/LogHistory.h"
 #include "Koi/Engine/Platform/Win32.h"
 #include <spdlog/sinks/basic_file_sink.h>
@@ -286,6 +287,7 @@ namespace koi
 	void Logger::Log(u16 category, LogLevel level, u16 source, u32 line, std::string_view message)
 	{
 		if (!s_logger) return;
+		KOI_ZONE_UNMUTED;
 
 		const LogSourceInfo   file = GetSource(source);
 		const LogCategoryInfo cat  = GetCategory(category);

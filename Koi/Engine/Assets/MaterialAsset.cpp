@@ -1,6 +1,7 @@
 #include "Koi/Engine/Assets/MaterialAsset.h"
-#include "Koi/Engine/Assets/MaterialFile.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Assets/MaterialFile.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/GPUTexture.h"
 #include "Koi/Engine/Graphics/MaterialTemplateLibrary.h"
 #include "Koi/Engine/Graphics/Renderer.h"
@@ -98,6 +99,7 @@ namespace koi
 
 	Material AssetTraits<Material>::Upload(GfxDevice& device, const MaterialSource& source)
 	{
+		ZoneScoped;
 		Material material;
 		material.Name        = source.Name;
 		material.Constants   = source.Constants;

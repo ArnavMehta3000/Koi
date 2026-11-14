@@ -36,6 +36,7 @@ namespace koi
 
 	GPUTexture AssetTraits<GPUTexture>::Upload(GfxDevice& device, const ImageAsset& source)
 	{
+		ZoneScoped;
 		return GPUTexture::Upload(device, source);
 	}
 

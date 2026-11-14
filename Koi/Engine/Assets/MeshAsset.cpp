@@ -2,6 +2,7 @@
 #include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/MeshFile.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -50,6 +51,7 @@ namespace koi
 
 	GPUMesh AssetTraits<GPUMesh>::Upload(GfxDevice& device, const ModelAsset& source)
 	{
+		ZoneScoped;
 		GPUMesh mesh = GPUMesh::Upload(device, source);
 		mesh.BindMaterials(device, source);
 		return mesh;

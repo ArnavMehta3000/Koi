@@ -1,4 +1,5 @@
 #include "Koi/Engine/Platform/Gamepad.h"
+#include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/MathTypes.h"
 #include "Koi/Engine/Platform/Win32.h"
@@ -97,6 +98,7 @@ namespace koi
 
 	void Gamepad::Poll(bool allowRumble)
 	{
+		ZoneScoped;
 		m_downPrev = m_down;
 		m_down.fill(false);
 		m_axes.fill(0.0f);
