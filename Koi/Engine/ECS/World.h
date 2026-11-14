@@ -59,6 +59,12 @@ namespace koi
 		void BeginPlay();
 		void EndPlay();
 
+		// Rebuilds every WorldTransform from the local Transforms
+		void PropagateTransforms();
+
+		// SetParent that keeps the child where it is in the world (null parent detaches)
+		static void Reparent(Entity child, Entity parent);
+
 		template<typename Event>
 		void Emit(Entity e, const Event& event = {}) { m_ecs->Emit(e, event); }
 
