@@ -13,7 +13,6 @@ target("Koi.Engine")
 		"toml++",
 		"dxc",
 		"tracy-profiler",
-		"Flecs",
 		"box3d",
 		"reflect-cpp",
 		"directx-headers", { public = true })
