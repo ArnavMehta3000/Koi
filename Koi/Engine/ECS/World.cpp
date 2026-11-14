@@ -247,6 +247,7 @@ namespace koi
 			KOI_LOG(Scene, Debug, "Scene has no camera; spawned a default one");
 		}
 
+		PropagateTransforms();
 		KOI_LOG(Scene, Debug, "Built world from scene table ({} entities)", entities->size());
 		return true;
 	}
@@ -349,6 +350,7 @@ namespace koi
 		if (!Engine::Get().IsPlaying())
 		{
 			m_ecs->Sync();
+			PropagateTransforms();
 			return;
 		}
 
@@ -365,12 +367,14 @@ namespace koi
 				++steps;
 			}
 			FrameStats::Count("Fixed Steps", steps);
+			if (steps > 0) PropagateTransforms();
 		}
 
 		if (!m_systemFailure)
 		{
 			KOI_SCOPE("Frame Systems");
 			m_ecs->RunPhases(false, dt);
+			PropagateTransforms();
 		}
 
 		if (m_systemFailure)
@@ -378,6 +382,57 @@ namespace koi
 			SystemFailure failure = *std::exchange(m_systemFailure, std::nullopt);
 			throw Exception(failure.Message, std::move(failure.Trace));
 		}
+	}
+
+	void World::PropagateTransforms()
+	{
+		KOI_SCOPE("Propagate Transforms");
+
+		// Collected first: a missing WorldTransform is added on the way, which defers inside a query
+		std::vector<Entity> roots;
+		m_ecs->Each<const Transform>([&](Entity e, const Transform&)
+		{
+			if (!e.GetParent()) roots.push_back(e);
+		});
+
+		i64 visited = 0;
+		const auto visit = [&](this const auto& self, Entity e, const WorldTransform* parent) -> void
+		{
+			// Copied, since adding a WorldTransform further down can move the pool
+			std::optional<WorldTransform> mine;
+			if (const Transform* local = e.TryGet<const Transform>())
+			{
+				mine = WorldTransform::Compose(*local, parent);
+				e.Set<WorldTransform>(*mine);
+				++visited;
+			}
+
+			const WorldTransform* passDown = mine ? &*mine : parent;
+			for (const Entity child : e.Children())
+			{
+				self(child, passDown);
+			}
+		};
+
+		for (const Entity root : roots)
+		{
+			visit(root, nullptr);
+		}
+		FrameStats::Count("Transforms", visited);
+	}
+
+	void World::Reparent(Entity child, Entity parent)
+	{
+		const WorldTransform* world = child.TryGet<const WorldTransform>();
+		const std::optional<Matrix> worldMatrix = world ? std::optional(world->World) : std::nullopt;
+
+		child.SetParent(parent);
+
+		Transform* local = child.TryGet<Transform>();
+		if (!local || !worldMatrix) return;
+
+		const WorldTransform* parentWorld = parent ? parent.TryGet<const WorldTransform>() : nullptr;
+		*local = WorldTransform::ToLocal(*worldMatrix, parentWorld);
 	}
 
 	void World::BeginPlay()
@@ -437,12 +492,12 @@ namespace koi
 		ZoneScoped;
 
 		bool found = false;
-		m_ecs->Query<const Transform, const CameraComponent>()
-			.Each([&](const Transform& xform, const CameraComponent& cam)
+		m_ecs->Query<const WorldTransform, const CameraComponent>()
+			.Each([&](const WorldTransform& xform, const CameraComponent& cam)
 			{
 				if (!cam.Primary || found) return;
 				m_camera.SetProjection(cam.FovY, aspect, cam.Near, cam.Far);
-				m_camera.SetTransform(xform);
+				m_camera.SetTransform(xform.AsTransform());
 				found = true;
 			});
 
