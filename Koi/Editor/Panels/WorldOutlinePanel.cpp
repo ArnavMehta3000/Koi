@@ -7,7 +7,9 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <algorithm>
+#include <iterator>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace koi::editor
@@ -18,9 +20,9 @@ namespace koi::editor
 
 		const char* EntityIcon(Entity e)
 		{
-			if (e.has<CameraComponent>()) return ICON_FA_VIDEO;
-			if (e.has<Light>())           return ICON_FA_LIGHTBULB;
-			if (e.has<MeshRef>())         return ICON_FA_SHAPES;
+			if (e.Has<CameraComponent>()) return ICON_FA_VIDEO;
+			if (e.Has<Light>())           return ICON_FA_LIGHTBULB;
+			if (e.Has<MeshRef>())         return ICON_FA_SHAPES;
 			return ICON_FA_CUBE;
 		}
 
@@ -28,13 +30,13 @@ namespace koi::editor
 		size_t AppendSortedChildren(ECS& ecs, Entity parent, std::vector<Entity>& out)
 		{
 			const size_t first = out.size();
-			if (parent.is_alive())
+			if (parent.IsAlive())
 			{
-				parent.children([&](Entity e) { out.push_back(e); });
+				std::ranges::copy(parent.Children(), std::back_inserter(out));
 			}
 			else
 			{
-				ecs.each<Transform>([&](Entity e, Transform&) { if (!e.parent()) out.push_back(e); });
+				ecs.Each<const Transform>([&](Entity e, const Transform&) { if (!e.GetParent()) out.push_back(e); });
 			}
 
 			std::ranges::sort(out.begin() + first, out.end(), {}, [](Entity e) { return World::OrderKey(e); });
@@ -59,7 +61,7 @@ namespace koi::editor
 			{
 				ForEachSortedChild(ecs, parent, scratch, [&](Entity e)
 				{
-					e.set<SceneOrder>({ next++ });
+					e.Set<SceneOrder>({ next++ });
 					self(e);
 				});
 			};
@@ -86,8 +88,7 @@ namespace koi::editor
 
 		auto DrawNode = [&](this auto&& self, Entity entity) -> void
 		{
-			bool hasChildren = false;
-			entity.children([&](Entity) { hasChildren = true; });
+			const bool hasChildren = entity.HasChildren();
 
 			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow
 										| ImGuiTreeNodeFlags_SpanAvailWidth
@@ -97,13 +98,14 @@ namespace koi::editor
 			if (!hasChildren)
 				flags |= ImGuiTreeNodeFlags_Leaf;
 
-			if (selected.is_alive() && selected.id() == entity.id())
+			if (selected.IsAlive() && selected.GetId() == entity.GetId())
 				flags |= ImGuiTreeNodeFlags_Selected;
 
-			const char* label = entity.name().length() > 0 ? entity.name().c_str() : "<unnamed>";
-			void* nodeId = reinterpret_cast<void*>(static_cast<intptr_t>(entity.id()));
+			const std::string name(entity.GetName());
+			const char* label = name.empty() ? "<unnamed>" : name.c_str();
+			void* nodeId = reinterpret_cast<void*>(static_cast<intptr_t>(entity.GetId()));
 
-			const bool renamingThis = m_renaming == entity.id();
+			const bool renamingThis = m_renaming == entity.GetId();
 			bool open;
 
 			if (renamingThis)
@@ -128,7 +130,7 @@ namespace koi::editor
 				else if (commit || ImGui::IsItemDeactivatedAfterEdit())
 				{
 					if (!m_renameBuffer.empty())
-						entity.set_name(m_renameBuffer.c_str());
+						entity.SetName(m_renameBuffer);
 					m_renaming = 0;
 				}
 				else if (ImGui::IsItemDeactivated())
@@ -145,14 +147,14 @@ namespace koi::editor
 
 				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
 				{
-					m_renaming     = entity.id();
+					m_renaming     = entity.GetId();
 					m_renameBuffer = label;
 					m_focusRename  = true;
 				}
 
 				if (ImGui::BeginDragDropSource())
 				{
-					EntityID id = entity.id();
+					EntityID id = entity.GetId();
 					ImGui::SetDragDropPayload(kDragDropPayloadType, &id, sizeof(id));
 					ImGui::TextUnformatted(label);
 					ImGui::EndDragDropSource();
@@ -174,8 +176,8 @@ namespace koi::editor
 
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(kDragDropPayloadType, where != PendingDrop::Into ? ImGuiDragDropFlags_AcceptNoDrawDefaultRect : 0))
 					{
-						Entity dragged = ecs.entity(*static_cast<EntityID*>(payload->Data));
-						if (dragged.is_alive() && dragged != entity)
+						const Entity dragged = ecs.FromId(*static_cast<const EntityID*>(payload->Data));
+						if (dragged.IsAlive() && dragged != entity)
 							pendingDrop = PendingDrop{ dragged, entity, where };
 					}
 					ImGui::EndDragDropTarget();
@@ -190,31 +192,31 @@ namespace koi::editor
 		};
 
 		// F2 renames the current selection wherever it ends up in the tree below
-		if (selected.is_alive() && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2))
+		if (selected.IsAlive() && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_F2))
 		{
-			m_renaming     = selected.id();
-			m_renameBuffer = selected.name().length() > 0 ? selected.name().c_str() : "";
+			m_renaming     = selected.GetId();
+			m_renameBuffer = selected.GetName();
 			m_focusRename  = true;
 		}
 
 		if (utils::IconButton(ICON_FA_PLUS, "Add entity (as a child of the selection)"))
 		{
-			Entity e = ecs.entity();
-			e.set_name(("Entity_" + std::to_string(static_cast<u64>(e.id()))).c_str());
-			e.set<Transform>({});
-			if (selected.is_alive())
-				e.child_of(selected);
+			const Entity e = ecs.Spawn();
+			e.SetName("Entity_" + std::to_string(e.GetId()));
+			e.Set<Transform>({});
+			if (selected.IsAlive())
+				e.SetParent(selected);
 			m_selection->Select(e);
 			renumber = true;
 		}
 
 		ImGui::SameLine();
-		ImGui::BeginDisabled(!selected.is_alive());
+		ImGui::BeginDisabled(!selected.IsAlive());
 
 		if (utils::IconButton(ICON_FA_TRASH, "Remove selected entity"))
 		{
 			m_selection->Clear();
-			selected.destruct();
+			selected.Destroy();
 		}
 		ImGui::EndDisabled();
 
@@ -227,21 +229,18 @@ namespace koi::editor
 			auto& [dragged, target, where] = *pendingDrop;
 			if (where == PendingDrop::Into)
 			{
-				dragged.child_of(target);
-				dragged.set<SceneOrder>({ ~0u });  // last among its new siblings until renumbered
+				dragged.SetParent(target);
+				dragged.Set<SceneOrder>({ ~0u });  // last among its new siblings until renumbered
 			}
 			else
 			{
 				// Same parent as the target, then slot in just before/after it. Fractional slots
 				// aren't possible on u32, so shift the target and everything past it by one first
-				if (const Entity parent = target.parent())
-					dragged.child_of(parent);
-				else
-					dragged.remove(flecs::ChildOf, flecs::Wildcard);
+				dragged.SetParent(target.GetParent());
 
-				const u32 slot = target.try_get<SceneOrder>() ? target.get<SceneOrder>().Index + (where == PendingDrop::After ? 1 : 0) : 0;
-				ecs.each<SceneOrder>([&](Entity e, SceneOrder& order) { if (e != dragged && order.Index >= slot) ++order.Index; });
-				dragged.set<SceneOrder>({ slot });
+				const u32 slot = target.TryGet<const SceneOrder>() ? target.Get<const SceneOrder>().Index + (where == PendingDrop::After ? 1 : 0) : 0;
+				ecs.Each<SceneOrder>([&](Entity e, SceneOrder& order) { if (e != dragged && order.Index >= slot) ++order.Index; });
+				dragged.Set<SceneOrder>({ slot });
 			}
 			renumber = true;
 		}

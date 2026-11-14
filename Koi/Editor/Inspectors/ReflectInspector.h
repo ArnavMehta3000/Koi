@@ -109,7 +109,7 @@ namespace koi::editor
 	public:
 		void Draw(Entity e) override
 		{
-			if (T* value = e.try_get_mut<T>()) utils::DrawReflected(*value);
+			if (T* value = e.TryGet<T>()) utils::DrawReflected(*value);
 		}
 	};
 }

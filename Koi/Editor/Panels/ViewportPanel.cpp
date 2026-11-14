@@ -237,7 +237,7 @@ namespace koi::editor
 		if (m_cameraMode != ViewportCamera::Scene || !m_selection->HasEntity()) return;
 
 		const Entity selected = m_selection->GetEntity();
-		Transform* xform = selected.try_get_mut<Transform>();
+		Transform* xform = selected.TryGet<Transform>();
 		if (!xform) return;
 
 		// Right-mouse is the camera - leave the shortcuts alone while it is held
@@ -272,7 +272,7 @@ namespace koi::editor
 				xform->Position = position;
 				xform->Rotation = rotation;
 				xform->Scale    = scale;
-				selected.modified<Transform>();
+				selected.Modified<Transform>();
 			}
 		}
 
@@ -313,8 +313,8 @@ namespace koi::editor
 		f32 best = std::numeric_limits<f32>::max();
 
 		world.GetECS()
-			.query<const Transform, const MeshRef>()
-			.each([&](Entity e, const Transform& xform, const MeshRef& meshRef)
+			.Query<const Transform, const MeshRef>()
+			.Each([&](Entity e, const Transform& xform, const MeshRef& meshRef)
 		{
 			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
 			if (!mesh) return;

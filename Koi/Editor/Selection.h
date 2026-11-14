@@ -14,9 +14,9 @@ namespace koi::editor
 		{
 			ClearEntity();
 			m_asset.clear();
-			if (entity.is_alive())
+			if (entity.IsAlive())
 			{
-				entity.add<Selected>();
+				entity.Add<Selected>();
 				m_entity = entity;
 			}
 		}
@@ -35,17 +35,17 @@ namespace koi::editor
 
 		[[nodiscard]] inline Entity GetEntity() const
 		{
-			return m_entity.is_alive() && m_entity.has<Selected>() ? m_entity : Entity{};
+			return m_entity.IsAlive() && m_entity.Has<Selected>() ? m_entity : Entity{};
 		}
 
 		[[nodiscard]] inline const std::string& GetAsset() const { return m_asset; }
-		[[nodiscard]] inline bool HasEntity() const { return GetEntity().is_alive(); }
+		[[nodiscard]] inline bool HasEntity() const { return GetEntity().IsAlive(); }
 		[[nodiscard]] inline bool HasAsset()  const { return !m_asset.empty(); }
 
 	private:
 		inline void ClearEntity()
 		{
-			if (m_entity.is_alive()) m_entity.remove<Selected>();
+			if (m_entity.IsAlive()) m_entity.Remove<Selected>();
 			m_entity = Entity{};
 		}
 

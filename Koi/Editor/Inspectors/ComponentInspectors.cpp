@@ -78,14 +78,14 @@ namespace koi::editor
 
 	void TransformInspector::Draw(Entity e)
 	{
-		Transform* local = e.try_get_mut<Transform>();
+		Transform* local = e.TryGet<Transform>();
 		if (!local) return;
 
 		// Also re-derive when something else moved the entity (the viewport gizmo), or the widget would keep showing the angles from before the drag
-		if (m_eulerFor != e.id() || m_eulerRot != local->Rotation)
+		if (m_eulerFor != e.GetId() || m_eulerRot != local->Rotation)
 		{
 			m_eulerDeg = local->Rotation.ToEuler() * kRadToDeg;
-			m_eulerFor = e.id();
+			m_eulerFor = e.GetId();
 			m_eulerRot = local->Rotation;
 		}
 
@@ -110,7 +110,7 @@ namespace koi::editor
 
 	void MeshInspector::Draw(Entity e)
 	{
-		const MeshRef* meshRef = e.try_get<MeshRef>();
+		const MeshRef* meshRef = e.TryGet<const MeshRef>();
 		if (!meshRef) return;
 
 		if (!utils::BeginPropertyGrid("##mesh")) return;
@@ -135,7 +135,7 @@ namespace koi::editor
 
 	void MaterialRefInspector::Draw(Entity e)
 	{
-		const MaterialRef* ref = e.try_get<MaterialRef>();
+		const MaterialRef* ref = e.TryGet<const MaterialRef>();
 		if (!ref) return;
 
 		if (!utils::BeginPropertyGrid("##material")) return;
@@ -154,7 +154,7 @@ namespace koi::editor
 
 	void CameraInspector::Draw(Entity e)
 	{
-		CameraComponent* cam = e.try_get_mut<CameraComponent>();
+		CameraComponent* cam = e.TryGet<CameraComponent>();
 		if (!cam) return;
 
 		if (!utils::BeginPropertyGrid("##camera")) return;
@@ -178,7 +178,7 @@ namespace koi::editor
 
 	void LightInspector::Draw(Entity e)
 	{
-		Light* light = e.try_get_mut<Light>();
+		Light* light = e.TryGet<Light>();
 		if (!light) return;
 
 		if (!utils::BeginPropertyGrid("##light")) return;
@@ -219,7 +219,7 @@ namespace koi::editor
 
 	void PostProcessInspector::Draw(Entity e)
 	{
-		PostProcess* post = e.try_get_mut<PostProcess>();
+		PostProcess* post = e.TryGet<PostProcess>();
 		if (!post) return;
 
 		ImGui::SeparatorText("Auto Exposure");
