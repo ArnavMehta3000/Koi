@@ -8,7 +8,8 @@ Everything below is done from your project. You never need to edit the engine.
 | Game lifecycle | Override `AppBase` hooks: `OnInit`, `OnTick`, `OnRender`, `OnBeginPlay`, `OnEndPlay`, `OnShutdown` | [Starting a project](NewProject.md) |
 | Components | A struct with `kKey`, plus `ComponentType<T>` | [Components](Components.md) |
 | Scene file format | `kReflect = true`, or a hand-written `Serializer<T>` | [Components](Components.md) |
-| Systems | `System<...>` or `TaskSystem`, in any `SystemPhase` | [Components](Components.md) |
+| Systems | `System<...>` or `TaskSystem`, in a built-in or custom phase (`using Phase = ...`) | [Components](Components.md) |
+| Event reactions | `Observer<Event, Components...>` | [Components](Components.md) |
 | Command-line flags | Subclass `CommandLine` and register it with `CommandLineRegistrar` | [Command line](CommandLine.md) |
 | Inspectors, panels, editor commands | An `EditorExtension` in `Editor/` | [Editor extensions](EditorExtensions.md) |
 | Shaders | `Content/Shaders/Shaders.json` | [Shaders](Shaders.md) |
