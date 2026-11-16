@@ -108,13 +108,12 @@ Xmake fetches everything. Each package uses a recipe in `Xmake/Packages/` that w
 |---|---|
 | `directx-headers` | D3D12 / DXGI headers |
 | `dxc` | Shader compiler (release binaries) |
-| `Flecs` | ECS |
 | `reflect-cpp` (+ `ctre`) | Component serialization and default inspectors |
 | `toml++` | Project, scene and settings files |
 | `spdlog` | Logging |
 | `cli11` | Command-line parsing |
 | `stduuid` | Asset IDs |
-| `box3d` | Physics (just being wired up) |
+| `box3d` | Physics |
 | `tracy-profiler`, `tracy-tools` | Profiling (the tools only install in profile modes) |
 | `directxtex` | Texture import and BC compression (editor only) |
 | `fastgltf` (+ `simdjson`, `simdutf`) | glTF import (editor only) |
