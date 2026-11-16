@@ -8,7 +8,6 @@ namespace koi
 	{
 	public:
 		using Phase = PreRender;
-		[[nodiscard]] std::string_view Name() const override { return "PhysicsDebugDraw"; }
 
 		void Run(const SystemContext& ctx) override;
 	};

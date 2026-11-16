@@ -10,7 +10,7 @@ Game code is C++ only. A component is a plain struct. Scenes save it as TOML, an
 
 struct Spin
 {
-	static constexpr std::string_view kKey = "spin";  // the scene table name and the inspector's ID
+	static constexpr std::string_view kKey = "Spin";  // the scene table name and the inspector's ID
 	static constexpr bool kReflect = true;            // reflect-cpp writes Serializer<Spin> for you
 
 	koi::Vector3 Axis  = koi::Vector3(0.0f, 1.0f, 0.0f);
@@ -57,7 +57,6 @@ The system runs for every entity that has the listed components:
 class SpinSystem final : public koi::System<koi::Transform, const Spin>
 {
 public:
-	std::string_view Name() const override { return "Spin"; }
 	void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& xform, const Spin& spin) override;
 };
 ```

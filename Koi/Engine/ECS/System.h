@@ -24,6 +24,7 @@ namespace koi
 		struct SystemTraits
 		{
 			u32              Id = 0;
+			std::string_view Name;
 			u32              (*RegisterPhase)(ECS&) = nullptr;
 			std::vector<u32> After;
 			std::vector<u32> Before;
@@ -41,7 +42,7 @@ namespace koi
 
 		virtual ~ISystem() = default;
 
-		[[nodiscard]] virtual std::string_view Name() const = 0;
+		[[nodiscard]] std::string_view Name() const { return m_traits.Name; }
 
 		virtual void Build(World& world) = 0;
 
@@ -53,6 +54,7 @@ namespace koi
 		void SetTraits()
 		{
 			m_traits.Id            = internal::SystemIdOf<T>();
+			m_traits.Name          = internal::TypeName<T>();
 			m_traits.RegisterPhase = [](ECS& ecs) { return ecs.RegisterPhase<typename T::Phase>(); };
 			m_traits.After         = internal::SystemIds<typename T::RunsAfter>::Get();
 			m_traits.Before        = internal::SystemIds<typename T::RunsBefore>::Get();

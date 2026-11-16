@@ -6,10 +6,11 @@ namespace koi
 {
 	class IObserver : public NonCopyable
 	{
+		friend class ObserverRegistry;
 	public:
 		virtual ~IObserver() = default;
 
-		[[nodiscard]] virtual std::string_view Name() const = 0;
+		[[nodiscard]] std::string_view Name() const { return m_name; }
 
 		[[nodiscard]] virtual bool FiresInEdit() const { return false; }
 
@@ -17,6 +18,13 @@ namespace koi
 
 		virtual void OnBeginPlay(World& /*world*/) {}
 		virtual void OnEndPlay(World& /*world*/) {}
+
+	private:
+		template<typename T>
+		void SetName() { m_name = internal::TypeName<T>(); }
+
+	private:
+		std::string_view m_name;
 	};
 
 	namespace internal

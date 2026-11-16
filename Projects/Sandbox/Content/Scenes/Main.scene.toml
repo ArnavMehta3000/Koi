@@ -2,10 +2,10 @@
 id = 0
 name = 'Sponza'
 
-    [entity.mesh]
+    [entity.Mesh]
     id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 6.1, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -14,10 +14,10 @@ name = 'Sponza'
 id = 1
 name = 'Sponza 2'
 
-    [entity.mesh]
+    [entity.Mesh]
     id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 6.04529, 0.0, 18.65 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -26,14 +26,14 @@ name = 'Sponza 2'
 id = 2
 name = 'Damaged Helmet'
 
-    [entity.mesh]
+    [entity.Mesh]
     id = 'f4379ca6-29d4-41f2-8767-bee96cad2942'
 
-    [entity.player_controller]
+    [entity.PlayerController]
     move_speed = 5.0
     turn_speed = 90.0
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 2.007, 2.1, 0.0 ]
     rotation = [ 0.0, 0.406737, 0.0, 0.913545 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -42,13 +42,13 @@ name = 'Damaged Helmet'
 id = 3
 name = 'Camera'
 
-    [entity.camera]
+    [entity.Camera]
     far = 1000.0
     fov_y = 0.826169
     near = 0.05
     primary = true
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 6.6, 1.35, -0.3 ]
     rotation = [ 0.0, 0.707107, 0.0, 0.707107 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -57,7 +57,7 @@ name = 'Camera'
 id = 4
 name = 'Child Light'
 
-    [entity.light]
+    [entity.Light]
     casts_shadows = false
     color = [ 0.696203, 0.176254, 0.176254 ]
     intensity = 1.0
@@ -66,7 +66,7 @@ name = 'Child Light'
     shadow_extent = 0.0
     type = 'Point'
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 3.35, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -75,7 +75,7 @@ name = 'Child Light'
 id = 5
 name = 'Point Light'
 
-    [entity.light]
+    [entity.Light]
     casts_shadows = false
     color = [ 0.6, 0.470588, 1.0 ]
     intensity = 2.6
@@ -84,7 +84,7 @@ name = 'Point Light'
     shadow_extent = 0.0
     type = 'Point'
 
-    [entity.transform]
+    [entity.Transform]
     position = [ -4.289, 3.95884, -0.17466 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -93,14 +93,14 @@ name = 'Point Light'
 id = 6
 name = 'Torus'
 
-    [entity.mesh]
+    [entity.Mesh]
     id = 'b6f9ebda-dac3-584a-af18-287555e3c7e3'
 
-    [entity.spin]
+    [entity.Spin]
     axis = [ 1.0, 0.0, 1.0 ]
     speed = 90.0
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 3.7907, 12.7115, -2.13038 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 15.0, 5.0, 15.0 ]
@@ -109,7 +109,7 @@ name = 'Torus'
 id = 7
 name = 'Sun'
 
-    [entity.light]
+    [entity.Light]
     casts_shadows = true
     color = [ 1.0, 0.927912, 0.877451 ]
     intensity = 2.8
@@ -118,11 +118,11 @@ name = 'Sun'
     shadow_extent = 16.5
     type = 'Directional'
 
-    [entity.spin]
+    [entity.Spin]
     axis = [ 0.2, 0.2, 0.2 ]
     speed = 45.0
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 4.93682, 0.0, 5.53945 ]
     rotation = [ -0.704015, 0.0, -0.0, 0.710185 ]
     scale = [ 1.0, 1.0, 1.0 ]

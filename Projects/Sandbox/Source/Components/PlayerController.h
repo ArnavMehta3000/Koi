@@ -5,7 +5,7 @@
 
 struct PlayerController
 {
-	static constexpr std::string_view kKey = "player_controller";
+	static constexpr std::string_view kKey = "PlayerController";
 	static constexpr bool kReflect = true;
 
 	koi::f32 MoveSpeed = 5.0f;   // units per second
@@ -15,7 +15,6 @@ struct PlayerController
 class PlayerControllerSystem final : public koi::System<koi::Transform, const PlayerController>
 {
 public:
-	[[nodiscard]] std::string_view Name() const override { return "PlayerController"; }
 	void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& xform, const PlayerController& controller) override;
 };
 

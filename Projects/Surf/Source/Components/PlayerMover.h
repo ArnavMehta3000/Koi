@@ -9,7 +9,7 @@ namespace game
 {
 	struct PlayerMover
 	{
-		static constexpr std::string_view kKey = "game:player_mover";
+		static constexpr std::string_view kKey = "PlayerMover";
 		static constexpr bool kReflect = true;
 
 		Lanes         Positions;
@@ -25,7 +25,6 @@ namespace game
 	class PlayerMoverSystem final : public koi::System<koi::Transform, PlayerMover>
 	{
 	public:
-		[[nodiscard]] std::string_view Name() const override { return "PlayerMover"; }
 		void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& transform, PlayerMover& mover) override;
 	};
 }

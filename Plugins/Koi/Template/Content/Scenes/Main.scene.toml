@@ -1,51 +1,56 @@
 [[entity]]
+id = 0
 name = 'Floor'
 
-    [entity.mesh]
+    [entity.Mesh]
     id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'  # engine Plane
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 0.0, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 10.0, 1.0, 10.0 ]
 
 [[entity]]
+id = 1
 name = 'Box'
 
-    [entity.mesh]
+    [entity.Mesh]
     id = '8e985361-92e3-5bd0-89b0-eabe0e977013'  # engine Box
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 0.0, 0.5, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 2
 name = 'Camera'
 
-    [entity.camera]
+    [entity.Camera]
     far = 1000.0
-    fov = 0.826169
+    fov_y = 0.826169
     near = 0.05
     primary = true
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 0.0, 2.0, -6.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 3
 name = 'Sun'
 
-    [entity.light]
+    [entity.Light]
     casts_shadows = true
     color = [ 1.0, 0.95, 0.9 ]
     intensity = 3.0
     range = 0.0
     shadow_bias = 0.0015
-    type = 'directional'
+    shadow_extent = 0.0
+    type = 'Directional'
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 0.0, 5.0, 0.0 ]
     rotation = [ -0.7040147, 0.0, 0.0, 0.7101854 ]
     scale = [ 1.0, 1.0, 1.0 ]

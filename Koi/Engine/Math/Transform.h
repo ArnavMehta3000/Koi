@@ -5,7 +5,7 @@ namespace koi
 {
 	struct Transform
 	{
-		static constexpr std::string_view kKey = "transform";
+		static constexpr std::string_view kKey = "Transform";
 		static constexpr bool kReflect = true;
 
 		Vector3 Position    = Vector3::Zero;

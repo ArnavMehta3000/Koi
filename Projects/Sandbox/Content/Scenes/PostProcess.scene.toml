@@ -2,10 +2,10 @@
 id = 0
 name = 'Sponza'
 
-    [entity.mesh]
+    [entity.Mesh]
     id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 0.0, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -14,13 +14,13 @@ name = 'Sponza'
 id = 1
 name = 'Camera'
 
-    [entity.camera]
+    [entity.Camera]
     far = 100.0
     fov_y = 0.826169
     near = 0.05
     primary = true
 
-    [entity.transform]
+    [entity.Transform]
     position = [ -8.7, 1.35, -0.3 ]
     rotation = [ 0.0, 0.707107, 0.0, -0.707107 ]
     scale = [ 1.0, 1.0, 1.0 ]
@@ -29,7 +29,7 @@ name = 'Camera'
 id = 2
 name = 'Sun'
 
-    [entity.light]
+    [entity.Light]
     casts_shadows = true
     color = [ 1.0, 0.927912, 0.877451 ]
     intensity = 2.8
@@ -38,11 +38,11 @@ name = 'Sun'
     shadow_extent = 16.5
     type = 'Directional'
 
-    [entity.spin]
+    [entity.Spin]
     axis = [ 0.5, 1.0, 0.0 ]
     speed = 90.0
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 0.0, 0.0, 0.0 ]
     rotation = [ -0.130167, 0.731659, 0.642978, -0.185235 ]
     scale = [ 0.999996, 0.999993, 0.999991 ]
@@ -51,17 +51,17 @@ name = 'Sun'
 id = 3
 name = 'Post Process'
 
-    [entity.post_process.auto_exposure]
+    [entity.PostProcess.auto_exposure]
     enabled = false
     exposure_compensation = 0.0
     key_value = 0.2
     max_log_luminance = 2.0
     min_log_luminance = -7.15
 
-    [entity.post_process.tonemap]
+    [entity.PostProcess.tonemap]
     operator = 'PBRNeutral'
 
-    [entity.transform]
+    [entity.Transform]
     position = [ 0.0, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]

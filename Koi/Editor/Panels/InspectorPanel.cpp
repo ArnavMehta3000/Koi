@@ -14,10 +14,16 @@ namespace koi::editor
 {
 	namespace
 	{
-		std::string Capitalize(std::string_view key)
+		// "RigidBody" -> "Rigid Body"
+		std::string DisplayName(std::string_view key)
 		{
-			std::string s(key);
-			if (!s.empty()) s[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(s[0])));
+			std::string s;
+			for (size_t i = 0; i < key.size(); ++i)
+			{
+				const auto c = static_cast<unsigned char>(key[i]);
+				if (i > 0 && std::isupper(c) && std::islower(static_cast<unsigned char>(key[i - 1]))) s += ' ';
+				s += static_cast<char>(c);
+			}
 			return s;
 		}
 	}
@@ -35,7 +41,7 @@ namespace koi::editor
 		IComponentInspector* inspector = m_inspectors->Find(key);
 		if (!inspector) return UndoScope(nullptr, nullptr);
 
-		return inspector->Watch(*m_undo, std::format("{} {}", verb, Capitalize(key)), e);
+		return inspector->Watch(*m_undo, std::format("{} {}", verb, DisplayName(key)), e);
 	}
 
 	void InspectorPanel::OnDraw()
@@ -74,7 +80,7 @@ namespace koi::editor
 			for (const std::unique_ptr<IComponentType>& type : ComponentRegistry::Get().All())
 			{
 				if (type->Has(selected)) continue;
-				if (ImGui::Selectable(Capitalize(type->Key()).c_str()))
+				if (ImGui::Selectable(DisplayName(type->Key()).c_str()))
 				{
 					UndoScope watch = WatchComponent("Add", type->Key(), selected);
 					type->Add(selected);
@@ -93,7 +99,7 @@ namespace koi::editor
 			const std::string_view key = type->Key();
 			ImGui::PushID(key.data(), key.data() + key.size());
 
-			const bool expanded = utils::SectionHeader(Capitalize(key).c_str(), type->Removable());
+			const bool expanded = utils::SectionHeader(DisplayName(key).c_str(), type->Removable());
 
 			bool remove = false;
 			if (utils::BeginSectionMenu())
@@ -112,7 +118,7 @@ namespace koi::editor
 				// A component is free to have no inspector; it still serializes and can be removed, just not undoably
 				if (IComponentInspector* inspector = m_inspectors->Find(key))
 				{
-					UndoScope watch = inspector->Watch(*m_undo, "Edit " + Capitalize(key), selected);
+					UndoScope watch = inspector->Watch(*m_undo, "Edit " + DisplayName(key), selected);
 					inspector->Draw(selected);
 				}
 				else

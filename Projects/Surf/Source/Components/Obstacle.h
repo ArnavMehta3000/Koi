@@ -13,7 +13,7 @@ namespace game
 {
 	struct Obstacle
 	{
-		static constexpr std::string_view kKey = "game:obstacle";
+		static constexpr std::string_view kKey = "Obstacle";
 		static constexpr bool kReflect = true;
 
 		koi::f32 Speed       = 10.0f;   // units per second toward +z
@@ -24,7 +24,7 @@ namespace game
 
 	struct ObstacleSpawner
 	{
-		static constexpr std::string_view kKey = "game:obstacle_spawner";
+		static constexpr std::string_view kKey = "ObstacleSpawner";
 		static constexpr bool kReflect = true;
 
 		Lanes         Positions;
@@ -49,14 +49,12 @@ namespace game
 	class ObstacleSpawnSystem final : public koi::System<ObstacleSpawner>
 	{
 	public:
-		[[nodiscard]] std::string_view Name() const override { return "ObstacleSpawn"; }
 		void Each(const koi::SystemContext& ctx, koi::Entity e, ObstacleSpawner& spawner) override;
 	};
 
 	class ObstacleMoveSystem final : public koi::System<koi::Transform, Obstacle>
 	{
 	public:
-		[[nodiscard]] std::string_view Name() const override { return "ObstacleMove"; }
 		void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& transform, Obstacle& obstacle) override;
 	};
 
@@ -67,7 +65,6 @@ namespace game
 	class ObstacleHitObserver final : public koi::Observer<koi::SensorBegin, const Obstacle>
 	{
 	public:
-		[[nodiscard]] std::string_view Name() const override { return "ObstacleHit"; }
 		void On(const koi::SensorBegin& event, koi::Entity e, const Obstacle& obstacle) override;
 	};
 }

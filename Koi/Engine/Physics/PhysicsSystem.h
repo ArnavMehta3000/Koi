@@ -12,7 +12,6 @@ namespace koi
 		using Phase = FixedUpdate;
 
 		~PhysicsSystem() override;
-		[[nodiscard]] std::string_view Name() const override { return "PhysicsSystem"; }
 
 		void Build(World& world) override;
 		void Run(const SystemContext& ctx) override;

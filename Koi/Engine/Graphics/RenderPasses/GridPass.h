@@ -19,7 +19,7 @@ namespace koi
 
 		struct Settings
 		{
-			static constexpr auto kKey     = "grid";
+			static constexpr auto kKey     = "Grid";
 			static constexpr bool kReflect = true;
 
 			bool    Enabled        = false;
