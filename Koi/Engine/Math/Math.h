@@ -12,11 +12,10 @@ namespace koi
 			return b.Extents.x <= 0.0f && b.Extents.y <= 0.0f && b.Extents.z <= 0.0f;
 		}
 
-		// Merges into an accumulator that may still be empty
 		void MergeBounds(BoundingBox& inOutBox, const BoundingBox& other);
-
-		// Radius of the sphere enclosing the box
 		[[nodiscard]] f32 BoundsRadius(const BoundingBox& b);
+		[[nodiscard]] Quaternion SafeNormalize(const Quaternion& q);
+		[[nodiscard]] bool IsSingular(const Matrix& m);
 
 		// Aligns a value to the nearest multiple of 256
 		template <typename T>
@@ -28,8 +27,8 @@ namespace koi
 	{
 	public:
 		CullVolume() = default;
-		explicit CullVolume(const BoundingFrustum& frustum)  : m_kind(Kind::Frustum), m_frustum(frustum) {}
-		explicit CullVolume(const BoundingOrientedBox& box)  : m_kind(Kind::Box),     m_box(box) {}
+		explicit CullVolume(const BoundingFrustum& frustum);
+		explicit CullVolume(const BoundingOrientedBox& box);
 
 		// World-space frustum from a perspective camera. Ortho projections need the box form
 		[[nodiscard]] static CullVolume FromCamera(const Matrix& view, const Matrix& projection);

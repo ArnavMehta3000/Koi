@@ -110,19 +110,12 @@ namespace koi
 			return false;
 		}
 
-		Result<World> loaded = World::Load(it->second);
-		if (!loaded)
+		// Loaded in place
+		if (const Result<void> loaded = m_world->Load(it->second); !loaded)
 		{
 			KOI_LOG(Scene, Error, "Couldn't load scene '{}' ({}): {}", name, it->second, loaded.error().Message);
 			return false;
 		}
-
-		const bool inPlay = m_engine->GetPlayState() != PlayState::Edit;
-		if (inPlay) m_world->EndPlay();
-
-		*m_world = std::move(*loaded);
-
-		if (inPlay) m_world->BeginPlay();
 		return true;
 	}
 

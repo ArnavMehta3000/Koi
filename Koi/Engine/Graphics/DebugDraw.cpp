@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/DebugDraw.h"
 #include "Koi/Engine/Graphics/Renderer.h"
+#include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
 #include <array>
@@ -51,8 +52,23 @@ namespace koi
 
 	void DebugDrawQueue::Box(const BoundingOrientedBox& box, const Color& color)
 	{
+		BoundingOrientedBox safe = box;
+		safe.Orientation = math::SafeNormalize(Quaternion(box.Orientation));
+
 		std::array<Vector3, 8> corners{};
-		box.GetCorners(reinterpret_cast<DirectX::XMFLOAT3*>(corners.data()));
+		safe.GetCorners(reinterpret_cast<DirectX::XMFLOAT3*>(corners.data()));
+		BoxCorners(corners, color);
+	}
+
+	// Corners pushed through the matrix, so scale and shear never go through a quaternion
+	void DebugDrawQueue::Box(const BoundingBox& local, const Matrix& world, const Color& color)
+	{
+		std::array<Vector3, 8> corners{};
+		local.GetCorners(reinterpret_cast<DirectX::XMFLOAT3*>(corners.data()));
+		for (Vector3& corner : corners)
+		{
+			corner = Vector3::Transform(corner, world);
+		}
 		BoxCorners(corners, color);
 	}
 

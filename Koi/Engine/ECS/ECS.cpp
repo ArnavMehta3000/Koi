@@ -22,6 +22,13 @@ namespace koi
 		KOI_LOG(ECS, Debug, "Tearing down ECS ({} entities, {} free slots)", m_nodes.size() - m_free.size(), m_free.size());
 
 		// Destroy signals still need the pools, the hooks and whatever the systems own
+		Clear();
+		DestroyNow(m_root);
+		FlushCommands();
+	}
+
+	void ECS::Clear()
+	{
 		Sync();
 		for (u32 i = 0; i < m_nodes.size(); ++i)
 		{
@@ -31,7 +38,11 @@ namespace koi
 				DestroyNow(EntityHandle(i, node.Generation));
 			}
 		}
-		DestroyNow(m_root);
+
+		for (const std::unique_ptr<internal::PoolBase>& pool : m_pools)
+		{
+			if (pool) pool->Erase(*this, m_root);
+		}
 		FlushCommands();
 	}
 

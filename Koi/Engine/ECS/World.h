@@ -31,10 +31,10 @@ namespace koi
 		~World();
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;
-		World(World&&) noexcept;
-		World& operator=(World&&) noexcept;
+		World(World&&) = delete;
+		World& operator=(World&&) = delete;
 
-		[[nodiscard]] static Result<World> Load(std::string_view virtualPath);
+		Result<void> Load(std::string_view virtualPath);
 		[[nodiscard]] static World& From(const ECS& ecs) { return ecs.GetWorld(); }
 
 		// Scene file order, then creation order
@@ -53,7 +53,7 @@ namespace koi
 		Result<void> Save();
 		bool LoadFromTable(const toml::table& scene);
 		[[nodiscard]] toml::table SaveToTable();
-		void Clear(); // Destroys every entity. The assets they referenced are released by component hooks
+		void Clear();
 
 		// Steps FixedUpdate systems as many times as dt covers, then runs the frame pipeline once
 		void Update(f32 dt);

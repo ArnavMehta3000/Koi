@@ -75,6 +75,9 @@ namespace koi
 			const GPUMesh* mesh = meshes.Get(object.Mesh);
 			if (!mesh) continue;
 
+			// Zero scale draws nothing
+			if (math::IsSingular(object.World)) continue;
+
 			// A MaterialRef on the entity wins over whatever the mesh's sidecar bound
 			const Material* override = materials.Get(object.Material);
 

@@ -323,7 +323,7 @@ namespace koi::editor
 			// Bounds are model-space, so the ray goes to the mesh rather than the box to the world
 			const Matrix& worldMatrix = xform.World;
 
-			if (std::abs(worldMatrix.Determinant()) < 1e-12f) return;
+			if (math::IsSingular(worldMatrix)) return;
 
 			const Matrix invert = worldMatrix.Invert();
 
