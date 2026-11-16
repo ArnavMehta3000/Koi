@@ -19,6 +19,7 @@ namespace koi
 	class EntityBuilder;
 	class IObserver;
 	class ISystem;
+	class RenderScene;
 	struct PostProcess;
 
 	class World
@@ -42,10 +43,11 @@ namespace koi
 		// Creates an entity with a Transform. Names are unique per world and looked up by scene files, so runtime spawns should stay unnamed
 		[[nodiscard]] EntityBuilder Spawn(std::string_view name = {});
 
-		[[nodiscard]] inline const std::string& GetSourcePath() const { return m_sourcePath; }
-		[[nodiscard]] inline const BoundingBox& GetBounds()     const { return m_bounds;     }
-		[[nodiscard]] inline ECS&               GetECS()              { return *m_ecs;       }
-		[[nodiscard]] inline const ECS&         GetECS()        const { return *m_ecs;       }
+		[[nodiscard]] inline const std::string& GetSourcePath()  const { return m_sourcePath; }
+		[[nodiscard]] inline const BoundingBox& GetBounds()      const { return m_bounds;     }
+		[[nodiscard]] inline ECS&               GetECS()               { return *m_ecs;       }
+		[[nodiscard]] inline const ECS&         GetECS()         const { return *m_ecs;       }
+		[[nodiscard]] inline const RenderScene& GetRenderScene() const { return *m_renderScene; }
 
 		// Writes back to the scene file this world was loaded from
 		Result<void> Save();
@@ -95,6 +97,7 @@ namespace koi
 
 		std::vector<std::unique_ptr<ISystem>>   m_systems;
 		std::vector<std::unique_ptr<IObserver>> m_observers;
+		std::unique_ptr<RenderScene>            m_renderScene;
 		std::unique_ptr<ECS>                    m_ecs;
 		f32                                     m_fixedAccumulator = 0.0f;
 		std::string                             m_sourcePath;        // virtual path this world was loaded from, empty if none
