@@ -18,6 +18,8 @@ struct Spin
 };
 ```
 
+An optional `static constexpr std::string_view kCategory = "Physics";` groups it in the editor's Add Component menu; without one it lands under Gameplay.
+
 In a scene it looks like this. Keys are the field names in snake_case:
 
 ```toml
