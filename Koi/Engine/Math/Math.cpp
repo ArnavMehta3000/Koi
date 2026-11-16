@@ -1,7 +1,17 @@
 #include "Koi/Engine/Math/Math.h"
+#include <cmath>
 
 namespace koi
 {
+	namespace
+	{
+		bool IsUsable(const Quaternion& q)
+		{
+			const f32 lengthSq = q.LengthSquared();
+			return std::isfinite(lengthSq) && lengthSq > 1e-12f;
+		}
+	}
+
 	void math::MergeBounds(BoundingBox& inOutBox, const BoundingBox& other)
 	{
 		if (IsEmpty(other)) return;
@@ -21,6 +31,41 @@ namespace koi
 		BoundingSphere sphere;
 		BoundingSphere::CreateFromBoundingBox(sphere, b);
 		return sphere.Radius > 0.001f ? sphere.Radius : 0.001f;
+	}
+
+	Quaternion math::SafeNormalize(const Quaternion& q)
+	{
+		if (!IsUsable(q)) return Quaternion::Identity;
+
+		Quaternion result;
+		q.Normalize(result);
+		return result;
+	}
+
+	bool math::IsSingular(const Matrix& m)
+	{
+		const f32 det = m.Determinant();
+		return !std::isfinite(det) || std::abs(det) < 1e-12f;
+	}
+
+	CullVolume::CullVolume(const BoundingFrustum& frustum)
+		: m_frustum(frustum)
+	{
+		const Quaternion orientation(frustum.Orientation);
+		if (!IsUsable(orientation)) return;
+
+		m_frustum.Orientation = math::SafeNormalize(orientation);
+		m_kind = Kind::Frustum;
+	}
+
+	CullVolume::CullVolume(const BoundingOrientedBox& box)
+		: m_box(box)
+	{
+		const Quaternion orientation(box.Orientation);
+		if (!IsUsable(orientation)) return;
+
+		m_box.Orientation = math::SafeNormalize(orientation);
+		m_kind = Kind::Box;
 	}
 
 	CullVolume CullVolume::FromCamera(const Matrix& view, const Matrix& projection)

@@ -251,7 +251,6 @@ namespace koi
 		ECS& operator=(ECS&&) = delete;
 
 		[[nodiscard]] World& GetWorld() const { return *m_owner; }
-		void SetWorld(World& owner) { m_owner = &owner; }
 
 		[[nodiscard]] Entity Spawn(std::string_view name = {});
 		[[nodiscard]] Entity FromId(EntityID id) { return Entity(this, EntityHandle::FromID(static_cast<EntityHandle::IndexType>(id))); }
@@ -302,6 +301,9 @@ namespace koi
 
 		// Flushes deferred structural changes and drains events until both are empty
 		void Sync();
+
+		// Destroys every entity and strips the root's singletons
+		void Clear();
 
 		// Internal helpers
 		[[nodiscard]] bool IsAlive(EntityHandle handle) const;

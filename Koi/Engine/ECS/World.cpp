@@ -34,36 +34,6 @@ namespace koi
 
 	World::~World() = default;
 
-	World::World(World&& other) noexcept
-		: m_systems(std::move(other.m_systems))
-		, m_observers(std::move(other.m_observers))
-		, m_renderScene(std::move(other.m_renderScene))
-		, m_ecs(std::move(other.m_ecs))
-		, m_fixedAccumulator(other.m_fixedAccumulator)
-		, m_sourcePath(std::move(other.m_sourcePath))
-		, m_bounds(other.m_bounds)
-		, m_camera(other.m_camera)
-	{
-		if (m_ecs) m_ecs->SetWorld(*this);
-	}
-
-	World& World::operator=(World&& other) noexcept
-	{
-		if (this == &other) return *this;
-
-		m_ecs              = std::move(other.m_ecs);
-		m_renderScene      = std::move(other.m_renderScene);
-		m_fixedAccumulator = other.m_fixedAccumulator;
-		m_systems          = std::move(other.m_systems);
-		m_observers        = std::move(other.m_observers);
-		m_sourcePath       = std::move(other.m_sourcePath);
-		m_bounds           = other.m_bounds;
-		m_camera           = other.m_camera;
-
-		if (m_ecs) m_ecs->SetWorld(*this);
-		return *this;
-	}
-
 	std::pair<u64, u64> World::OrderKey(Entity e)
 	{
 		const SceneOrder* order = e.TryGet<const SceneOrder>();
@@ -120,7 +90,7 @@ namespace koi
 		});
 	}
 
-	Result<World> World::Load(std::string_view virtualPath)
+	Result<void> World::Load(std::string_view virtualPath)
 	{
 		ZoneScoped;
 		KOI_LOG(Scene, Debug, "Loading scene '{}'", virtualPath);
@@ -133,21 +103,28 @@ namespace koi
 
 		const std::string_view text(reinterpret_cast<const char*>(bytes->data()), bytes->size());
 
+		// Parsed before anything is torn down, so a broken file leaves the current scene alone
+		toml::table scene;
 		try
 		{
-			const toml::table scene = toml::parse(text);
-
-			World world;
-			world.m_sourcePath = virtualPath;
-			world.LoadFromTable(scene);
-
-			KOI_LOG(Scene, Info, "Loaded scene '{}'", virtualPath);
-			return world;
+			scene = toml::parse(text);
 		}
 		catch (const toml::parse_error& e)
 		{
 			return Error::Make("line {}: {}", e.source().begin.line, e.description());
 		}
+
+		const bool inPlay = Engine::Get().GetPlayState() != PlayState::Edit;
+		if (inPlay) EndPlay();
+
+		Clear();
+		m_sourcePath = virtualPath;
+		LoadFromTable(scene);
+
+		if (inPlay) BeginPlay();
+
+		KOI_LOG(Scene, Info, "Loaded scene '{}'", virtualPath);
+		return {};
 	}
 
 	bool World::LoadFromTable(const toml::table& scene)
@@ -161,11 +138,10 @@ namespace koi
 			return false;
 		}
 
-		// Pass 1: create each entity + its components, deferring parent links (by name)
-		// so an entity can reference a parent declared later in the file
-		struct PendingParent { Entity Child; std::string ParentName; };
+		// Pass 1: create each entity + its components, deferring parent links (by id)
+		struct PendingParent { Entity Child; i64 ParentId; };
 		std::vector<PendingParent> pendingParents;
-		std::unordered_map<std::string, Entity> byName;
+		std::unordered_map<i64, Entity> byId;
 
 		const auto components = ComponentRegistry::Get().All();
 		u32 index = 0;
@@ -179,9 +155,12 @@ namespace koi
 			// Create entity
 			const std::string name = (*entityTable)["name"].value_or<std::string>("Entity_" + std::to_string(i));
 			const Entity e = m_ecs->Spawn(name);
-			if (!byName.try_emplace(name, e).second)
+
+			// Ids default to the entity's position in the file
+			const i64 id = (*entityTable)["id"].value_or(static_cast<i64>(i));
+			if (!byId.try_emplace(id, e).second)
 			{
-				KOI_LOG(Scene, Warn, "Scene entity [{}] '{}' duplicates an earlier name; children naming it attach to the first", i, name);
+				KOI_LOG(Scene, Warn, "Scene entity [{}] '{}' reuses id {}; children of that id attach to the first", i, name, id);
 			}
 
 			e.Set<SceneOrder>({ i });
@@ -200,20 +179,31 @@ namespace koi
 			}
 
 			// Configure parents if they exist
-			if (const std::string parentName = (*entityTable)["parent"].value_or(std::string()); !parentName.empty())
-				pendingParents.push_back({ e, parentName });
+			if (const std::optional<i64> parentId = (*entityTable)["parent"].value<i64>())
+			{
+				pendingParents.push_back({ e, *parentId });
+			}
+			else if ((*entityTable).contains("parent"))
+			{
+				KOI_LOG(Scene, Warn, "Scene entity '{}' has a non-integer parent; it should be the parent's id", name);
+			}
 		}
 
-		// Pass 2: resolve parent links now that every named entity exists
+		// Pass 2: resolve parent links now that every entity exists
 		for (const PendingParent& link : pendingParents)
 		{
-			if (const auto parent = byName.find(link.ParentName); parent != byName.end())
+			const auto parent = byId.find(link.ParentId);
+			if (parent == byId.end())
 			{
-				link.Child.SetParent(parent->second);
+				KOI_LOG(Scene, Warn, "Scene entity '{}' has parent id {}, which doesn't exist", link.Child.GetName(), link.ParentId);
+			}
+			else if (parent->second == link.Child || parent->second.IsDescendantOf(link.Child))
+			{
+				KOI_LOG(Scene, Warn, "Scene entity '{}' would parent into its own subtree; left at the top level", link.Child.GetName());
 			}
 			else
 			{
-				KOI_LOG(Scene, Warn, "Scene entity parent '{}' not found", link.ParentName);
+				link.Child.SetParent(parent->second);
 			}
 		}
 
@@ -299,17 +289,28 @@ namespace koi
 		});
 		std::ranges::stable_sort(ordered, {}, [](Entity e) { return OrderKey(e); });
 
+		// An entity's id is its position in the file, so names never have to be unique
+		std::unordered_map<EntityID, i64> ids;
+		for (const Entity e : ordered)
+		{
+			ids.emplace(e.GetId(), static_cast<i64>(ids.size()));
+		}
+
 		const auto components = ComponentRegistry::Get().All();
 		for (const Entity e : ordered)
 		{
 			toml::table entity;
 
-			// Save name
+			entity.insert("id", ids.at(e.GetId()));
 			entity.insert("name", std::string(e.GetName()));
 
-			// Save parent
 			if (const Entity parent = e.GetParent(); parent)
-				entity.insert("parent", std::string(parent.GetName()));
+			{
+				if (const auto it = ids.find(parent.GetId()); it != ids.end())
+				{
+					entity.insert("parent", it->second);
+				}
+			}
 
 			// Save components (use registry for this)
 			for (const std::unique_ptr<IComponentType>& component : components)
@@ -330,20 +331,8 @@ namespace koi
 		ZoneScoped;
 
 		// Destructing an entity fires the component hooks, which is what releases its assets
-
-		// Collect first to prevent iterator invalidation
-		std::vector<Entity> doomed;
-		m_ecs->Each<const Transform>([&](Entity e, const Transform&)
-		{
-			if (!e.GetParent()) doomed.push_back(e);  // children go with their parent
-		});
-
-		for (const Entity e : doomed)
-		{
-			e.Destroy();
-		}
-
-		KOI_LOG(Scene, Debug, "Cleared world ({} entities destroyed)", doomed.size());
+		m_ecs->Clear();
+		KOI_LOG(Scene, Debug, "Cleared world");
 
 		m_bounds = BoundingBox{ {}, {} };
 	}

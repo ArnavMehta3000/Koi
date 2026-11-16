@@ -1,4 +1,5 @@
 [[entity]]
+id = 0
 name = 'Camera'
 
     [entity.camera]
@@ -13,6 +14,7 @@ name = 'Camera'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 1
 name = 'Sun'
 
     [entity.light]
@@ -30,6 +32,7 @@ name = 'Sun'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 2
 name = 'Physics'
 
     [entity.physics_settings]
@@ -43,6 +46,7 @@ name = 'Physics'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 3
 name = 'Floor'
 
     [entity.collider]
@@ -67,6 +71,7 @@ name = 'Floor'
     scale = [ 30.0, 1.0, 30.0 ]
 
 [[entity]]
+id = 4
 name = 'Spinner'
 
     [entity.mesh]
@@ -82,8 +87,9 @@ name = 'Spinner'
     scale = [ 1.5, 1.5, 1.5 ]
 
 [[entity]]
+id = 5
 name = 'Arm'
-parent = 'Spinner'
+parent = 4
 
     [entity.mesh]
     id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'
@@ -94,8 +100,9 @@ parent = 'Spinner'
     scale = [ 1.0, 0.3, 0.3 ]
 
 [[entity]]
+id = 6
 name = 'Hand'
-parent = 'Arm'
+parent = 5
 
     [entity.mesh]
     id = '5bbca827-62e3-52c1-acca-9a2a45322624'
@@ -110,6 +117,7 @@ parent = 'Arm'
     scale = [ 0.4, 1.5, 1.5 ]
 
 [[entity]]
+id = 7
 name = 'Falling Crate'
 
     [entity.collider]
@@ -142,8 +150,9 @@ name = 'Falling Crate'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 8
 name = 'Crate Antenna'
-parent = 'Falling Crate'
+parent = 7
 
     [entity.mesh]
     id = '5bbca827-62e3-52c1-acca-9a2a45322624'
@@ -154,8 +163,9 @@ parent = 'Falling Crate'
     scale = [ 0.2, 0.6, 0.2 ]
 
 [[entity]]
+id = 9
 name = 'Crate Side'
-parent = 'Falling Crate'
+parent = 7
 
     [entity.mesh]
     id = '986a5604-68c1-5cd9-a7cc-fe44867a7a8b'

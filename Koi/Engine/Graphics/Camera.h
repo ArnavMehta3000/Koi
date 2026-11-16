@@ -24,12 +24,11 @@ namespace koi
 		void SetView(Vector3 position, Vector3 target,
 		             Vector3 worldUp = Vector3::Up);
 
-		void SetTransform(const Transform& transform, Vector3 worldUp = Vector3::Up);
-
-		// Recomputes Projection and ViewProjection. D3D depth range [0,1]
+		void SetTransform(const Transform& transform);
 		void SetProjection(f32 fovYRad, f32 aspect, f32 nearZ, f32 farZ);
-
-		// Recomputes projection with a new aspect ratio, keeps other params
 		void SetAspect(f32 aspect);
+
+	private:
+		void SetBasis(Vector3 position, Vector3 forward, Vector3 right, Vector3 up);
 	};
 }

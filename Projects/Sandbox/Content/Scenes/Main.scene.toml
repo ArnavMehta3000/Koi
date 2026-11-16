@@ -1,4 +1,5 @@
 [[entity]]
+id = 0
 name = 'Sponza'
 
     [entity.mesh]
@@ -10,6 +11,7 @@ name = 'Sponza'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 1
 name = 'Sponza 2'
 
     [entity.mesh]
@@ -21,6 +23,7 @@ name = 'Sponza 2'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 2
 name = 'Damaged Helmet'
 
     [entity.mesh]
@@ -36,6 +39,7 @@ name = 'Damaged Helmet'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 3
 name = 'Camera'
 
     [entity.camera]
@@ -50,6 +54,7 @@ name = 'Camera'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 4
 name = 'Child Light'
 
     [entity.light]
@@ -67,6 +72,7 @@ name = 'Child Light'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 5
 name = 'Point Light'
 
     [entity.light]
@@ -84,6 +90,7 @@ name = 'Point Light'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
+id = 6
 name = 'Torus'
 
     [entity.mesh]
@@ -99,6 +106,7 @@ name = 'Torus'
     scale = [ 15.0, 5.0, 15.0 ]
 
 [[entity]]
+id = 7
 name = 'Sun'
 
     [entity.light]

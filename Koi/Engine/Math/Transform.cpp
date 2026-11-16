@@ -1,4 +1,5 @@
 #include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/Math/Math.h"
 
 namespace koi
 {
@@ -12,7 +13,7 @@ namespace koi
 
 	WorldTransform WorldTransform::Compose(const Transform& local, const WorldTransform* parent)
 	{
-		if (!parent) return { local.ToMatrix(), local.Position, local.Rotation, local.Scale };
+		if (!parent) return { local.ToMatrix(), local.Position, math::SafeNormalize(local.Rotation), local.Scale };
 
 		const Matrix ogWorld = local.ToMatrix() * parent->World;
 
@@ -20,23 +21,30 @@ namespace koi
 		{
 			.World    = ogWorld,
 			.Position = ogWorld.Translation(),
-			.Rotation = local.Rotation * parent->Rotation,
+			.Rotation = math::SafeNormalize(local.Rotation * parent->Rotation),
 			.Scale    = local.Scale * parent->Scale,
 		};
-
-		world.Rotation.Normalize();
 		return world;
 	}
 
 	Transform WorldTransform::ToLocal(Matrix world, const WorldTransform* parent)
 	{
-		Matrix local = parent ? world * parent->World.Invert() : world;
+		Matrix local = world;
+		if (parent)
+		{
+			// A zero-scale parent can't be inverted, so only undo its rotation and position
+			const Matrix parentMatrix = math::IsSingular(parent->World)
+				? Matrix::CreateFromQuaternion(parent->Rotation) * Matrix::CreateTranslation(parent->Position)
+				: parent->World;
+			local = world * parentMatrix.Invert();
+		}
 
 		Transform result;
 		if (!local.Decompose(result.Scale, result.Rotation, result.Position))
 		{
-			result.Position = local.Translation();
+			result = Transform{ .Position = local.Translation() };
 		}
+		result.Rotation = math::SafeNormalize(result.Rotation);
 		return result;
 	}
 }
