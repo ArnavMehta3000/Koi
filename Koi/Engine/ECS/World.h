@@ -35,6 +35,7 @@ namespace koi
 		World& operator=(World&&) = delete;
 
 		Result<void> Load(std::string_view virtualPath);
+		void Load(const toml::table& scene, std::string_view sourcePath);
 		[[nodiscard]] static World& From(const ECS& ecs) { return ecs.GetWorld(); }
 
 		// Scene file order, then creation order
@@ -51,7 +52,6 @@ namespace koi
 
 		// Writes back to the scene file this world was loaded from
 		Result<void> Save();
-		bool LoadFromTable(const toml::table& scene);
 		[[nodiscard]] toml::table SaveToTable();
 		void Clear();
 
@@ -84,6 +84,7 @@ namespace koi
 
 
 	private:
+		void LoadFromTable(const toml::table& scene);
 		void ConfigureComponentHooks();
 		void BuildSystems();
 		void BuildObservers();

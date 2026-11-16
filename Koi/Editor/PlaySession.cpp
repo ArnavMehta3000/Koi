@@ -51,7 +51,8 @@ namespace koi::editor
 		AssetCache<GPUMesh>& meshes     = assets.Cache<GPUMesh>();
 		AssetCache<Material>& materials = assets.Cache<Material>();
 
-		m_snapshot = world.SaveToTable();
+		m_snapshot     = world.SaveToTable();
+		m_snapshotPath = world.GetSourcePath();
 
 		// Hold a reference to everything the snapshot names. Stop tears the world down
 		// before rebuilding it, and without this the last reference to each asset would
@@ -103,8 +104,7 @@ namespace koi::editor
 		m_selection->Clear();
 
 		World& world = m_ctx->GetGame()->GetWorld();
-		world.Clear();  // Clear all entities, without touching the systems
-		world.LoadFromTable(m_snapshot);
+		world.Load(m_snapshot, m_snapshotPath);  // a scene loaded during play doesn't leave its path behind
 
 		// The rebuilt world took its own references, so the play-time pins can go
 		GfxDevice& device     = engine.GetSubsystem<Renderer>().GetDevice();
@@ -115,6 +115,7 @@ namespace koi::editor
 		m_pinnedMeshes.clear();
 		m_pinnedMaterials.clear();
 		m_snapshot = toml::table{};
+		m_snapshotPath.clear();
 
 		for (const std::function<void()>& callback : m_onStopped)
 		{

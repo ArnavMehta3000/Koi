@@ -114,20 +114,24 @@ namespace koi
 			return Error::Make("line {}: {}", e.source().begin.line, e.description());
 		}
 
-		const bool inPlay = Engine::Get().GetPlayState() != PlayState::Edit;
-		if (inPlay) EndPlay();
-
-		Clear();
-		m_sourcePath = virtualPath;
-		LoadFromTable(scene);
-
-		if (inPlay) BeginPlay();
-
+		Load(scene, virtualPath);
 		KOI_LOG(Scene, Info, "Loaded scene '{}'", virtualPath);
 		return {};
 	}
 
-	bool World::LoadFromTable(const toml::table& scene)
+	void World::Load(const toml::table& scene, std::string_view sourcePath)
+	{
+		const bool inPlay = Engine::Get().GetPlayState() != PlayState::Edit;
+		if (inPlay) EndPlay();
+
+		Clear();
+		m_sourcePath = sourcePath;
+		LoadFromTable(scene);
+
+		if (inPlay) BeginPlay();
+	}
+
+	void World::LoadFromTable(const toml::table& scene)
 	{
 		ZoneScoped;
 
@@ -135,7 +139,7 @@ namespace koi
 		if (!entities)
 		{
 			KOI_LOG(Scene, Warn, "Scene has no [[entity]] array; loading empty world");
-			return false;
+			return;
 		}
 
 		// Pass 1: create each entity + its components, deferring parent links (by id)
@@ -243,7 +247,6 @@ namespace koi
 
 		PropagateTransforms();
 		KOI_LOG(Scene, Debug, "Built world from scene table ({} entities)", entities->size());
-		return true;
 	}
 
 	Result<void> World::Save()

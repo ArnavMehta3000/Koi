@@ -4,6 +4,7 @@
 #include <toml++/toml.hpp>
 #include <exception>
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace koi::editor
@@ -35,6 +36,7 @@ namespace koi::editor
 		Selection*                         m_selection = nullptr;
 		Toasts*                            m_toasts    = nullptr;
 		toml::table                        m_snapshot;         // the world as it was when Play was pressed
+		std::string                        m_snapshotPath;
 		std::vector<MeshHandle>            m_pinnedMeshes;     // keep the snapshot's assets resident across Stop
 		std::vector<MaterialHandle>        m_pinnedMaterials;
 		std::vector<std::function<void()>> m_onStarted;
