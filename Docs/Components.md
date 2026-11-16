@@ -22,14 +22,16 @@ In a scene it looks like this. Keys are the field names in snake_case:
 
 ```toml
 [[entity]]
+id = 3
 name = 'Box'
+parent = 1
 
     [entity.spin]
     axis = [ 0.0, 1.0, 0.0 ]
     speed = 90.0
 ```
 
-A key missing from the file keeps the field's default value, and an unknown key logs a warning. To keep a field out of the file (runtime-only state), wrap it in `rfl::Skip<T>`. The inspector still shows it, greyed out.
+`id` is the entity's position in the file and `parent` names another entity's `id`; both are optional, and names don't have to be unique. A key missing from the file keeps the field's default value, and an unknown key logs a warning. To keep a field out of the file (runtime-only state), wrap it in `rfl::Skip<T>`. The inspector still shows it, greyed out.
 
 ## Registering it
 
@@ -60,7 +62,9 @@ public:
 };
 ```
 
-Override `Phase()` to run in `PreUpdate`, `FixedUpdate`, `Update` (the default), `PostUpdate` or `PreRender`. Derive `TaskSystem` instead for a system that runs once per frame without looping over entities. If a system throws, the editor stops Play and restores the world; a shipped game exits with the error logged. See [Error handling](ErrorHandling.md).
+A system runs in `Update` unless it says otherwise with `using Phase = koi::FixedUpdate;` (or `PreUpdate`, `PostUpdate`, `PreRender`). A custom phase is a type, `struct LateUpdate : koi::Phase<koi::After<koi::Update>> {};` (pass `true` as the second argument to make it fixed-step). Within a phase, systems run in registration order unless they set `using RunsAfter = koi::SystemList<OtherSystem>;` (or `RunsBefore`). Every phase ends with a sync point, where deferred spawns, destroys and events are applied. Derive `TaskSystem` instead for a system that runs once per frame without looping over entities. If a system throws, the editor stops Play and restores the world; a shipped game exits with the error logged. See [Error handling](ErrorHandling.md).
+
+To react to events instead of running every frame, derive `koi::Observer<Event, Components...>` and register it with `ObserverRegistry` in the same hook. Send events with `World::Emit`; `BeginPlay` and `EndPlay` reach every entity. Cleanup when a component goes away belongs in an `ecs.OnRemove<T>` hook.
 
 Then give the component an inspector. See [Editor extensions](EditorExtensions.md). Systems only run during Play; see [Play mode](PlayMode.md).
 
