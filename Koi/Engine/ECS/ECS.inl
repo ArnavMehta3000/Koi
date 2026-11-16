@@ -62,7 +62,10 @@ namespace koi
 		const u32 index = handle.GetIndex();
 		if (!Has(index)) return;
 
-		for (RemoveSignal& fn : m_onRemove) fn(ecs.FromId(handle.GetId()), m_data[m_sparse[index]]);
+		for (Signal& fn : m_onRemove)
+		{
+			fn(ecs.FromId(handle.GetId()), m_data[m_sparse[index]]);
+		}
 
 		const u32 slot = m_sparse[index];
 		const u32 last = static_cast<u32>(m_dense.size() - 1);
@@ -119,13 +122,24 @@ namespace koi
 			m_ecs->Defer([e = *this, value = T{ std::forward<Args>(args)... }]() mutable
 			{
 				if (!e.IsAlive()) return;
-				if (T* existing = e.TryGet<T>()) *existing = std::move(value);
-				else e.m_ecs->GetPool<T>().Emplace(e.m_handle, std::move(value));
+
+				if (T* existing = e.TryGet<T>())
+				{
+					*existing = std::move(value);
+				}
+				else
+				{
+					auto& pool = e.m_ecs->GetPool<T>();
+					pool.Emplace(e.m_handle, std::move(value));
+					pool.NotifyAdd(e);
+				}
 			});
 			return *this;
 		}
 
-		m_ecs->GetPool<T>().Emplace(m_handle, std::forward<Args>(args)...);
+		auto& pool = m_ecs->GetPool<T>();
+		pool.Emplace(m_handle, std::forward<Args>(args)...);
+		pool.NotifyAdd(*this);
 		return *this;
 	}
 

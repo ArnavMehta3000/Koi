@@ -152,7 +152,7 @@ namespace koi
 		class Pool final : public PoolBase
 		{
 		public:
-			using RemoveSignal = std::move_only_function<void(Entity, T&)>;
+			using Signal = std::move_only_function<void(Entity, T&)>;
 
 			[[nodiscard]] T* TryGet(u32 index) { return Has(index) ? &m_data[m_sparse[index]] : nullptr; }
 			[[nodiscard]] T& At(u32 index) { return m_data[m_sparse[index]]; }
@@ -167,11 +167,18 @@ namespace koi
 
 			void Erase(ECS& ecs, EntityHandle handle) override;
 
-			void OnRemove(RemoveSignal fn) { m_onRemove.push_back(std::move(fn)); }
+			void OnAdd(Signal fn)    { m_onAdd.push_back(std::move(fn)); }
+			void OnRemove(Signal fn) { m_onRemove.push_back(std::move(fn)); }
+
+			void NotifyAdd(Entity e)
+			{
+				for (Signal& fn : m_onAdd) fn(e, At(e.GetHandle().GetIndex()));
+			}
 
 		private:
-			std::vector<T>            m_data;
-			std::vector<RemoveSignal> m_onRemove;
+			std::vector<T>      m_data;
+			std::vector<Signal> m_onAdd;
+			std::vector<Signal> m_onRemove;
 		};
 
 		class EventQueueBase
@@ -263,6 +270,9 @@ namespace koi
 
 		// fn(Entity, T&), whenever T leaves an entity
 		template<Component T, typename Fn> void OnRemove(Fn&& fn) { GetPool<T>().OnRemove(std::forward<Fn>(fn)); }
+
+		// fn(Entity, T&), right after T lands on an entity
+		template<Component T, typename Fn> void OnAdd(Fn&& fn) { GetPool<T>().OnAdd(std::forward<Fn>(fn)); }
 
 		// Events are queued and delivered at the next sync point
 		template<typename Event> void Emit(Entity e, const Event& event = {}) { GetEventQueue<Event>().Push(e, event); }

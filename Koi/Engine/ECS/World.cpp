@@ -8,6 +8,7 @@
 #include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/ECS/ObserverRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
@@ -23,7 +24,8 @@ namespace koi
 	{
 		ZoneScoped;
 
-		m_ecs  = std::make_unique<ECS>(*this);
+		m_ecs         = std::make_unique<ECS>(*this);
+		m_renderScene = std::make_unique<RenderScene>(*m_ecs);
 
 		ConfigureComponentHooks();
 		BuildSystems();
@@ -35,6 +37,7 @@ namespace koi
 	World::World(World&& other) noexcept
 		: m_systems(std::move(other.m_systems))
 		, m_observers(std::move(other.m_observers))
+		, m_renderScene(std::move(other.m_renderScene))
 		, m_ecs(std::move(other.m_ecs))
 		, m_fixedAccumulator(other.m_fixedAccumulator)
 		, m_sourcePath(std::move(other.m_sourcePath))
@@ -49,6 +52,7 @@ namespace koi
 		if (this == &other) return *this;
 
 		m_ecs              = std::move(other.m_ecs);
+		m_renderScene      = std::move(other.m_renderScene);
 		m_fixedAccumulator = other.m_fixedAccumulator;
 		m_systems          = std::move(other.m_systems);
 		m_observers        = std::move(other.m_observers);
@@ -419,6 +423,8 @@ namespace koi
 			visit(root, nullptr);
 		}
 		FrameStats::Count("Transforms", visited);
+
+		m_renderScene->Sync();
 	}
 
 	void World::Reparent(Entity child, Entity parent)
