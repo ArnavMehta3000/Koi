@@ -1,4 +1,5 @@
 #include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
@@ -89,11 +90,9 @@ namespace koi
 		ZoneScoped;
 		m_lights.clear();
 
-		world.GetECS().Each<const WorldTransform, const Light>([&](const WorldTransform& xform, const Light& light)
+		for (const RenderLight& entry : world.GetRenderScene().GetLights())
 		{
-			// Directional lights use the entity's forward; point lights use its position
-			Vector3 forward = Matrix::CreateFromQuaternion(xform.Rotation).Forward();
-			forward.Normalize();
+			const Light& light = entry.Data;
 
 			// ShadowPass picks its caster with the same rule, so the first match here is
 			// the light its map was rendered from
@@ -101,11 +100,12 @@ namespace koi
 				&& light.CastsShadows
 				&& light.Type == LightType::Directional;
 
+			// Directional lights use the entity's forward, point lights use its position
 			m_lights.push_back(GPULight
 			{
-				.Position       = xform.Position,
+				.Position       = entry.Position,
 				.Type           = static_cast<u32>(light.Type),
-				.Direction      = forward,
+				.Direction      = entry.Direction,
 				.Range          = light.Range,
 				.Color          = light.Color,
 				.Intensity      = light.Intensity,
@@ -115,6 +115,6 @@ namespace koi
 			});
 
 			if (shadowed) shadowMapIndex = INVALID_DESCRIPTOR;  // one shadowed light per frame
-		});
+		}
 	}
 }

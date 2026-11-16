@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Graphics/RenderFeature.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
-#include "Koi/Engine/Graphics/MeshGather.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 
 namespace koi
 {
@@ -41,7 +41,6 @@ namespace koi
 
 		GpuFrameBuffer<FrameConstants> m_frameConstants;
 		GpuFrameBuffer<PerObjectData>  m_objects;
-		MeshGatherer                   m_gatherer;
 		MeshGatherResult               m_gather;
 	};
 }

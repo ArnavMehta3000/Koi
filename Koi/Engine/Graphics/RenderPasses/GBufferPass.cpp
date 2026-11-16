@@ -1,6 +1,7 @@
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/ECS/World.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
@@ -63,7 +64,8 @@ namespace koi
 		GfxDevice& device   = *m_config.Device;
 		const u32 frameSlot = device.GetFrameSlot();
 
-		m_gatherer.Gather(world, CullVolume::FromCamera(camera.View, camera.Projection), true, m_gather);
+		constexpr GatherDesc kGather{};
+		world.GetRenderScene().Gather(kGather, CullVolume::FromCamera(camera.View, camera.Projection), m_gather);
 		FrameStats::Count("GBuffer Draws",  i64(m_gather.Draws.size()));
 		FrameStats::Count("GBuffer Culled", i64(m_gather.Culled));
 		if (m_gather.Draws.empty()) return;

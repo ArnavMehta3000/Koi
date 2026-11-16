@@ -61,18 +61,16 @@ namespace koi
 		f32     radius = 0.0f;
 		bool    found  = false;
 
-		world.GetECS()
-			.Query<const WorldTransform, const Light>()
-			.Each([&](const WorldTransform& xform, const Light& light)
-			{
-				if (found || !light.CastsShadows || light.Type != LightType::Directional) return;
+		for (const RenderLight& light : world.GetRenderScene().GetLights())
+		{
+			if (!light.Data.CastsShadows || light.Data.Type != LightType::Directional) continue;
 
-				lightDir = Matrix::CreateFromQuaternion(xform.Rotation).Forward();
-				lightDir.Normalize();
-				center = xform.Position;
-				radius = light.ShadowExtent;
-				found  = true;
-			});
+			lightDir = light.Direction;
+			center   = light.Position;
+			radius   = light.Data.ShadowExtent;
+			found    = true;
+			break;
+		}
 
 		if (!found) return false;
 
@@ -120,7 +118,8 @@ namespace koi
 		const u32  frameSlot = device.GetFrameSlot();
 
 		// Depth-only, so the normal matrix is never needed
-		m_gatherer.Gather(world, m_cullVolume, false, m_gather);
+		constexpr GatherDesc kGather{ .Require = RenderFlag::CastsShadow, .Normals = false };
+		world.GetRenderScene().Gather(kGather, m_cullVolume, m_gather);
 		FrameStats::Count("Shadow Draws",  i64(m_gather.Draws.size()));
 		FrameStats::Count("Shadow Culled", i64(m_gather.Culled));
 		if (m_gather.Draws.empty()) return;
