@@ -3,6 +3,7 @@
 #include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/Math/Scalar.h"
 #include "Koi/Engine/Physics/PhysicsComponents.h"
+#include "Koi/Engine/Runtime/AppBase.h"
 #include <algorithm>
 
 KOI_LOG_CATEGORY(ObstacleSpawner);
@@ -54,10 +55,10 @@ namespace game
 		KOI_LOG(ObstacleSpawner, Info, "Obstacle {} hit '{}' at ({:.2f}, {:.2f}, {:.2f}), speed {:.1f}, age {:.2f}s",
 			e.GetId(), other, at.x, at.y, at.z, obstacle.Speed, *obstacle.Age);
 
-		// Reloading here would swap the world mid-step, so OnTick does it
 		if (event.Other && event.Other.Has<PlayerMover>())
 		{
-			e.GetECS().Add<RestartRequested>();
+			KOI_LOG(ObstacleSpawner, Info, "Player hit an obstacle, restarting");
+			koi::AppBase::Get().LoadScene("Main");
 		}
 	}
 }

@@ -10,6 +10,7 @@
 #include "Koi/Engine/ECS/SystemRegistry.h"
 #include "Koi/Engine/Physics/PhysicsDebugDraw.h"
 #include "Koi/Engine/Physics/PhysicsSystem.h"
+#include <utility>
 
 namespace koi
 {
@@ -49,8 +50,16 @@ namespace koi
 	{
 		m_world->Update(dt);
 
-		KOI_SCOPE("Game Tick");
-		OnTick(dt);
+		{
+			KOI_SCOPE("Game Tick");
+			OnTick(dt);
+		}
+
+		// Nothing is iterating the world here
+		if (!m_pendingScene.empty())
+		{
+			LoadSceneNow(std::exchange(m_pendingScene, {}));
+		}
 	}
 
 	void AppBase::HostRender()
@@ -96,27 +105,43 @@ namespace koi
 			return;
 		}
 
-		LoadScene(m_desc.StartupScene);
+		if (!m_desc.Scenes.contains(m_desc.StartupScene))
+		{
+			KOI_LOG(Scene, Error, "Startup scene '{}' is not listed in [scenes.list]", m_desc.StartupScene);
+			return;
+		}
+
+		LoadSceneNow(m_desc.StartupScene);
 	}
 
 	bool AppBase::LoadScene(std::string_view name)
 	{
-		ZoneScoped;
-
-		const auto it = m_desc.Scenes.find(std::string(name));
-		if (it == m_desc.Scenes.end())
+		if (!m_desc.Scenes.contains(std::string(name)))
 		{
 			KOI_LOG(Scene, Error, "Scene '{}' is not listed in [scenes.list]", name);
 			return false;
 		}
 
-		// Loaded in place
-		if (const Result<void> loaded = m_world->Load(it->second); !loaded)
+		if (!m_pendingScene.empty() && m_pendingScene != name)
 		{
-			KOI_LOG(Scene, Error, "Couldn't load scene '{}' ({}): {}", name, it->second, loaded.error().Message);
-			return false;
+			KOI_LOG(Scene, Warn, "Scene '{}' replaces the pending load of '{}'", name, m_pendingScene);
 		}
+		m_pendingScene = name;
 		return true;
+	}
+
+	void AppBase::LoadSceneNow(const std::string& name)
+	{
+		ZoneScoped;
+		const std::string& path = m_desc.Scenes.at(name);
+
+		// Loaded in place
+		if (const Result<void> loaded = m_world->Load(path); !loaded)
+		{
+			KOI_LOG(Scene, Error, "Couldn't load scene '{}' ({}): {}", name, path, loaded.error().Message);
+			return;
+		}
+		OnSceneLoaded(name);
 	}
 
 	std::optional<RenderView> AppBase::GetWindowView() const

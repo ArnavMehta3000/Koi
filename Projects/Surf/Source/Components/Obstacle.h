@@ -58,9 +58,6 @@ namespace game
 		void Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& transform, Obstacle& obstacle) override;
 	};
 
-	// World singleton
-	struct RestartRequested {};
-
 	// The obstacle is the sensor
 	class ObstacleHitObserver final : public koi::Observer<koi::SensorBegin, const Obstacle>
 	{

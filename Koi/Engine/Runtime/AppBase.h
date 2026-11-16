@@ -8,6 +8,8 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 
 namespace koi
 {
@@ -64,20 +66,19 @@ namespace koi
 		virtual void OnBeginPlay() {}
 		virtual void OnEndPlay() {}
 
-		// For a host that owns the render target (the editor): renders the world into view, then runs OnRender
 		void HostRenderInto(const std::optional<RenderView>& view);
-
-		// The window's back buffer, seen through the world's camera projected against the window's aspect
 		[[nodiscard]] std::optional<RenderView> GetWindowView() const;
 
-		// Replaces the world with a scene named in [scenes.list]
+		virtual void OnSceneLoaded(std::string_view /*name*/) {}
 		bool LoadScene(std::string_view name);
 
 	private:
 		void LoadStartupScene();
+		void LoadSceneNow(const std::string& name);
 
 	private:
 		AppCreateDesc          m_desc;
+		std::string            m_pendingScene;
 		std::unique_ptr<World> m_world;
 		Engine*                m_engine = nullptr;
 		Window*                m_window = nullptr;

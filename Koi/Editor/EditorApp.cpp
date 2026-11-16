@@ -108,13 +108,14 @@ namespace koi::editor
 
 	void EditorApp::RegisterCommands()
 	{
+		const auto editing    = [] { return Engine::Get().GetPlayState() == PlayState::Edit; };
 		const auto notEditing = [] { return Engine::Get().GetPlayState() != PlayState::Edit; };
 
 		// File commands
 		m_commands->Register({ .Id = "file.save", .Label = "Save Scene", .Icon = ICON_FA_FLOPPY_DISK, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_S,
-			.Execute = [this] { SaveScene(); } });
+			.Execute = [this] { SaveScene(); }, .CanExecute = editing });
 		m_commands->Register({ .Id = "file.cook", .Label = "Cook", .Icon = ICON_FA_BOX,
-			.Execute = [this] { Cook(); } });
+			.Execute = [this] { Cook(); }, .CanExecute = editing });
 		m_commands->Register({ .Id = "file.exit", .Label = "Exit", .Icon = ICON_FA_RIGHT_FROM_BRACKET,
 			.Execute = [] { Engine::Get().RequestExit(); } });
 
