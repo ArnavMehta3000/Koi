@@ -8,6 +8,7 @@ namespace koi
 	struct MeshRef
 	{
 		static constexpr std::string_view kKey = "Mesh";
+		static constexpr std::string_view kCategory = "Rendering";
 
 		MeshHandle Handle;  // the source path lives in the mesh AssetCache, not per entity
 	};
@@ -22,6 +23,7 @@ namespace koi
 	struct MaterialRef
 	{
 		static constexpr std::string_view kKey = "Material";
+		static constexpr std::string_view kCategory = "Rendering";
 
 		MaterialHandle Handle;
 	};
@@ -29,6 +31,7 @@ namespace koi
 	struct CameraComponent
 	{
 		static constexpr std::string_view kKey = "Camera";
+		static constexpr std::string_view kCategory = "Rendering";
 		static constexpr bool kReflect = true;
 
 		f32  FovY    = 0.8f;     // vertical field of view, radians
@@ -69,6 +72,7 @@ namespace koi
 	struct PostProcess
 	{
 		static constexpr std::string_view kKey = "PostProcess";
+		static constexpr std::string_view kCategory = "Rendering";
 		static constexpr bool kReflect = true;
 
 		AutoExposureSettings AutoExposure;
@@ -84,6 +88,7 @@ namespace koi
 	struct Light
 	{
 		static constexpr std::string_view kKey = "Light";
+		static constexpr std::string_view kCategory = "Rendering";
 		static constexpr bool kReflect = true;
 
 		LightType Type      = LightType::Point;

@@ -52,6 +52,7 @@ namespace koi
 		{
 		public:
 			[[nodiscard]] std::string_view Key() const override { return MeshRef::kKey; }
+			[[nodiscard]] std::string_view Category() const override { return MeshRef::kCategory; }
 			[[nodiscard]] i32 DrawOrder() const override { return 10; }
 
 			[[nodiscard]] bool Has(Entity e) const override { return e.Has<MeshRef>(); }
@@ -91,6 +92,7 @@ namespace koi
 		{
 		public:
 			[[nodiscard]] std::string_view Key() const override { return MaterialRef::kKey; }
+			[[nodiscard]] std::string_view Category() const override { return MaterialRef::kCategory; }
 			[[nodiscard]] i32 DrawOrder() const override { return 11; }
 
 			[[nodiscard]] bool Has(Entity e) const override { return e.Has<MaterialRef>(); }

@@ -4,6 +4,7 @@
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/Undo/UndoStack.h"
 #include <IconsFontAwesome6.h>
+#include <string>
 
 namespace koi::editor
 {
@@ -22,6 +23,9 @@ namespace koi::editor
 
 	private:
 		[[nodiscard]] UndoScope WatchComponent(std::string_view verb, std::string_view key, Entity e) const;
+		void DrawAddComponentMenu(Entity e);
+
+		std::string        m_addFilter;
 
 		Selection*         m_selection  = nullptr;
 		InspectorRegistry* m_inspectors = nullptr;

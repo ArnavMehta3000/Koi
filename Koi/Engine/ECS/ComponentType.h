@@ -11,6 +11,7 @@ namespace koi
 
 		[[nodiscard]] virtual std::string_view Key() const = 0;  // Sub-table key under [[entity]] in the scene TOML, and the inspector's identity
 
+		[[nodiscard]] virtual std::string_view Category() const { return "Gameplay"; }  // Groups the editor's Add Component menu
 		[[nodiscard]] virtual i32  DrawOrder() const { return 0; }  // Where this component sits relative to others in the inspector
 		[[nodiscard]] virtual bool Removable() const { return true; }
 
@@ -39,6 +40,12 @@ namespace koi
 
 		[[nodiscard]] std::string_view Key() const override { return T::kKey; }
 		[[nodiscard]] i32  DrawOrder() const override { return m_drawOrder; }
+
+		[[nodiscard]] std::string_view Category() const override
+		{
+			if constexpr (requires { { T::kCategory } -> std::convertible_to<std::string_view>; }) return T::kCategory;
+			else return IComponentType::Category();
+		}
 		[[nodiscard]] bool Removable() const override { return !m_required; }
 
 		[[nodiscard]] bool Has(Entity e) const override { return e.Has<T>(); }

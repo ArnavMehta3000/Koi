@@ -12,6 +12,7 @@ namespace koi
 	struct PhysicsSettings
 	{
 		static constexpr std::string_view kKey = "PhysicsSettings";
+		static constexpr std::string_view kCategory = "Physics";
 		static constexpr bool kReflect = true;
 
 		Vector3 Gravity  = Vector3(0.0f, -9.81f, 0.0f);
@@ -39,6 +40,7 @@ namespace koi
 	struct RigidBody
 	{
 		static constexpr std::string_view kKey = "RigidBody";
+		static constexpr std::string_view kCategory = "Physics";
 		static constexpr bool kReflect = true;
 
 		BodyType Type           = BodyType::Dynamic;
@@ -55,6 +57,7 @@ namespace koi
 	struct Collider
 	{
 		static constexpr std::string_view kKey = "Collider";
+		static constexpr std::string_view kCategory = "Physics";
 		static constexpr bool kReflect = true;
 
 		ColliderShape Shape       = ColliderShape::Box;
