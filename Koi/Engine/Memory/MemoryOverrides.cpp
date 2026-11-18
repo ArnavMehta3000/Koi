@@ -1,4 +1,4 @@
-// Counts every allocation for the editor Profiler, and routes it through Tracy in profile builds
+#include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Core/Types.h"
 #include <atomic>
@@ -9,6 +9,8 @@ namespace koi::internal
 {
 	constinit std::atomic<u64> g_allocationCount{ 0 };
 }
+
+#if !KOI_RELEASE
 
 namespace
 {
@@ -54,3 +56,5 @@ void operator delete  (void* p, const std::nothrow_t&)                   noexcep
 void operator delete[](void* p, const std::nothrow_t&)                   noexcept { Free(p); }
 void operator delete  (void* p, std::align_val_t, const std::nothrow_t&) noexcept { Free(p); }
 void operator delete[](void* p, std::align_val_t, const std::nothrow_t&) noexcept { Free(p); }
+
+#endif
