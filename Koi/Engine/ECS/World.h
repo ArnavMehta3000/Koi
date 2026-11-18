@@ -25,8 +25,6 @@ namespace koi
 	class World
 	{
 	public:
-		static constexpr f32 kFixedStep = 1.0f / 60.0f;
-
 		World();
 		~World();
 		World(const World&) = delete;
@@ -47,8 +45,11 @@ namespace koi
 		static void MakePersistent(Entity e);
 		[[nodiscard]] static bool IsPersistent(Entity e);
 
+		void SetFixedStep(f32 seconds);
+
 		[[nodiscard]] inline const std::string& GetSourcePath()  const { return m_sourcePath; }
 		[[nodiscard]] const BoundingBox&        GetBounds()      const;
+		[[nodiscard]] inline f32                GetFixedStep()   const { return m_fixedStep; }
 		[[nodiscard]] inline ECS&               GetECS()               { return *m_ecs;       }
 		[[nodiscard]] inline const ECS&         GetECS()         const { return *m_ecs;       }
 		[[nodiscard]] inline const RenderScene& GetRenderScene() const { return *m_renderScene; }
@@ -106,6 +107,7 @@ namespace koi
 		std::vector<std::unique_ptr<IObserver>> m_observers;
 		std::unique_ptr<RenderScene>            m_renderScene;
 		std::unique_ptr<ECS>                    m_ecs;
+		f32                                     m_fixedStep        = 1.0f / 60.0f;
 		f32                                     m_fixedAccumulator = 0.0f;
 		std::string                             m_sourcePath;        // virtual path this world was loaded from, empty if none
 		Camera                                  m_camera;            // derived from the primary camera entity by ResolveCamera

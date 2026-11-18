@@ -94,6 +94,7 @@ namespace koi::internal
 			.AppName        = project["project"]["name"].value_or("Koi Application"),
 			.Scenes         = std::move(scenes),
 			.StartupScene   = project["scenes"]["startup"].value_or(""),
+			.FixedStep      = static_cast<f32>(project["physics"]["fixed_step"].value_or(1.0 / 60.0)),
 		};
 	}
 

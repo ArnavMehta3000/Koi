@@ -144,7 +144,8 @@ namespace koi
 	void Engine::Tick(IAppHost& host)
 	{
 		ZoneScoped;
-		m_timer.Tick([&host](f32 dt) { host.HostTick(dt); });
+		m_timer.Tick();
+		host.HostTick(m_timer.GetDeltaTime());
 		host.HostRender();
 	}
 

@@ -381,12 +381,12 @@ namespace koi
 		{
 			KOI_SCOPE("Fixed Update");
 			i64 steps = 0;
-			while (m_fixedAccumulator >= kFixedStep && !m_systemFailure)
+			while (m_fixedAccumulator >= m_fixedStep && !m_systemFailure)
 			{
 				ZoneScopedN("Fixed Step");
-				m_ecs->RunPhases(true, kFixedStep);
+				m_ecs->RunPhases(true, m_fixedStep);
 				PropagateTransforms();  // the next step's physics reads WorldTransform
-				m_fixedAccumulator -= kFixedStep;
+				m_fixedAccumulator -= m_fixedStep;
 				++steps;
 			}
 			FrameStats::Count("Fixed Steps", steps);
@@ -443,6 +443,16 @@ namespace koi
 		FrameStats::Count("Transforms", visited);
 
 		m_renderScene->Sync();
+	}
+
+	void World::SetFixedStep(f32 seconds)
+	{
+		if (seconds <= 0.0f)
+		{
+			KOI_LOG(ECS, Warn, "Fixed step must be positive (got {}); keeping {}", seconds, m_fixedStep);
+			return;
+		}
+		m_fixedStep = seconds;
 	}
 
 	const BoundingBox& World::GetBounds() const

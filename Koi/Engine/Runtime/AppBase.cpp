@@ -42,6 +42,7 @@ namespace koi
 		// A World builds its systems on construction (World::BuildSystems)
 		//   so it comes after every engine registration
 		m_world = std::make_unique<World>();
+		m_world->SetFixedStep(m_desc.FixedStep);
 		LoadStartupScene();
 		OnInit();
 	}

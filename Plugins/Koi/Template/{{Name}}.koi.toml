@@ -41,6 +41,9 @@ startup = "Main"
 [scenes.list]
 Main = "project://Content/Scenes/Main.scene.toml"
 
+[physics]
+fixed_step = 0.0166667  # seconds per FixedUpdate step (60 Hz)
+
 [input]
 stick_deadzone   = 0.2
 trigger_deadzone = 0.05

@@ -23,8 +23,9 @@ namespace koi
 		LoggerConfig LogConfig{};
 		InputConfig  Input{};
 		std::string  AppName        = "Koi Application";
-		std::map<std::string, std::string> Scenes;  // name -> virtual path, from [scenes.list]
-		std::string  StartupScene;                  // name in Scenes, empty = none
+		std::map<std::string, std::string> Scenes;   // name -> virtual path, from [scenes.list]
+		std::string  StartupScene;                   // name in Scenes, empty = none
+		f32          FixedStep      = 1.0f / 60.0f;  // seconds per FixedUpdate step, from [physics]
 	};
 
 	class AppBase : public NonCopyable, public IAppHost
