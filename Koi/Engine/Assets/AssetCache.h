@@ -109,6 +109,15 @@ namespace koi
 			return entry ? std::string_view(entry->Key.Path()) : std::string_view();
 		}
 
+		[[nodiscard]] AssetHandle<T> AddRef(AssetHandle<T> handle)
+		{
+			Entry* entry = m_pool.Get(handle);
+			if (!entry) return {};
+
+			++entry->RefCount;
+			return handle;
+		}
+
 		// Drops one reference. The last one only marks the asset unused; Collect frees it later
 		void Release(GfxDevice& /*device*/, AssetHandle<T> handle)
 		{

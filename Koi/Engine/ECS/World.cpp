@@ -3,6 +3,7 @@
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Core/Exception.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/ECS/ComponentClone.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"
@@ -71,23 +72,8 @@ namespace koi
 	{
 		// Whatever drops a MeshRef - a removed component, a destroyed entity, a torn-down
 		// world - gives the cache reference back here, so no call site has to remember to
-		m_ecs->OnRemove<MeshRef>([](Entity, MeshRef& mesh)
-		{
-			if (!mesh.Handle) return;
-
-			Engine& engine = Engine::Get();
-			engine.GetSubsystem<AssetRegistry>().Cache<GPUMesh>()
-				.Release(engine.GetSubsystem<Renderer>().GetDevice(), mesh.Handle);
-		});
-
-		m_ecs->OnRemove<MaterialRef>([](Entity, MaterialRef& material)
-		{
-			if (!material.Handle) return;
-
-			Engine& engine = Engine::Get();
-			engine.GetSubsystem<AssetRegistry>().Cache<Material>()
-				.Release(engine.GetSubsystem<Renderer>().GetDevice(), material.Handle);
-		});
+		m_ecs->OnRemove<MeshRef>([](Entity, MeshRef& mesh) { ComponentClone<MeshRef>::Drop(mesh); });
+		m_ecs->OnRemove<MaterialRef>([](Entity, MaterialRef& material) { ComponentClone<MaterialRef>::Drop(material); });
 	}
 
 	Result<void> World::Load(std::string_view virtualPath)
