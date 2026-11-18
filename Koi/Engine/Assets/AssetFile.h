@@ -39,6 +39,7 @@ namespace koi
 		Material,
 		Skeleton,
 		Animation,
+		Prefab,  // text, indexed from its id line
 	};
 
 	enum class AssetFileFlags : u32

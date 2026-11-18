@@ -13,6 +13,7 @@ namespace koi
 		Shader,
 		Scene,
 		Material,
+		Prefab,
 	};
 
 	enum class AssetState : u8
@@ -32,11 +33,12 @@ namespace koi
 	{
 		using namespace std::string_view_literals;  // For sv
 
-		inline constexpr std::array kMeshExt    = { ".kmesh"sv };
-		inline constexpr std::array kTextureExt = { ".ktex"sv };
-		inline constexpr std::array kShaderExt  = { ".hlsl"sv };
+		inline constexpr std::array kMeshExt     = { ".kmesh"sv };
+		inline constexpr std::array kTextureExt  = { ".ktex"sv };
+		inline constexpr std::array kShaderExt   = { ".hlsl"sv };
 		inline constexpr std::array kSceneExt    = { ".scene.toml"sv };
 		inline constexpr std::array kMaterialExt = { ".kmat"sv };
+		inline constexpr std::array kPrefabExt   = { ".prefab.toml"sv };
 	}
 
 	inline constexpr std::array kAssetTypes = std::to_array<AssetTypeInfo>(
@@ -46,6 +48,7 @@ namespace koi
 		{ AssetKind::Shader,   "shader",   internal::kShaderExt   },
 		{ AssetKind::Scene,    "scene",    internal::kSceneExt    },
 		{ AssetKind::Material, "material", internal::kMaterialExt },
+		{ AssetKind::Prefab,   "prefab",   internal::kPrefabExt   },
 	});
 
 	namespace utils
