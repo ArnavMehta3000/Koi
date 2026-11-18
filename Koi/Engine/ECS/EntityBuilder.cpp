@@ -3,6 +3,7 @@
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <utility>
 
 namespace koi
 {
@@ -13,11 +14,18 @@ namespace koi
 		void SetAssetRef(Entity e, std::string_view virtualPath)
 		{
 			Engine& engine = Engine::Get();
-			const AssetHandle<T> handle = engine.GetSubsystem<AssetRegistry>().Cache<T>()
-				.Acquire(engine.GetSubsystem<Renderer>().GetDevice(), AssetKey(std::string(virtualPath)));
+			GfxDevice& device = engine.GetSubsystem<Renderer>().GetDevice();
+			auto& cache = engine.GetSubsystem<AssetRegistry>().Cache<T>();
+			const AssetHandle<T> handle = cache.Acquire(device, AssetKey(std::string(virtualPath)));
 			if (!handle) return;
 
-			e.Remove<Ref>();  // the World's on_remove hook releases the previous handle
+			// Swapped in place: a deferred Remove inside a query would land after the Set and drop the new handle
+			if (Ref* existing = e.TryGet<Ref>())
+			{
+				const AssetHandle<T> previous = std::exchange(existing->Handle, handle);
+				if (previous) cache.Release(device, previous);
+				return;
+			}
 			e.Set<Ref>({ handle });
 		}
 	}

@@ -30,6 +30,9 @@ namespace koi
 	{
 		KOI_SCOPE("RenderScene Sync");
 
+		const AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
+		m_bounds = BoundingBox{ {}, {} };
+
 		for (RenderObject& object : m_objects.All())
 		{
 			const Entity e = object.Owner;
@@ -41,6 +44,14 @@ namespace koi
 			// No WorldTransform until the first propagation; draw it at the origin until then
 			const WorldTransform* world = e.TryGet<const WorldTransform>();
 			object.World = world ? world->World : Matrix::Identity;
+
+			const GPUMesh* mesh = meshes.Get(object.Mesh);
+			if (mesh && !math::IsSingular(object.World))
+			{
+				BoundingBox worldBounds;
+				mesh->Bounds.Transform(worldBounds, object.World);
+				math::MergeBounds(m_bounds, worldBounds);
+			}
 		}
 
 		for (RenderLight& light : m_lights.All())

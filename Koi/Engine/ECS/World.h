@@ -48,7 +48,7 @@ namespace koi
 		[[nodiscard]] static bool IsPersistent(Entity e);
 
 		[[nodiscard]] inline const std::string& GetSourcePath()  const { return m_sourcePath; }
-		[[nodiscard]] inline const BoundingBox& GetBounds()      const { return m_bounds;     }
+		[[nodiscard]] const BoundingBox&        GetBounds()      const;
 		[[nodiscard]] inline ECS&               GetECS()               { return *m_ecs;       }
 		[[nodiscard]] inline const ECS&         GetECS()         const { return *m_ecs;       }
 		[[nodiscard]] inline const RenderScene& GetRenderScene() const { return *m_renderScene; }
@@ -108,7 +108,6 @@ namespace koi
 		std::unique_ptr<ECS>                    m_ecs;
 		f32                                     m_fixedAccumulator = 0.0f;
 		std::string                             m_sourcePath;        // virtual path this world was loaded from, empty if none
-		BoundingBox                             m_bounds{ {}, {} };  // zero extents until meshes resolve
 		Camera                                  m_camera;            // derived from the primary camera entity by ResolveCamera
 		std::optional<SystemFailure>            m_systemFailure;
 	};

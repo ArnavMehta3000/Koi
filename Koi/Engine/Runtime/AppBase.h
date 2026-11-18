@@ -85,9 +85,4 @@ namespace koi
 
 		static inline AppBase* s_instance = nullptr;
 	};
-
-	namespace internal
-	{
-		int RunApplication(int argc, char* argv[]);
-	}
 }

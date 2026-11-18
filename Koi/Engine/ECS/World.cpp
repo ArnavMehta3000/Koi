@@ -140,7 +140,6 @@ namespace koi
 		StopSystems();
 
 		m_ecs->Clear(&World::IsPersistent);
-		m_bounds     = BoundingBox{ {}, {} };
 		m_sourcePath = sourcePath;
 		LoadFromTable(scene);  // the ECS is still playing, so every entity spawned here gets BeginPlay
 
@@ -246,15 +245,9 @@ namespace koi
 			}
 		}
 
-		// World bounds come from whichever meshes ended up resident
-		const AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
-		m_ecs->Each<const MeshRef>([&](const MeshRef& mesh)
-		{
-			if (const GPUMesh* gpuMesh = meshes.Get(mesh.Handle))
-			{
-				math::MergeBounds(m_bounds, gpuMesh->Bounds);
-			}
-		});
+		// Syncs the RenderScene too, which is where the world bounds come from
+		PropagateTransforms();
+		const BoundingBox& bounds = GetBounds();
 
 		// If no deserialized camera exists, create one centered on the scene world bounds
 		bool hasCamera = false;
@@ -262,10 +255,10 @@ namespace koi
 		if (!hasCamera)
 		{
 			Transform camXform;
-			if (!math::IsEmpty(m_bounds))
+			if (!math::IsEmpty(bounds))
 			{
-				const Vector3 center(m_bounds.Center);
-				const f32 radius  = math::BoundsRadius(m_bounds);
+				const Vector3 center(bounds.Center);
+				const f32 radius  = math::BoundsRadius(bounds);
 				camXform.Position = center + Vector3(0.0f, 0.0f, radius * 2.5f);
 			}
 			else
@@ -371,8 +364,6 @@ namespace koi
 		// Destructing an entity fires the component hooks, which is what releases its assets
 		m_ecs->Clear();
 		KOI_LOG(Scene, Debug, "Cleared world");
-
-		m_bounds = BoundingBox{ {}, {} };
 	}
 
 	void World::Update(f32 dt)
@@ -394,11 +385,11 @@ namespace koi
 			{
 				ZoneScopedN("Fixed Step");
 				m_ecs->RunPhases(true, kFixedStep);
+				PropagateTransforms();  // the next step's physics reads WorldTransform
 				m_fixedAccumulator -= kFixedStep;
 				++steps;
 			}
 			FrameStats::Count("Fixed Steps", steps);
-			if (steps > 0) PropagateTransforms();
 		}
 
 		if (!m_systemFailure)
@@ -452,6 +443,11 @@ namespace koi
 		FrameStats::Count("Transforms", visited);
 
 		m_renderScene->Sync();
+	}
+
+	const BoundingBox& World::GetBounds() const
+	{
+		return m_renderScene->GetBounds();
 	}
 
 	void World::Reparent(Entity child, Entity parent)

@@ -125,9 +125,11 @@ namespace koi
 
 		[[nodiscard]] std::span<const RenderObject> GetObjects() const { return m_objects.All(); }
 		[[nodiscard]] std::span<const RenderLight>  GetLights()  const { return m_lights.All(); }
+		[[nodiscard]] const BoundingBox&            GetBounds()  const { return m_bounds; }
 
 	private:
 		RecordSet<RenderObject> m_objects;
 		RecordSet<RenderLight>  m_lights;
+		BoundingBox             m_bounds{ {}, {} };
 	};
 }
