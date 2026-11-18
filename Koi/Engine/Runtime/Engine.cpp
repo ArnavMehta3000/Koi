@@ -13,18 +13,9 @@
 
 namespace koi
 {
-	// Declaration order is init order | shutdown runs in reverse
-	struct Engine::Subsystems : SubsystemSet<InputManager, Renderer, AssetRegistry> {};
-
-	template <typename T>
-	T& Engine::GetSubsystem()
-	{
-		return m_systems->Get<T>();
-	}
-
-	template InputManager&  Engine::GetSubsystem<InputManager>();
-	template Renderer&      Engine::GetSubsystem<Renderer>();
-	template AssetRegistry& Engine::GetSubsystem<AssetRegistry>();
+	template<> InputManager&  Engine::GetSubsystem<InputManager>()  { return *m_input;    }
+	template<> Renderer&      Engine::GetSubsystem<Renderer>()      { return *m_renderer; }
+	template<> AssetRegistry& Engine::GetSubsystem<AssetRegistry>() { return *m_assets;   }
 
 	Engine::Engine(const Desc& desc)
 		: m_desc(desc)
@@ -36,8 +27,9 @@ namespace koi
 
 		KOI_LOG(Engine, Info, "Engine initializing");
 
-		m_systems = std::make_unique<Subsystems>();
-		m_systems->ConstructAll();
+		m_input    = std::make_unique<InputManager>();
+		m_renderer = std::make_unique<Renderer>();
+		m_assets   = std::make_unique<AssetRegistry>();
 		KOI_LOG(Engine, Debug, "Engine subsystems constructed");
 
 		ComponentRegistry::Get().RegisterEngineComponents();
@@ -49,8 +41,10 @@ namespace koi
 
 		// Runs here, not at the end of RunApp: the host outlives RunApp and releases GPU
 		// resources in its own destructor, so the device has to still be alive for it
-		GfxDevice& device = GetSubsystem<Renderer>().GetDevice();
-		m_systems->ShutdownAll(device);
+		m_assets->Shutdown(m_renderer->GetDevice());
+		m_assets.reset();
+		m_renderer.reset();
+		m_input.reset();
 		KOI_LOG(Engine, Debug, "Engine subsystems shut down");
 
 		m_window.reset();
@@ -75,7 +69,9 @@ namespace koi
 			.VSync          = mainWndDesc.VSync,
 			.Input          = desc.Input,
 		};
-		m_systems->InitAll(initCtx);
+		m_input->Init(initCtx);
+		m_renderer->Init(initCtx);
+		m_assets->Init();
 		KOI_LOG(Engine, Debug, "Engine subsystems initialized");
 
 		window.SetCloseCallback([this]() { RequestExit(); });

@@ -6,7 +6,6 @@
 #include "Koi/Engine/Assets/TextureAsset.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/GPUTexture.h"
-#include "Koi/Engine/Runtime/Subsystems.h"
 #include <tuple>
 
 namespace koi
@@ -18,8 +17,6 @@ namespace koi
 	class AssetRegistryFor : public NonCopyable
 	{
 	public:
-		using Dependencies = TypeList<Renderer>;  // Used by engine subsystems
-
 		template<typename T> [[nodiscard]] AssetCache<T>&       Cache()       { return std::get<AssetCache<T>>(m_caches); }
 		template<typename T> [[nodiscard]] const AssetCache<T>& Cache() const { return std::get<AssetCache<T>>(m_caches); }
 

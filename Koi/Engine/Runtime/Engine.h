@@ -63,7 +63,6 @@ namespace koi
 		[[nodiscard]] inline Window&       GetWindow()       { return *m_window; }
 		[[nodiscard]] inline const Window& GetWindow() const { return *m_window; }
 
-		// Instantiated in Engine.cpp for each subsystem; include the subsystem's own header to use it
 		template <typename T> [[nodiscard]] T& GetSubsystem();
 
 		[[nodiscard]] Stats GetStats() const;
@@ -81,11 +80,13 @@ namespace koi
 	private:
 		static inline Engine* s_instance = nullptr;
 
-		struct Subsystems;
+		Desc                           m_desc;
+		std::unique_ptr<Window>        m_window;
 
-		Desc                        m_desc;
-		std::unique_ptr<Window>     m_window;
-		std::unique_ptr<Subsystems> m_systems;
+		// Systems below, init ordered, shutdown in reverse
+		std::unique_ptr<InputManager>  m_input;
+		std::unique_ptr<Renderer>      m_renderer;
+		std::unique_ptr<AssetRegistry> m_assets;
 
 		IAppHost* m_host = nullptr;  // valid for the duration of RunApp
 
@@ -94,7 +95,7 @@ namespace koi
 		PlayState m_playState = PlayState::Edit;
 	};
 
-	extern template InputManager&  Engine::GetSubsystem<InputManager>();
-	extern template Renderer&      Engine::GetSubsystem<Renderer>();
-	extern template AssetRegistry& Engine::GetSubsystem<AssetRegistry>();
+	template<> [[nodiscard]] InputManager&  Engine::GetSubsystem<InputManager>();
+	template<> [[nodiscard]] Renderer&      Engine::GetSubsystem<Renderer>();
+	template<> [[nodiscard]] AssetRegistry& Engine::GetSubsystem<AssetRegistry>();
 }
