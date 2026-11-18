@@ -27,15 +27,18 @@ namespace koi
 		FlushCommands();
 	}
 
-	void ECS::Clear()
+	void ECS::Clear(const std::function<bool(Entity)>& keep)
 	{
 		Sync();
 		for (u32 i = 0; i < m_nodes.size(); ++i)
 		{
 			const Node& node = m_nodes[i];
-			if (node.Alive && !node.Parent.IsValid() && i != m_root.GetIndex())
+			if (!node.Alive || node.Parent.IsValid() || i == m_root.GetIndex()) continue;
+
+			const EntityHandle handle(i, node.Generation);
+			if (!keep || !keep(Entity(this, handle)))
 			{
-				DestroyNow(EntityHandle(i, node.Generation));
+				DestroyNow(handle);
 			}
 		}
 

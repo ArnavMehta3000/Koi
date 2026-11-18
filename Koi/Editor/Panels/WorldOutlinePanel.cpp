@@ -222,7 +222,15 @@ namespace koi::editor
 
 		ImGui::Separator();
 
-		ForEachSortedChild(ecs, Entity{}, m_order, DrawNode);
+		ForEachSortedChild(ecs, Entity{}, m_order, [&](Entity e) { if (!e.Has<Persistent>()) DrawNode(e); });
+
+		bool anyPersistent = false;
+		ecs.Each<const Persistent>([&](Entity e, const Persistent&) { anyPersistent |= !e.GetParent(); });
+		if (anyPersistent)
+		{
+			ImGui::SeparatorText("Persistent");
+			ForEachSortedChild(ecs, Entity{}, m_order, [&](Entity e) { if (e.Has<Persistent>()) DrawNode(e); });
+		}
 
 		if (pendingDrop)
 		{

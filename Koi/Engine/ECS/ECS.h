@@ -51,6 +51,9 @@ namespace koi
 	struct BeginPlay {};
 	struct EndPlay {};
 
+	// Sent to persistent entities
+	struct SceneLoaded {};
+
 	namespace internal
 	{
 		inline u32& ComponentCounter() { static u32 counter = 0; return counter; }
@@ -297,13 +300,13 @@ namespace koi
 
 		// While playing, spawned entities get BeginPlay
 		void SetPlaying(bool playing) { m_playing = playing; }
-		template<typename Event> void EmitToAll(const Event& event = {});
+		template<typename Event> void EmitToAll(const Event& event = {}, const std::function<bool(Entity)>& filter = {});
 
 		// Flushes deferred structural changes and drains events until both are empty
 		void Sync();
 
-		// Destroys every entity and strips the root's singletons
-		void Clear();
+		// Destroys every top-level entity keep() doesn't claim, with its subtree, and strips the root's singletons
+		void Clear(const std::function<bool(Entity)>& keep = {});
 
 		// Internal helpers
 		[[nodiscard]] bool IsAlive(EntityHandle handle) const;

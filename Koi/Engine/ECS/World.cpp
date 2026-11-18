@@ -121,14 +121,49 @@ namespace koi
 
 	void World::Load(const toml::table& scene, std::string_view sourcePath)
 	{
-		const bool inPlay = Engine::Get().GetPlayState() != PlayState::Edit;
-		if (inPlay) EndPlay();
+		if (Engine::Get().GetPlayState() != PlayState::Edit)
+		{
+			SwapScene(scene, sourcePath);
+			return;
+		}
 
 		Clear();
 		m_sourcePath = sourcePath;
 		LoadFromTable(scene);
+	}
 
-		if (inPlay) BeginPlay();
+	void World::SwapScene(const toml::table& scene, std::string_view sourcePath)
+	{
+		ZoneScoped;
+		m_ecs->EmitToAll(koi::EndPlay{}, [](Entity e) { return !IsPersistent(e); });
+		m_ecs->Sync();
+		StopSystems();
+
+		m_ecs->Clear(&World::IsPersistent);
+		m_bounds     = BoundingBox{ {}, {} };
+		m_sourcePath = sourcePath;
+		LoadFromTable(scene);  // the ECS is still playing, so every entity spawned here gets BeginPlay
+
+		StartSystems();
+		m_ecs->EmitToAll(SceneLoaded{}, &World::IsPersistent);
+		m_ecs->Sync();
+	}
+
+	void World::MakePersistent(Entity e)
+	{
+		KOI_ASSERT(Engine::Get().GetPlayState() != PlayState::Edit, "Persistent entities only exist during play");
+		KOI_ASSERT(!e.GetParent(), "Only a top-level entity can be made persistent");
+		e.Add<Persistent>();
+	}
+
+	bool World::IsPersistent(Entity e)
+	{
+		Entity top = e;
+		while (const Entity parent = top.GetParent())
+		{
+			top = parent;
+		}
+		return top.Has<Persistent>();
 	}
 
 	void World::LoadFromTable(const toml::table& scene)
@@ -436,15 +471,7 @@ namespace koi
 	void World::BeginPlay()
 	{
 		ZoneScoped;
-		m_fixedAccumulator = 0.0f;
-		for (const std::unique_ptr<ISystem>& system : m_systems)
-		{
-			system->OnBeginPlay(*this);
-		}
-		for (const std::unique_ptr<IObserver>& observer : m_observers)
-		{
-			observer->OnBeginPlay(*this);
-		}
+		StartSystems();
 
 		m_ecs->SetPlaying(true);
 		m_ecs->EmitToAll(koi::BeginPlay{});
@@ -457,7 +484,24 @@ namespace koi
 		m_ecs->EmitToAll(koi::EndPlay{});
 		m_ecs->Sync();
 		m_ecs->SetPlaying(false);
+		StopSystems();
+	}
 
+	void World::StartSystems()
+	{
+		m_fixedAccumulator = 0.0f;
+		for (const std::unique_ptr<ISystem>& system : m_systems)
+		{
+			system->OnBeginPlay(*this);
+		}
+		for (const std::unique_ptr<IObserver>& observer : m_observers)
+		{
+			observer->OnBeginPlay(*this);
+		}
+	}
+
+	void World::StopSystems()
+	{
 		for (auto it = m_observers.rbegin(); it != m_observers.rend(); ++it)
 		{
 			(*it)->OnEndPlay(*this);

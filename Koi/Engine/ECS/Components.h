@@ -19,6 +19,9 @@ namespace koi
 		u32 Index = 0;
 	};
 
+	// Runtime-only tag (World::MakePersistent)
+	struct Persistent {};
+
 	// Overrides every material slot of the entity's mesh with one material asset
 	struct MaterialRef
 	{

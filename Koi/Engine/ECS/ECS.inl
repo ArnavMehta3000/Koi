@@ -48,11 +48,17 @@ namespace koi
 	}
 
 	template<typename Event>
-	void ECS::EmitToAll(const Event& event)
+	void ECS::EmitToAll(const Event& event, const std::function<bool(Entity)>& filter)
 	{
 		for (u32 i = 0; i < m_nodes.size(); ++i)
 		{
-			if (m_nodes[i].Alive && i != m_root.GetIndex()) Emit(Entity(this, EntityHandle(i, m_nodes[i].Generation)), event);
+			if (!m_nodes[i].Alive || i == m_root.GetIndex()) continue;
+
+			const Entity e(this, EntityHandle(i, m_nodes[i].Generation));
+			if (!filter || filter(e))
+			{
+				Emit(e, event);
+			}
 		}
 	}
 

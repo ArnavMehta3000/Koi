@@ -44,6 +44,9 @@ namespace koi
 		// Creates an entity with a Transform. Names are unique per world and looked up by scene files, so runtime spawns should stay unnamed
 		[[nodiscard]] EntityBuilder Spawn(std::string_view name = {});
 
+		static void MakePersistent(Entity e);
+		[[nodiscard]] static bool IsPersistent(Entity e);
+
 		[[nodiscard]] inline const std::string& GetSourcePath()  const { return m_sourcePath; }
 		[[nodiscard]] inline const BoundingBox& GetBounds()      const { return m_bounds;     }
 		[[nodiscard]] inline ECS&               GetECS()               { return *m_ecs;       }
@@ -85,6 +88,9 @@ namespace koi
 
 	private:
 		void LoadFromTable(const toml::table& scene);
+		void SwapScene(const toml::table& scene, std::string_view sourcePath);
+		void StartSystems();
+		void StopSystems();
 		void ConfigureComponentHooks();
 		void BuildSystems();
 		void BuildObservers();
