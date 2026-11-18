@@ -92,7 +92,6 @@ namespace koi
 		template<Component T, typename... Args> const Entity& Add(Args&&... args) const;
 		template<Component T> const Entity& Set(T value) const;
 		template<Component T> const Entity& Remove() const;
-		template<Component T> void Modified() const {}
 
 		void Destroy() const;
 		[[nodiscard]] bool IsAlive() const;
