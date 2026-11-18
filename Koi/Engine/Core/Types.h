@@ -86,26 +86,4 @@ namespace koi
 		NonMovable() = default;
 		~NonMovable() = default;
 	};
-
-	namespace internal
-	{
-		consteval std::string_view ExtractFilename(std::string_view path) noexcept
-		{
-			const size_t lastSlash = path.find_last_of("/\\");
-			return lastSlash == std::string_view::npos ? path : path.substr(lastSlash + 1);
-		}
-
-		consteval std::string_view ExtractFilenameNoExt(std::string_view path) noexcept
-		{
-			const std::string_view filename = ExtractFilename(path);
-			const size_t lastDot = filename.find_last_of('.');
-			return lastDot == std::string_view::npos ? filename : filename.substr(0, lastDot);
-		}
-	}
 }
-
-// The filename with extension of the current file
-#define KOI_FILENAME ::koi::internal::ExtractFilename(__FILE__)
-
-// The filename without extension of the current file
-#define KOI_FILE ::koi::internal::ExtractFilenameNoExt(__FILE__)
