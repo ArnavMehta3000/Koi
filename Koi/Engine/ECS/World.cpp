@@ -245,8 +245,9 @@ namespace koi
 			}
 		}
 
-		// Syncs the RenderScene too, which is where the world bounds come from
+		// The world bounds come from the RenderScene
 		PropagateTransforms();
+		m_renderScene->Sync();
 		const BoundingBox& bounds = GetBounds();
 
 		// If no deserialized camera exists, create one centered on the scene world bounds
@@ -274,6 +275,7 @@ namespace koi
 		}
 
 		PropagateTransforms();
+		m_renderScene->Sync();
 		KOI_LOG(Scene, Debug, "Built world from scene table ({} entities)", entities->size());
 	}
 
@@ -373,6 +375,7 @@ namespace koi
 		{
 			m_ecs->Sync();
 			PropagateTransforms();
+			m_renderScene->Sync();
 			return;
 		}
 
@@ -397,6 +400,7 @@ namespace koi
 			KOI_SCOPE("Frame Systems");
 			m_ecs->RunPhases(false, dt);
 			PropagateTransforms();
+			m_renderScene->Sync();
 		}
 
 		if (m_systemFailure)
@@ -441,8 +445,6 @@ namespace koi
 			visit(root, nullptr);
 		}
 		FrameStats::Count("Transforms", visited);
-
-		m_renderScene->Sync();
 	}
 
 	void World::SetFixedStep(f32 seconds)
