@@ -36,20 +36,7 @@ namespace koi
 			void UploadTextureSubresources(TextureHandle dst, std::span<const byte> data, std::span<const TextureSubresourceLayout> layout);
 			void End();
 
-			// Deferred -> takes ownership of data, submitted at the next Renderer::BeginFrame.
-			void QueueBufferUpload(BufferHandle dst, const std::vector<byte>& data);
-			void QueueTextureUpload(TextureHandle dst, const std::vector<byte>& data);
-
-			// Called at the start of new frame
-			void FlushQueued(dx12::CommandQueue* graphicsQueue);
-
 		private:
-			struct PendingUpload
-			{
-				std::variant<BufferHandle, TextureHandle> Dst;
-				std::vector<byte> Data;
-			};
-
 			[[nodiscard]] BufferHandle RecordBufferUpload(BufferHandle dst, const void* data, u64 size);
 			[[nodiscard]] BufferHandle RecordTextureUpload(TextureHandle dst, const void* data, u64 size);
 			[[nodiscard]] BufferHandle RecordSubresourcesUpload(TextureHandle dst, std::span<const byte> data, std::span<const TextureSubresourceLayout> layout);
@@ -62,11 +49,8 @@ namespace koi
 			HANDLE                            m_fenceEvent           = nullptr;
 			u64                               m_nextFenceValue       = 1;
 
-			std::vector<PendingUpload>        m_pendingUploads;
 			std::vector<BufferHandle>         m_activeStagingBuffers;
-			std::vector<BufferHandle>         m_pendingStagingFree;
-			u64                               m_pendingFreeFenceValue = 0;
-			u32                               m_recordDepth           = 0;  // Final End() actualy uploads (allows nesting)
+			u32                               m_recordDepth          = 0;  // Final End() actually uploads (allows nesting)
 		};
 
 	public:

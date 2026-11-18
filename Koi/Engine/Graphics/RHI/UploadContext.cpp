@@ -1,6 +1,5 @@
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Core/Assert.h"
-#include "Koi/Engine/Core/Patterns/Match.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <algorithm>
@@ -49,25 +48,6 @@ namespace koi
 		ZoneScoped;
 
 		KOI_ASSERT(m_recordDepth == 0, "UploadContext::Shutdown called while a Begin/End block is still open");
-
-		// If there are staging buffers pending from the last FlushQueued, wait for the
-		// copy fence to pass so we can safely destroy them.
-		if (!m_pendingStagingFree.empty())
-		{
-			if (m_copyFence->GetCompletedValue() < m_pendingFreeFenceValue)
-			{
-				DX_CHECK(m_copyFence->SetEventOnCompletion(m_pendingFreeFenceValue, m_fenceEvent));
-				::WaitForSingleObject(m_fenceEvent, INFINITE);
-			}
-
-			for (BufferHandle h : m_pendingStagingFree)
-			{
-				m_device->Destroy(h);
-			}
-
-			m_device->FlushPendingDeletions();
-			m_pendingStagingFree.clear();
-		}
 
 		if (m_fenceEvent)
 		{
@@ -157,97 +137,6 @@ namespace koi
 
 		m_device->FlushPendingDeletions();
 		m_activeStagingBuffers.clear();
-	}
-
-	void GfxDevice::UploadContext::QueueBufferUpload(BufferHandle dst, const std::vector<byte>& data)
-	{
-		KOI_ASSERT(m_device, "UploadContext::QueueBufferUpload called before Init");
-		KOI_ASSERT(m_recordDepth == 0, "Cannot queue an upload while a synchronous Begin/End block is open");
-		KOI_ASSERT(m_device->m_buffers.IsValid(dst), "QueueBufferUpload: invalid destination buffer handle");
-		KOI_ASSERT(!data.empty(), "QueueBufferUpload: data vector is empty");
-
-		m_pendingUploads.push_back({ dst, data });
-	}
-
-	void GfxDevice::UploadContext::QueueTextureUpload(TextureHandle dst, const std::vector<byte>& data)
-	{
-		KOI_ASSERT(m_device, "UploadContext::QueueTextureUpload called before Init");
-		KOI_ASSERT(m_recordDepth == 0, "Cannot queue an upload while a synchronous Begin/End block is open");
-		KOI_ASSERT(m_device->m_textures.IsValid(dst), "QueueTextureUpload: invalid destination texture handle");
-		KOI_ASSERT(!data.empty(), "QueueTextureUpload: data vector is empty");
-
-		m_pendingUploads.push_back({ dst, data });
-	}
-
-	void GfxDevice::UploadContext::FlushQueued(dx12::CommandQueue* graphicsQueue)
-	{
-		ZoneScoped;
-
-		KOI_ASSERT(m_device, "UploadContext::FlushQueued called before Init");
-		KOI_ASSERT(m_recordDepth == 0, "FlushQueued called while a synchronous Begin/End block is open");
-		KOI_ASSERT(graphicsQueue, "FlushQueued: graphicsQueue is null");
-
-		// Ensure previous flush's staging buffers are freed before submitting new work.
-		// The copy queue is fast relative to frame rate, so the poll branch is almost always taken.
-		if (!m_pendingStagingFree.empty())
-		{
-			// Rare: copy queue somehow hasn't caught up in a whole frame —> actually block
-			if (m_copyFence->GetCompletedValue() < m_pendingFreeFenceValue)
-			{
-				DX_CHECK(m_copyFence->SetEventOnCompletion(m_pendingFreeFenceValue, m_fenceEvent));
-				::WaitForSingleObject(m_fenceEvent, INFINITE);
-			}
-
-			for (BufferHandle h : m_pendingStagingFree)
-			{
-				m_device->Destroy(h);
-			}
-
-			m_device->FlushPendingDeletions();
-			m_pendingStagingFree.clear();
-		}
-
-		constexpr std::string_view kUploadCounter = "Upload KB";
-
-		if (m_pendingUploads.empty())
-		{
-			FrameStats::Count(kUploadCounter, 0);
-			return;
-		}
-
-		KOI_LOG(RHI, Trace, "UploadContext: flushing {} queued upload(s)", m_pendingUploads.size());
-
-		DX_CHECK(m_allocator->Reset());
-		DX_CHECK(m_cmdList->Reset(m_allocator.Get(), nullptr));
-
-		std::vector<BufferHandle> stagingThisFlush;
-		stagingThisFlush.reserve(m_pendingUploads.size());
-
-		i64 uploadBytes = 0;
-		for (PendingUpload& upload : m_pendingUploads)
-		{
-			uploadBytes += i64(upload.Data.size());
-			std::visit(Match
-			{
-				[&](BufferHandle h)  { stagingThisFlush.push_back(RecordBufferUpload(h,  upload.Data.data(), upload.Data.size())); },
-				[&](TextureHandle h) { stagingThisFlush.push_back(RecordTextureUpload(h, upload.Data.data(), upload.Data.size())); },
-			}, upload.Dst);
-		}
-		m_pendingUploads.clear();
-		FrameStats::Count(kUploadCounter, (uploadBytes + 1023) / 1024);
-
-		DX_CHECK(m_cmdList->Close());
-
-		dx12::CommandList* lists[] = { m_cmdList.Get() };
-		m_copyQueue->ExecuteCommandLists(1, lists);
-
-		const u64 signalValue = m_nextFenceValue++;
-		DX_CHECK(m_copyQueue->Signal(m_copyFence.Get(), signalValue));
-		m_pendingFreeFenceValue = signalValue;
-		m_pendingStagingFree    = std::move(stagingThisFlush);
-
-		// GPU-side ordering: graphics queue will not begin until the copy queue signals
-		DX_CHECK(graphicsQueue->Wait(m_copyFence.Get(), signalValue));
 	}
 
 	BufferHandle GfxDevice::UploadContext::RecordBufferUpload(BufferHandle dst, const void* data, u64 size)

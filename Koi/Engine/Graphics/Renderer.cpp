@@ -145,7 +145,6 @@ namespace koi
 		m_device->GpuProfilerNewFrame();
 
 		m_shaderReadRequests.clear();
-		m_device->GetUploadContext().FlushQueued(m_device->GetGraphicsQueue());
 
 		m_frameContext->List.Begin(m_device->GetFrameSlot());
 	}
