@@ -11,6 +11,7 @@ namespace koi::editor
 	class AssetDatabase;
 	class EditorContext;
 	class ImportQueue;
+	class SceneFiles;
 	struct AssetEntry;
 
 	// Queries the asset database to draw
@@ -45,6 +46,7 @@ namespace koi::editor
 		AssetDatabase* m_database  = nullptr;
 		Selection*     m_selection = nullptr;
 		ImportQueue*   m_imports   = nullptr;
+		SceneFiles*    m_scenes    = nullptr;
 
 		std::string m_selectedFolder;
 		std::string m_search;

@@ -10,7 +10,10 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
+
+namespace toml { inline namespace v3 { class table; } }
 
 namespace koi
 {
@@ -26,6 +29,7 @@ namespace koi::editor
 	class ImportQueue;
 	class PanelManager;
 	class PlaySession;
+	class SceneFiles;
 	class Toasts;
 	class UndoStack;
 	class ViewportPanel;
@@ -78,6 +82,8 @@ namespace koi::editor
 		void DrawMenuBar();
 		void DrawPlayControls();
 		void DrawGizmoMenu();
+		void DrawOpenSceneMenu();
+		void DrawNewSceneModal();
 		void SaveScene();
 		void Cook();
 
@@ -89,7 +95,9 @@ namespace koi::editor
 
 		// Per-project editor state in <project>/.koi/Editor.toml, one [panels.<Name>] table per panel
 		[[nodiscard]] fs::path EditorStatePath() const;
-		void LoadEditorState();
+		[[nodiscard]] toml::table ReadEditorState() const;
+		void LoadEditorState(const toml::table& state);
+		void ReopenLastScene(const toml::table& state);
 		void SaveEditorState() const;
 
 	private:
@@ -104,12 +112,15 @@ namespace koi::editor
 		StatusBar                m_statusBar;
 		GizmoOptions             m_gizmos{};
 		std::optional<bool>      m_pendingShaderReload;  // true reloads all
+		std::string              m_newSceneName;
+		bool                     m_openNewScene = false;
 
 		// Owned by m_context, cached for access
 		PanelManager*    m_panels        = nullptr;
 		CommandRegistry* m_commands      = nullptr;
 		ImportQueue*     m_importQueue   = nullptr;
 		PlaySession*     m_play          = nullptr;
+		SceneFiles*      m_scenes        = nullptr;
 		Toasts*          m_toasts        = nullptr;
 		UndoStack*       m_undo          = nullptr;
 		ViewportPanel*   m_viewportPanel = nullptr;

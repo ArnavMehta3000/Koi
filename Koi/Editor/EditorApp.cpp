@@ -18,6 +18,7 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Editor/PlaySession.h"
+#include "Koi/Editor/SceneFiles.h"
 #include "Koi/Editor/Selection.h"
 #include "Koi/Editor/Toasts.h"
 #include "Koi/Editor/UI/Widgets.h"
@@ -32,6 +33,7 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/InputManager.h"
 #include "Koi/Engine/Platform/Window.h"
@@ -39,10 +41,13 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Runtime/Serializer.h"
 
+#include <algorithm>
 #include <format>
 #include <fstream>
 #include <IconsFontAwesome6.h>
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
+#include <utility>
 
 namespace koi::editor
 {
@@ -86,8 +91,9 @@ namespace koi::editor
 
 		// Extensions can expect the built-in inspectors to exist at startup
 		m_context.Add<InspectorRegistry>()->RegisterBuiltins();
-		m_play = m_context.Add<PlaySession>();
-		m_undo = m_context.Add<UndoStack>();
+		m_play     = m_context.Add<PlaySession>();
+		m_undo     = m_context.Add<UndoStack>();
+		m_scenes   = m_context.Add<SceneFiles>();
 		m_commands = m_context.Add<CommandRegistry>();
 		RegisterCommands();
 
@@ -112,6 +118,8 @@ namespace koi::editor
 		const auto notEditing = [] { return Engine::Get().GetPlayState() != PlayState::Edit; };
 
 		// File commands
+		m_commands->Register({ .Id = "file.new_scene", .Label = "New Scene...", .Icon = ICON_FA_FILE_CIRCLE_PLUS,
+			.Execute = [this] { m_openNewScene = true; }, .CanExecute = editing });
 		m_commands->Register({ .Id = "file.save", .Label = "Save Scene", .Icon = ICON_FA_FLOPPY_DISK, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_S,
 			.Execute = [this] { SaveScene(); }, .CanExecute = editing });
 		m_commands->Register({ .Id = "file.cook", .Label = "Cook", .Icon = ICON_FA_BOX,
@@ -146,12 +154,15 @@ namespace koi::editor
 	void EditorApp::HostInit()
 	{
 		Setup();
+		const toml::table state = ReadEditorState();
+		ReopenLastScene(state);
+
 		m_game->HostInit();
 		StartExtensions();
 		m_imgui.Init(Engine::Get().GetWindow());
 		m_panels->RegisterSettingsHandler();
 
-		LoadEditorState();
+		LoadEditorState(state);
 
 		KOI_LOG(Editor, Info, "Editor initialized");
 	}
@@ -180,7 +191,7 @@ namespace koi::editor
 		return m_config.CookedOutput.parent_path() / "Editor.toml";  // <project>/.koi/Editor.toml
 	}
 
-	void EditorApp::LoadEditorState()
+	toml::table EditorApp::ReadEditorState() const
 	{
 		toml::table root;
 		if (const fs::path path = EditorStatePath(); fs::exists(path))
@@ -194,10 +205,34 @@ namespace koi::editor
 				KOI_LOG(Editor, Warn, "Editor state '{}' did not parse: {}", path.string(), e.description());
 			}
 		}
+		return root;
+	}
 
+	void EditorApp::LoadEditorState(const toml::table& state)
+	{
 		// Every panel loads, even from nothing, so each can fall back to its own defaults
-		const toml::table* panels = root["panels"].as_table();
+		const toml::table* panels = state["panels"].as_table();
 		m_panels->LoadState(panels ? *panels : toml::table{});
+	}
+
+	void EditorApp::ReopenLastScene(const toml::table& state)
+	{
+		const std::optional<std::string> last = state["scene"].value<std::string>();
+		if (!last) return;
+
+		const std::optional<fs::path> disk = VirtualFileSystem::Get().TryResolveToDisk(*last);
+		if (!disk || !fs::exists(*disk)) return;
+
+		AppCreateDesc desc = m_game->GetDesc();
+		const auto listed = std::ranges::find(desc.Scenes, *last, &decltype(desc.Scenes)::value_type::second);
+		if (listed == desc.Scenes.end())
+		{
+			m_scenes->Open(*last);
+			return;
+		}
+
+		desc.StartupScene = listed->first;
+		m_game->SetDesc(std::move(desc));
 	}
 
 	void EditorApp::SaveEditorState() const
@@ -209,6 +244,10 @@ namespace koi::editor
 
 		toml::table root;
 		root.insert("panels", std::move(panels));
+		if (const std::string& scene = m_game->GetWorld().GetSourcePath(); !scene.empty())
+		{
+			root.insert("scene", scene);
+		}
 
 		std::error_code ec;
 		fs::create_directories(path.parent_path(), ec);
@@ -441,6 +480,8 @@ namespace koi::editor
 
 		if (ImGui::BeginMenu("File"))
 		{
+			m_commands->MenuItem("file.new_scene");
+			DrawOpenSceneMenu();
 			m_commands->MenuItem("file.save");
 			m_commands->MenuItem("file.cook");
 			ImGui::Separator();
@@ -471,6 +512,53 @@ namespace koi::editor
 
 		DrawPlayControls();
 		ImGui::EndMainMenuBar();
+
+		DrawNewSceneModal();
+	}
+
+	void EditorApp::DrawOpenSceneMenu()
+	{
+		if (!ImGui::BeginMenu(ICON_FA_FOLDER_OPEN "  Open Scene", Engine::Get().GetPlayState() == PlayState::Edit)) return;
+
+		const std::string& current = m_game->GetWorld().GetSourcePath();
+		for (const AssetEntry& entry : m_context.Get<AssetDatabase>()->All())
+		{
+			if (entry.Kind != AssetKind::Scene) continue;
+			if (ImGui::MenuItem(entry.Name.c_str(), nullptr, entry.VirtualPath == current))
+			{
+				m_scenes->Open(entry.VirtualPath);
+			}
+		}
+		ImGui::EndMenu();
+	}
+
+	void EditorApp::DrawNewSceneModal()
+	{
+		static constexpr const char* kPopup = "New Scene";
+		if (std::exchange(m_openNewScene, false))
+		{
+			m_newSceneName.clear();
+			ImGui::OpenPopup(kPopup);
+		}
+
+		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+		if (!ImGui::BeginPopupModal(kPopup, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+
+		if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+		const bool submit = ImGui::InputTextWithHint("##name", "Name", &m_newSceneName, ImGuiInputTextFlags_EnterReturnsTrue);
+		ImGui::TextDisabled("Content/Scenes/%s.scene.toml", m_newSceneName.c_str());
+
+		ImGui::BeginDisabled(m_newSceneName.empty());
+		if (ImGui::Button("Create") || (submit && !m_newSceneName.empty()))
+		{
+			m_scenes->Create(m_newSceneName);
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndDisabled();
+
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape)) ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
 	}
 
 	void EditorApp::DrawPlayControls()

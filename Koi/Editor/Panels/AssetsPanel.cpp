@@ -3,6 +3,7 @@
 #include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
+#include "Koi/Editor/SceneFiles.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
@@ -75,6 +76,7 @@ namespace koi::editor
 		: m_database(ctx->Get<AssetDatabase>())
 		, m_selection(ctx->Get<Selection>())
 		, m_imports(ctx->Get<ImportQueue>())
+		, m_scenes(ctx->Get<SceneFiles>())
 	{
 		const std::span<const std::string> folders = m_database->Folders();
 		if (!folders.empty()) m_selectedFolder = folders.front();
@@ -246,6 +248,9 @@ namespace koi::editor
 		const std::string label = std::string(utils::AssetKindIcon(entry.Kind)) + "  " + entry.Name;
 		if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 			SelectAsset(entry.VirtualPath);
+
+		if (entry.Kind == AssetKind::Scene && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			m_scenes->Open(entry.VirtualPath);
 
 		// Payload is the virtual path; the receiving side resolves it back through the database
 		if (ImGui::BeginDragDropSource())
