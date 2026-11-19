@@ -1,10 +1,10 @@
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/Resources.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
-#include <rfl.hpp>
 #include <format>
 
 namespace koi::editor
@@ -127,7 +127,7 @@ namespace koi::editor
 		{
 			if (const Texture* tex = device.Get(out->Texture))
 			{
-				ImGui::TextDisabled("%ux%u  %s", tex->Desc.Width, tex->Desc.Height, rfl::enum_to_string(tex->Desc.Format).c_str());
+				ImGui::TextDisabled("%ux%u  %s", tex->Desc.Width, tex->Desc.Height, std::string(refl::EnumName<Format, 192>(tex->Desc.Format)).c_str());
 			}
 		}
 

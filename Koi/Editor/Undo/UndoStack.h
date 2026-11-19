@@ -56,7 +56,7 @@ namespace koi::editor
 		// Reflected values only write back the fields this step changed, so runtime state and later edits survive
 		void Apply(const std::optional<typename S::Value>& to, const std::optional<typename S::Value>& from)
 		{
-			if constexpr (ReflectedComponent<typename S::Value>)
+			if constexpr (refl::Reflected<typename S::Value>)
 			{
 				std::optional<typename S::Value> live = Source.Read();
 				if (to && from && live)

@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Content/Shaders/Interop/Grid.hlsli"
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Graphics/GpuFrameBuffer.h"
 #include "Koi/Engine/Graphics/RenderFeature.h"
 
@@ -20,7 +21,6 @@ namespace koi
 		struct Settings
 		{
 			static constexpr auto kKey     = "Grid";
-			static constexpr bool kReflect = true;
 
 			bool    Enabled        = false;
 			f32     CellSize       = 1.0f;
@@ -34,6 +34,8 @@ namespace koi
 
 			Vector4 AxisXColor { 0.91f, 0.26f, 0.30f, 1.00f };  // Red
 			Vector4 AxisZColor { 0.24f, 0.51f, 0.96f, 1.00f };  // Blue
+
+			KOI_REFLECT(Settings, Enabled, CellSize, ThickEvery, FadeStart, FadeEnd, MajorLineWidth, ThinColor, ThickColor, AxisXColor, AxisZColor);
 		};
 
 		explicit GridPass(const Config& config);

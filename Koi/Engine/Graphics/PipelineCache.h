@@ -40,6 +40,8 @@ namespace koi
 		D3D_PRIMITIVE_TOPOLOGY Topology     = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
 		bool operator==(const RasterPipeline&) const = default;
+
+		KOI_REFLECT(RasterPipeline, VertexShader, PixelShader, Rasterizer, Blend, DepthStencil, Topology);
 	};
 
 	struct ComputePipeline
@@ -47,6 +49,8 @@ namespace koi
 		ShaderRef ComputeShader;
 
 		bool operator==(const ComputePipeline&) const = default;
+
+		KOI_REFLECT(ComputePipeline, ComputeShader);
 	};
 
 	struct TargetFormats
@@ -56,6 +60,8 @@ namespace koi
 		Format                                 Depth      = Format::UNKNOWN;
 
 		bool operator==(const TargetFormats&) const = default;
+
+		KOI_REFLECT(TargetFormats, Colors, ColorCount, Depth);
 	};
 
 	enum class PipelineError : u8
@@ -97,6 +103,8 @@ namespace koi
 			TargetFormats  Targets;
 
 			bool operator==(const Key&) const = default;
+
+			KOI_REFLECT(Key, Pipeline, Targets);
 		};
 
 		struct Entry

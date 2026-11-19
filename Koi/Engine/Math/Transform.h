@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Math/MathTypes.h"
 
 namespace koi
@@ -6,13 +7,14 @@ namespace koi
 	struct Transform
 	{
 		static constexpr std::string_view kKey = "Transform";
-		static constexpr bool kReflect = true;
 
 		Vector3 Position    = Vector3::Zero;
 		Quaternion Rotation = Quaternion::Identity;
 		Vector3 Scale       = Vector3::One;
 
 		[[nodiscard]] Matrix ToMatrix() const;
+
+		KOI_REFLECT(Transform, Position, Rotation, Scale);
 	};
 
 	// Rebuilt every frame, never-saved

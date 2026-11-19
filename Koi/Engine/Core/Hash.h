@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Core/Types.h"
 #include <concepts>
 #include <functional>
@@ -6,7 +7,6 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <rfl/to_view.hpp>
 
 namespace koi::utils
 {
@@ -37,7 +37,7 @@ namespace koi::utils
 	template <typename T>
 	concept SelfHashed = requires(const T& value) { { value.GetHash() } -> std::convertible_to<u64>; };
 
-	// Walks a struct's fields with reflect-cpp, recursing into nested structs and ranges
+	// Walks a KOI_REFLECT struct's fields, recursing into nested structs and ranges
 	template <typename T>
 	void HashFields(u64& seed, const T& value)
 	{
@@ -49,8 +49,10 @@ namespace koi::utils
 			HashCombine(seed, std::hash<T>{}(value));
 		else if constexpr (std::ranges::range<T>)
 			for (const auto& element : value) HashFields(seed, element);
+		else if constexpr (refl::Reflected<T>)
+			refl::ForEachField(value, [&seed]<typename F>(const refl::FieldInfo&, const F& field) { if constexpr (!refl::kIsTransient<F>) HashFields(seed, field); });
 		else
-			rfl::to_view(value).apply([&seed](const auto& field) { HashFields(seed, *field.value()); });
+			static_assert(false, "Give T a GetHash() or KOI_REFLECT");
 	}
 
 	// Hashes every field, so it agrees with a defaulted operator==

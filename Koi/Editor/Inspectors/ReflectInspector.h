@@ -7,8 +7,6 @@
 #include <imgui.h>
 #include <filesystem>
 #include <imgui_stdlib.h>
-#include <rfl/enums.hpp>
-#include <rfl/to_view.hpp>
 #include <string>
 
 // One ImGui widget per reflected field; components with custom widgets keep their own inspector
@@ -66,26 +64,26 @@ namespace koi::editor
 		template <typename E> requires std::is_enum_v<E>
 		bool DrawReflectedEnum(const char* label, E& value)
 		{
-			static constexpr auto entries = rfl::get_enumerator_array<E>();
+			static constexpr auto entries = refl::EnumEntries<E>();
 			int index = 0;
 			for (size_t i = 0; i < entries.size(); ++i)
 			{
-				if (entries[i].second == value) index = static_cast<int>(i);
+				if (entries[i].Value == value) index = static_cast<int>(i);
 			}
 
 			const bool changed = ImGui::Combo(label, &index,
-				[](void*, int i) { return entries[static_cast<size_t>(i)].first.data(); },
+				[](void*, int i) { return entries[static_cast<size_t>(i)].Name.data(); },
 				nullptr, static_cast<int>(entries.size()));
 
-			if (changed) value = entries[static_cast<size_t>(index)].second;
+			if (changed) value = entries[static_cast<size_t>(index)].Value;
 			return changed;
 		}
 
-		// One property-grid row per leaf; Skip<> and arrays recurse into rows of their own
+		// One property-grid row per leaf; Transient<> and arrays recurse into rows of their own
 		template <typename T>
 		bool DrawReflectedField(const char* label, T& value)
 		{
-			if constexpr (requires { typename T::Type; value.get(); })  // rfl::Skip<> runtime state
+			if constexpr (refl::kIsTransient<T>)
 			{
 				ImGui::BeginDisabled();
 				DrawReflectedField(label, value.get());
@@ -130,9 +128,9 @@ namespace koi::editor
 			if (!BeginPropertyGrid("##reflected")) return false;
 
 			bool changed = false;
-			rfl::to_view(value).apply([&](const auto& field)
+			refl::ForEachField(value, [&](const refl::FieldInfo& field, auto& member)
 			{
-				changed |= DrawReflectedField(FieldLabel(field.name()).c_str(), *field.value());
+				changed |= DrawReflectedField(FieldLabel(field.Name).c_str(), member);
 			});
 			EndPropertyGrid();
 			return changed;

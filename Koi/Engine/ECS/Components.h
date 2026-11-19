@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetHandles.h"
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Math/MathTypes.h"
 #include <string_view>
 
@@ -35,12 +36,13 @@ namespace koi
 	{
 		static constexpr std::string_view kKey = "Camera";
 		static constexpr std::string_view kCategory = "Rendering";
-		static constexpr bool kReflect = true;
 
 		f32  FovY    = 0.8f;     // vertical field of view, radians
 		f32  Near    = 0.05f;
 		f32  Far     = 1000.0f;
 		bool Primary = true;     // the camera the world renders from
+
+		KOI_REFLECT(CameraComponent, FovY, Near, Far, Primary);
 	};
 
 	struct AutoExposureSettings
@@ -52,6 +54,8 @@ namespace koi
 		f32  ExposureCompensation = 0.0f;   // EV
 
 		bool operator==(const AutoExposureSettings&) const = default;
+
+		KOI_REFLECT(AutoExposureSettings, Enabled, MinLogLuminance, MaxLogLuminance, KeyValue, ExposureCompensation);
 	};
 
 	// Values match the TONEMAPPER_* constants in Shaders/Interop/PostProcess.hlsli
@@ -70,16 +74,19 @@ namespace koi
 		Tonemapper Operator = Tonemapper::ACES;
 
 		bool operator==(const TonemapSettings&) const = default;
+
+		KOI_REFLECT(TonemapSettings, Operator);
 	};
 
 	struct PostProcess
 	{
 		static constexpr std::string_view kKey = "PostProcess";
 		static constexpr std::string_view kCategory = "Rendering";
-		static constexpr bool kReflect = true;
 
 		AutoExposureSettings AutoExposure;
 		TonemapSettings      Tonemap;
+
+		KOI_REFLECT(PostProcess, AutoExposure, Tonemap);
 	};
 
 	enum class LightType : u8
@@ -92,7 +99,6 @@ namespace koi
 	{
 		static constexpr std::string_view kKey = "Light";
 		static constexpr std::string_view kCategory = "Rendering";
-		static constexpr bool kReflect = true;
 
 		LightType Type      = LightType::Point;
 		Vector3   Color     = Vector3(1.0f, 1.0f, 1.0f);
@@ -103,5 +109,7 @@ namespace koi
 		bool      CastsShadows = false;
 		f32       ShadowBias   = 0.0015f;  // constant offset in light-space depth
 		f32       ShadowExtent = 0.0f;     // half-size of the ortho box, centered on the entity; 0 fits the scene bounds instead
+
+		KOI_REFLECT(Light, Type, Color, Intensity, Range, CastsShadows, ShadowBias, ShadowExtent);
 	};
 }

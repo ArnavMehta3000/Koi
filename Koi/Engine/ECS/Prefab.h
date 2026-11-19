@@ -163,14 +163,18 @@ namespace koi
 	}
 }
 
-namespace rfl
+namespace koi
 {
 	template<typename P>
-	struct Reflector<koi::PrefabRef<P>>
+	struct Serializer<PrefabRef<P>>
 	{
-		using ReflType = std::string;
+		static std::string Serialize(const PrefabRef<P>& ref) { return internal::PrefabIdOf(ref.GetHandle()); }
 
-		static std::string from(const koi::PrefabRef<P>& ref) { return koi::internal::PrefabIdOf(ref.GetHandle()); }
-		static koi::PrefabRef<P> to(const std::string& id) { return id.empty() ? koi::PrefabRef<P>() : koi::PrefabRef<P>::Load(id); }
+		static std::optional<PrefabRef<P>> Deserialize(const toml::node& node)
+		{
+			const std::optional<std::string_view> id = node.value<std::string_view>();
+			if (!id) return std::nullopt;
+			return id->empty() ? PrefabRef<P>() : PrefabRef<P>::Load(*id);
+		}
 	};
 }

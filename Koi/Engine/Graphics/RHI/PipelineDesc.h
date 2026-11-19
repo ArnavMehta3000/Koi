@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Graphics/Types.h"
 #include "Koi/Engine/Graphics/RHI/DX12Common.h"
 #include <span>
@@ -23,6 +24,8 @@ namespace koi
 		[[nodiscard]] static constexpr RasterizerDesc Wireframe() { return { .FillMode = D3D12_FILL_MODE_WIREFRAME, .CullMode = D3D12_CULL_MODE_NONE }; }
 
 		bool operator==(const RasterizerDesc&) const = default;
+
+		KOI_REFLECT(RasterizerDesc, FillMode, CullMode, FrontCounterClockwise, DepthClipEnable, ConservativeRaster, DepthBias, DepthBiasClamp, SlopeScaledDepthBias);
 	};
 
 	struct BlendTargetDesc
@@ -41,6 +44,8 @@ namespace koi
 		[[nodiscard]] static constexpr BlendTargetDesc Additive()   { return { .BlendEnable = true, .SrcBlend = D3D12_BLEND_ONE, .DstBlend = D3D12_BLEND_ONE }; }
 
 		bool operator==(const BlendTargetDesc&) const = default;
+
+		KOI_REFLECT(BlendTargetDesc, BlendEnable, SrcBlend, DstBlend, BlendOp, SrcBlendAlpha, DstBlendAlpha, BlendOpAlpha, WriteMask);
 	};
 
 	struct DepthStencilDesc
@@ -55,6 +60,8 @@ namespace koi
 		[[nodiscard]] static constexpr DepthStencilDesc None()    { return { .DepthEnable = false, .DepthWrite = false }; }
 
 		bool operator==(const DepthStencilDesc&) const = default;
+
+		KOI_REFLECT(DepthStencilDesc, DepthEnable, DepthWrite, DepthFunc, StencilEnable);
 	};
 
 	struct PipelineDesc

@@ -14,7 +14,6 @@ target("Koi.Engine")
 		"dxc",
 		"tracy-profiler",
 		"box3d",
-		"reflect-cpp",
 		"directx-headers", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })

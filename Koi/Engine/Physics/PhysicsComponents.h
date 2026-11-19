@@ -1,7 +1,7 @@
 #pragma once
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Math/MathTypes.h"
 #include <box3d/id.h>
-#include <rfl/Skip.hpp>
 #include <array>
 #include <string_view>
 
@@ -13,13 +13,14 @@ namespace koi
 	{
 		static constexpr std::string_view kKey = "PhysicsSettings";
 		static constexpr std::string_view kCategory = "Physics";
-		static constexpr bool kReflect = true;
 
 		Vector3 Gravity  = Vector3(0.0f, -9.81f, 0.0f);
 		i32     SubSteps = 4;
 		bool    DrawColliders = false;  // not in game-release, which has no debug draw
 
 		[[nodiscard]] static const PhysicsSettings& Resolve(const World& world);
+
+		KOI_REFLECT(PhysicsSettings, Gravity, SubSteps, DrawColliders);
 	};
 
 	enum class BodyType : u8
@@ -41,7 +42,6 @@ namespace koi
 	{
 		static constexpr std::string_view kKey = "RigidBody";
 		static constexpr std::string_view kCategory = "Physics";
-		static constexpr bool kReflect = true;
 
 		BodyType Type           = BodyType::Dynamic;
 		f32      GravityScale   = 1.0f;
@@ -51,14 +51,15 @@ namespace koi
 		std::array<bool, 3> LockPosition{};  // world X, Y, Z
 		std::array<bool, 3> LockRotation{};
 
-		rfl::Skip<b3BodyId> BodyId = b3_nullBodyId;
+		Transient<b3BodyId> BodyId = b3_nullBodyId;
+
+		KOI_REFLECT(RigidBody, Type, GravityScale, LinearDamping, AngularDamping, LockPosition, LockRotation, BodyId);
 	};
 
 	struct Collider
 	{
 		static constexpr std::string_view kKey = "Collider";
 		static constexpr std::string_view kCategory = "Physics";
-		static constexpr bool kReflect = true;
 
 		ColliderShape Shape       = ColliderShape::Box;
 		Vector3       HalfExtents = Vector3(0.5f, 0.5f, 0.5f);  // Box
@@ -74,7 +75,9 @@ namespace koi
 		bool SensorEvents  = true;   // sensors can detect this shape
 		bool ContactEvents = false;  // For collision begin/end
 
-		rfl::Skip<b3ShapeId> ShapeId    = b3_nullShapeId;
-		rfl::Skip<Vector3>   BuiltScale = Vector3::Zero;  // the Transform scale ShapeId was built at
+		Transient<b3ShapeId> ShapeId    = b3_nullShapeId;
+		Transient<Vector3>   BuiltScale = Vector3::Zero;  // the Transform scale ShapeId was built at
+
+		KOI_REFLECT(Collider, Shape, HalfExtents, Radius, HalfHeight, Offset, Friction, Restitution, Density, IsSensor, SensorEvents, ContactEvents, ShapeId, BuiltScale);
 	};
 }
