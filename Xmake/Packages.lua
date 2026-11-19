@@ -7,12 +7,10 @@ includes("Packages/KoiProfiler.lua")
 -- Package recipes, adapted from xmake-repo. All but dxc are git-only
 includes("Packages/Box3D.lua")
 includes("Packages/CLI11.lua")
-includes("Packages/CTRE.lua")
 includes("Packages/DirectXHeaders.lua")
 includes("Packages/DirectXTex.lua")
 includes("Packages/dxc.lua")
 includes("Packages/FastGLTF.lua")
-includes("Packages/ReflectCpp.lua")
 includes("Packages/SimdJson.lua")
 includes("Packages/SimdUtf.lua")
 includes("Packages/Spdlog.lua")
@@ -30,7 +28,6 @@ add_requires("directx-headers ee479f0bd5f7b884f202bcf0c3f076cc050dd256") -- v1.6
 add_requires("directxtex 32b2a8ef351ab08f822f6c0937fa37e07484714a")      -- jul2025, editor-only
 add_requires("dxc 1.9.2602")                                             -- release binaries
 add_requires("fastgltf 87cfbceeeda127ccc9092694279437b700046119")        -- v1.0.1
-add_requires("reflect-cpp 1327ef1d0b403f1424776da4c47bf0c7a6b0feaa")     -- v0.25.0
 add_requires("spdlog 79524ddd08a4ec981b7fea76afd08ee05f83755d")          -- v1.17.0
 add_requires("stb 31c1ad37456438565541f4919958214b6e762fb4")
 add_requires("stduuid 3afe7193facd5d674de709fccc44d5055e144d7a")         -- v1.2.3
@@ -45,5 +42,3 @@ end
 -- Dependencies of the packages above
 add_requireconfs("fastgltf.simdjson",  { override = true, version = "ec73615105bd405fc36ddcd1b4a6afb045aeffc1" })  -- v5.1.0
 add_requireconfs("fastgltf.simdutf",   { override = true, version = "59589cd3df6823cbfdbd253cde3377e7c3e1fe9b" })  -- v9.3.3
-add_requireconfs("reflect-cpp.ctre",   { override = true, version = "e34c26ba149b9fd9c34aa0f678e39739641a0d1e" })  -- v3.10.0
-add_requireconfs("reflect-cpp.toml++", { override = true, version = kTomlPlusPlus })
