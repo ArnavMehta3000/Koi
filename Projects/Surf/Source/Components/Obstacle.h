@@ -1,13 +1,14 @@
 #pragma once
 #include "Components/Lanes.h"
 #include "Koi/Engine/ECS/Observer.h"
+#include "Koi/Engine/ECS/Prefab.h"
 #include "Koi/Engine/ECS/System.h"
 #include "Koi/Engine/Math/Ease.h"
 #include "Koi/Engine/Math/Random.h"
 #include "Koi/Engine/Math/Transform.h"
+#include "Koi/Engine/Physics/PhysicsComponents.h"
 #include "Koi/Engine/Physics/PhysicsEvents.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
-#include <string>
 
 namespace game
 {
@@ -22,14 +23,21 @@ namespace game
 		rfl::Skip<koi::f32> Age = 0.0f;
 	};
 
+	struct ObstaclePrefab : koi::Prefab<ObstaclePrefab,
+		koi::MeshRef, koi::MaterialRef, koi::RigidBody, koi::Collider, Obstacle>
+	{
+		static constexpr std::string_view kKey = "Obstacle";
+
+		static void OnSpawn(Staged& obstacle, const koi::Vector3& at, koi::f32 speed);
+	};
+
 	struct ObstacleSpawner
 	{
 		static constexpr std::string_view kKey = "ObstacleSpawner";
 		static constexpr bool kReflect = true;
 
+		koi::PrefabRef<ObstaclePrefab> Prefab;
 		Lanes         Positions;
-		std::string   Mesh         = "engine://Content/Meshes/Box.kmesh";
-		std::string   Material     = "project://Content/Materials/Obstacle.kmat";
 		koi::u64      Seed         = 0;      // 0 picks one at boot
 		koi::f32      Interval     = 1.0f;   // seconds between spawns at the start
 		koi::f32      MinInterval  = 0.35f;
@@ -37,8 +45,6 @@ namespace game
 		koi::f32      MaxSpeed     = 30.0f;
 		koi::f32      RampDuration = 60.0f;  // seconds to reach MinInterval / MaxSpeed
 		koi::EaseType RampEase     = koi::EaseType::OutQuad;
-		koi::f32      DespawnZ     = 10.0f;
-		koi::f32      PopDuration  = 0.25f;
 
 		// Runtime, not saved
 		rfl::Skip<koi::Random> Rng;

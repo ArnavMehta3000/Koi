@@ -1,0 +1,19 @@
+id = '04fc6161-0a57-4765-8bfb-a2ff3ad83703'
+class = 'Obstacle'
+
+[Mesh]
+path = 'engine://Content/Meshes/Box.kmesh'
+
+[Material]
+path = 'project://Content/Materials/Obstacle.kmat'
+
+[RigidBody]
+type = 'Kinematic'
+
+[Collider]
+is_sensor = true
+
+[Obstacle]
+speed = 10.0
+despawn_z = 10.0
+pop_duration = 0.25

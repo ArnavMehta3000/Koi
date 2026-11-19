@@ -1,8 +1,6 @@
 #include "Components/Obstacle.h"
 #include "Components/PlayerMover.h"
-#include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/Math/Scalar.h"
-#include "Koi/Engine/Physics/PhysicsComponents.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include <algorithm>
 
@@ -25,14 +23,7 @@ namespace game
 
 		const koi::i32 lane = (*spawner.Rng).Range(0, static_cast<koi::i32>(spawner.Positions.size()) - 1);
 
-		ctx.World.Spawn()
-			.At(spawner.Positions[static_cast<size_t>(lane)])
-			.Scaled(0.0f)
-			.WithMesh(spawner.Mesh)
-			.WithMaterial(spawner.Material)
-			.With(Obstacle{ .Speed = speed, .DespawnZ = spawner.DespawnZ, .PopDuration = spawner.PopDuration })
-			.With(koi::RigidBody{ .Type = koi::BodyType::Kinematic })  // ObstacleMoveSystem drives the Transform
-			.With(koi::Collider{ .IsSensor = true });
+		ctx.World.Spawn(spawner.Prefab, spawner.Positions[static_cast<size_t>(lane)], speed);
 	}
 
 	void ObstacleMoveSystem::Each(const koi::SystemContext& ctx, koi::Entity e, koi::Transform& transform, Obstacle& obstacle)
@@ -60,5 +51,12 @@ namespace game
 			KOI_LOG(ObstacleSpawner, Info, "Player hit an obstacle, restarting");
 			koi::AppBase::Get().LoadScene("Main");
 		}
+	}
+
+	void ObstaclePrefab::OnSpawn(Staged& obstacle, const koi::Vector3& at, koi::f32 speed)
+	{
+		obstacle.Get<koi::Transform>().Position = at;
+		obstacle.Get<koi::Transform>().Scale = koi::Vector3::Zero;  // ObstacleMoveSystem pops it in
+		obstacle.Get<Obstacle>().Speed = speed;
 	}
 }

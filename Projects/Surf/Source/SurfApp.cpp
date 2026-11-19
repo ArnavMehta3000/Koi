@@ -3,6 +3,7 @@
 #include "Components/PlayerMover.h"
 #include "Koi/Engine/ECS/ComponentRegistry.h"
 #include "Koi/Engine/ECS/ObserverRegistry.h"
+#include "Koi/Engine/ECS/PrefabRegistry.h"
 #include "Koi/Engine/ECS/SystemRegistry.h"
 
 std::unique_ptr<koi::AppBase> koi::AppBase::Create([[maybe_unused]] koi::CommandLine& cmd)
@@ -18,6 +19,8 @@ namespace game
 		registry.Register<koi::ComponentType<PlayerMover>>(50);
 		registry.Register<koi::ComponentType<Obstacle>>(51);
 		registry.Register<koi::ComponentType<ObstacleSpawner>>(52);
+
+		koi::PrefabRegistry::Get().Register<ObstaclePrefab>();
 	}
 
 	void SurfApp::OnRegisterSystems()
