@@ -136,4 +136,4 @@ A new effect adds its own struct to `PostProcess` (give it an `operator==` for u
 
 ## Exposing settings to the editor
 
-For editor-only settings that aren't scene content, give your feature a settings struct with `kKey` and `kReflect = true`. An editor panel can then draw it with `utils::DrawReflected` and save it with `Serializer<T>`. `GridPass::Settings` and `Koi/Editor/Panels/GridPanel.cpp` are a full example. See [Editor extensions](EditorExtensions.md).
+For editor-only settings that aren't scene content, give your feature a settings struct with `kKey` and `KOI_REFLECT(...)`. An editor panel can then draw it with `utils::DrawReflected` and save it with `Serializer<T>`. `GridPass::Settings` and `Koi/Editor/Panels/GridPanel.cpp` are a full example. See [Editor extensions](EditorExtensions.md).

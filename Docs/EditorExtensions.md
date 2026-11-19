@@ -38,7 +38,7 @@ Without an inspector, a component still shows up in the Inspector panel and can 
 ctx.Get<koi::editor::InspectorRegistry>()->Emplace<koi::editor::ReflectedInspector<PlayerController>>();
 ```
 
-It draws one row per field: a checkbox for `bool`, drag boxes for `f32`, `i32` and `Vector3`, a text box for `std::string`, and a combo box for enums. `rfl::Skip<>` fields are greyed out. Field names become labels, so `MoveSpeed` shows as "Move Speed".
+It draws one row per field: a checkbox for `bool`, drag boxes for `f32`, `i32` and `Vector3`, a text box for `std::string`, and a combo box for enums. `koi::Transient<>` fields are greyed out. Field names become labels, so `MoveSpeed` shows as "Move Speed".
 
 For custom widgets, derive `ComponentInspector<T>` and draw with ImGui:
 

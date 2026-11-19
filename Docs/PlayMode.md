@@ -16,7 +16,7 @@ The engine is always in one of three states: `Edit`, `Playing` or `Paused`. The 
 
 **Ctrl+P** toggles Play, and **Ctrl+Shift+P** pauses. On Play, the editor saves the world to TOML exactly as it would save a scene file. On Stop, it clears the world and loads that snapshot back. What that means:
 
-- **Only what a scene file can hold survives Stop.** Registered components are restored. `rfl::Skip<>` fields return to their defaults. Anything that isn't a registered component (unregistered data, singletons on the root) is lost.
+- **Only what a scene file can hold survives Stop.** Registered components are restored. `koi::Transient<>` fields return to their defaults. Anything that isn't a registered component (unregistered data, singletons on the root) is lost.
 - **Entities spawned during Play are removed** on Stop.
 - **`AppBase::LoadScene` during Play** reloads the world in place: the old entities get `EndPlay`, the new ones `BeginPlay`, and singletons are cleared.
 - **Your `AppBase` subclass is not reset.** Member variables keep whatever Play left in them. Reset them in `OnBeginPlay` or `OnEndPlay`.

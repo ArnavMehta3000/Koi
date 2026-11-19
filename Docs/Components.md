@@ -6,19 +6,20 @@ Game code is C++ only. A component is a plain struct. Scenes save it as TOML, an
 
 ```cpp
 // Source/Components/Spin.h
-#include "Koi/Engine/Runtime/ReflectSerializer.h"
+#include "Koi/Engine/Core/ReflectSerializer.h"
 
 struct Spin
 {
 	static constexpr std::string_view kKey = "Spin";  // the scene table name and the inspector's ID
-	static constexpr bool kReflect = true;            // reflect-cpp writes Serializer<Spin> for you
 
 	koi::Vector3 Axis  = koi::Vector3(0.0f, 1.0f, 0.0f);
 	koi::f32     Speed = 90.0f;
+
+	KOI_REFLECT(Spin, Axis, Speed);  // writes Serializer<Spin> for you
 };
 ```
 
-An optional `static constexpr std::string_view kCategory = "Physics";` groups it in the editor's Add Component menu; without one it lands under Gameplay.
+`KOI_REFLECT` must list every field, or the build fails. An optional `static constexpr std::string_view kCategory = "Physics";` groups it in the editor's Add Component menu; without one it lands under Gameplay.
 
 In a scene it looks like this. Keys are the field names in snake_case:
 
@@ -33,7 +34,7 @@ parent = 1
     speed = 90.0
 ```
 
-`id` is the entity's position in the file and `parent` names another entity's `id`; both are optional, and names don't have to be unique. A key missing from the file keeps the field's default value, and an unknown key logs a warning. To keep a field out of the file (runtime-only state), wrap it in `rfl::Skip<T>`. The inspector still shows it, greyed out.
+`id` is the entity's position in the file and `parent` names another entity's `id`; both are optional, and names don't have to be unique. A key missing from the file keeps the field's default value, and an unknown key logs a warning. Enums are written by name. To keep a field out of the file (runtime-only state), wrap it in `koi::Transient<T>` and still list it in `KOI_REFLECT`. The inspector shows it greyed out.
 
 ## Registering it
 
@@ -71,7 +72,7 @@ Then give the component an inspector. See [Editor extensions](EditorExtensions.m
 
 ## Writing a serializer by hand
 
-Use this when the file format should differ from the struct. Leave out `kReflect` and specialize `koi::Serializer<T>`:
+Use this when the file format should differ from the struct. Leave out `KOI_REFLECT` and specialize `koi::Serializer<T>`:
 
 ```cpp
 template <>
