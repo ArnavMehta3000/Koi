@@ -15,12 +15,13 @@ namespace game
 	struct Obstacle
 	{
 		static constexpr std::string_view kKey = "Obstacle";
-		static constexpr bool kReflect = true;
 
 		koi::f32 Speed       = 10.0f;   // units per second toward +z
 		koi::f32 DespawnZ    = 10.0f;
 		koi::f32 PopDuration = 0.25f;   // scale-in time
-		rfl::Skip<koi::f32> Age = 0.0f;
+		koi::Transient<koi::f32> Age = 0.0f;
+
+		KOI_REFLECT(Obstacle, Speed, DespawnZ, PopDuration, Age);
 	};
 
 	struct ObstaclePrefab : koi::Prefab<ObstaclePrefab,
@@ -34,7 +35,6 @@ namespace game
 	struct ObstacleSpawner
 	{
 		static constexpr std::string_view kKey = "ObstacleSpawner";
-		static constexpr bool kReflect = true;
 
 		koi::PrefabRef<ObstaclePrefab> Prefab;
 		Lanes         Positions;
@@ -47,9 +47,11 @@ namespace game
 		koi::EaseType RampEase     = koi::EaseType::OutQuad;
 
 		// Runtime, not saved
-		rfl::Skip<koi::Random> Rng;
-		rfl::Skip<koi::f32>    Elapsed   = 0.0f;
-		rfl::Skip<koi::f32>    Countdown = 0.0f;
+		koi::Transient<koi::Random> Rng;
+		koi::Transient<koi::f32>    Elapsed   = 0.0f;
+		koi::Transient<koi::f32>    Countdown = 0.0f;
+
+		KOI_REFLECT(ObstacleSpawner, Prefab, Positions, Seed, Interval, MinInterval, Speed, MaxSpeed, RampDuration, RampEase, Rng, Elapsed, Countdown);
 	};
 
 	class ObstacleSpawnSystem final : public koi::System<ObstacleSpawner>

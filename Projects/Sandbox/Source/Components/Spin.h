@@ -7,10 +7,11 @@
 struct Spin
 {
 	static constexpr std::string_view kKey = "Spin";
-	static constexpr bool kReflect = true;  // Serializer<Spin> comes from reflection; keys are snake_case field names
 
 	koi::Vector3 Axis  = koi::Vector3(0.0f, 1.0f, 0.0f);
 	koi::f32     Speed = 90.0f;  // degrees per second, about Axis in world space
+
+	KOI_REFLECT(Spin, Axis, Speed);
 };
 
 class SpinSystem final : public koi::System<koi::Transform, const Spin>

@@ -10,16 +10,17 @@ namespace game
 	struct PlayerMover
 	{
 		static constexpr std::string_view kKey = "PlayerMover";
-		static constexpr bool kReflect = true;
 
 		Lanes         Positions;
 		koi::f32      Duration = 0.15f;  // seconds per lane switch
 		koi::EaseType Ease     = koi::EaseType::OutBack;
 
 		// Runtime tween state, not saved
-		rfl::Skip<koi::i32>     Lane = 1;
-		rfl::Skip<koi::Vector3> From;
-		rfl::Skip<koi::f32>     T    = 1.0f;
+		koi::Transient<koi::i32>     Lane = 1;
+		koi::Transient<koi::Vector3> From;
+		koi::Transient<koi::f32>     T    = 1.0f;
+
+		KOI_REFLECT(PlayerMover, Positions, Duration, Ease, Lane, From, T);
 	};
 
 	class PlayerMoverSystem final : public koi::System<koi::Transform, PlayerMover>

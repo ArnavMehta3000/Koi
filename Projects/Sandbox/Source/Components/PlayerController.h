@@ -6,10 +6,11 @@
 struct PlayerController
 {
 	static constexpr std::string_view kKey = "PlayerController";
-	static constexpr bool kReflect = true;
 
 	koi::f32 MoveSpeed = 5.0f;   // units per second
 	koi::f32 TurnSpeed = 90.0f;  // degrees per second, about the world Y axis
+
+	KOI_REFLECT(PlayerController, MoveSpeed, TurnSpeed);
 };
 
 class PlayerControllerSystem final : public koi::System<koi::Transform, const PlayerController>
