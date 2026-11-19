@@ -30,11 +30,11 @@ class VignettePass
 {
 public:
 	static constexpr std::string_view kName = "Vignette";
-	void Record(koi::RenderGraph& graph, const koi::RenderView& view, koi::World& world);
+	void Record(koi::RenderGraph& graph, const koi::RenderView& view, const koi::RenderScene& scene);
 };
 ```
 
-`RenderView` gives you the camera and the output target for this frame. `World` is the scene, if you need to read entities.
+`RenderView` gives you the camera and the output target for this frame. `RenderScene` is what to draw: objects and lights to `Gather`, the scene bounds and the resolved `PostProcess`. Features never see the `World`.
 
 ## The blackboard
 
@@ -125,7 +125,7 @@ F5 in the editor recompiles changed shaders and rebuilds their pipelines, so you
 
 ## Post-process settings
 
-Settings that belong to the scene live in the `PostProcess` component, one nested struct per effect (`AutoExposure`, `Tonemap`). A feature reads them with `world.ResolvePostProcess()`: the first `PostProcess` in the world wins, and without one the struct defaults apply. There are no project-level settings; a scene that wants different values adds the component:
+Settings that belong to the scene live in the `PostProcess` component, one nested struct per effect (`AutoExposure`, `Tonemap`). A feature reads them with `scene.GetPostProcess()`: the first `PostProcess` in the world wins, and without one the struct defaults apply. There are no project-level settings; a scene that wants different values adds the component:
 
 ```toml
 [entity.post_process.tonemap]

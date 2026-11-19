@@ -6,6 +6,7 @@
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
+#include <utility>
 
 namespace koi
 {
@@ -17,6 +18,7 @@ namespace koi
 	}
 
 	RenderScene::RenderScene(ECS& ecs)
+		: m_ecs(&ecs)
 	{
 		// Add ECS hooks
 		ecs.OnAdd<MeshRef>([this](Entity e, MeshRef&)     { m_objects.Add(e, RenderObject{ .Owner = e }); });
@@ -32,6 +34,13 @@ namespace koi
 
 		const AssetCache<GPUMesh>& meshes = Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>();
 		m_bounds = BoundingBox{ {}, {} };
+
+		m_postProcess = PostProcess{};
+		bool foundPost = false;
+		m_ecs->Each<const PostProcess>([&](const PostProcess& post)
+		{
+			if (!std::exchange(foundPost, true)) m_postProcess = post;
+		});
 
 		for (RenderObject& object : m_objects.All())
 		{

@@ -3,7 +3,7 @@
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -30,7 +30,7 @@ namespace koi
 		m_lightBuffer.Init(*m_config.Device, BufferUsage::Storage, 16, "GPULight");
 	}
 
-	void LightingPass::Record(RenderGraph& graph, const RenderView& view, World& world)
+	void LightingPass::Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene)
 	{
 		ZoneScoped;
 		const Camera& camera = *view.Camera;
@@ -57,12 +57,12 @@ namespace koi
 				b.Read(shadow.ShadowMap);
 				hdr = b.ColorTarget(hdr, LoadOp::Clear);
 			},
-			[this, &world, &camera, gbuffer, depth, shadow](RasterContext& ctx)
+			[this, &scene, &camera, gbuffer, depth, shadow](RasterContext& ctx)
 			{
 				GfxDevice& device   = *m_config.Device;
 				const u32 frameSlot = device.GetFrameSlot();
 
-				GatherLights(world, shadow.LightViewProjection, ctx.SRV(shadow.ShadowMap));
+				GatherLights(scene, shadow.LightViewProjection, ctx.SRV(shadow.ShadowMap));
 				if (m_lights.empty() || !m_config.Resources || !ctx.SetPipeline(kLighting)) return;
 
 				const DescriptorIndex lightBufferIndex = m_lightBuffer.Upload(frameSlot, std::span<const GPULight>(m_lights));
@@ -85,12 +85,12 @@ namespace koi
 		bb.Add(SceneColor{ .Color = hdr });
 	}
 
-	void LightingPass::GatherLights(World& world, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex)
+	void LightingPass::GatherLights(const RenderScene& scene, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex)
 	{
 		ZoneScoped;
 		m_lights.clear();
 
-		for (const RenderLight& entry : world.GetRenderScene().GetLights())
+		for (const RenderLight& entry : scene.GetLights())
 		{
 			const Light& light = entry.Data;
 

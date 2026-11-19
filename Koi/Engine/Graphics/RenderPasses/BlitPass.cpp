@@ -15,7 +15,7 @@ namespace koi
 		};
 	}
 
-	void BlitPass::Record(RenderGraph& graph, const RenderView& view, World&)
+	void BlitPass::Record(RenderGraph& graph, const RenderView& view, const RenderScene&)
 	{
 		ZoneScoped;
 

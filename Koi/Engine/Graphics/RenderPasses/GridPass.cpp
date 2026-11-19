@@ -29,7 +29,7 @@ namespace koi
 		m_constants.Init(*m_config.Device, BufferUsage::Constant, 1, "Grid Constants");
 	}
 
-	void GridPass::Record(RenderGraph& graph, const RenderView& view, World&)
+	void GridPass::Record(RenderGraph& graph, const RenderView& view, const RenderScene&)
 	{
 		ZoneScoped;
 		const Camera& camera = *view.Camera;

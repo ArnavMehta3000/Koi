@@ -2,7 +2,7 @@
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
@@ -29,10 +29,10 @@ namespace koi
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "Shadow PerObjectData");
 	}
 
-	void ShadowPass::Record(RenderGraph& graph, const RenderView&, World& world)
+	void ShadowPass::Record(RenderGraph& graph, const RenderView&, const RenderScene& scene)
 	{
 		ZoneScoped;
-		m_hasShadow = ComputeLightMatrix(world);
+		m_hasShadow = ComputeLightMatrix(scene);
 		if (!m_hasShadow || !m_config.Resources) return;
 
 		RGTexture shadowMap = graph.CreateTexture(TextureDesc
@@ -45,12 +45,12 @@ namespace koi
 		// Cleared even with nothing to draw: Lighting samples the map whenever it exists
 		graph.AddPass<RasterPass>("Shadow",
 			[&](RGBuilder& b) { shadowMap = b.DepthTarget(shadowMap, LoadOp::Clear); },
-			[this, &world](RasterContext& ctx) { Draw(ctx, world); });
+			[this, &scene](RasterContext& ctx) { Draw(ctx, scene); });
 
 		graph.GetBlackboard().Add(ShadowData{ .ShadowMap = shadowMap, .LightViewProjection = m_lightViewProjection });
 	}
 
-	bool ShadowPass::ComputeLightMatrix(World& world)
+	bool ShadowPass::ComputeLightMatrix(const RenderScene& scene)
 	{
 		// Returns false when there is no caster
 
@@ -61,7 +61,7 @@ namespace koi
 		f32     radius = 0.0f;
 		bool    found  = false;
 
-		for (const RenderLight& light : world.GetRenderScene().GetLights())
+		for (const RenderLight& light : scene.GetLights())
 		{
 			if (!light.Data.CastsShadows || light.Data.Type != LightType::Directional) continue;
 
@@ -78,7 +78,7 @@ namespace koi
 		// Texel density falls off as the scene grows
 		if (radius <= 0.0f)
 		{
-			const BoundingBox& bounds = world.GetBounds();
+			const BoundingBox& bounds = scene.GetBounds();
 			if (math::IsEmpty(bounds)) return false;  // nothing loaded yet
 
 			center = Vector3(bounds.Center);
@@ -111,7 +111,7 @@ namespace koi
 		return true;
 	}
 
-	void ShadowPass::Draw(RasterContext& ctx, World& world)
+	void ShadowPass::Draw(RasterContext& ctx, const RenderScene& scene)
 	{
 		ZoneScoped;
 		GfxDevice& device    = *m_config.Device;
@@ -119,7 +119,7 @@ namespace koi
 
 		// Depth-only, so the normal matrix is never needed
 		constexpr GatherDesc kGather{ .Require = RenderFlag::CastsShadow, .Normals = false };
-		world.GetRenderScene().Gather(kGather, m_cullVolume, m_gather);
+		scene.Gather(kGather, m_cullVolume, m_gather);
 		FrameStats::Count("Shadow Draws",  i64(m_gather.Draws.size()));
 		FrameStats::Count("Shadow Culled", i64(m_gather.Culled));
 		if (m_gather.Draws.empty()) return;

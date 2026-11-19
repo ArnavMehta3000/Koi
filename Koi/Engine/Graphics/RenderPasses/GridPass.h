@@ -43,7 +43,7 @@ namespace koi
 		static constexpr std::string_view kName = "Grid";
 
 		// Draws into DisplayColor and SceneDepth; adds nothing while disabled
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene);
 
 		[[nodiscard]] inline Settings& GetSettings() noexcept { return m_settings; }
 		[[nodiscard]] inline const Settings& GetSettings() const noexcept { return m_settings; }

@@ -204,14 +204,14 @@ namespace koi
 			build(*this, m_features);
 	}
 
-	void Renderer::SetupFrame(const RenderView& view, World& world)
+	void Renderer::SetupFrame(const RenderView& view, const RenderScene& scene)
 	{
 		KOI_SCOPE("Render Setup");
 		m_graph.Reset();
 		if (view.Camera)
 		{
 			m_capture.SetDepthPlanes(view.Camera->Near, view.Camera->Far);
-			m_features.Record(m_graph, view, world);
+			m_features.Record(m_graph, view, scene);
 		}
 	}
 

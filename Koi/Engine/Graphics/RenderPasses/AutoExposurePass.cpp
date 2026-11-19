@@ -1,6 +1,6 @@
 #include "Koi/Engine/Graphics/RenderPasses/AutoExposurePass.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include <algorithm>
 #include <cstring>
@@ -44,12 +44,12 @@ namespace koi
 		m_stats.Valid    = true;
 	}
 
-	void AutoExposurePass::Record(RenderGraph& graph, const RenderView&, World& world)
+	void AutoExposurePass::Record(RenderGraph& graph, const RenderView&, const RenderScene& renderScene)
 	{
 		ZoneScoped;
 		RGBlackboard& bb = graph.GetBlackboard();
 
-		const AutoExposureSettings settings = world.ResolvePostProcess().AutoExposure;
+		const AutoExposureSettings settings = renderScene.GetPostProcess().AutoExposure;
 
 		const SceneColor* scene = bb.TryGet<SceneColor>();
 		if (!scene || !settings.Enabled)

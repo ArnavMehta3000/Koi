@@ -9,6 +9,6 @@ namespace koi
 		static constexpr std::string_view kName = "Tonemap";
 
 		// Reads SceneColor (+ ExposureData), publishes DisplayColor
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& renderScene);
 	};
 }

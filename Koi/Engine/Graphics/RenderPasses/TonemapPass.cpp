@@ -2,7 +2,7 @@
 #include "Koi/Engine/Content/Shaders/Interop/PostProcess.hlsli"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 
 namespace koi
 {
@@ -21,7 +21,7 @@ namespace koi
 		static_assert(static_cast<u32>(Tonemapper::None)       == TONEMAPPER_NONE);
 	}
 
-	void TonemapPass::Record(RenderGraph& graph, const RenderView&, World& world)
+	void TonemapPass::Record(RenderGraph& graph, const RenderView&, const RenderScene& renderScene)
 	{
 		ZoneScoped;
 		RGBlackboard& bb = graph.GetBlackboard();
@@ -29,7 +29,7 @@ namespace koi
 		const SceneColor* scene = bb.TryGet<SceneColor>();
 		if (!scene) return;
 
-		const PostProcess& post = world.ResolvePostProcess();
+		const PostProcess& post = renderScene.GetPostProcess();
 		const u32 op = static_cast<u32>(post.Tonemap.Operator);
 
 		const RGTexture   hdr  = scene->Color;

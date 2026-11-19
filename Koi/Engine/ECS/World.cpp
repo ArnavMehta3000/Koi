@@ -512,17 +512,6 @@ namespace koi
 		m_systemFailure = SystemFailure{ std::format("System '{}' threw: {}", system, what), std::move(trace) };
 	}
 
-	const PostProcess& World::ResolvePostProcess() const
-	{
-		const PostProcess* found = nullptr;
-		m_ecs->Each<const PostProcess>([&](const PostProcess& post)
-		{
-			if (!found) found = &post;
-		});
-		static const PostProcess kDefault{};
-		return found ? *found : kDefault;
-	}
-
 	const Camera* World::ResolveCamera(f32 aspect)
 	{
 		ZoneScoped;

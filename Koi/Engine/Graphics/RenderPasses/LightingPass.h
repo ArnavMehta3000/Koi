@@ -5,7 +5,7 @@
 
 namespace koi
 {
-	class  World;
+	class  RenderScene;
 	class  GfxDevice;
 	struct RendererResources;
 
@@ -21,10 +21,10 @@ namespace koi
 		};
 
 		explicit LightingPass(const Config& config);
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene);
 
 	private:
-		void GatherLights(World& world, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex);
+		void GatherLights(const RenderScene& scene, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex);
 
 		Config                   m_config;
 		GpuFrameBuffer<GPULight> m_lightBuffer;  // StructuredBuffer<GPULight>, grown on demand

@@ -1,7 +1,7 @@
 #include "Koi/Engine/Graphics/RenderPasses/GBufferPass.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Graphics/RenderScene.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
@@ -20,7 +20,7 @@ namespace koi
 		m_objects.Init      (*m_config.Device, BufferUsage::Storage,  64, "GBuffer PerObjectData");
 	}
 
-	void GBufferPass::Record(RenderGraph& graph, const RenderView& view, World& world)
+	void GBufferPass::Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene)
 	{
 		ZoneScoped;
 		const Camera& camera = *view.Camera;
@@ -49,14 +49,14 @@ namespace koi
 				out.Material = b.ColorTarget(out.Material, LoadOp::Clear);
 				depth        = b.DepthTarget(depth,        LoadOp::Clear);
 			},
-			[this, &world, &camera](RasterContext& ctx) { Draw(ctx, world, camera); });
+			[this, &scene, &camera](RasterContext& ctx) { Draw(ctx, scene, camera); });
 
 		RGBlackboard& bb = graph.GetBlackboard();
 		bb.Add(out);
 		bb.Add(SceneDepth{ .Depth = depth });
 	}
 
-	void GBufferPass::Draw(RasterContext& ctx, World& world, const Camera& camera)
+	void GBufferPass::Draw(RasterContext& ctx, const RenderScene& scene, const Camera& camera)
 	{
 		ZoneScoped;
 		if (!m_config.Resources) return;
@@ -65,7 +65,7 @@ namespace koi
 		const u32 frameSlot = device.GetFrameSlot();
 
 		constexpr GatherDesc kGather{};
-		world.GetRenderScene().Gather(kGather, CullVolume::FromCamera(camera.View, camera.Projection), m_gather);
+		scene.Gather(kGather, CullVolume::FromCamera(camera.View, camera.Projection), m_gather);
 		FrameStats::Count("GBuffer Draws",  i64(m_gather.Draws.size()));
 		FrameStats::Count("GBuffer Culled", i64(m_gather.Culled));
 		if (m_gather.Draws.empty()) return;

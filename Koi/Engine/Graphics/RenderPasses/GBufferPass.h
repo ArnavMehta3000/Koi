@@ -5,7 +5,7 @@
 
 namespace koi
 {
-	class  World;
+	class  RenderScene;
 	class  GfxDevice;
 	struct Camera;
 	struct RendererResources;
@@ -25,10 +25,10 @@ namespace koi
 		};
 
 		explicit GBufferPass(const Config& config);
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene);
 
 	private:
-		void Draw(RasterContext& ctx, World& world, const Camera& camera);
+		void Draw(RasterContext& ctx, const RenderScene& scene, const Camera& camera);
 
 	private:
 		Config m_config;

@@ -6,6 +6,13 @@ local kEngineDirs   = { "Assets", "ECS", "Graphics", "Physics", "Runtime" }
 -- Koi.RHI's part of Graphics/: whole folders end in /**, the rest are file stems
 local kRHIGraphics = { "RHI/**", "RenderGraph/**", "Format", "GpuFrameBuffer", "PipelineCache", "ShaderCache", "ShaderCompiler", "Types" }
 
+-- Koi.Assets' part of Assets/: the CPU file formats. The GPU caches and AssetRegistry stay in Koi.Engine
+local kCPUAssets = { "AssetCache", "AssetData", "AssetFile", "AssetHandles", "AssetIndex", "AssetKey", "AssetTraits", "AssetTypes",
+	"MaterialFile", "MaterialSource", "MeshFile", "TextureFile" }
+
+-- Koi.ECS' part of ECS/: the storage core. World, System, Observer and the registries stay in Koi.Engine
+local kECSCore = { "ECS" }
+
 -- `exclude` holds stems relative to each dir, as in kRHIGraphics
 local function add_dirs(dirs, exclude)
 	for _, dir in ipairs(dirs) do
@@ -44,6 +51,7 @@ target("Koi.Core")
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_dirs(kCoreDirs)
+	set_pcxxheader("CorePch.h")
 
 	local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)"
 	local config_dir = path.join(base_config_dir, "Generated/Engine")
@@ -77,6 +85,7 @@ target("Koi.Platform")
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_dirs(kPlatformDirs)
+	set_pcxxheader("CorePch.h")
 
 	if is_plat("windows") then
 		add_syslinks("shell32", "dwmapi", { public = true })
@@ -101,17 +110,43 @@ target("Koi.RHI")
 	end
 target_end()
 
+-- ASSETS
+target("Koi.Assets")
+	set_kind("static")
+	set_group("Koi")
+	add_options("LogLevel")
+
+	add_deps("Koi.Core", "Koi.RHI", { public = true })
+
+	add_includedirs("$(projectdir)", { public = true })
+	add_stems("Assets", kCPUAssets)
+	set_pcxxheader("CorePch.h")
+target_end()
+
+-- ECS
+target("Koi.ECS")
+	set_kind("static")
+	set_group("Koi")
+	add_options("LogLevel")
+
+	add_deps("Koi.Core", { public = true })
+
+	add_includedirs("$(projectdir)", { public = true })
+	add_stems("ECS", kECSCore)
+	set_pcxxheader("CorePch.h")
+target_end()
+
 --ENGINE
 target("Koi.Engine")
 	set_kind("static")
 	set_group("Koi")
 	add_options("LogLevel")
 
-	add_deps("Koi.Core", "Koi.Platform", "Koi.RHI", { public = true })
+	add_deps("Koi.Core", "Koi.Platform", "Koi.RHI", "Koi.Assets", "Koi.ECS", { public = true })
 	add_packages("cli11", "box3d", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_dirs(kEngineDirs, { Graphics = kRHIGraphics })
+	add_dirs(kEngineDirs, { Graphics = kRHIGraphics, Assets = kCPUAssets, ECS = kECSCore })
 	set_pcxxheader("Pch.h")
 
 	add_extrafiles("Content/Shaders/**.hlsl")

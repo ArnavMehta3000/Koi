@@ -20,7 +20,6 @@ namespace koi
 	class IObserver;
 	class ISystem;
 	class RenderScene;
-	struct PostProcess;
 	template<typename P> class PrefabRef;
 
 	class World
@@ -88,8 +87,6 @@ namespace koi
 		[[nodiscard]] const Camera* ResolveCamera(f32 aspect);
 		[[nodiscard]] const GPUMesh* GetMesh(MeshHandle handle) const;
 
-		// The first PostProcess component in query order, else default
-		[[nodiscard]] const PostProcess& ResolvePostProcess() const;
 
 
 	private:

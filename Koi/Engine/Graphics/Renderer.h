@@ -17,7 +17,7 @@
 namespace koi
 {
 	class Window;
-	class World;
+	class RenderScene;
 	struct RenderView;
 
 	class Renderer
@@ -53,7 +53,7 @@ namespace koi
 		void SetPipeline(PipelineBuildFunc build);  // Clears the feature list and rebuilds it
 
 		// Per-frame wiring, driven from the view the app host resolved
-		void SetupFrame(const RenderView& view, World& world);
+		void SetupFrame(const RenderView& view, const RenderScene& scene);
 
 		inline void SetOverlay(IRendererOverlay* overlay) noexcept { m_overlay = overlay; }
 

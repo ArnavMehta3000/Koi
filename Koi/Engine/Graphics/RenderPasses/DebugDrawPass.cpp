@@ -27,7 +27,7 @@ namespace koi
 		m_vertexBuffer.Init(*m_config.Device, BufferUsage::Storage, 1024, "DebugVertex");
 	}
 
-	void DebugDrawPass::Record(RenderGraph& graph, const RenderView& view, World&)
+	void DebugDrawPass::Record(RenderGraph& graph, const RenderView& view, const RenderScene&)
 	{
 		ZoneScoped;
 		const Camera& camera = *view.Camera;

@@ -30,7 +30,7 @@ namespace koi
 		explicit AutoExposurePass(const Config& config) : m_config(config) {}
 		~AutoExposurePass();
 
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& renderScene);
 
 		inline void RequestStats() noexcept { m_statsRequested = true; }
 		[[nodiscard]] inline const Stats& GetStats() const noexcept { return m_stats; }

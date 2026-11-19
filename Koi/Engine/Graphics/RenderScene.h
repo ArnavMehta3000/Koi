@@ -127,9 +127,14 @@ namespace koi
 		[[nodiscard]] std::span<const RenderLight>  GetLights()  const { return m_lights.All(); }
 		[[nodiscard]] const BoundingBox&            GetBounds()  const { return m_bounds; }
 
+		// The first PostProcess component in query order, else the defaults
+		[[nodiscard]] const PostProcess&            GetPostProcess() const { return m_postProcess; }
+
 	private:
 		RecordSet<RenderObject> m_objects;
 		RecordSet<RenderLight>  m_lights;
 		BoundingBox             m_bounds{ {}, {} };
+		PostProcess             m_postProcess;
+		ECS*                    m_ecs = nullptr;
 	};
 }

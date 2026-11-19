@@ -9,6 +9,6 @@ namespace koi
 		static constexpr std::string_view kName = "Blit";
 
 		// Copies DisplayColor into the view's target
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene);
 	};
 }

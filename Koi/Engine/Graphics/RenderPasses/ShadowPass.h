@@ -5,7 +5,7 @@
 
 namespace koi
 {
-	class  World;
+	class  RenderScene;
 	class  GfxDevice;
 	struct RendererResources;
 
@@ -22,15 +22,15 @@ namespace koi
 		};
 
 		explicit ShadowPass(const Config& config);
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene);
 
 		[[nodiscard]] inline bool HasShadow() const { return m_hasShadow; }
 		[[nodiscard]] inline const Matrix& GetLightViewProjection() const { return m_lightViewProjection; }
 
 	private:
 		// Ortho light-space view-projection fitted to the world bounds
-		bool ComputeLightMatrix(World& world);
-		void Draw(RasterContext& ctx, World& world);
+		bool ComputeLightMatrix(const RenderScene& scene);
+		void Draw(RasterContext& ctx, const RenderScene& scene);
 
 	private:
 		Config m_config;

@@ -23,7 +23,7 @@ namespace koi
 		static constexpr std::string_view kName = "Debug Draw";
 
 		// Always adds its pass: gizmos are queued after the graph is built
-		void Record(RenderGraph& graph, const RenderView& view, World& world);
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene);
 
 	private:
 		Config                      m_config;

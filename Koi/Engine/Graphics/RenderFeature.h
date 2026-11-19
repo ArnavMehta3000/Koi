@@ -9,14 +9,14 @@
 
 namespace koi
 {
-	class World;
+	class RenderScene;
 
 	// Something that has a name and a record function
 	template <typename T>
-	concept RenderFeature = requires(T& feature, RenderGraph& graph, const RenderView& view, World& world)
+	concept RenderFeature = requires(T& feature, RenderGraph& graph, const RenderView& view, const RenderScene& scene)
 	{
 		{ T::kName } -> std::convertible_to<std::string_view>;
-		feature.Record(graph, view, world);
+		feature.Record(graph, view, scene);
 	};
 
 	// The features of a pipeline, recorded in the order they were added
@@ -25,7 +25,7 @@ namespace koi
 		struct Slot
 		{
 			virtual ~Slot() = default;
-			virtual void Record(RenderGraph& graph, const RenderView& view, World& world) = 0;
+			virtual void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene) = 0;
 
 			const void* Type = nullptr;
 		};
@@ -36,7 +36,7 @@ namespace koi
 			template <typename... Args>
 			explicit Model(Args&&... args) : Feature(std::forward<Args>(args)...) { Type = &kTypeTag<T>; }
 
-			void Record(RenderGraph& graph, const RenderView& view, World& world) override { Feature.Record(graph, view, world); }
+			void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene) override { Feature.Record(graph, view, scene); }
 
 			T Feature;
 		};
@@ -63,11 +63,11 @@ namespace koi
 			return nullptr;
 		}
 
-		void Record(RenderGraph& graph, const RenderView& view, World& world)
+		void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene)
 		{
 			for (auto& slot : m_features)
 			{
-				slot->Record(graph, view, world);
+				slot->Record(graph, view, scene);
 			}
 		}
 
