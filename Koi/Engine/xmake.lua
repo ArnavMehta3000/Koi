@@ -1,25 +1,25 @@
-target("Koi.Engine")
+-- From Koi subdir
+local kCoreDirs   = { "Core", "Diagnostics", "IO", "Logging", "Math", "Memory", "Text" }
+local kEngineDirs = { "Assets", "ECS", "Graphics", "Physics", "Platform", "Runtime" }
+
+local function add_dirs(dirs)
+	for _, dir in ipairs(dirs) do
+		add_headerfiles(dir .. "/**.h", dir .. "/**.inl", { public = true })
+		add_files(dir .. "/**.cpp")
+	end
+end
+
+-- CORE
+target("Koi.Core")
 	set_kind("static")
 	set_group("Koi")
 	add_options("LogLevel")
 
 	add_deps("SimpleMath", { public = true })
-	add_deps("GameInput")
-
-	add_packages(
-		"cli11",
-		"stduuid",
-		"spdlog",
-		"toml++",
-		"dxc",
-		"tracy-profiler",
-		"box3d",
-		"directx-headers", { public = true })
+	add_packages("stduuid", "spdlog", "toml++", "tracy-profiler", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_headerfiles("**.h", "**.inl", { public = true })
-	add_files("**.cpp", { public = true })
-	set_pcxxheader("Pch.h")
+	add_dirs(kCoreDirs)
 
 	local base_config_dir = "$(builddir)/Generated/$(mode)-$(arch)"
 	local config_dir = path.join(base_config_dir, "Generated/Engine")
@@ -38,15 +38,26 @@ target("Koi.Engine")
 	add_configfiles("$(projectdir)/Xmake/ConfigFiles/Config.h.in")
 
 	if is_plat("windows") then
-		add_syslinks(
-			"user32",
-			"shell32",
-			"dwmapi",
-			"d3d12",
-			"dxgi",
-			"dxguid",
-			"d3dcompiler",
-			"dbghelp", { public = true })
+		add_syslinks("user32", "dbghelp", { public = true })
+	end
+target_end()
+
+-- ENGINE
+target("Koi.Engine")
+	set_kind("static")
+	set_group("Koi")
+	add_options("LogLevel")
+
+	add_deps("Koi.Core", { public = true })
+	add_deps("GameInput")
+	add_packages("cli11", "dxc", "box3d", "directx-headers", { public = true })
+
+	add_includedirs("$(projectdir)", { public = true })
+	add_dirs(kEngineDirs)
+	set_pcxxheader("Pch.h")
+
+	if is_plat("windows") then
+		add_syslinks("shell32", "dwmapi", "d3d12", "dxgi", "dxguid", "d3dcompiler", { public = true })
 	end
 
 	add_extrafiles("Content/Shaders/**.hlsl")
