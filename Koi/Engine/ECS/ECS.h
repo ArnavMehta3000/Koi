@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Core/Handle.h"
+#include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Core/Types.h"
 #include <algorithm>
 #include <array>
@@ -66,17 +67,7 @@ namespace koi
 		template<typename T> u32 PhaseIdOf()     { static const u32 id = PhaseCounter()++;     return id; }
 		template<typename T> u32 SystemIdOf()    { static const u32 id = SystemCounter()++;    return id; }
 
-		// Unqualified type name from the MSVC signature
-		template<typename T>
-		constexpr std::string_view TypeName()
-		{
-			std::string_view name = __FUNCSIG__;
-			name = name.substr(name.find("TypeName<") + 9);
-			name = name.substr(0, name.rfind(">("));
-			if (const size_t space = name.find(' '); space != std::string_view::npos) name.remove_prefix(space + 1);
-			if (const size_t colon = name.rfind("::"); colon != std::string_view::npos) name.remove_prefix(colon + 2);
-			return name;
-		}
+		using refl::TypeName;
 	}
 
 	// A handle to an entity in an ECS. Null when default-constructed; a const component type means read-only access
