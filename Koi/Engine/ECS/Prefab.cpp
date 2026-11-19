@@ -84,6 +84,11 @@ namespace koi
 		return entry ? utils::ToString(entry->Id) : std::string(key.Path());
 	}
 
+	std::string_view internal::PrefabPathOf(PrefabHandle handle)
+	{
+		return Prefabs().GetPath(handle);
+	}
+
 	void internal::WarnUndeclaredComponents(const toml::table& file, std::string_view path, std::span<const std::string_view> declared)
 	{
 		for (const auto& [key, value] : file)

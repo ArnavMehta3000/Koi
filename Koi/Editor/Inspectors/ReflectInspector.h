@@ -1,8 +1,11 @@
 #pragma once
 #include "Koi/Editor/Inspectors/ComponentInspector.h"
 #include "Koi/Editor/UI/Widgets.h"
+#include "Koi/Engine/Assets/AssetTypes.h"
+#include "Koi/Engine/ECS/Prefab.h"
 #include "Koi/Engine/Runtime/ReflectSerializer.h"
 #include <imgui.h>
+#include <filesystem>
 #include <imgui_stdlib.h>
 #include <rfl/enums.hpp>
 #include <rfl/to_view.hpp>
@@ -25,6 +28,39 @@ namespace koi::editor
 				out += name[i];
 			}
 			return out;
+		}
+
+		template <typename T> inline constexpr bool kIsPrefabRef = false;
+		template <typename P> inline constexpr bool kIsPrefabRef<PrefabRef<P>> = true;
+
+		// Takes a dropped .prefab.toml
+		template <typename P>
+		bool DrawPrefabRef(const char* id, PrefabRef<P>& value)
+		{
+			const std::string_view path = value.GetPath();
+			const std::string file      = std::filesystem::path(path).filename().string();
+			const std::string name      = file.substr(0, file.size() - koi::utils::AssetExtensionOf(file).size());
+
+			std::string dropped;
+			if (!AssetField(id, AssetKindIcon(AssetKind::Prefab), name, path, dropped, true)) return false;
+
+			if (dropped.empty())
+			{
+				value = {};
+				return true;
+			}
+
+			if (const AssetTypeInfo* type = koi::utils::FindAssetTypeForFile(dropped); !type || type->Kind != AssetKind::Prefab)
+			{
+				KOI_LOG(Editor, Warn, "Dropped asset is not a prefab: {}", dropped);
+				return false;
+			}
+
+			PrefabRef<P> loaded = PrefabRef<P>::Load(dropped);
+			if (!loaded) return false;
+
+			value = std::move(loaded);
+			return true;
 		}
 
 		template <typename E> requires std::is_enum_v<E>
@@ -78,6 +114,7 @@ namespace koi::editor
 				else if constexpr (std::is_same_v<T, std::string>) return ImGui::InputText(id.c_str(), &value);
 				else if constexpr (std::is_same_v<T, Vector3>)     return DragAxes(id.c_str(), &value.x, 3);
 				else if constexpr (std::is_enum_v<T>)              return DrawReflectedEnum(id.c_str(), value);
+				else if constexpr (kIsPrefabRef<T>)                return DrawPrefabRef(id.c_str(), value);
 				else
 				{
 					ImGui::TextDisabled("(no widget)");

@@ -1,6 +1,7 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
@@ -70,7 +71,18 @@ namespace koi::editor
 		KOI_LOG(AssetDB, Info, "Asset browser found {} file(s) across {} folder(s)", m_entries.size(), m_folders.size());
 
 		// Files may have moved or been deleted, so ids need to point at their new homes
-		Engine::Get().GetSubsystem<AssetRegistry>().Index().Rebuild();
+		Engine& engine = Engine::Get();
+		AssetRegistry& assets = engine.GetSubsystem<AssetRegistry>();
+		assets.Index().Rebuild();
+
+		// Prefab files may have been edited by hand; existing refs see the new template
+		for (const AssetEntry& entry : m_entries)
+		{
+			if (entry.Kind == AssetKind::Prefab)
+			{
+				assets.Cache<PrefabTemplate>().Reload(engine.GetSubsystem<Renderer>().GetDevice(), entry.Key());
+			}
+		}
 	}
 
 	void AssetDatabase::ScanRoot(const fs::path& root, std::string_view scheme, std::string_view contentDir)

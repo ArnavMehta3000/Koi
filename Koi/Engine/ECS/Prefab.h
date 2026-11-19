@@ -25,6 +25,7 @@ namespace koi
 		void                                 ReleasePrefab(PrefabHandle handle);
 		[[nodiscard]] const IPrefabTemplate* FindPrefab(PrefabHandle handle);
 		[[nodiscard]] std::string            PrefabIdOf(PrefabHandle handle);
+		[[nodiscard]] std::string_view       PrefabPathOf(PrefabHandle handle);
 		void WarnUndeclaredComponents(const toml::table& file, std::string_view path, std::span<const std::string_view> declared);
 	}
 
@@ -140,7 +141,8 @@ namespace koi
 			return prefab && prefab->Class() == P::kKey ? static_cast<const P*>(prefab) : nullptr;
 		}
 
-		[[nodiscard]] PrefabHandle GetHandle() const { return m_handle; }
+		[[nodiscard]] PrefabHandle     GetHandle() const { return m_handle; }
+		[[nodiscard]] std::string_view GetPath()   const { return internal::PrefabPathOf(m_handle); }
 		explicit operator bool() const { return Get() != nullptr; }
 		[[nodiscard]] bool operator==(const PrefabRef& other) const { return m_handle == other.m_handle; }
 

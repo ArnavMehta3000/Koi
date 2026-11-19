@@ -149,6 +149,30 @@ namespace koi
 			});
 		}
 
+		// Rebuilds a resident asset from its file under the same handle. The caller makes sure nothing is still using the old one
+		bool Reload(GfxDevice& device, const AssetKey& key)
+		{
+			const auto it = m_handleByKey.find(key);
+			if (it == m_handleByKey.end()) return false;
+
+			const Result<std::unique_ptr<typename AssetTraits<T>::Source>> source = AssetTraits<T>::Load(key.Path());
+			if (!source)
+			{
+				KOI_LOG(Assets, Error, "Couldn't reload {} {}: {}", AssetTraits<T>::Name, key.Path(), source.error().Message);
+				return false;
+			}
+
+			// Built before the old one goes, so assets both share never drop to zero references
+			T fresh = AssetTraits<T>::Upload(device, **source);
+			Entry* entry = m_pool.Get(it->second);  // Upload may have grown the pool
+			if (!entry) return false;
+
+			AssetTraits<T>::Destroy(device, entry->Resource);
+			entry->Resource = std::move(fresh);
+			KOI_LOG(Assets, Debug, "Reloaded {} asset: {}", AssetTraits<T>::Name, key.Path());
+			return true;
+		}
+
 		// Frees every unreferenced asset now, grace or not
 		void EvictUnused(GfxDevice& device)
 		{
