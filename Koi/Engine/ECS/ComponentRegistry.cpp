@@ -1,4 +1,5 @@
 #include "Koi/Engine/ECS/ComponentRegistry.h"
+#include "Koi/Engine/ECS/ComponentSerializers.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
 #include "Koi/Engine/Core/UUID.h"
@@ -15,9 +16,9 @@ namespace koi
 {
 	namespace
 	{
-		AssetCache<GPUMesh>&  Meshes()    { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<GPUMesh>(); }
-		AssetCache<Material>& Materials() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<Material>(); }
-		GfxDevice&            Device()    { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
+		template<typename T>
+		AssetCache<T>& Cache() { return Engine::Get().GetSubsystem<AssetRegistry>().Cache<T>(); }
+		GfxDevice&     Device() { return Engine::Get().GetSubsystem<Renderer>().GetDevice(); }
 
 		constexpr std::string_view kDefaultMesh     = "engine://Content/Meshes/Box.kmesh";
 		constexpr std::string_view kDefaultMaterial = "engine://Content/Materials/Default.kmat";
@@ -47,83 +48,79 @@ namespace koi
 				table.insert("path", key.Path());  // generated or unindexed, so the path is all there is
 		}
 
-		// MeshRef is a cache handle rather than plain data, so it cannot depend on Serializer<T>
-		class MeshComponentType final : public IComponentType
+		// A cache handle named by id in the file
+		template<typename Ref, typename T>
+		class AssetRefComponentType final : public IComponentType
 		{
 		public:
-			[[nodiscard]] std::string_view Key() const override { return MeshRef::kKey; }
-			[[nodiscard]] std::string_view Category() const override { return MeshRef::kCategory; }
-			[[nodiscard]] i32 DrawOrder() const override { return 10; }
+			AssetRefComponentType(i32 drawOrder, std::string_view defaultPath) : m_drawOrder(drawOrder), m_defaultPath(defaultPath) {}
 
-			[[nodiscard]] bool Has(Entity e) const override { return e.Has<MeshRef>(); }
+			[[nodiscard]] std::string_view Key() const override { return Ref::kKey; }
+			[[nodiscard]] std::string_view Category() const override { return Ref::kCategory; }
+			[[nodiscard]] i32 DrawOrder() const override { return m_drawOrder; }
 
-			// Default to a box so a freshly added component has something visible
+			[[nodiscard]] bool Has(Entity e) const override { return e.Has<Ref>(); }
+
 			void Add(Entity e) const override
 			{
-				const MeshHandle handle = Meshes().Acquire(Device(), AssetKey(std::string(kDefaultMesh)));
-				if (handle) e.Set<MeshRef>({ handle });
+				const AssetHandle<T> handle = Cache<T>().Acquire(Device(), AssetKey(std::string(m_defaultPath)));
+				if (handle) e.Set<Ref>({ handle });
 			}
 
-			// World's MeshRef on_remove hook hands the cache reference back
-			void Remove(Entity e) const override { e.Remove<MeshRef>(); }
+			// World's OnRemove hook hands the cache reference back
+			void Remove(Entity e) const override { e.Remove<Ref>(); }
 
 			void Load(Entity e, const toml::table& entityTable) const override
 			{
-				const toml::table* meshTable = entityTable[Key()].as_table();
-				if (!meshTable) return;
+				const toml::node* node = entityTable.get(Key());
+				if (!node) return;
 
-				const MeshHandle handle = Meshes().Acquire(Device(), ReadAssetRef(*meshTable, "mesh"));
-				if (handle) e.Set<MeshRef>({ handle });
+				if (const std::optional<Ref> ref = Serializer<Ref>::Deserialize(*node); ref && ref->Handle)
+				{
+					e.Set<Ref>(*ref);
+				}
 			}
 
 			void Save(Entity e, toml::table& entityTable) const override
 			{
-				const MeshRef* meshRef = e.TryGet<const MeshRef>();
-				if (!meshRef) return;
-
-				toml::table meshTable;
-				WriteAssetRef(meshTable, Meshes().GetKey(meshRef->Handle));
-				entityTable.insert(Key(), std::move(meshTable));
+				if (const Ref* ref = e.TryGet<const Ref>())
+				{
+					entityTable.insert(Key(), Serializer<Ref>::Serialize(*ref));
+				}
 			}
+
+		private:
+			i32              m_drawOrder;
+			std::string_view m_defaultPath;
 		};
+	}
 
-		// Same shape as MeshComponentType: a cache handle, named by id in the scene file
-		class MaterialComponentType final : public IComponentType
-		{
-		public:
-			[[nodiscard]] std::string_view Key() const override { return MaterialRef::kKey; }
-			[[nodiscard]] std::string_view Category() const override { return MaterialRef::kCategory; }
-			[[nodiscard]] i32 DrawOrder() const override { return 11; }
+	toml::table Serializer<MeshRef>::Serialize(const MeshRef& mesh)
+	{
+		toml::table table;
+		WriteAssetRef(table, Cache<GPUMesh>().GetKey(mesh.Handle));
+		return table;
+	}
 
-			[[nodiscard]] bool Has(Entity e) const override { return e.Has<MaterialRef>(); }
+	std::optional<MeshRef> Serializer<MeshRef>::Deserialize(const toml::node& node)
+	{
+		const toml::table* table = node.as_table();
+		if (!table) return std::nullopt;
+		return MeshRef{ Cache<GPUMesh>().Acquire(Device(), ReadAssetRef(*table, "mesh")) };
+	}
 
-			void Add(Entity e) const override
-			{
-				const MaterialHandle handle = Materials().Acquire(Device(), AssetKey(std::string(kDefaultMaterial)));
-				if (handle) e.Set<MaterialRef>({ handle });
-			}
+	toml::table Serializer<MaterialRef>::Serialize(const MaterialRef& material)
+	{
+		toml::table table;
+		WriteAssetRef(table, Cache<Material>().GetKey(material.Handle));
+		return table;
+	}
 
-			void Remove(Entity e) const override { e.Remove<MaterialRef>(); }
-
-			void Load(Entity e, const toml::table& entityTable) const override
-			{
-				const toml::table* table = entityTable[Key()].as_table();
-				if (!table) return;
-
-				const MaterialHandle handle = Materials().Acquire(Device(), ReadAssetRef(*table, "material"));
-				if (handle) e.Set<MaterialRef>({ handle });
-			}
-
-			void Save(Entity e, toml::table& entityTable) const override
-			{
-				const MaterialRef* ref = e.TryGet<const MaterialRef>();
-				if (!ref) return;
-
-				toml::table table;
-				WriteAssetRef(table, Materials().GetKey(ref->Handle));
-				entityTable.insert(Key(), std::move(table));
-			}
-		};
+	std::optional<MaterialRef> Serializer<MaterialRef>::Deserialize(const toml::node& node)
+	{
+		const toml::table* table = node.as_table();
+		if (!table) return std::nullopt;
+		return MaterialRef{ Cache<Material>().Acquire(Device(), ReadAssetRef(*table, "material")) };
 	}
 
 	ComponentRegistry& ComponentRegistry::Get()
@@ -161,8 +158,8 @@ namespace koi
 	void ComponentRegistry::RegisterEngineComponents()
 	{
 		Register<ComponentType<Transform>>(0, true);
-		Register<MeshComponentType>();
-		Register<MaterialComponentType>();
+		Register<AssetRefComponentType<MeshRef, GPUMesh>>(10, kDefaultMesh);
+		Register<AssetRefComponentType<MaterialRef, Material>>(11, kDefaultMaterial);
 		Register<ComponentType<CameraComponent>>(20);
 		Register<ComponentType<Light>>(30);
 		Register<ComponentType<PostProcess>>(40);

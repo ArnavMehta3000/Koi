@@ -3,6 +3,7 @@
 #include "Koi/Engine/Assets/AssetIndex.h"
 #include "Koi/Engine/Assets/MaterialAsset.h"
 #include "Koi/Engine/Assets/MeshAsset.h"
+#include "Koi/Engine/Assets/PrefabAsset.h"
 #include "Koi/Engine/Assets/TextureAsset.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/GPUTexture.h"
@@ -46,5 +47,5 @@ namespace koi
 	};
 
 	// A class rather than an alias so it can be forward declared
-	class AssetRegistry : public AssetRegistryFor<GPUMesh, GPUTexture, Material> {};
+	class AssetRegistry : public AssetRegistryFor<PrefabTemplate, GPUMesh, GPUTexture, Material> {};
 }

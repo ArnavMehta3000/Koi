@@ -21,6 +21,7 @@ namespace koi
 	class ISystem;
 	class RenderScene;
 	struct PostProcess;
+	template<typename P> class PrefabRef;
 
 	class World
 	{
@@ -39,8 +40,12 @@ namespace koi
 		// Scene file order, then creation order
 		[[nodiscard]] static std::pair<u64, u64> OrderKey(Entity e);
 
-		// Creates an entity with a Transform. Names are unique per world and looked up by scene files, so runtime spawns should stay unnamed
+		// Spawn an entity
 		[[nodiscard]] EntityBuilder Spawn(std::string_view name = {});
+
+		// Spawn a prefab entity
+		template<typename P, typename... Args>
+		Entity Spawn(const PrefabRef<P>& prefab, Args&&... args);
 
 		static void MakePersistent(Entity e);
 		[[nodiscard]] static bool IsPersistent(Entity e);

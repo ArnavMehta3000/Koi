@@ -1,11 +1,30 @@
 #include "Koi/Engine/Assets/AssetIndex.h"
+#include "Koi/Engine/Assets/AssetTypes.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/IO/VirtualFileSystem.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include <chrono>
+#include <toml++/toml.hpp>
 
 namespace koi
 {
+	namespace
+	{
+		// Prefabs are text, so the id is a top-level key rather than a header field
+		Result<UUID> ReadPrefabId(const fs::path& diskPath)
+		{
+			try
+			{
+				const toml::table file = toml::parse_file(diskPath.string());
+				return utils::UUIDFromString(file["id"].value_or(std::string()));
+			}
+			catch (const toml::parse_error& e)
+			{
+				return Error::Make("line {}: {}", e.source().begin.line, e.description());
+			}
+		}
+	}
+
 	void AssetIndex::Rebuild()
 	{
 		ZoneScoped;
@@ -38,6 +57,20 @@ namespace koi
 		for (const fs::directory_entry& file : fs::recursive_directory_iterator(contentRoot, ec))
 		{
 			if (!file.is_regular_file()) continue;
+
+			if (const AssetTypeInfo* kind = utils::FindAssetTypeForFile(file.path().filename().string()); kind && kind->Kind == AssetKind::Prefab)
+			{
+				const Result<UUID> id = ReadPrefabId(file.path());
+				if (!id)
+				{
+					KOI_LOG(Assets, Error, "Skipped {}: {}", file.path().string(), id.error().Message);
+					continue;
+				}
+
+				const fs::path relative = fs::relative(file.path(), root, ec);
+				if (!ec) Add(*id, AssetFileType::Prefab, std::string(scheme) + "://" + relative.generic_string());
+				continue;
+			}
 
 			const AssetFileType expected = AssetFile::TypeForPath(file.path());
 			if (expected == AssetFileType::Unknown) continue;

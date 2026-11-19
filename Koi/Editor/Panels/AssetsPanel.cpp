@@ -49,6 +49,9 @@ namespace koi::editor
 			case AssetKind::Texture:
 				return resident(engine.GetSubsystem<AssetRegistry>().Cache<GPUTexture>().IsResident(entry.Key()));
 
+			case AssetKind::Prefab:
+				return resident(engine.GetSubsystem<AssetRegistry>().Cache<PrefabTemplate>().IsResident(entry.Key()));
+
 			case AssetKind::Shader:
 			{
 				// ShaderCache keys without the extension; the database entry carries it
