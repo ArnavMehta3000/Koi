@@ -1,6 +1,7 @@
 -- From Koi subdir
-local kCoreDirs   = { "Core", "Diagnostics", "IO", "Logging", "Math", "Memory", "Text" }
-local kEngineDirs = { "Assets", "ECS", "Graphics", "Physics", "Platform", "Runtime" }
+local kCoreDirs     = { "Core", "Diagnostics", "IO", "Logging", "Math", "Memory", "Text" }
+local kPlatformDirs = { "Platform" }
+local kEngineDirs   = { "Assets", "ECS", "Graphics", "Physics", "Runtime" }
 
 local function add_dirs(dirs)
 	for _, dir in ipairs(dirs) do
@@ -42,14 +43,30 @@ target("Koi.Core")
 	end
 target_end()
 
--- ENGINE
-target("Koi.Engine")
+-- PLATFORM
+target("Koi.Platform")
 	set_kind("static")
 	set_group("Koi")
 	add_options("LogLevel")
 
 	add_deps("Koi.Core", { public = true })
 	add_deps("GameInput")
+
+	add_includedirs("$(projectdir)", { public = true })
+	add_dirs(kPlatformDirs)
+
+	if is_plat("windows") then
+		add_syslinks("shell32", "dwmapi", { public = true })
+	end
+target_end()
+
+--ENGINE
+target("Koi.Engine")
+	set_kind("static")
+	set_group("Koi")
+	add_options("LogLevel")
+
+	add_deps("Koi.Core", "Koi.Platform", { public = true })
 	add_packages("cli11", "dxc", "box3d", "directx-headers", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
@@ -57,7 +74,7 @@ target("Koi.Engine")
 	set_pcxxheader("Pch.h")
 
 	if is_plat("windows") then
-		add_syslinks("shell32", "dwmapi", "d3d12", "dxgi", "dxguid", "d3dcompiler", { public = true })
+		add_syslinks("d3d12", "dxgi", "dxguid", "d3dcompiler", { public = true })
 	end
 
 	add_extrafiles("Content/Shaders/**.hlsl")
