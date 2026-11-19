@@ -3,10 +3,33 @@ local kCoreDirs     = { "Core", "Diagnostics", "IO", "Logging", "Math", "Memory"
 local kPlatformDirs = { "Platform" }
 local kEngineDirs   = { "Assets", "ECS", "Graphics", "Physics", "Runtime" }
 
-local function add_dirs(dirs)
+-- Koi.RHI's part of Graphics/: whole folders end in /**, the rest are file stems
+local kRHIGraphics = { "RHI/**", "RenderGraph/**", "Format", "GpuFrameBuffer", "PipelineCache", "ShaderCache", "ShaderCompiler", "Types" }
+
+-- `exclude` holds stems relative to each dir, as in kRHIGraphics
+local function add_dirs(dirs, exclude)
 	for _, dir in ipairs(dirs) do
-		add_headerfiles(dir .. "/**.h", dir .. "/**.inl", { public = true })
-		add_files(dir .. "/**.cpp")
+		local function pattern(ext)
+			local result = dir .. "/**" .. ext
+			for _, stem in ipairs(exclude and exclude[dir] or {}) do
+				result = result .. "|" .. stem .. ext
+			end
+			return result
+		end
+		add_headerfiles(pattern(".h"), pattern(".inl"), { public = true })
+		add_files(pattern(".cpp"))
+	end
+end
+
+local function add_stems(dir, stems)
+	for _, stem in ipairs(stems) do
+		for _, ext in ipairs({ ".h", ".inl" }) do
+			add_headerfiles(dir .. "/" .. stem .. ext, { public = true })
+		end
+		local cpp = dir .. "/" .. stem .. ".cpp"
+		if stem:endswith("**") or os.isfile(path.join(os.scriptdir(), cpp)) then
+			add_files(cpp)
+		end
 	end
 end
 
@@ -60,22 +83,36 @@ target("Koi.Platform")
 	end
 target_end()
 
+-- RHI
+target("Koi.RHI")
+	set_kind("static")
+	set_group("Koi")
+	add_options("LogLevel")
+
+	add_deps("Koi.Core", { public = true })
+	add_packages("dxc", "directx-headers", { public = true })
+
+	add_includedirs("$(projectdir)", { public = true })
+	add_stems("Graphics", kRHIGraphics)
+	set_pcxxheader("Pch.h")
+
+	if is_plat("windows") then
+		add_syslinks("d3d12", "dxgi", "dxguid", "d3dcompiler", { public = true })
+	end
+target_end()
+
 --ENGINE
 target("Koi.Engine")
 	set_kind("static")
 	set_group("Koi")
 	add_options("LogLevel")
 
-	add_deps("Koi.Core", "Koi.Platform", { public = true })
-	add_packages("cli11", "dxc", "box3d", "directx-headers", { public = true })
+	add_deps("Koi.Core", "Koi.Platform", "Koi.RHI", { public = true })
+	add_packages("cli11", "box3d", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_dirs(kEngineDirs)
+	add_dirs(kEngineDirs, { Graphics = kRHIGraphics })
 	set_pcxxheader("Pch.h")
-
-	if is_plat("windows") then
-		add_syslinks("d3d12", "dxgi", "dxguid", "d3dcompiler", { public = true })
-	end
 
 	add_extrafiles("Content/Shaders/**.hlsl")
 	add_files("Content/Shaders/Shaders.json", { rule = "KoiShaders", koi_scheme = "engine" })
