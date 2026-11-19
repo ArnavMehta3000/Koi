@@ -3,7 +3,6 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Runtime/Engine.h"
 
 #include <algorithm>
 #include <cmath>
@@ -33,14 +32,14 @@ namespace koi
 		s_instance = nullptr;
 	}
 
-	void InputManager::Init(const SubsystemInitContext& ctx)
+	void InputManager::Init(Window& window, const InputConfig& config)
 	{
 		ZoneScoped;
 
-		m_config = ctx.Input;
+		m_config = config;
 		m_actions.assign(m_config.Actions.size(), ActionState{});
 
-		m_window = ctx.MainWindow;
+		m_window = &window;
 		const HWND hwnd = static_cast<HWND>(m_window->GetNativeHandle());
 		KOI_ASSERT(hwnd, "Window has no native HWND");
 
@@ -62,16 +61,15 @@ namespace koi
 		KOI_LOG(Input, Debug, "InputManager initialized, {} action(s)", m_config.Actions.size());
 	}
 
-	void InputManager::BeginFrame()
+	void InputManager::BeginFrame(bool gameplay)
 	{
 		ZoneScoped;
 
 		m_keyboard.BeginFrame();
 		m_mouse.BeginFrame();
 
-		const Engine& engine = Engine::Get();
-		if (engine.GetPlayState() == PlayState::Edit) m_gamepad.SetRumble({});
-		m_gamepad.Poll(m_appActive && m_gameFocused && engine.IsPlaying());
+		if (!gameplay) m_gamepad.SetRumble({});
+		m_gamepad.Poll(m_appActive && m_gameFocused && gameplay);
 
 		EvaluateActions();
 	}

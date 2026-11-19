@@ -2,7 +2,7 @@
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/MathTypes.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include <GameInput.h>
 
 #include <algorithm>

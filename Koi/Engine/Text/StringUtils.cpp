@@ -1,6 +1,6 @@
 #include "Koi/Engine/Text/StringUtils.h"
 #include "Koi/Engine/Core/Types.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 
 namespace koi
 {

@@ -12,21 +12,6 @@ namespace koi
 {
 	static_assert(AssetType<Material>, "AssetTraits<Material> does not satisfy AssetType");
 
-	namespace
-	{
-		// The [textures] key each slot is written under
-		constexpr std::array<std::string_view, kMaterialTextureCount> kSlotKeys =
-		{
-			"base_color", "metallic_roughness", "normal", "occlusion", "emissive"
-		};
-	}
-
-	std::string_view Material::SlotName(MaterialTextureSlot slot)
-	{
-		const size_t index = static_cast<size_t>(slot);
-		return index < kSlotKeys.size() ? kSlotKeys[index] : std::string_view("unknown");
-	}
-
 	DescriptorIndex Material::SRVFor(MaterialTextureSlot slot) const
 	{
 		const size_t index = static_cast<size_t>(slot);

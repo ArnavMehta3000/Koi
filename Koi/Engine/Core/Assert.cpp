@@ -1,7 +1,7 @@
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/CrashHandler.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>

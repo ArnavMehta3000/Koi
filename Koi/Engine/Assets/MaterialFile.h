@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetFile.h"
-#include "Koi/Engine/Assets/MaterialAsset.h"
+#include "Koi/Engine/Assets/MaterialSource.h"
 #include <functional>
 
 namespace koi

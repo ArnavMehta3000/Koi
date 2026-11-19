@@ -8,7 +8,7 @@
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Physics/PhysicsComponents.h"
 #include "Koi/Engine/Physics/PhysicsEvents.h"
-#include "Koi/Engine/Runtime/ReflectSerializer.h"
+#include "Koi/Engine/Core/ReflectSerializer.h"
 
 namespace game
 {

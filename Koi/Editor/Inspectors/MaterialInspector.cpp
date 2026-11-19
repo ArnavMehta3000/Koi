@@ -115,7 +115,7 @@ namespace koi::editor
 		size_t slot = kMaterialTextureCount;
 		for (size_t i = 0; i < kMaterialTextureCount; ++i)
 		{
-			if (Material::SlotName(static_cast<MaterialTextureSlot>(i)) == param.Name) slot = i;
+			if (MaterialSource::SlotName(static_cast<MaterialTextureSlot>(i)) == param.Name) slot = i;
 		}
 		if (slot == kMaterialTextureCount) return;
 

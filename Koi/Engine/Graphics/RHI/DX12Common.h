@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Core/Core.h"  // For the Win32 macro
 
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include <wrl/client.h>
 
 #define D3DX12_USE_ARRAY_COM_PTR

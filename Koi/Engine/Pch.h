@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include <wrl/client.h>
 #include <directx/d3dx12.h>
 #include <dxgi1_6.h>

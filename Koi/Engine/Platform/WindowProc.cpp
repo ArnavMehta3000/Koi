@@ -1,6 +1,6 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include <shellapi.h>
 
 // Borderless frame handling after https://github.com/melak47/BorderlessWindow

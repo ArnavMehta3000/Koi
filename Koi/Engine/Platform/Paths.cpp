@@ -1,5 +1,5 @@
 #include "Koi/Engine/Platform/Paths.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 
 namespace koi::utils
 {

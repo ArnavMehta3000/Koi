@@ -1,5 +1,5 @@
 #include "Koi/Engine/Platform/Mouse.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include "Koi/Engine/Platform/Window.h"
 
 namespace koi

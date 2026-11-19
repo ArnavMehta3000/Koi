@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/ECS/System.h"
 #include "Koi/Engine/Math/Transform.h"
-#include "Koi/Engine/Runtime/ReflectSerializer.h"
+#include "Koi/Engine/Core/ReflectSerializer.h"
 
 // A component the engine has never heard of: defined, serialized, inspected and simulated entirely from game code
 struct Spin

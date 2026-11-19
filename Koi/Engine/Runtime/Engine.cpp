@@ -9,7 +9,6 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/AppHost.h"
-#include "Koi/Engine/Runtime/Subsystems.h"
 
 namespace koi
 {
@@ -63,14 +62,8 @@ namespace koi
 
 		host.SetWindow(window);
 
-		SubsystemInitContext initCtx
-		{
-			.MainWindow     = &window,
-			.VSync          = mainWndDesc.VSync,
-			.Input          = desc.Input,
-		};
-		m_input->Init(initCtx);
-		m_renderer->Init(initCtx);
+		m_input->Init(window, desc.Input);
+		m_renderer->Init(window, mainWndDesc.VSync);
 		m_assets->Init();
 		KOI_LOG(Engine, Debug, "Engine subsystems initialized");
 
@@ -131,7 +124,7 @@ namespace koi
 		ZoneScoped;
 		{
 			KOI_SCOPE("Input");
-			GetSubsystem<InputManager>().BeginFrame();
+			m_input->BeginFrame(IsPlaying());
 			Window::PollEvents();
 		}
 		GetSubsystem<Renderer>().BeginFrame();

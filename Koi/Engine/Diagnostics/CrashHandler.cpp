@@ -2,7 +2,7 @@
 #include "Koi/Engine/Core/Exception.h"
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include <DbgHelp.h>
 #include <atomic>
 #include <cstdlib>

@@ -3,7 +3,6 @@
 #include "Koi/Engine/Platform/InputActions.h"
 #include "Koi/Engine/Platform/Keyboard.h"
 #include "Koi/Engine/Platform/Mouse.h"
-#include "Koi/Engine/Runtime/Subsystems.h"
 #include <optional>
 
 namespace koi
@@ -18,9 +17,10 @@ namespace koi
 		~InputManager();
 
 		// Called once by Engine after the main window is created.
-		void Init(const SubsystemInitContext& ctx);
+		void Init(Window& window, const InputConfig& config);
 
-		void BeginFrame();
+		// The gamepad is only read, and only rumbles, while gameplay runs
+		void BeginFrame(bool gameplay);
 
 		// Devices are never gated by game focus; actions are
 		[[nodiscard]] inline Keyboard&       GetKeyboard()       noexcept { return m_keyboard; }

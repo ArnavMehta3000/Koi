@@ -39,7 +39,7 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/Runtime/Serializer.h"
+#include "Koi/Engine/Core/Serializer.h"
 
 #include <algorithm>
 #include <format>

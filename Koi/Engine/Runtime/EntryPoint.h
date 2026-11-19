@@ -2,7 +2,7 @@
 
 #pragma once
 #include "Koi/Engine/Core/Config.h"
-#include "Koi/Engine/Platform/Win32.h"
+#include "Koi/Engine/Core/Win32.h"
 #include <filesystem>
 #include <memory>
 

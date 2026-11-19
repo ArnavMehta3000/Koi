@@ -159,7 +159,7 @@ namespace koi
 			if (!source.Textures[i].IsValid()) continue;
 
 			MaterialFileContents::Param& param = contents.Params.emplace_back();
-			param.Name    = std::string(Material::SlotName(static_cast<MaterialTextureSlot>(i)));
+			param.Name    = std::string(MaterialSource::SlotName(static_cast<MaterialTextureSlot>(i)));
 			param.Type    = MaterialValueType::Texture;
 			param.Texture = idFor(source.Textures[i]);
 		}
@@ -181,7 +181,7 @@ namespace koi
 			{
 				for (size_t i = 0; i < kMaterialTextureCount; ++i)
 				{
-					if (param.Name == Material::SlotName(static_cast<MaterialTextureSlot>(i)))
+					if (param.Name == MaterialSource::SlotName(static_cast<MaterialTextureSlot>(i)))
 						source.Textures[i] = keyFor(param.Texture);
 				}
 				continue;

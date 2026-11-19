@@ -11,7 +11,6 @@
 #include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/CommandQueue.h"
 #include "Koi/Engine/Graphics/TargetCapture.h"
-#include "Koi/Engine/Runtime/Subsystems.h"
 #include <memory>
 #include <optional>
 
@@ -30,7 +29,7 @@ namespace koi
 		~Renderer();
 
 		// Called once by Engine after the main window is created.
-		void Init(const SubsystemInitContext& ctx);
+		void Init(Window& window, bool vsync);
 
 		[[nodiscard]] inline GfxDevice&               GetDevice() noexcept                 { return *m_device;              }
 		[[nodiscard]] inline const GfxDevice&         GetDevice() const noexcept           { return *m_device;              }
