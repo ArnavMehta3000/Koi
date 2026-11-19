@@ -140,6 +140,7 @@ namespace koi::editor::utils
 			case AssetKind::Shader:   return ICON_FA_CODE;
 			case AssetKind::Scene:    return ICON_FA_MAP;
 			case AssetKind::Material: return ICON_FA_PALETTE;
+			case AssetKind::Prefab:   return ICON_FA_CUBES;
 			default:                  return ICON_FA_FILE;
 		}
 	}
