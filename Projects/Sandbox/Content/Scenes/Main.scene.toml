@@ -44,13 +44,13 @@ name = 'Camera'
 
     [entity.Camera]
     far = 1000.0
-    fov_y = 0.826169
+    fov_y = 1.52367
     near = 0.05
     primary = true
 
     [entity.Transform]
     position = [ 6.6, 1.35, -0.3 ]
-    rotation = [ 0.0, 0.707107, 0.0, 0.707107 ]
+    rotation = [ 0.0831115, 0.702206, -0.0831115, 0.702205 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -92,6 +92,9 @@ name = 'Point Light'
 [[entity]]
 id = 6
 name = 'Torus'
+
+    [entity.Material]
+    id = 'c26b16f7-e1d9-572e-81c3-7e687a13ca8f'
 
     [entity.Mesh]
     id = 'b6f9ebda-dac3-584a-af18-287555e3c7e3'
