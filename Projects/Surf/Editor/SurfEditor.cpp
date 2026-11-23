@@ -1,7 +1,10 @@
 #include "Components/Obstacle.h"
 #include "Components/PlayerMover.h"
+#include "SurfApp.h"
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Core/EditorExtension.h"
+#include "Koi/Editor/Core/EditorModules.h"
+#include "Koi/Modules/Physics/Editor/PhysicsEditor.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Inspectors/ReflectInspector.h"
 
@@ -40,6 +43,8 @@ namespace game
 		public:
 			void OnStartup(koi::editor::EditorContext& ctx) override
 			{
+				koi::editor::EditorModules<SurfApp::Modules>::Register(ctx);
+
 				koi::editor::InspectorRegistry* inspectors = ctx.Get<koi::editor::InspectorRegistry>();
 				inspectors->Emplace<PlayerMoverInspector>();
 				inspectors->Emplace<ObstacleSpawnerInspector>();

@@ -83,6 +83,27 @@ rule("KoiGame")
 	end)
 rule_end()
 
+-- A module is a static lib on Koi.Engine, laid out like a game: Source/ in every mode, Editor/ in editor-* only
+rule("KoiModule")
+	on_load(function(target)
+		local root = target:scriptdir()
+
+		target:set("kind", "static")
+		target:set("group", "Koi/Modules")
+		target:add("options", "LogLevel")
+		target:add("deps", "Koi.Engine", { public = true })
+		target:set("pcxxheader", path.join(os.projectdir(), "Koi", "Engine", "Pch.h"))
+		target:add("files", path.join(root, "Source/**.cpp"))
+		target:add("headerfiles", path.join(root, "Source/**.h"))
+
+		if is_mode("editor-.*") then
+			target:add("deps", "Koi.Editor", { public = true })
+			target:add("files", path.join(root, "Editor/**.cpp"))
+			target:add("headerfiles", path.join(root, "Editor/**.h"))
+		end
+	end)
+rule_end()
+
 -- Add natvis files from packages
 rule("Natvis")
 	on_config(function (target)

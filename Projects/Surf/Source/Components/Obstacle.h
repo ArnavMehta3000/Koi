@@ -6,8 +6,8 @@
 #include "Koi/Engine/Math/Ease.h"
 #include "Koi/Engine/Math/Random.h"
 #include "Koi/Engine/Math/Transform.h"
-#include "Koi/Engine/Physics/PhysicsComponents.h"
-#include "Koi/Engine/Physics/PhysicsEvents.h"
+#include "Koi/Modules/Physics/Source/PhysicsComponents.h"
+#include "Koi/Modules/Physics/Source/PhysicsEvents.h"
 #include "Koi/Engine/Core/ReflectSerializer.h"
 
 namespace game

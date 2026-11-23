@@ -1,4 +1,4 @@
-#include "Koi/Engine/Physics/PhysicsComponents.h"
+#include "Koi/Modules/Physics/Source/PhysicsComponents.h"
 #include "Koi/Engine/ECS/World.h"
 
 namespace koi

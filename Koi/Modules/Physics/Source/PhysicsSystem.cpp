@@ -1,10 +1,10 @@
-#include "Koi/Engine/Physics/PhysicsSystem.h"
-#include "Koi/Engine/Physics/PhysicsComponents.h"
-#include "Koi/Engine/Physics/PhysicsEvents.h"
-#include "Koi/Engine/Physics/Box3DConvert.h"
-#include "Koi/Engine/Physics/ScaledCollider.h"
+#include "Koi/Modules/Physics/Source/PhysicsSystem.h"
+#include "Koi/Modules/Physics/Source/PhysicsComponents.h"
+#include "Koi/Modules/Physics/Source/PhysicsEvents.h"
+#include "Koi/Modules/Physics/Source/Box3DConvert.h"
+#include "Koi/Modules/Physics/Source/ScaledCollider.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Logging/LogCategories.h"
+#include "Koi/Modules/Physics/Source/PhysicsModule.h"
 #include <box3d/box3d.h>
 
 namespace koi

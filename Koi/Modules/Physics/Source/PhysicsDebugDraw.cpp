@@ -1,7 +1,7 @@
-#include "Koi/Engine/Physics/PhysicsDebugDraw.h"
+#include "Koi/Modules/Physics/Source/PhysicsDebugDraw.h"
 #include "Koi/Engine/Graphics/DebugDraw.h"
-#include "Koi/Engine/Physics/Box3DConvert.h"
-#include "Koi/Engine/Physics/ScaledCollider.h"
+#include "Koi/Modules/Physics/Source/Box3DConvert.h"
+#include "Koi/Modules/Physics/Source/ScaledCollider.h"
 #include <box3d/box3d.h>
 
 namespace koi

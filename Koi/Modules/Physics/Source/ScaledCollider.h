@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Physics/PhysicsComponents.h"
+#include "Koi/Modules/Physics/Source/PhysicsComponents.h"
 #include <algorithm>
 #include <cmath>
 

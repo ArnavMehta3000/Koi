@@ -35,6 +35,9 @@ add_rules("KoiMode", "Natvis")
 
 includes("Koi/Engine")
 includes("Koi/Editor")
+for _, file in ipairs(os.files("Koi/Modules/*/xmake.lua")) do
+	includes(file)
+end
 
 -- A game project is any Projects/<Name>/ carrying <Name>.koi.toml
 for _, marker in ipairs(os.files("Projects/*/*.koi.toml")) do

@@ -7,9 +7,6 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include "Koi/Engine/ECS/SystemRegistry.h"
-#include "Koi/Engine/Physics/PhysicsDebugDraw.h"
-#include "Koi/Engine/Physics/PhysicsSystem.h"
 #include <utility>
 
 namespace koi
@@ -40,14 +37,10 @@ namespace koi
 
 		OnRegisterComponents();
 		OnRegisterSystems();
-
-		SystemRegistry::Get().Register<PhysicsSystem>();
-#if KOI_DEBUG_DRAW
-		SystemRegistry::Get().Register<PhysicsDebugDrawSystem>();
-#endif
+		OnRegisterModules();
 
 		// A World builds its systems on construction (World::BuildSystems)
-		//   so it comes after every engine registration
+		//   so it comes after every registration
 		m_world = std::make_unique<World>();
 		m_world->SetFixedStep(m_desc.FixedStep);
 		LoadStartupScene();

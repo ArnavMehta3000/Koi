@@ -1,5 +1,6 @@
 target("Surf")
 	add_rules("KoiGame")
+	add_deps("Koi.Module.Physics")
 	add_files("Source/**.cpp")
 	add_headerfiles("Source/**.h")
 target_end()

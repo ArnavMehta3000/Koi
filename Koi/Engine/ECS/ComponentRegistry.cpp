@@ -7,7 +7,6 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"
-#include "Koi/Engine/Physics/PhysicsComponents.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include "Koi/Engine/Core/ReflectSerializer.h"
 #include <algorithm>
@@ -163,8 +162,5 @@ namespace koi
 		Register<ComponentType<CameraComponent>>(20);
 		Register<ComponentType<Light>>(30);
 		Register<ComponentType<PostProcess>>(40);
-		Register<ComponentType<PhysicsSettings>>(45);
-		Register<ComponentType<RigidBody>>(46);
-		Register<ComponentType<Collider>>(47);
 	}
 }

@@ -1,7 +1,10 @@
 #include "Components/PlayerController.h"
 #include "Components/Spin.h"
+#include "SandboxApp.h"
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Core/EditorExtension.h"
+#include "Koi/Editor/Core/EditorModules.h"
+#include "Koi/Modules/Physics/Editor/PhysicsEditor.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
 #include "Koi/Editor/Inspectors/ReflectInspector.h"
 #include "Koi/Editor/UI/Widgets.h"
@@ -34,6 +37,8 @@ namespace
 	public:
 		void OnStartup(koi::editor::EditorContext& ctx) override
 		{
+			koi::editor::EditorModules<SandboxApp::Modules>::Register(ctx);
+
 			koi::editor::InspectorRegistry* inspectors = ctx.Get<koi::editor::InspectorRegistry>();
 			inspectors->Emplace<SpinInspector>();
 			inspectors->Emplace<koi::editor::ReflectedInspector<PlayerController>>();

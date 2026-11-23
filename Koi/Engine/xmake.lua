@@ -1,7 +1,7 @@
 -- From Koi subdir
 local kCoreDirs     = { "Core", "Diagnostics", "IO", "Logging", "Math", "Memory", "Text" }
 local kPlatformDirs = { "Platform" }
-local kEngineDirs   = { "Assets", "ECS", "Graphics", "Physics", "Runtime" }
+local kEngineDirs   = { "Assets", "ECS", "Graphics", "Runtime" }
 
 -- Koi.RHI's part of Graphics/: whole folders end in /**, the rest are file stems
 local kRHIGraphics = { "RHI/**", "RenderGraph/**", "Format", "GpuFrameBuffer", "PipelineCache", "ShaderCache", "ShaderCompiler", "Types" }
@@ -143,7 +143,7 @@ target("Koi.Engine")
 	add_options("LogLevel")
 
 	add_deps("Koi.Core", "Koi.Platform", "Koi.RHI", "Koi.Assets", "Koi.ECS", { public = true })
-	add_packages("cli11", "box3d", { public = true })
+	add_packages("cli11", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_dirs(kEngineDirs, { Graphics = kRHIGraphics, Assets = kCPUAssets, ECS = kECSCore })

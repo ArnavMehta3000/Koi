@@ -56,9 +56,11 @@ namespace koi
 		void HostBeginPlay() override;
 		void HostEndPlay() override;
 
-		// Both run before the startup scene loads; register with ComponentRegistry / SystemRegistry
+		// All run before the startup scene loads; register with ComponentRegistry / SystemRegistry
 		virtual void OnRegisterComponents() {}
 		virtual void OnRegisterSystems() {}
+		// After the game's systems, so game fixed-step systems run before a module's: `Modules::Register()`
+		virtual void OnRegisterModules() {}
 
 		virtual void OnInit() {}
 		virtual void OnShutdown() {}
