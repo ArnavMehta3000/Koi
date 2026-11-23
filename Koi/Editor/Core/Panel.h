@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/Types.h"
 #include <imgui.h>
 #include <toml++/toml.hpp>
 #include <string>
@@ -28,6 +29,10 @@ namespace koi::editor
 
 		// Every frame while open, just before the window begins (even when docked out of sight)
 		virtual void OnUpdate() {}
+
+		// Every frame while open: in HostTick before the game ticks, and in HostRender where views are submitted
+		virtual void OnTick([[maybe_unused]] f32 dt) {}
+		virtual void OnRender() {}
 
 		// Per-project state in <project>/.koi/Editor.toml. LoadState always runs once, with an empty table if nothing was saved
 		virtual void SaveState([[maybe_unused]] toml::table& state) const {}

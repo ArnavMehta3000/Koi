@@ -35,7 +35,7 @@ namespace koi
 
 		DisplayColor* color = bb.TryGet<DisplayColor>();
 		SceneDepth*   depth = bb.TryGet<SceneDepth>();
-		if (!color) return;
+		if (!color || !view.Flags.Has(ViewFlags::DebugDraw)) return;
 
 		graph.AddPass<RasterPass>("Debug Draw",
 			[&](RGBuilder& b)

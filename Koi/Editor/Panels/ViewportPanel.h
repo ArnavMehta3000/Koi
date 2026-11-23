@@ -1,110 +1,55 @@
 #pragma once
 #include "Koi/Editor/Core/Panel.h"
-#include "Koi/Editor/EditorCameraController.h"
-#include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/RenderView.h"
-#include <IconsFontAwesome6.h>
-
-namespace toml { inline namespace v3 { class table; } }
 
 namespace koi
 {
-	class Renderer;
-	class CommandList;
 	class InputManager;
-	class AppBase;
+	class Renderer;
 }
 
 namespace koi::editor
 {
-	class CommandRegistry;
-	class EditorContext;
-	class Selection;
-	class UndoStack;
-
-	enum class GizmoOp : u8
-	{
-		Translate,
-		Rotate,
-		Scale,
-	};
-
-	enum class GizmoSpace : u8
-	{
-		World,
-		Local,
-	};
-
-	enum class ViewportCamera : u8
-	{
-		Scene,
-		Game,
-	};
-
-	enum class ViewportResolution : u8
-	{
-		FreeAspect,  // track the panel, no letterboxing
-		Window,      // what a standalone build would render
-		R1920x1080,
-		R1280x720,
-	};
-
+	// A panel showing one offscreen target
 	class ViewportPanel : public Panel
 	{
 	public:
-		static constexpr PanelInfo kInfo{ .Name = "Viewport", .Icon = ICON_FA_DISPLAY, .Padding = false, .Closable = false };
-
-		explicit ViewportPanel(EditorContext* ctx);
 		~ViewportPanel() override;
 
 		void OnUpdate() override;
-		void OnDraw() override;
-
-		// The orbit camera; frames the scene when nothing was saved
-		void SaveState(toml::table& state) const override;
-		void LoadState(const toml::table& state) override;
-
-		[[nodiscard]] inline const ViewportTarget* GetTarget() const { return m_valid ? &m_target : nullptr; }
-		[[nodiscard]] inline const Camera& GetCamera() const { return m_camera; }
-		[[nodiscard]] inline bool IsGameCamera() const { return m_cameraMode == ViewportCamera::Game; }
+		void OnDraw() final;
 
 		const ViewportTarget* PrepareFrame();
-		void FrameBounds(const BoundingBox& bounds);
 
-		void Update(f32 dt, InputManager& input);
+		[[nodiscard]] inline const ViewportTarget* GetTarget()   const { return m_valid ? &m_target : nullptr; }
+		[[nodiscard]] inline bool                  IsHovered()   const { return m_isHovered; }
+		[[nodiscard]] inline bool                  IsCapturing() const { return m_isCapturing; }
+
+	protected:
+		ViewportPanel();
+
+		void UpdateCapture(const InputManager& input, bool blocked);
+
+		virtual void DrawToolbar() {}
+		virtual void ChooseSize(const ImVec2& avail, u32& outWidth, u32& outHeight);
+
+		// Over the image, after it's drawn (in screen-space rect)
+		virtual void OnImageGui([[maybe_unused]] const ImVec2& min, [[maybe_unused]] const ImVec2& size) {}
+		virtual void OnWindowGui() {} // After the image (over the whole window)
+		virtual void OnTargetResized([[maybe_unused]] u32 width, [[maybe_unused]] u32 height) {}
+
+	protected:
+		Renderer* m_renderer = nullptr;
 
 	private:
 		void EnsureSize(u32 width, u32 height);
-		void DrawToolbar();
-
-		// Image rect in screen space
-		void DrawGizmo(f32 x, f32 y, f32 width, f32 height);
-		void HandlePicking(f32 x, f32 y, f32 width, f32 height);
-		void PickEntity(f32 ndcX, f32 ndcY);
 
 	private:
-		Renderer*         m_renderer;
-		AppBase*          m_game      = nullptr;
-		Selection*        m_selection = nullptr;
-		CommandRegistry*  m_commands  = nullptr;
-		UndoStack*        m_undo      = nullptr;
-		ViewportTarget    m_target{};
-		bool              m_valid           = false;
-		u32               m_desiredWidth    = 1280;
-		u32               m_desiredHeight   = 720;
-		f32               m_resizeSettle    = 0.0f;  // counts down after a resize (to prevent log spam)
-
-		ViewportCamera     m_cameraMode       = ViewportCamera::Scene;
-		ViewportCamera     m_cameraBeforePlay = ViewportCamera::Scene;  // restored on Stop
-		ViewportResolution m_resolution = ViewportResolution::FreeAspect;
-
-		Camera            m_camera;
-		CameraController  m_controller;
-		bool              m_isHovered        = false;
-		bool              m_isCapturingInput = false;
-
-		GizmoOp           m_gizmoOp    = GizmoOp::Translate;
-		GizmoSpace        m_gizmoSpace = GizmoSpace::World;
-		bool              m_gizmoActive = false;  // gizmo owns the mouse this frame, camera must not
+		ViewportTarget m_target{};
+		bool           m_valid         = false;
+		u32            m_desiredWidth  = 1280;
+		u32            m_desiredHeight = 720;
+		bool           m_isHovered     = false;
+		bool           m_isCapturing   = false;
 	};
 }

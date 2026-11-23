@@ -7,8 +7,9 @@ namespace koi
 
 	enum class ViewFlags : u8
 	{
-		None = 0,
-		Grid = KOI_BIT(0),
+		None      = 0,
+		Grid      = KOI_BIT(0),
+		DebugDraw = KOI_BIT(1),  // the shared DebugDraw queue: game and editor lines
 	};
 
 	struct ViewportTarget
@@ -19,7 +20,7 @@ namespace koi
 	};
 
 	// What to render this frame and from which camera. Resolved by the app host:
-	// standalone -> game camera + swapchain | editor -> editor camera + viewport texture
+	// standalone -> game camera + swapchain | editor -> a viewport camera + its texture
 	struct RenderView
 	{
 		const Camera*       Camera = nullptr;

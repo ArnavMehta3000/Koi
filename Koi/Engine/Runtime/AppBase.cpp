@@ -71,7 +71,7 @@ namespace koi
 	void AppBase::HostRenderInto(const std::optional<RenderView>& view)
 	{
 		if (view)
-			m_engine->GetSubsystem<Renderer>().SetupFrame(*view, m_world->GetRenderScene());
+			m_engine->GetSubsystem<Renderer>().GetMainSceneRenderer().Submit(*view, m_world->GetRenderScene());
 
 		OnRender();
 	}
@@ -165,6 +165,7 @@ namespace koi
 				.Width               = rw->GetWidth(),
 				.Height              = rw->GetHeight(),
 			},
+			.Flags = ViewFlags::DebugDraw,
 		};
 	}
 }

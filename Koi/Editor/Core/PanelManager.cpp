@@ -135,6 +135,22 @@ namespace koi::editor
 		}
 	}
 
+	void PanelManager::TickAll(f32 dt)
+	{
+		for (std::unique_ptr<Panel>& panel : m_panels)
+		{
+			if (panel->IsOpen()) panel->OnTick(dt);
+		}
+	}
+
+	void PanelManager::RenderAll()
+	{
+		for (std::unique_ptr<Panel>& panel : m_panels)
+		{
+			if (panel->IsOpen()) panel->OnRender();
+		}
+	}
+
 	void PanelManager::DrawAll()
 	{
 		ZoneScoped;

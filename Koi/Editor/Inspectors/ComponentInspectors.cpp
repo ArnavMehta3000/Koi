@@ -243,7 +243,7 @@ namespace koi::editor
 
 		if (ae.Enabled)
 		{
-			if (AutoExposurePass* pass = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<AutoExposurePass>())
+			if (AutoExposurePass* pass = Engine::Get().GetSubsystem<Renderer>().GetMainSceneRenderer().GetFeatures().Find<AutoExposurePass>())
 			{
 				pass->RequestStats();
 				if (auto stats = pass->GetStats(); stats.Valid)

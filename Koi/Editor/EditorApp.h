@@ -32,7 +32,7 @@ namespace koi::editor
 	class SceneFiles;
 	class Toasts;
 	class UndoStack;
-	class ViewportPanel;
+	class SceneViewport;
 
 	struct EditorConfig
 	{
@@ -77,7 +77,6 @@ namespace koi::editor
 		void RegisterCommands();
 		void StartExtensions();
 		void ShutdownExtensions();
-		[[nodiscard]] std::optional<RenderView> GetViewportView() const;
 
 		void DrawMenuBar();
 		void DrawPlayControls();
@@ -123,6 +122,6 @@ namespace koi::editor
 		SceneFiles*      m_scenes        = nullptr;
 		Toasts*          m_toasts        = nullptr;
 		UndoStack*       m_undo          = nullptr;
-		ViewportPanel*   m_viewportPanel = nullptr;
+		SceneViewport*   m_viewportPanel = nullptr;
 	};
 }

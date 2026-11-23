@@ -21,7 +21,7 @@
 
 namespace koi
 {
-	World::World()
+	World::World(WorldKind kind)
 	{
 		ZoneScoped;
 
@@ -29,8 +29,11 @@ namespace koi
 		m_renderScene = std::make_unique<RenderScene>(*m_ecs);
 
 		ConfigureComponentHooks();
-		BuildSystems();
-		BuildObservers();
+		if (kind == WorldKind::Game)
+		{
+			BuildSystems();
+			BuildObservers();
+		}
 	}
 
 	World::~World() = default;

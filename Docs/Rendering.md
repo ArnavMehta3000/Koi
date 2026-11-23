@@ -1,12 +1,12 @@
 # Customizing the renderer
 
-The `Renderer` runs a **pipeline**: an ordered list of **features**. Every frame, each feature records passes into a **render graph**. The graph creates temporary textures, inserts barriers, binds render targets and then executes the passes.
+A `SceneRenderer` renders one view with a **pipeline**: an ordered list of **features**. Every frame, each feature records passes into that view's **render graph**. The graph creates temporary textures, inserts barriers, binds render targets and then executes the passes.
 
 The engine's default is `DeferredPipeline::Build`: Shadow → GBuffer → Lighting → AutoExposure → Tonemap → Grid → DebugDraw → Blit. The source for each one is in `Koi/Engine/Graphics/RenderPasses/`.
 
 ## Swapping the pipeline
 
-A pipeline is just a function. Pass yours to `SetPipeline`, which clears the feature list and calls it:
+A pipeline is just a function, registered with the `Renderer` under a name. A `SceneRenderer` is built from one, and `SetPipeline(name)` rebuilds its features from another:
 
 ```cpp
 void MyPipeline(koi::Renderer& renderer, koi::FeatureList& features)
@@ -16,10 +16,14 @@ void MyPipeline(koi::Renderer& renderer, koi::FeatureList& features)
 }
 
 // in OnInit
-GetEngine()->GetSubsystem<koi::Renderer>().SetPipeline(&MyPipeline);
+koi::Renderer& renderer = GetEngine()->GetSubsystem<koi::Renderer>();
+renderer.RegisterPipeline("MyPipeline", &MyPipeline);
+renderer.GetMainSceneRenderer().SetPipeline("MyPipeline");
 ```
 
-The order you add features in is the order they run. You can also skip `DeferredPipeline::Build` and add only the engine features you want. To reach a feature later, for example to change its settings, use `renderer.GetFeatures().Find<GridPass>()`.
+The order you add features in is the order they run. You can also skip `DeferredPipeline::Build` and add only the engine features you want. To reach a feature later, for example to change its settings, use `renderer.GetMainSceneRenderer().GetFeatures().Find<GridPass>()`.
+
+Every view has its own `SceneRenderer`, so its own feature instances: the game world uses the main one, and an editor preview creates another (`std::make_unique<SceneRenderer>(renderer, "Deferred")`).
 
 ## Writing a feature
 

@@ -70,7 +70,7 @@ namespace koi::editor
 		GfxDevice&     device  = m_renderer->GetDevice();
 
 		ImGui::BeginChild("##List");
-		for (const RGInspection::Pass& pass : m_renderer->GetRenderGraph().GetInspection().Passes)
+		for (const RGInspection::Pass& pass : m_renderer->GetMainSceneRenderer().GetRenderGraph().GetInspection().Passes)
 		{
 			if (pass.Name == kCapturePass || pass.Writes.empty()) continue;
 
@@ -123,7 +123,7 @@ namespace koi::editor
 		ImGui::DragFloatRange2("##Range", &s.RangeMin, &s.RangeMax, 0.01f, 0.0f, 0.0f, "Min %.2f", "Max %.2f");
 
 		GfxDevice& device = m_renderer->GetDevice();
-		if (const RGInspection::Output* out = FindWatched(m_renderer->GetRenderGraph().GetInspection(), *watched))
+		if (const RGInspection::Output* out = FindWatched(m_renderer->GetMainSceneRenderer().GetRenderGraph().GetInspection(), *watched))
 		{
 			if (const Texture* tex = device.Get(out->Texture))
 			{

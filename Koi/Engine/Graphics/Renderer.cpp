@@ -1,15 +1,15 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Core/Config.h"
-#include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/DeferredPipeline.h"
-#include "Koi/Engine/Graphics/RenderView.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
 #include "Koi/Engine/Graphics/RHI/GpuProfiling.h"
 #include "Koi/Engine/Graphics/ShaderCache.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <algorithm>
 #include <cassert>
+#include <utility>
 
 namespace koi
 {
@@ -50,10 +50,8 @@ namespace koi
 		m_graphicsQueue = CommandQueue(m_device->GetGraphicsQueue());
 
 		m_pipelineCache.Init(*m_device);
-		m_graph.Init(*m_device, m_pipelineCache);
 		m_defaultResources.Init(*m_device);
 		m_capture.Init(*m_device);
-		m_graph.SetObserver(&m_capture);
 		RegisterMaterialTemplates();
 
 		KOI_LOG(Render, Info, "Renderer initialized");
@@ -93,8 +91,7 @@ namespace koi
 		if (m_device)
 			m_device->WaitForIdle();
 
-		m_features.Clear();
-		m_graph.Shutdown();
+		m_mainScene.reset();
 		m_capture.Shutdown();
 		m_frameContext.reset();
 		m_renderWindow.reset();
@@ -128,8 +125,9 @@ namespace koi
 		m_defaultResources.RegisterFallbackAssets(*m_device);
 		m_materials.Set(MaterialTable::kFallbackSlot, FallbackMaterialRow(m_defaultResources.FallbackTextureSRV));
 
-		SetPipeline(&DeferredPipeline::Build);
-
+		RegisterPipeline("Deferred", &DeferredPipeline::Build);
+		m_mainScene = std::make_unique<SceneRenderer>(*this, "Deferred");
+		m_mainScene->SetCapture(&m_capture);
 	}
 
 	void Renderer::BeginFrame()
@@ -144,6 +142,7 @@ namespace koi
 		m_device->GpuProfilerNewFrame();
 
 		m_shaderReadRequests.clear();
+		m_submitted.clear();
 
 		m_frameContext->List.Begin(m_device->GetFrameSlot());
 	}
@@ -169,7 +168,10 @@ namespace koi
 
 		CommandList& cmd = m_frameContext->List;
 
-		m_graph.Execute(cmd);
+		for (SceneRenderer* scene : std::exchange(m_submitted, {}))
+		{
+			scene->Execute(cmd);
+		}
 		m_debugDraw.Clear();  // after the pass consumed it, so ImGui-time pushes (inspectors) survive into the next frame
 
 		if (m_overlay)
@@ -192,27 +194,28 @@ namespace koi
 		m_device->GpuProfilerCollect();
 	}
 
-	void Renderer::SetPipeline(PipelineBuildFunc build)
+	void Renderer::RegisterPipeline(std::string name, PipelineBuildFunc build)
 	{
-		ZoneScoped;
-
-		m_device->WaitForIdle();
-		m_graph.Reset();  // its callbacks point into the features about to go
-		m_features.Clear();
-
-		if (build)
-			build(*this, m_features);
+		m_pipelines.insert_or_assign(std::move(name), build);
 	}
 
-	void Renderer::SetupFrame(const RenderView& view, const RenderScene& scene)
+	Renderer::PipelineBuildFunc Renderer::FindPipeline(std::string_view name) const
 	{
-		KOI_SCOPE("Render Setup");
-		m_graph.Reset();
-		if (view.Camera)
+		const auto it = m_pipelines.find(std::string(name));
+		return it != m_pipelines.end() ? it->second : nullptr;
+	}
+
+	void Renderer::Enqueue(SceneRenderer& scene)
+	{
+		if (!std::ranges::contains(m_submitted, &scene))
 		{
-			m_capture.SetDepthPlanes(view.Camera->Near, view.Camera->Far);
-			m_features.Record(m_graph, view, scene);
+			m_submitted.push_back(&scene);
 		}
+	}
+
+	void Renderer::Dequeue(SceneRenderer& scene)
+	{
+		std::erase(m_submitted, &scene);
 	}
 
 	CommandList* Renderer::GetCommandList() noexcept

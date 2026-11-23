@@ -8,6 +8,7 @@
 #include "Koi/Editor/ImGui/EditorPalette.h"
 #include "Koi/Editor/Inspectors/ComponentInspectors.h"
 #include "Koi/Editor/Inspectors/InspectorRegistry.h"
+#include "Koi/Editor/Panels/AssetViewerPanel.h"
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Panels/GridPanel.h"
 #include "Koi/Editor/Panels/ImportPanel.h"
@@ -15,7 +16,7 @@
 #include "Koi/Editor/Panels/LogPanel.h"
 #include "Koi/Editor/Panels/ProfilerPanel.h"
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
-#include "Koi/Editor/Panels/ViewportPanel.h"
+#include "Koi/Editor/Panels/SceneViewport.h"
 #include "Koi/Editor/Panels/WorldOutlinePanel.h"
 #include "Koi/Editor/PlaySession.h"
 #include "Koi/Editor/SceneFiles.h"
@@ -104,7 +105,8 @@ namespace koi::editor
 		m_panels->Add<GridPanel>();
 		m_panels->Add<LogPanel>();
 		m_panels->Add<ProfilerPanel>();
-		m_viewportPanel = m_panels->Add<ViewportPanel>();
+		m_viewportPanel = m_panels->Add<SceneViewport>();
+		m_panels->Add<AssetViewerPanel>();
 		m_panels->Add<AssetsPanel>();
 		m_panels->Add<ImportPanel>();
 
@@ -266,7 +268,6 @@ namespace koi::editor
 	void EditorApp::HostTick(f32 dt)
 	{
 		ZoneScoped;
-		InputManager& input = Engine::Get().GetSubsystem<InputManager>();
 
 		// Requested during the ImGui frame; runs here, before any command list is recording
 		if (m_pendingShaderReload)
@@ -275,7 +276,7 @@ namespace koi::editor
 		}
 		m_context.Tick(dt);
 
-		m_viewportPanel->Update(dt, input);
+		m_panels->TickAll(dt);  // the scene viewport sets game focus before the game ticks
 		m_importQueue->Update();
 
 		// The game always ticks. What play state gates is the world's simulation, and
@@ -297,9 +298,10 @@ namespace koi::editor
 		ZoneScoped;
 		m_viewportPanel->PrepareFrame();
 
-		m_game->HostRenderInto(GetViewportView());
+		m_game->HostRenderInto(m_viewportPanel->GetView());
 
 		QueueGizmos();
+		m_panels->RenderAll();  // previews, after the main view
 	}
 
 	void EditorApp::QueueGizmos()
@@ -363,7 +365,7 @@ namespace koi::editor
 
 	void EditorApp::DrawShadowVolume()
 	{
-		FeatureList& features = Engine::Get().GetSubsystem<Renderer>().GetFeatures();
+		FeatureList& features = Engine::Get().GetSubsystem<Renderer>().GetMainSceneRenderer().GetFeatures();
 
 		const ShadowPass* shadow = features.Find<ShadowPass>();
 		if (!shadow || !shadow->HasShadow()) return;
@@ -407,28 +409,6 @@ namespace koi::editor
 		{
 			m_play->ReportFailure(e);
 		}
-	}
-
-	std::optional<RenderView> EditorApp::GetViewportView() const
-	{
-		const ViewportTarget* target = m_viewportPanel->GetTarget();
-		if (!target || target->Height == 0) return std::nullopt;
-
-		// Game view swaps the camera but keeps the same viewport texture. The scene
-		// camera tracks the panel's aspect itself, so only the game one is projected here
-		const Camera* camera = &m_viewportPanel->GetCamera();
-		EnumFlag<ViewFlags> flags = ViewFlags::Grid;
-		if (m_viewportPanel->IsGameCamera())
-		{
-			flags.Unset(ViewFlags::Grid);
-			const f32 aspect = static_cast<f32>(target->Width) / static_cast<f32>(target->Height);
-
-			// No primary camera in the world yet
-			if (const Camera* gameCamera = m_game->GetWorld().ResolveCamera(aspect))
-				camera = gameCamera;
-		}
-
-		return RenderView{ .Camera = camera, .Target = *target, .Flags = flags };
 	}
 
 	void EditorApp::OnOverlayRender(CommandList& cmd)
@@ -606,7 +586,7 @@ namespace koi::editor
 		if (!ImGui::BeginMenu("Gizmos")) return;
 
 		// The grid lives in a pass, so its own Settings is the toggle; see the Grid panel
-		if (GridPass* grid = Engine::Get().GetSubsystem<Renderer>().GetFeatures().Find<GridPass>())
+		if (GridPass* grid = Engine::Get().GetSubsystem<Renderer>().GetMainSceneRenderer().GetFeatures().Find<GridPass>())
 			ImGui::MenuItem("Grid", nullptr, &grid->GetSettings().Enabled);
 
 		ImGui::MenuItem("Selection Bounds", nullptr, &m_gizmos.SelectionBounds);

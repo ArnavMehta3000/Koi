@@ -22,10 +22,16 @@ namespace koi
 	class RenderScene;
 	template<typename P> class PrefabRef;
 
+	enum class WorldKind : u8
+	{
+		Game,
+		Preview,  // Asset viewers, thumbnails, etc. (no game systems/observers)
+	};
+
 	class World
 	{
 	public:
-		World();
+		explicit World(WorldKind kind = WorldKind::Game);
 		~World();
 		World(const World&) = delete;
 		World& operator=(const World&) = delete;

@@ -1,66 +1,22 @@
 #include "Koi/Editor/Panels/ViewportPanel.h"
-#include "Koi/Editor/Core/CommandRegistry.h"
-#include "Koi/Editor/Core/EditorContext.h"
-#include "Koi/Editor/ImGui/EditorPalette.h"
-#include "Koi/Editor/PlaySession.h"
-#include "Koi/Editor/Selection.h"
-#include "Koi/Editor/UI/Widgets.h"
-#include "Koi/Editor/Undo/ComponentOf.h"
-#include "Koi/Editor/Undo/UndoStack.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/ECS/World.h"
-#include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Graphics/RenderWindow.h"
-#include "Koi/Engine/Graphics/RHI/CommandList.h"
 #include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Logging/Logger.h"
-#include "Koi/Engine/Math/Math.h"
-#include "Koi/Engine/Math/MathSerializer.h"
 #include "Koi/Engine/Platform/InputManager.h"
-#include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/Engine.h"
-#include <IconsFontAwesome6.h>
-#include <ImGuizmo.h>
-#include <cmath>
-#include <limits>
-#include <utility>
 
 namespace koi::editor
 {
 	static constexpr Format kResolvedFormat = Format::R8G8B8A8_UNORM;
 
-	// A click that moves further than this is a camera drag, not a pick
-	static constexpr f32 kPickDragSlop = 4.0f;
-
-	ViewportPanel::ViewportPanel(EditorContext* ctx)
+	ViewportPanel::ViewportPanel()
 		: m_renderer(&Engine::Get().GetSubsystem<Renderer>())
-		, m_game(ctx->GetGame())
-		, m_selection(ctx->Get<Selection>())
-		, m_undo(ctx->Get<UndoStack>())
-		, m_controller(&m_camera, CameraMode::Orbit)
 	{
-		// Show the game camera by default; the toolbar can still switch back mid-play
-		PlaySession* play = ctx->Get<PlaySession>();
-		play->OnStarted([this] { m_cameraBeforePlay = std::exchange(m_cameraMode, ViewportCamera::Game); });
-		play->OnStopped([this] { m_cameraMode = m_cameraBeforePlay; });
-
-		m_commands = ctx->Get<CommandRegistry>();
-		const auto gizmo = [this](std::string id, std::string label, const char* icon, ImGuiKey key, GizmoOp op)
-		{
-			m_commands->Register({ .Id = std::move(id), .Label = std::move(label), .Icon = icon, .Shortcut = key, .Scope = std::string(kInfo.Name),
-				.Execute = [this, op] { m_gizmoOp = op; }, .IsChecked = [this, op] { return m_gizmoOp == op; } });
-		};
-		gizmo("viewport.translate", "Gizmo: Translate", ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, ImGuiKey_W, GizmoOp::Translate);
-		gizmo("viewport.rotate",    "Gizmo: Rotate",    ICON_FA_ROTATE,                    ImGuiKey_E, GizmoOp::Rotate);
-		gizmo("viewport.scale",     "Gizmo: Scale",     ICON_FA_EXPAND,                    ImGuiKey_R, GizmoOp::Scale);
 	}
 
 	ViewportPanel::~ViewportPanel()
 	{
-		GfxDevice& device = m_renderer->GetDevice();
-		if (m_target.ResolvedColorBuffer) device.Destroy(m_target.ResolvedColorBuffer);
+		if (m_target.ResolvedColorBuffer) m_renderer->GetDevice().Destroy(m_target.ResolvedColorBuffer);
 	}
 
 	void ViewportPanel::EnsureSize(u32 width, u32 height)
@@ -90,67 +46,33 @@ namespace koi::editor
 		m_target.Height = height;
 		m_valid = true;
 
-		m_camera.SetAspect(static_cast<f32>(width) / static_cast<f32>(height));
-		m_resizeSettle = 0.25f;
+		OnTargetResized(width, height);
 	}
 
 	const ViewportTarget* ViewportPanel::PrepareFrame()
 	{
+		// Resizes the target to what the last draw asked for. Null while there's nothing to render into
 		ZoneScoped;
 		EnsureSize(m_desiredWidth, m_desiredHeight);
-		return m_valid ? &m_target : nullptr;
+		return GetTarget();
 	}
 
-	void ViewportPanel::DrawToolbar()
+	void ViewportPanel::ChooseSize(const ImVec2& avail, u32& outWidth, u32& outHeight)
 	{
-		static constexpr const char* kCameraLabels[]     = { "Scene", "Game" };
-		static constexpr const char* kResolutionLabels[] = { "Free Aspect", "Window", "1920x1080", "1280x720" };
+		outWidth  = static_cast<u32>(avail.x);
+		outHeight = static_cast<u32>(avail.y);
+	}
 
-		ImGui::PushItemFlag(ImGuiItemFlags_NoNav, true);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 2.0f));
+	void ViewportPanel::UpdateCapture(const InputManager& input, bool blocked)
+	{
+		const bool anyMouseDown = input.GetMouse().IsButtonDown(MouseButton::Left)
+			|| input.GetMouse().IsButtonDown(MouseButton::Right)
+			|| input.GetMouse().IsButtonDown(MouseButton::Middle);
 
-		ImGui::SetNextItemWidth(90.0f);
-		int cameraMode = static_cast<int>(m_cameraMode);
-		if (ImGui::Combo("##camera", &cameraMode, kCameraLabels, IM_ARRAYSIZE(kCameraLabels)))
-			m_cameraMode = static_cast<ViewportCamera>(cameraMode);
-
-		// Resolution only means something for the game camera; the scene camera
-		// always fills the panel
-		if (m_cameraMode == ViewportCamera::Game)
-		{
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(120.0f);
-			int resolution = static_cast<int>(m_resolution);
-			if (ImGui::Combo("##resolution", &resolution, kResolutionLabels, IM_ARRAYSIZE(kResolutionLabels)))
-				m_resolution = static_cast<ViewportResolution>(resolution);
-		}
-		else
-		{
-			static constexpr utils::Segment kGizmoOps[] =
-			{
-				{ ICON_FA_ARROWS_UP_DOWN_LEFT_RIGHT, "Translate" },
-				{ ICON_FA_ROTATE,                    "Rotate"    },
-				{ ICON_FA_EXPAND,                    "Scale"     },
-			};
-			static constexpr utils::Segment kGizmoSpaces[] =
-			{
-				{ ICON_FA_GLOBE, "World space" },
-				{ ICON_FA_CUBE,  "Local space" },
-			};
-
-			ImGui::SameLine();
-			i32 op = static_cast<i32>(m_gizmoOp);
-			if (utils::SegmentedControl("##gizmoop", op, kGizmoOps))
-				m_gizmoOp = static_cast<GizmoOp>(op);
-
-			ImGui::SameLine();
-			i32 space = static_cast<i32>(m_gizmoSpace);
-			if (utils::SegmentedControl("##gizmospace", space, kGizmoSpaces))
-				m_gizmoSpace = static_cast<GizmoSpace>(space);
-		}
-
-		ImGui::PopStyleVar();
-		ImGui::PopItemFlag();
+		if (m_isHovered && anyMouseDown && !blocked)
+			m_isCapturing = true;
+		else if (!anyMouseDown)
+			m_isCapturing = false;
 	}
 
 	void ViewportPanel::OnUpdate()
@@ -166,243 +88,36 @@ namespace koi::editor
 		const ImVec2 avail = ImGui::GetContentRegionAvail();
 		if (avail.x >= 1.0f && avail.y >= 1.0f)
 		{
-			// Scene view always tracks the panel; the fixed modes render at their own size and get scaled to fit below
-			switch (m_cameraMode == ViewportCamera::Scene ? ViewportResolution::FreeAspect : m_resolution)
+			ChooseSize(avail, m_desiredWidth, m_desiredHeight);
+
+			GfxDevice& device = m_renderer->GetDevice();
+			const Texture* tex = m_valid ? device.Get(m_target.ResolvedColorBuffer) : nullptr;
+			if (tex && tex->SRVIndex != INVALID_DESCRIPTOR)
 			{
-				case ViewportResolution::Window:
-					if (const RenderWindow* rw = m_renderer->GetMainRenderWindow())
-					{
-						m_desiredWidth  = rw->GetWidth();
-						m_desiredHeight = rw->GetHeight();
-						break;
-					}
-					[[fallthrough]];  // no window yet, fall back to the panel
+				m_renderer->RequestShaderRead(m_target.ResolvedColorBuffer);
 
-				case ViewportResolution::FreeAspect:
-					m_desiredWidth  = static_cast<u32>(avail.x);
-					m_desiredHeight = static_cast<u32>(avail.y);
-					break;
+				// Fit the target inside the panel without distorting it
+				const f32 targetAspect = static_cast<f32>(m_target.Width) / static_cast<f32>(m_target.Height);
+				const f32 availAspect  = avail.x / avail.y;
 
-				case ViewportResolution::R1920x1080: m_desiredWidth = 1920; m_desiredHeight = 1080; break;
-				case ViewportResolution::R1280x720:  m_desiredWidth = 1280; m_desiredHeight = 720;  break;
-			}
+				const ImVec2 size = (targetAspect > availAspect)
+					? ImVec2(avail.x, avail.x / targetAspect)
+					: ImVec2(avail.y * targetAspect, avail.y);
 
-			if (m_valid)
-			{
-				GfxDevice& device = m_renderer->GetDevice();
-				if (const Texture* tex = device.Get(m_target.ResolvedColorBuffer);
-					tex && tex->SRVIndex != INVALID_DESCRIPTOR)
-				{
-					m_renderer->RequestShaderRead(m_target.ResolvedColorBuffer);
+				const ImVec2 cursor = ImGui::GetCursorPos();
+				ImGui::SetCursorPos(ImVec2(cursor.x + (avail.x - size.x) * 0.5f,
+				                           cursor.y + (avail.y - size.y) * 0.5f));
 
-					// Fit the target inside the panel without distorting it
-					const f32 targetAspect = static_cast<f32>(m_target.Width) / static_cast<f32>(m_target.Height);
-					const f32 availAspect  = avail.x / avail.y;
+				const ImVec2 imageMin = ImGui::GetCursorScreenPos();
+				const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
+				ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
 
-					const ImVec2 size = (targetAspect > availAspect)
-						? ImVec2(avail.x, avail.x / targetAspect)
-						: ImVec2(avail.y * targetAspect, avail.y);
+				m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
 
-					const ImVec2 cursor = ImGui::GetCursorPos();
-					ImGui::SetCursorPos(ImVec2(cursor.x + (avail.x - size.x) * 0.5f,
-					                           cursor.y + (avail.y - size.y) * 0.5f));
-
-					const ImVec2 imageMin = ImGui::GetCursorScreenPos();
-					const auto gpu = device.ResourceHeap().GpuHandle(tex->SRVIndex);
-					ImGui::Image(static_cast<ImTextureID>(gpu.ptr), size);
-
-					m_isHovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
-
-					DrawGizmo(imageMin.x, imageMin.y, size.x, size.y);
-					HandlePicking(imageMin.x, imageMin.y, size.x, size.y);
-				}
+				OnImageGui(imageMin, size);
 			}
 		}
 
-		// Amber frame while the game runs, so play mode can't be mistaken for editing
-		if (const PlayState state = Engine::Get().GetPlayState(); state != PlayState::Edit)
-		{
-			const EditorPalette& palette = EditorPalette::Get();
-			const ImRect inner = ImGui::GetCurrentWindow()->InnerRect;
-			ImGui::GetWindowDrawList()->AddRect(ImVec2(inner.Min.x + 1.0f, inner.Min.y + 1.0f), ImVec2(inner.Max.x - 1.0f, inner.Max.y - 1.0f),
-				ImGui::GetColorU32(state == PlayState::Playing ? palette.Playing : palette.Paused), 0.0f, 2.0f);
-		}
-	}
-
-	void ViewportPanel::DrawGizmo(f32 x, f32 y, f32 width, f32 height)
-	{
-		m_gizmoActive = false;
-
-		// No gizmo in game view or when no entity is selected
-		if (m_cameraMode != ViewportCamera::Scene || !m_selection->HasEntity()) return;
-
-		const Entity selected = m_selection->GetEntity();
-		Transform* xform = selected.TryGet<Transform>();
-		if (!xform) return;
-
-		// Right-mouse is the camera - leave the shortcuts alone while it is held
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
-		{
-			m_commands->PollShortcuts(kInfo.Name);
-		}
-
-		static constexpr ImGuizmo::OPERATION kOps[] =
-		{
-			ImGuizmo::TRANSLATE, ImGuizmo::ROTATE, ImGuizmo::SCALE
-		};
-		static constexpr std::string_view kLabels[] = { "Move", "Rotate", "Scale" };
-
-		const auto watch = m_undo->Watch(kLabels[static_cast<u32>(m_gizmoOp)], ComponentOf<Transform>(selected));
-
-		ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-		ImGuizmo::SetRect(x, y, width, height);
-		ImGuizmo::AllowAxisFlip(false);  // keep handles fixed to world axes instead of flipping toward the camera
-
-		// The gizmo works in world space; the edit lands on the local Transform
-		const Entity parent = selected.GetParent();
-		const WorldTransform* parentWorld = parent ? parent.TryGet<const WorldTransform>() : nullptr;
-		const WorldTransform* current = selected.TryGet<const WorldTransform>();
-
-		Matrix matrix = current ? current->World : xform->ToMatrix();
-		if (ImGuizmo::Manipulate(&m_camera.View._11,
-		                         &m_camera.Projection._11,
-		                         kOps[static_cast<u32>(m_gizmoOp)],
-		                         m_gizmoSpace == GizmoSpace::Local ? ImGuizmo::LOCAL : ImGuizmo::WORLD,
-		                         &matrix._11))
-		{
-			*xform = WorldTransform::ToLocal(matrix, parentWorld);
-			if (WorldTransform* cached = selected.TryGet<WorldTransform>())
-			{
-				*cached = WorldTransform::Compose(*xform, parentWorld);
-			}
-		}
-
-		m_gizmoActive = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
-	}
-
-	void ViewportPanel::HandlePicking(f32 x, f32 y, f32 width, f32 height)
-	{
-		if (m_cameraMode != ViewportCamera::Scene || m_gizmoActive) return;
-		if (!m_isHovered || !ImGui::IsMouseReleased(ImGuiMouseButton_Left)) return;
-
-		// Orbiting also releases the left button over the image, so only a click that stayed put counts as a pick
-		const ImVec2 drag = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left);
-		if (std::abs(drag.x) + std::abs(drag.y) > kPickDragSlop) return;
-
-		const ImVec2 mouse = ImGui::GetIO().MousePos;
-		PickEntity((mouse.x - x) / width  * 2.0f - 1.0f,
-		           1.0f - (mouse.y - y) / height * 2.0f);
-	}
-
-	void ViewportPanel::PickEntity(f32 ndcX, f32 ndcY)
-	{
-		ZoneScoped;
-		World& world = m_game->GetWorld();
-
-		const Matrix invViewProj = m_camera.ViewProjection.Invert();
-
-		const Vector4 nearH = Vector4::Transform(Vector4(ndcX, ndcY, 0.0f, 1.0f), invViewProj);
-		const Vector4 farH  = Vector4::Transform(Vector4(ndcX, ndcY, 1.0f, 1.0f), invViewProj);
-
-		const Vector3 origin(nearH.x / nearH.w, nearH.y / nearH.w, nearH.z / nearH.w);
-		const Vector3 target(farH.x / farH.w, farH.y / farH.w, farH.z / farH.w);
-
-		Vector3 direction = target - origin;
-		direction.Normalize();
-
-		Entity hit;
-		f32 best = std::numeric_limits<f32>::max();
-
-		world.GetECS()
-			.Query<const WorldTransform, const MeshRef>()
-			.Each([&](Entity e, const WorldTransform& xform, const MeshRef& meshRef)
-		{
-			const GPUMesh* mesh = world.GetMesh(meshRef.Handle);
-			if (!mesh) return;
-
-			// Bounds are model-space, so the ray goes to the mesh rather than the box to the world
-			const Matrix& worldMatrix = xform.World;
-
-			if (math::IsSingular(worldMatrix)) return;
-
-			const Matrix invert = worldMatrix.Invert();
-
-			Ray ray(Vector3::Transform(origin, invert), Vector3::TransformNormal(direction, invert));
-			ray.direction.Normalize();  // non-uniform scale denormalises it
-
-			f32 modelDist = 0.0f;
-			if (!ray.Intersects(mesh->Bounds, modelDist)) return;
-
-			// Model-space distances are not comparable across different scales
-			const Vector3 point = Vector3::Transform(ray.position + ray.direction * modelDist, worldMatrix);
-			const f32 distance  = Vector3::Distance(point, origin);
-			if (distance < best)
-			{
-				best = distance;
-				hit  = e;
-			}
-		});
-
-		m_selection->Select(hit);  // an invalid hit clears the selection: clicking empty space deselects
-	}
-
-	void ViewportPanel::FrameBounds(const BoundingBox& bounds)
-	{
-		const Vector3 center(bounds.Center);
-		const f32 radius = math::BoundsRadius(bounds);
-
-		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
-		m_controller.SetOrbitTarget(center, radius * 2.5f, 0.0f, -0.5f);
-	}
-
-	void ViewportPanel::SaveState(toml::table& state) const
-	{
-		toml::table camera;
-		koi::utils::SerializeInto(camera, "target", m_controller.GetOrbitTarget());
-		camera.insert("radius", m_controller.GetOrbitRadius());
-		camera.insert("yaw",    m_controller.GetYaw());
-		camera.insert("pitch",  m_controller.GetPitch());
-		state.insert("camera", std::move(camera));
-	}
-
-	void ViewportPanel::LoadState(const toml::table& state)
-	{
-		const toml::table* camera = state["camera"].as_table();
-		if (!camera)
-		{
-			FrameBounds(m_game->GetWorld().GetBounds());
-			return;
-		}
-
-		m_camera.SetProjection(0.8f, m_camera.Aspect, 0.05f, 1000.0f);
-		m_controller.SetOrbitTarget(
-			koi::utils::DeserializeOr(*camera, "target", Vector3::Zero),
-			(*camera)["radius"].value_or(10.0f),
-			(*camera)["yaw"].value_or(0.0f),
-			(*camera)["pitch"].value_or(-0.5f));
-	}
-
-	void ViewportPanel::Update(f32 dt, InputManager& input)
-	{
-		// A drag resizes every frame; report only where it ended up
-		m_resizeSettle -= dt;
-		if (m_resizeSettle > 0.0f && m_resizeSettle <= 0.0f)
-		{
-			KOI_LOG(Editor, Debug, "Viewport resized to {}x{}", m_target.Width, m_target.Height);
-		}
-
-		const bool anyMouseDown = input.GetMouse().IsButtonDown(MouseButton::Left)
-			|| input.GetMouse().IsButtonDown(MouseButton::Right)
-			|| input.GetMouse().IsButtonDown(MouseButton::Middle);
-
-		if (m_isHovered && anyMouseDown && !m_gizmoActive) m_isCapturingInput = true;
-		else if (!anyMouseDown) m_isCapturingInput = false;
-
-		input.SetGameFocused(m_isHovered || m_isCapturingInput);
-
-		if (!m_gizmoActive && (m_isHovered || m_isCapturingInput))
-		{
-			m_controller.Update(dt, input);
-		}
+		OnWindowGui();
 	}
 }

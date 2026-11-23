@@ -15,5 +15,5 @@ Everything below is done from your project. You never need to edit the engine.
 | Shaders | `Content/Shaders/Shaders.json` | [Shaders](Shaders.md) |
 | Input actions | `[input.actions]` in the project TOML | [Input](Input.md) |
 | Begin/end play behavior | `OnBeginPlay`, `OnEndPlay` | [Play mode](PlayMode.md) |
-| Render pipeline and passes | `Renderer::SetPipeline` with your own build function | [Rendering](Rendering.md) |
+| Render pipeline and passes | `Renderer::RegisterPipeline` + `SceneRenderer::SetPipeline` | [Rendering](Rendering.md) |
 | Log categories and levels | `KOI_LOG_CATEGORY(Name)`, `[logging]`, `--log` | [Logging](Logging.md) |

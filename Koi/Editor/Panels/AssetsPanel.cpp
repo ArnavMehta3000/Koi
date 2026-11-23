@@ -2,7 +2,9 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
 #include "Koi/Editor/Core/EditorContext.h"
+#include "Koi/Editor/Core/PanelManager.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
+#include "Koi/Editor/Panels/AssetViewerPanel.h"
 #include "Koi/Editor/SceneFiles.h"
 #include "Koi/Editor/UI/Widgets.h"
 #include "Koi/Engine/Assets/AssetRegistry.h"
@@ -80,6 +82,7 @@ namespace koi::editor
 		, m_selection(ctx->Get<Selection>())
 		, m_imports(ctx->Get<ImportQueue>())
 		, m_scenes(ctx->Get<SceneFiles>())
+		, m_panels(ctx->Get<PanelManager>())
 	{
 		const std::span<const std::string> folders = m_database->Folders();
 		if (!folders.empty()) m_selectedFolder = folders.front();
@@ -252,8 +255,17 @@ namespace koi::editor
 		if (ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_SpanAllColumns))
 			SelectAsset(entry.VirtualPath);
 
-		if (entry.Kind == AssetKind::Scene && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-			m_scenes->Open(entry.VirtualPath);
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+		{
+			if (entry.Kind == AssetKind::Scene)
+			{
+				m_scenes->Open(entry.VirtualPath);
+			}
+			else if (entry.Kind == AssetKind::Mesh || entry.Kind == AssetKind::Material)
+			{
+				if (AssetViewerPanel* viewer = m_panels->Find<AssetViewerPanel>()) viewer->Focus();
+			}
+		}
 
 		// Payload is the virtual path; the receiving side resolves it back through the database
 		if (ImGui::BeginDragDropSource())

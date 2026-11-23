@@ -11,6 +11,7 @@ namespace koi::editor
 	class AssetDatabase;
 	class EditorContext;
 	class ImportQueue;
+	class PanelManager;
 	class SceneFiles;
 	struct AssetEntry;
 
@@ -47,6 +48,7 @@ namespace koi::editor
 		Selection*     m_selection = nullptr;
 		ImportQueue*   m_imports   = nullptr;
 		SceneFiles*    m_scenes    = nullptr;
+		PanelManager*  m_panels    = nullptr;
 
 		std::string m_selectedFolder;
 		std::string m_search;

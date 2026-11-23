@@ -53,6 +53,8 @@ namespace koi::editor
 		void SaveState(toml::table& panels) const;
 		void LoadState(const toml::table& panels);
 
+		void TickAll(f32 dt);
+		void RenderAll();
 		void DrawAll();
 		void DrawMenuItems();
 
