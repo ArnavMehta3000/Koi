@@ -2,7 +2,7 @@
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/MaterialWriter.h"
 #include "Koi/Editor/UI/Widgets.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <IconsFontAwesome6.h>

@@ -1,42 +1,20 @@
 -- From Koi subdir
 local kCoreDirs     = { "Core", "Diagnostics", "IO", "Logging", "Math", "Memory", "Text" }
 local kPlatformDirs = { "Platform" }
-local kEngineDirs   = { "Assets", "ECS", "Graphics", "Runtime" }
+local kEngineDirs   = { "ECS", "Graphics", "Resources", "Runtime" }
 
--- Koi.RHI's part of Graphics/: whole folders end in /**, the rest are file stems
-local kRHIGraphics = { "RHI/**", "RenderGraph/**", "Format", "GpuFrameBuffer", "PipelineCache", "ShaderCache", "ShaderCompiler", "Types" }
-
--- Koi.Assets' part of Assets/: the CPU file formats. The GPU caches and AssetRegistry stay in Koi.Engine
-local kCPUAssets = { "AssetCache", "AssetData", "AssetFile", "AssetHandles", "AssetIndex", "AssetKey", "AssetTraits", "AssetTypes",
-	"MaterialFile", "MaterialSource", "MeshFile", "TextureFile" }
-
--- Koi.ECS' part of ECS/: the storage core. World, System, Observer and the registries stay in Koi.Engine
-local kECSCore = { "ECS" }
-
--- `exclude` holds stems relative to each dir, as in kRHIGraphics
-local function add_dirs(dirs, exclude)
+-- `skip` names a subfolder of the dir that belongs to another target (ECS/Core is Koi.ECS)
+local function add_dirs(dirs, skip)
 	for _, dir in ipairs(dirs) do
 		local function pattern(ext)
 			local result = dir .. "/**" .. ext
-			for _, stem in ipairs(exclude and exclude[dir] or {}) do
-				result = result .. "|" .. stem .. ext
+			if skip and skip[dir] then
+				result = result .. "|" .. skip[dir] .. "/**" .. ext
 			end
 			return result
 		end
 		add_headerfiles(pattern(".h"), pattern(".inl"), { public = true })
 		add_files(pattern(".cpp"))
-	end
-end
-
-local function add_stems(dir, stems)
-	for _, stem in ipairs(stems) do
-		for _, ext in ipairs({ ".h", ".inl" }) do
-			add_headerfiles(dir .. "/" .. stem .. ext, { public = true })
-		end
-		local cpp = dir .. "/" .. stem .. ".cpp"
-		if stem:endswith("**") or os.isfile(path.join(os.scriptdir(), cpp)) then
-			add_files(cpp)
-		end
 	end
 end
 
@@ -102,7 +80,7 @@ target("Koi.RHI")
 	add_packages("dxc", "directx-headers", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_stems("Graphics", kRHIGraphics)
+	add_dirs({ "RHI" })
 	set_pcxxheader("Pch.h")
 
 	if is_plat("windows") then
@@ -119,7 +97,7 @@ target("Koi.Assets")
 	add_deps("Koi.Core", "Koi.RHI", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_stems("Assets", kCPUAssets)
+	add_dirs({ "Assets" })
 	set_pcxxheader("CorePch.h")
 target_end()
 
@@ -132,7 +110,7 @@ target("Koi.ECS")
 	add_deps("Koi.Core", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_stems("ECS", kECSCore)
+	add_dirs({ "ECS/Core" })
 	set_pcxxheader("CorePch.h")
 target_end()
 
@@ -146,7 +124,7 @@ target("Koi.Engine")
 	add_packages("cli11", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
-	add_dirs(kEngineDirs, { Graphics = kRHIGraphics, Assets = kCPUAssets, ECS = kECSCore })
+	add_dirs(kEngineDirs, { ECS = "Core" })
 	set_pcxxheader("Pch.h")
 
 	add_extrafiles("Content/Shaders/**.hlsl")

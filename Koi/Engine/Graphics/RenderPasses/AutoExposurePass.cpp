@@ -1,7 +1,7 @@
 #include "Koi/Engine/Graphics/RenderPasses/AutoExposurePass.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/RenderScene.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/RHI/Device.h"
 #include <algorithm>
 #include <cstring>
 

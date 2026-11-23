@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/RHI/Types.h"
 
 namespace koi
 {

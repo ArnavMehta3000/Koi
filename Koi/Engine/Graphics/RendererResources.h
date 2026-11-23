@@ -1,7 +1,7 @@
 #pragma once
-#include "Koi/Engine/Assets/MeshAsset.h"
-#include "Koi/Engine/Assets/TextureAsset.h"
-#include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/Resources/MeshAsset.h"
+#include "Koi/Engine/Resources/TextureAsset.h"
+#include "Koi/Engine/RHI/Types.h"
 
 namespace koi
 {

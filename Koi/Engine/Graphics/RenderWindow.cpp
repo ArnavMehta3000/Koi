@@ -1,8 +1,8 @@
 #include "Koi/Engine/Graphics/RenderWindow.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Graphics/RHI/Resources.h"
+#include "Koi/Engine/RHI/Device.h"
+#include "Koi/Engine/RHI/Resources.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 #include <spdlog/fmt/xchar.h>

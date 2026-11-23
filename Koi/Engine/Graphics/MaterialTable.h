@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Engine/Content/Shaders/Interop/Mesh.hlsli"
-#include "Koi/Engine/Graphics/GpuFrameBuffer.h"
+#include "Koi/Engine/RHI/GpuFrameBuffer.h"
 #include <vector>
 
 namespace koi

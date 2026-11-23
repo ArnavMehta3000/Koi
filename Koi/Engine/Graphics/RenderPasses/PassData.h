@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Graphics/RenderGraph/RGHandles.h"
+#include "Koi/Engine/RHI/RenderGraph/RGHandles.h"
 #include "Koi/Engine/Math/MathTypes.h"
 
 namespace koi

@@ -1,5 +1,5 @@
 #include "Koi/Editor/Assets/MaterialWriter.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Assets/MaterialFile.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"

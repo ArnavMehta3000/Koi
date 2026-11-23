@@ -3,7 +3,7 @@
 #include "Koi/Engine/Assets/TextureFile.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/RHI/Device.h"
 
 namespace koi
 {

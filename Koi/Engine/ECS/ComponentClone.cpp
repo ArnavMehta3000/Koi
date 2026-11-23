@@ -1,5 +1,5 @@
 #include "Koi/Engine/ECS/ComponentClone.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <utility>

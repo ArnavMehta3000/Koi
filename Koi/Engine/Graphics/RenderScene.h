@@ -2,8 +2,8 @@
 #include "Koi/Engine/Content/Shaders/Interop/Mesh.hlsli"
 #include "Koi/Engine/Core/EnumFlags.h"
 #include "Koi/Engine/ECS/Components.h"
-#include "Koi/Engine/ECS/ECS.h"
-#include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/ECS/Core/ECS.h"
+#include "Koi/Engine/RHI/Types.h"
 #include "Koi/Engine/Math/Math.h"
 #include <span>
 #include <vector>

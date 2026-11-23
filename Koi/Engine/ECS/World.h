@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Core/Error.h"
-#include "Koi/Engine/ECS/ECS.h"
+#include "Koi/Engine/ECS/Core/ECS.h"
 #include "Koi/Engine/Graphics/Camera.h"
 #include <memory>
 #include <optional>

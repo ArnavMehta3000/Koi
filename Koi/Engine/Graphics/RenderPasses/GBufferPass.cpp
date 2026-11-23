@@ -6,7 +6,7 @@
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/RHI/Device.h"
 
 namespace koi
 {

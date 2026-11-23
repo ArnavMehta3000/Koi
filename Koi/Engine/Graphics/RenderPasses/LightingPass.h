@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Content/Shaders/Interop/Lighting.hlsli"
 #include "Koi/Engine/Graphics/RenderFeature.h"
-#include "Koi/Engine/Graphics/GpuFrameBuffer.h"
+#include "Koi/Engine/RHI/GpuFrameBuffer.h"
 
 namespace koi
 {

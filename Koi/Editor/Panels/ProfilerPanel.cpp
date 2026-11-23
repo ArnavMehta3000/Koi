@@ -1,6 +1,6 @@
 #include "Koi/Editor/Panels/ProfilerPanel.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/RHI/Device.h"
 #include "Koi/Engine/Runtime/Engine.h"
 
 namespace koi::editor

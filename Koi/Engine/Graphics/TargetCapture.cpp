@@ -1,7 +1,7 @@
 #include "Koi/Engine/Graphics/TargetCapture.h"
 #include "Koi/Engine/Content/Shaders/Interop/PostProcess.hlsli"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/RHI/Device.h"
 
 namespace koi
 {

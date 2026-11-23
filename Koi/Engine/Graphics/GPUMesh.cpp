@@ -1,11 +1,11 @@
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Assets/AssetData.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Assets/MeshFile.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
 

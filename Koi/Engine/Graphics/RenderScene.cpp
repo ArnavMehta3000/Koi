@@ -1,5 +1,5 @@
 #include "Koi/Engine/Graphics/RenderScene.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
 #include "Koi/Engine/Logging/Logger.h"

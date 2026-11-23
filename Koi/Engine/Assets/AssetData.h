@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetKey.h"
 #include "Koi/Engine/Content/Shaders/Interop/Mesh.hlsli"
-#include "Koi/Engine/Graphics/Types.h"
+#include "Koi/Engine/RHI/Types.h"
 #include "Koi/Engine/Math/MathTypes.h"
 #include <memory>
 #include <string>

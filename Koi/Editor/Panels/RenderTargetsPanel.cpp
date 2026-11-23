@@ -1,8 +1,8 @@
 #include "Koi/Editor/Panels/RenderTargetsPanel.h"
 #include "Koi/Engine/Core/Reflect.h"
 #include "Koi/Engine/Graphics/Renderer.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
-#include "Koi/Engine/Graphics/RHI/Resources.h"
+#include "Koi/Engine/RHI/Device.h"
+#include "Koi/Engine/RHI/Resources.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <format>

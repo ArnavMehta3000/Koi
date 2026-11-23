@@ -1,6 +1,6 @@
 #pragma once
 #include "Koi/Engine/Core/TypeIndex.h"
-#include "Koi/Engine/Graphics/RenderGraph/RenderGraph.h"
+#include "Koi/Engine/RHI/RenderGraph/RenderGraph.h"
 #include "Koi/Engine/Graphics/RenderPasses/PassData.h"
 #include "Koi/Engine/Graphics/RenderView.h"
 #include <concepts>

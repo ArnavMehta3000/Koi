@@ -3,7 +3,7 @@
 #include "Koi/Engine/Graphics/Camera.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Graphics/RenderView.h"
-#include "Koi/Engine/Graphics/RHI/Device.h"
+#include "Koi/Engine/RHI/Device.h"
 #include "Koi/Engine/Graphics/TargetCapture.h"
 #include "Koi/Engine/Logging/Logger.h"
 

@@ -7,8 +7,8 @@
 #include "Koi/Editor/Panels/AssetViewerPanel.h"
 #include "Koi/Editor/SceneFiles.h"
 #include "Koi/Editor/UI/Widgets.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
-#include "Koi/Engine/Graphics/ShaderCache.h"
+#include "Koi/Engine/Resources/AssetRegistry.h"
+#include "Koi/Engine/RHI/ShaderCache.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <imgui.h>
 #include <imgui_stdlib.h>

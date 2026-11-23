@@ -1,5 +1,5 @@
 #pragma once
-#include "Koi/Engine/Assets/PrefabAsset.h"
+#include "Koi/Engine/Resources/PrefabAsset.h"
 #include "Koi/Engine/ECS/ComponentClone.h"
 #include "Koi/Engine/ECS/ComponentSerializers.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"

@@ -1,5 +1,5 @@
 #include "Koi/Engine/ECS/World.h"
-#include "Koi/Engine/Assets/AssetRegistry.h"
+#include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Core/Exception.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"

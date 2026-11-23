@@ -3,7 +3,7 @@
 
 // Shared C++/HLSL structs are written in C++ names
 #ifdef __cplusplus
-	#include "Koi/Engine/Graphics/Types.h"
+	#include "Koi/Engine/RHI/Types.h"
 	#include "Koi/Engine/Math/MathTypes.h"
 
 	#define KOI_INTEROP_BEGIN namespace koi {
