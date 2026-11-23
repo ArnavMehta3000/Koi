@@ -37,7 +37,7 @@ namespace koi
 		// Defined by the game. Runs before the project TOML is applied
 		[[nodiscard]] static std::unique_ptr<AppBase> Create(CommandLine& cmd);
 
-		[[nodiscard]] static AppBase& Get() { return *s_instance; }
+		[[nodiscard]] static AppBase& Get();
 		[[nodiscard]] const AppCreateDesc& GetDesc() const override { return m_desc; }
 		[[nodiscard]] Engine* GetEngine() const { return m_engine; }
 		[[nodiscard]] Window& GetWindow() const { KOI_ASSERT(m_window); return *m_window; }
@@ -84,6 +84,6 @@ namespace koi
 		Engine*                m_engine = nullptr;
 		Window*                m_window = nullptr;
 
-		static inline AppBase* s_instance = nullptr;
+		static AppBase* s_instance;
 	};
 }

@@ -1,4 +1,5 @@
 #include "Koi/Engine/Diagnostics/FrameStats.h"
+#include "Koi/Engine/Memory/Allocator.h"
 #include <atomic>
 #include <chrono>
 #include <utility>
@@ -6,11 +7,6 @@
 
 namespace koi
 {
-	namespace internal
-	{
-		extern std::atomic<u64> g_allocationCount;  // MemoryOverrides.cpp
-	}
-
 	namespace
 	{
 		using Clock = std::chrono::steady_clock;
@@ -34,7 +30,7 @@ namespace koi
 	{
 		t_isMainThread = true;
 
-		const u64 allocations = internal::g_allocationCount.load(std::memory_order_relaxed);
+		const u64 allocations = internal::GetAllocationCount();
 		if (s_allocationBase != ~0ull)
 			Count("Allocations", i64(allocations - s_allocationBase));
 		s_allocationBase = allocations;

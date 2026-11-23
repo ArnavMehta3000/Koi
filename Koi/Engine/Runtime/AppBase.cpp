@@ -14,6 +14,13 @@
 
 namespace koi
 {
+	AppBase* AppBase::s_instance = nullptr;
+
+	AppBase& AppBase::Get()
+	{
+		return *s_instance;
+	}
+
 	AppBase::AppBase()
 	{
 		KOI_ASSERT(s_instance == nullptr, "Application already exists!");

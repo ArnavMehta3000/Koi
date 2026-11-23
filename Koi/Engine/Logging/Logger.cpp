@@ -20,6 +20,14 @@ namespace fs = std::filesystem;
 
 namespace koi
 {
+	spdlog::logger* Logger::s_logger = nullptr;
+	constinit std::array<std::atomic<u8>, Logger::kMaxCategories> Logger::s_levels{};
+
+	bool Logger::ShouldLog(u16 category, LogLevel level)
+	{
+		return s_logger && static_cast<u8>(level) >= s_levels[category].load(std::memory_order_relaxed);
+	}
+
 	static_assert(static_cast<int>(LogLevel::Trace)    == spdlog::level::trace);
 	static_assert(static_cast<int>(LogLevel::Debug)    == spdlog::level::debug);
 	static_assert(static_cast<int>(LogLevel::Info)     == spdlog::level::info);

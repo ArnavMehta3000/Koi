@@ -36,6 +36,8 @@ namespace koi
 		}
 	}
 
+	u32 Window::s_windowCount = 0;
+
 	Window::Window(const WindowDesc& desc)
 		: m_mode(desc.Mode)
 		, m_resizable(desc.Resizable)

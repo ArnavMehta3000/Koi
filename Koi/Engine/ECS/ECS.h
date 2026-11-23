@@ -2,6 +2,7 @@
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Core/Handle.h"
 #include "Koi/Engine/Core/Reflect.h"
+#include "Koi/Engine/Core/TypeIndex.h"
 #include "Koi/Engine/Core/Types.h"
 #include <algorithm>
 #include <array>
@@ -57,15 +58,15 @@ namespace koi
 
 	namespace internal
 	{
-		inline u32& ComponentCounter() { static u32 counter = 0; return counter; }
-		inline u32& EventCounter()     { static u32 counter = 0; return counter; }
-		inline u32& PhaseCounter()     { static u32 counter = 0; return counter; }
-		inline u32& SystemCounter()    { static u32 counter = 0; return counter; }
+		struct ComponentDomain {};
+		struct EventDomain {};
+		struct PhaseDomain {};
+		struct SystemDomain {};
 
-		template<typename T> u32 ComponentIdOf() { static const u32 id = ComponentCounter()++; return id; }
-		template<typename T> u32 EventIdOf()     { static const u32 id = EventCounter()++;     return id; }
-		template<typename T> u32 PhaseIdOf()     { static const u32 id = PhaseCounter()++;     return id; }
-		template<typename T> u32 SystemIdOf()    { static const u32 id = SystemCounter()++;    return id; }
+		template<typename T> u32 ComponentIdOf() { return TypeIndex<ComponentDomain, T>(); }
+		template<typename T> u32 EventIdOf()     { return TypeIndex<EventDomain, T>();     }
+		template<typename T> u32 PhaseIdOf()     { return TypeIndex<PhaseDomain, T>();     }
+		template<typename T> u32 SystemIdOf()    { return TypeIndex<SystemDomain, T>();    }
 
 		using refl::TypeName;
 	}

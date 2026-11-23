@@ -41,7 +41,7 @@ namespace koi::editor
 		{
 			for (const std::unique_ptr<Panel>& panel : m_panels)
 			{
-				if (panel->m_info == &T::kInfo) return static_cast<T*>(panel.get());
+				if (panel->m_info->Name == T::kInfo.Name) return static_cast<T*>(panel.get());
 			}
 			return nullptr;
 		}

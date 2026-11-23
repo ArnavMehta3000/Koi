@@ -3,12 +3,13 @@
 #pragma once
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Core/Win32.h"
+#include "Koi/Engine/Runtime/AppBase.h"
 #include <filesystem>
 #include <memory>
 
 namespace koi
 {
-	class AppBase;
+	class CommandLine;
 	class IAppHost;
 }
 
@@ -39,6 +40,9 @@ namespace koi::internal
 	// Pointer to wrap host
 	using HostAdapter = std::unique_ptr<IAppHost>(*)(std::unique_ptr<AppBase>, const LaunchDesc&);
 
+	// The game's AppBase::Create
+	using AppFactory = std::unique_ptr<AppBase>(*)(CommandLine&);
+
 	// Editor defines them and runtime leave them empty to find cooked content in the sam dir
 	struct LaunchDesc
 	{
@@ -47,7 +51,8 @@ namespace koi::internal
 		std::filesystem::path ProjectFile;      // default project TOML; -p overrides
 		std::filesystem::path EngineBuildDir;   // xmake output (compiled shaders) mounted beside EngineDir (editor only)
 		std::filesystem::path ProjectBuildDir;  // same, beside ProjectDir
-		HostAdapter Adapter = nullptr;
+		HostAdapter Adapter   = nullptr;
+		AppFactory  CreateApp = nullptr;
 	};
 
 	int RunApplication(int argc, char* argv[], const LaunchDesc& desc);
@@ -55,17 +60,17 @@ namespace koi::internal
 }
 
 #if KOI_DEBUG
-	#define KOI_IMPLEMENT_MAIN_WITH(launch)                                 \
-		KOI_MAIN()                                                          \
-		{                                                                   \
-			return ::koi::internal::RunApplication(argc, argv, (launch)()); \
-		}
+	#define KOI_INTERNAL_MAIN_ARGS argc, argv
 #else
-	#define KOI_IMPLEMENT_MAIN_WITH(launch)                                      \
-		KOI_MAIN()                                                               \
-		{                                                                        \
-			return ::koi::internal::RunApplication(__argc, __wargv, (launch)()); \
-		}
+	#define KOI_INTERNAL_MAIN_ARGS __argc, __wargv
 #endif
+
+#define KOI_IMPLEMENT_MAIN_WITH(launch)                                     \
+	KOI_MAIN()                                                              \
+	{                                                                       \
+		::koi::internal::LaunchDesc desc = (launch)();                      \
+		desc.CreateApp = &::koi::AppBase::Create;                           \
+		return ::koi::internal::RunApplication(KOI_INTERNAL_MAIN_ARGS, desc); \
+	}
 
 #define KOI_IMPLEMENT_MAIN() KOI_IMPLEMENT_MAIN_WITH([] { return ::koi::internal::LaunchDesc{}; })

@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Core/Assert.h"
+#include "Koi/Engine/Core/TypeIndex.h"
 #include "Koi/Engine/Core/Types.h"
 #include <concepts>
 #include <memory>
@@ -80,17 +81,16 @@ namespace koi::editor
 
 		struct Entry
 		{
-			const void* Key = nullptr;
+			u32         Key = ~0u;
 			Owned       Service{ nullptr, nullptr };
 			void      (*Shutdown)(void*) = nullptr;
 			void      (*Tick)(void*, f32) = nullptr;
 		};
 
 		template <typename T>
-		[[nodiscard]] static const void* Key()
+		[[nodiscard]] static u32 Key()
 		{
-			static constexpr char kTag = 0;
-			return &kTag;
+			return koi::internal::TypeIndex<EditorContext, T>();
 		}
 
 	private:

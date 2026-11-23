@@ -63,6 +63,6 @@ namespace koi
 		Window* m_window      = nullptr;
 		u32     m_hookId      = 0;
 
-		static inline InputManager* s_instance = nullptr;
+		static InputManager* s_instance;
 	};
 }

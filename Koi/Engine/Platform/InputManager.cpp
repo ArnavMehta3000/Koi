@@ -9,6 +9,8 @@
 
 namespace koi
 {
+	InputManager* InputManager::s_instance = nullptr;
+
 	InputManager::InputManager()
 	{
 		KOI_ASSERT(s_instance == nullptr, "InputManager already exists");

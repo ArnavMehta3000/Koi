@@ -118,6 +118,6 @@ namespace koi
 		std::vector<Hook> m_hooks;
 		u32               m_nextHookId = 1;
 
-		static inline u32 s_windowCount = 0;
+		static u32 s_windowCount;
 	};
 }

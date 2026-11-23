@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Core/Assert.h"
+#include "Koi/Engine/Core/TypeIndex.h"
 #include "Koi/Engine/Core/Types.h"
 #include <concepts>
 #include <memory>
@@ -68,8 +69,7 @@ namespace koi
 		template <BlackboardEntry T>
 		static u32 IndexOf()
 		{
-			static const u32 index = s_nextIndex++;
-			return index;
+			return internal::TypeIndex<RGBlackboard, T>();
 		}
 
 		template <BlackboardEntry T>
@@ -88,8 +88,6 @@ namespace koi
 		}
 
 	private:
-		inline static u32 s_nextIndex = 0;
-
 		std::vector<std::unique_ptr<SlotBase>> m_slots;
 	};
 }

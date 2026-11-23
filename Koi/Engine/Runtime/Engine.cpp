@@ -16,6 +16,13 @@ namespace koi
 	template<> Renderer&      Engine::GetSubsystem<Renderer>()      { return *m_renderer; }
 	template<> AssetRegistry& Engine::GetSubsystem<AssetRegistry>() { return *m_assets;   }
 
+	Engine* Engine::s_instance = nullptr;
+
+	Engine& Engine::Get()
+	{
+		return *s_instance;
+	}
+
 	Engine::Engine(const Desc& desc)
 		: m_desc(desc)
 	{

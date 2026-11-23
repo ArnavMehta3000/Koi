@@ -19,11 +19,12 @@
 
 namespace koi::internal
 {
-	static std::unique_ptr<AppBase> CreateApplicationInstance(CommandLine& cmd)
+	static std::unique_ptr<AppBase> CreateApplicationInstance(const LaunchDesc& desc, CommandLine& cmd)
 	{
 		// Custom scoped function for profiling reasons
 		ZoneScoped;
-		return AppBase::Create(cmd);
+		KOI_ASSERT(desc.CreateApp, "LaunchDesc has no CreateApp; main comes from KOI_IMPLEMENT_MAIN");
+		return desc.CreateApp(cmd);
 	}
 
 	static WindowMode ParseWindowMode(std::string_view mode)
@@ -240,7 +241,7 @@ namespace koi::internal
 			});
 
 			KOI_LOG(Engine, Debug, "Creating application instance");
-			std::unique_ptr<AppBase> app = CreateApplicationInstance(*cmd);
+			std::unique_ptr<AppBase> app = CreateApplicationInstance(desc, *cmd);
 			if (!app)
 			{
 				KOI_LOG(Engine, Critical, "Failed to create application");

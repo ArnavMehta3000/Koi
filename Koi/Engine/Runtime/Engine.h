@@ -42,7 +42,7 @@ namespace koi
 		explicit Engine(const Desc& desc);
 		~Engine();
 
-		[[nodiscard]] static Engine& Get() { return *s_instance; }
+		[[nodiscard]] static Engine& Get();
 
 		[[nodiscard]] static constexpr std::string_view ToString(PlayState state)
 		{
@@ -78,7 +78,7 @@ namespace koi
 		void MainLoop(IAppHost& host);
 
 	private:
-		static inline Engine* s_instance = nullptr;
+		static Engine* s_instance;
 
 		Desc                           m_desc;
 		std::unique_ptr<Window>        m_window;

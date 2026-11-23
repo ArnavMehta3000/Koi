@@ -30,10 +30,10 @@ namespace koi::editor
 		ImVec4 Paused;
 
 		// The active theme's palette, set by utils::ApplyTheme
-		[[nodiscard]] static const EditorPalette& Get() { return *s_active; }
-		static void SetActive(const EditorPalette& palette) { s_active = &palette; }
+		[[nodiscard]] static const EditorPalette& Get();
+		static void SetActive(const EditorPalette& palette);
 
 	private:
-		static inline const EditorPalette* s_active = nullptr;
+		static const EditorPalette* s_active;
 	};
 }

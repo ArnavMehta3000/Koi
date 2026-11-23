@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Core/TypeIndex.h"
 #include "Koi/Engine/Graphics/RenderGraph/RenderGraph.h"
 #include "Koi/Engine/Graphics/RenderPasses/PassData.h"
 #include "Koi/Engine/Graphics/RenderView.h"
@@ -27,22 +28,19 @@ namespace koi
 			virtual ~Slot() = default;
 			virtual void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene) = 0;
 
-			const void* Type = nullptr;
+			u32 Type = ~0u;
 		};
 
 		template <RenderFeature T>
 		struct Model final : Slot
 		{
 			template <typename... Args>
-			explicit Model(Args&&... args) : Feature(std::forward<Args>(args)...) { Type = &kTypeTag<T>; }
+			explicit Model(Args&&... args) : Feature(std::forward<Args>(args)...) { Type = internal::TypeIndex<FeatureList, T>(); }
 
 			void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene) override { Feature.Record(graph, view, scene); }
 
 			T Feature;
 		};
-
-		template <typename T>
-		static constexpr char kTypeTag = 0;
 
 	public:
 		template <RenderFeature T, typename... Args>
@@ -57,7 +55,7 @@ namespace koi
 		{
 			for (auto& slot : m_features)
 			{
-				if (slot->Type == &kTypeTag<T>)
+				if (slot->Type == internal::TypeIndex<FeatureList, T>())
 					return &static_cast<Model<T>&>(*slot).Feature;
 			}
 			return nullptr;

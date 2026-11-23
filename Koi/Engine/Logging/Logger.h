@@ -68,16 +68,13 @@ namespace koi
 			Log(category, level, source, line, std::string_view(message));
 		}
 
-		[[nodiscard]] static bool ShouldLog(u16 category, LogLevel level)
-		{
-			return s_logger && static_cast<u8>(level) >= s_levels[category].load(std::memory_order_relaxed);
-		}
+		[[nodiscard]] static bool ShouldLog(u16 category, LogLevel level);
 
 	private:
-		static inline spdlog::logger* s_logger = nullptr;
+		static spdlog::logger* s_logger;
 
 		// Zero is Trace, so a category logs everything until Configure says otherwise
-		static constinit inline std::array<std::atomic<u8>, kMaxCategories> s_levels{};
+		static std::array<std::atomic<u8>, kMaxCategories> s_levels;
 	};
 }
 
