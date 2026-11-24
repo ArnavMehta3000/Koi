@@ -2,12 +2,15 @@
 #define _GBUFFER_PS_HLSL_
 
 #include "MeshShaderCommon.hlsl"
+#include "NormalMapping.hlsl"
 
 struct PSInput
 {
-	float4 Position    : SV_Position;
-	float3 WorldNormal : NORMAL;  // [-1, 1] range
-	float2 UV          : TEXCOORD0;
+	float4 Position     : SV_Position;
+	float3 WorldNormal  : NORMAL;  // [-1, 1] range
+	float4 WorldTangent : TANGENT;
+	float2 UV           : TEXCOORD0;
+	bool   FrontFace    : SV_IsFrontFace;
 };
 
 struct PSOutput
@@ -51,8 +54,18 @@ PSOutput PSMain(PSInput input)
 		ao = 1.0f + mat.OcclusionStrength * (sampledAO - 1.0f);
 	}
 
+	// MikkTSpace wants the interpolated normal as it is, so only the result gets normalized
+	float3 N = input.WorldNormal;
+	if (mat.NormalIndex != INVALID_DESCRIPTOR)
+	{
+		Texture2D normalTex = ResourceDescriptorHeap[mat.NormalIndex];
+		N = ApplyNormalMap(N, input.WorldTangent, input.UV, normalTex, samp, mat.NormalScale);
+	}
+
+	N = normalize(N) * (input.FrontFace ? 1.0f : -1.0f);
+
 	// Encode world normal from [-1, 1] to [0, 1] for the UNORM target
-	const float3 mappedNormal = input.WorldNormal * 0.5f + 0.5f;
+	const float3 mappedNormal = N * 0.5f + 0.5f;
 
 	PSOutput output;
 	output.Color    = float4(albedo, ao);

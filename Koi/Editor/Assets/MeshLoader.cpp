@@ -381,6 +381,7 @@ namespace koi::editor
 			if (gltfMat.normalTexture)
 			{
 				mat.NormalTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.normalTexture->textureIndex));
+				mat.MaterialConstants.NormalScale = gltfMat.normalTexture->scale;
 			}
 
 			if (gltfMat.occlusionTexture)

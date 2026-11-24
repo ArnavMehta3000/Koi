@@ -5,9 +5,10 @@
 
 struct VSOutput
 {
-	float4 Position    : SV_Position;
-	float3 WorldNormal : NORMAL;
-	float2 UV          : TEXCOORD0;
+	float4 Position     : SV_Position;
+	float3 WorldNormal  : NORMAL;
+	float4 WorldTangent : TANGENT;
+	float2 UV           : TEXCOORD0;
 };
 
 VSOutput VSMain(uint vertexId : SV_VertexID)
@@ -25,6 +26,9 @@ VSOutput VSMain(uint vertexId : SV_VertexID)
 	output.Position    = mul(worldPos, frame.ViewProjection);
 	output.WorldNormal = normalize(mul(v.Normal, (float3x3)obj.NormalMatrix));
 	output.UV          = v.UV;
+
+	float3 worldTangent = normalize(mul(v.Tangent.xyz, (float3x3) obj.World));
+	output.WorldTangent = float4(worldTangent, v.Tangent.w);
 
 	return output;
 }
