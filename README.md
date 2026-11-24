@@ -156,6 +156,7 @@ Kept in `External/` and built from source:
 |---|---|
 | `SimpleMath` | Math, from DirectXTK, on top of DirectXMath |
 | `GameInput` | Gamepad input and rumble |
+| `ScreenGrab` | Screenshots, from DirectXTex |
 | `ImGui` (docking) + `ImGuizmo` | Editor UI and gizmos |
 | `IconFontCppHeaders` | Font Awesome icons in the editor |
 | `KoiProfiler` | The editor's in-app profiler |
