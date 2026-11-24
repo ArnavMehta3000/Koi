@@ -12,6 +12,7 @@
 #include "Koi/Engine/RHI/CommandList.h"
 #include "Koi/Engine/RHI/CommandQueue.h"
 #include "Koi/Engine/Graphics/TargetCapture.h"
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
@@ -21,6 +22,8 @@
 
 namespace koi
 {
+	namespace fs = std::filesystem;
+
 	class Window;
 
 	class Renderer
@@ -60,6 +63,8 @@ namespace koi
 		void RequestShaderRead(TextureHandle texture);
 		void FlushShaderReadRequests(CommandList& cmd);
 
+		void RequestScreenshot(fs::path path = {});
+
 		void BeginFrame();
 		void EndFrame();
 
@@ -69,6 +74,7 @@ namespace koi
 		friend class SceneRenderer;
 		void Enqueue(SceneRenderer& scene);
 		void Dequeue(SceneRenderer& scene);
+		void TakeScreenshot(TextureHandle target);
 
 		void RegisterMaterialTemplates();
 
@@ -95,6 +101,7 @@ namespace koi
 		std::vector<SceneRenderer*>      m_submitted;  // this frame's views, executed in order by EndFrame
 		IRendererOverlay*                m_overlay   = nullptr;
 		DebugDrawQueue                   m_debugDraw;
+		std::optional<fs::path>          m_screenshot;  // requested for this frame
 		std::vector<TextureHandle>       m_shaderReadRequests;  // per-frame, cleared in BeginFrame
 	};
 }

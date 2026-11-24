@@ -1,11 +1,14 @@
 #pragma once
 #include "Koi/Engine/Core/Types.h"
 #include "Koi/Engine/Runtime/Timer.h"
+#include <filesystem>
 #include <memory>
 #include <string_view>
 
 namespace koi
 {
+	namespace fs = std::filesystem;
+
 	class AssetRegistry;
 	class IAppHost;
 	class InputManager;
@@ -35,6 +38,7 @@ namespace koi
 			bool D3DDebug      = false;
 			bool GpuValidation = false;
 			f64  Timeout       = 0.0;  // seconds until RequestExit, 0 = never
+			fs::path SavedDir;  // machine output: <project>/.koi (editor) or <exe>/.koi
 		};
 
 	public:

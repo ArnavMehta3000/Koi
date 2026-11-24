@@ -4,6 +4,7 @@ includes("Packages/GameInput.lua")
 includes("Packages/ImGui.lua")
 includes("Packages/KoiProfiler.lua")
 includes("Packages/MikkTSpace.lua")
+includes("Packages/ScreenGrab.lua")
 
 -- Package recipes, adapted from xmake-repo. All but dxc are git-only
 includes("Packages/Box3D.lua")

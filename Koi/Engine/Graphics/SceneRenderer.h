@@ -23,6 +23,9 @@ namespace koi
 
 		void Submit(const RenderView& view, const RenderScene& scene);
 
+		// What the last submitted view rendered into
+		[[nodiscard]] TextureHandle GetOutput() const noexcept { return m_output; }
+
 		// Inspection and capture follow the graph this is set on
 		void SetCapture(TargetCapture* capture);
 
@@ -39,5 +42,6 @@ namespace koi
 		FeatureList    m_features;
 		RenderGraph    m_graph;
 		TargetCapture* m_capture = nullptr;
+		TextureHandle  m_output;
 	};
 }

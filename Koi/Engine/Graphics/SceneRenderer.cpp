@@ -58,6 +58,7 @@ namespace koi
 		{
 			m_capture->SetDepthPlanes(view.Camera->Near, view.Camera->Far);
 		}
+		m_output = view.Target.ResolvedColorBuffer;
 		m_features.Record(m_graph, view, scene);
 		m_renderer->Enqueue(*this);
 	}

@@ -1,0 +1,10 @@
+target("ScreenGrab")
+	set_kind("static")
+	set_group("External/DirectXTex")
+	set_warnings("none")
+	add_packages("directx-headers")
+	add_defines("USING_DIRECTX_HEADERS", { public = true })  -- the package's d3d12.h, not the Windows SDK's
+	add_files("$(projectdir)/External/DirectXTex/ScreenGrab/ScreenGrab12.cpp")
+	add_headerfiles("$(projectdir)/External/DirectXTex/ScreenGrab/ScreenGrab12.h")
+	add_includedirs("$(projectdir)/External/DirectXTex/ScreenGrab", { public = true })
+target_end()

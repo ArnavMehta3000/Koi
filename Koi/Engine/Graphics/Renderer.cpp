@@ -1,6 +1,7 @@
 #include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Core/Config.h"
 #include "Koi/Engine/Graphics/DeferredPipeline.h"
+#include "Koi/Engine/Graphics/Screenshot.h"
 #include "Koi/Engine/RHI/Device.h"
 #include "Koi/Engine/RHI/GpuProfiling.h"
 #include "Koi/Engine/RHI/ShaderCache.h"
@@ -176,6 +177,7 @@ namespace koi
 			cmd.ClearRenderTarget(m_renderWindow->CurrentBackBuffer(), kBlack);
 		}
 
+		const bool mainSubmitted = std::ranges::contains(m_submitted, m_mainScene.get());
 		for (SceneRenderer* scene : std::exchange(m_submitted, {}))
 		{
 			scene->Execute(cmd);
@@ -196,10 +198,43 @@ namespace koi
 			cmd.End();
 			m_graphicsQueue.Submit(cmd);
 		}
+
+		if (m_screenshot)
+		{
+			TakeScreenshot(mainSubmitted ? m_mainScene->GetOutput() : TextureHandle());
+		}
 		m_renderWindow->Present();
 
 		// After Present, since that waits on the back buffer fence and the payload is ready by then
 		m_device->GpuProfilerCollect();
+	}
+
+	void Renderer::RequestScreenshot(fs::path path)
+	{
+		if (path.empty())
+		{
+			path = utils::TimestampedScreenshotPath(Engine::Get().GetDesc().SavedDir / "Screenshots");
+		}
+		m_screenshot = std::move(path);
+	}
+
+	void Renderer::TakeScreenshot(TextureHandle target)
+	{
+		const fs::path path = std::move(*m_screenshot);
+		m_screenshot.reset();
+
+		if (!target)
+		{
+			KOI_LOG(Render, Warn, "No screenshot taken: nothing rendered to the main view this frame");
+			return;
+		}
+
+		if (const Result<void> saved = utils::SaveScreenshot(*m_device, target, path); !saved)
+		{
+			KOI_LOG(Render, Error, "Couldn't save screenshot '{}': {}", path.string(), saved.error().Message);
+			return;
+		}
+		KOI_LOG(Render, Info, "Saved screenshot '{}'", path.string());
 	}
 
 	void Renderer::RegisterPipeline(std::string name, PipelineBuildFunc build)

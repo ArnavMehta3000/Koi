@@ -248,6 +248,7 @@ namespace koi::internal
 				.D3DDebug      = cmd->IsD3DDebugEnabled(),
 				.GpuValidation = cmd->IsGpuValidationEnabled(),
 				.Timeout       = cmd->GetTimeout(),
+				.SavedDir      = savedDir,
 			});
 
 			KOI_LOG(Engine, Debug, "Creating application instance");

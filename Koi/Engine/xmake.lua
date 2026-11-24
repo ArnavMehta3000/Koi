@@ -121,11 +121,16 @@ target("Koi.Engine")
 	add_options("LogLevel")
 
 	add_deps("Koi.Core", "Koi.Platform", "Koi.RHI", "Koi.Assets", "Koi.ECS", { public = true })
+	add_deps("ScreenGrab")
 	add_packages("cli11", { public = true })
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_dirs(kEngineDirs, { ECS = "Core" })
 	set_pcxxheader("Pch.h")
+
+	if is_plat("windows") then
+		add_syslinks("ole32", "windowscodecs", { public = true })  -- screenshots are encoded with WIC
+	end
 
 	add_extrafiles("Content/Shaders/**.hlsl")
 	add_files("Content/Shaders/Shaders.json", { rule = "KoiShaders", koi_scheme = "engine" })
