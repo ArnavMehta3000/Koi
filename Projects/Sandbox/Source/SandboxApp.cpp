@@ -4,12 +4,61 @@
 #include "Components/Traveller.h"
 #include "Koi/Engine/ECS/EntityBuilder.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/InputManager.h"
+#include "Koi/Engine/Runtime/CommandLine.h"
 #include "Koi/Engine/Runtime/Engine.h"
+#include <utility>
 
-std::unique_ptr<koi::AppBase> koi::AppBase::Create([[maybe_unused]] koi::CommandLine& cmd)
+KOI_LOG_CATEGORY(Sandbox);
+
+namespace
 {
-	return std::make_unique<SandboxApp>();
+	class SandboxCommandLine final : public koi::CommandLine
+	{
+	public:
+		SandboxCommandLine() : koi::CommandLine("Koi Sandbox")
+		{
+			add_option("--scene", m_scene, "Scene to start in, a name from [scenes.list]");
+		}
+
+		const std::string& GetScene() const noexcept { return m_scene; }
+
+	private:
+		std::string m_scene;
+	};
+
+	const koi::CommandLineRegistrar<SandboxCommandLine> s_cmdReg;
+}
+
+std::unique_ptr<koi::AppBase> koi::AppBase::Create(koi::CommandLine& cmd)
+{
+	return std::make_unique<SandboxApp>(static_cast<SandboxCommandLine&>(cmd).GetScene());
+}
+
+SandboxApp::SandboxApp(std::string startScene)
+	: m_startScene(std::move(startScene))
+{
+}
+
+void SandboxApp::HostInit()
+{
+	// Before the base loads the startup scene
+	if (!m_startScene.empty())
+	{
+		koi::AppCreateDesc desc = GetDesc();
+		if (desc.Scenes.contains(m_startScene))
+		{
+			desc.StartupScene = m_startScene;
+			SetDesc(std::move(desc));
+		}
+		else
+		{
+			KOI_LOG(Sandbox, Error, "--scene {}: not listed in [scenes.list]", m_startScene);
+		}
+	}
+
+	AppBase::HostInit();
 }
 
 void SandboxApp::OnRegisterComponents()

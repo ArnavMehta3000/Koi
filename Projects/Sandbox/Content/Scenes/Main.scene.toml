@@ -1,25 +1,32 @@
 [[entity]]
 id = 0
+name = 'Post Process'
+
+    [entity.PostProcess.auto_exposure]
+    enabled = true
+    exposure_compensation = -2.2
+    key_value = 0.44
+    max_log_luminance = 4.0
+    min_log_luminance = -7.65
+
+    [entity.PostProcess.tonemap]
+    operator = 'Reinhard'
+
+    [entity.Transform]
+    position = [ 2.007, 2.1, 0.0 ]
+    rotation = [ -0.0, 0.406737, -0.0, 0.913545 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+id = 1
 name = 'Sponza'
 
     [entity.Mesh]
     id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
 
     [entity.Transform]
-    position = [ 6.1, 0.0, 0.0 ]
+    position = [ 0.0, 0.0, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
-    scale = [ 1.0, 1.0, 1.0 ]
-
-[[entity]]
-id = 1
-name = 'Sponza 2'
-
-    [entity.Mesh]
-    id = '358ad63d-9721-4060-bba3-a5b8b68d592f'
-
-    [entity.Transform]
-    position = [ 6.04529, 0.0, 18.65 ]
-    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
@@ -120,10 +127,6 @@ name = 'Sun'
     shadow_bias = 0.0015
     shadow_extent = 16.5
     type = 'Directional'
-
-    [entity.Spin]
-    axis = [ 0.2, 0.2, 0.2 ]
-    speed = 45.0
 
     [entity.Transform]
     position = [ 4.93682, 0.0, 5.53945 ]

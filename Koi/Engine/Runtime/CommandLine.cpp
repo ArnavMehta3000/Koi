@@ -20,15 +20,19 @@ namespace koi
 
 namespace koi::internal
 {
-	static CommandLineFactory s_factory = [] { return std::make_unique<CommandLine>(); };
+	static CommandLineFactory& Factory()
+	{
+		static CommandLineFactory s_factory = [] { return std::make_unique<CommandLine>(); };
+		return s_factory;
+	}
 
 	void RegisterCommandLineFactory(CommandLineFactory factory)
 	{
-		s_factory = std::move(factory);
+		Factory() = std::move(factory);
 	}
 
 	std::unique_ptr<CommandLine> InvokeCommandLineFactory()
 	{
-		return s_factory();
+		return Factory()();
 	}
 }
