@@ -1,6 +1,7 @@
 #include "Koi/Engine/RHI/RenderGraph/RenderGraph.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/RHI/CommandList.h"
 #include "Koi/Engine/RHI/Device.h"
 #include "Koi/Engine/RHI/GpuProfiling.h"
@@ -448,6 +449,11 @@ namespace koi
 
 	void RenderGraph::Inspect()
 	{
+		if (m_inspection.Passes.size() != m_passes.size())
+		{
+			KOI_LOG(RHI, Trace, "Render graph changed from {} to {} pass(es)", m_inspection.Passes.size(), m_passes.size());
+		}
+
 		// Resized, not cleared, so each pass's Writes keeps its capacity across frames
 		m_inspection.Passes.resize(m_passes.size());
 		for (const auto& [pass, info] : std::views::zip(m_passes, m_inspection.Passes))

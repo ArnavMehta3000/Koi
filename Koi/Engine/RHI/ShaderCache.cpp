@@ -6,6 +6,7 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <algorithm>
+#include <chrono>
 #include <toml++/toml.hpp>
 
 namespace koi
@@ -98,7 +99,7 @@ namespace koi
 		if (!LoadBytecode(key, defines, entry))
 			return nullptr;  // failures aren't cached, so a fixed shader loads on the next attempt
 
-		KOI_LOG(Shaders, Debug, "Shader cached: '{}' ({} bytes, {} dependencies)",
+		KOI_LOG(Shaders, Trace, "Shader cached: '{}' ({} bytes, {} dependencies)",
 			virtualPathNoExt, entry.Bytecode.size(), entry.Dependencies.size());
 
 		return &m_entries.emplace(key, std::move(entry)).first->second;
@@ -120,7 +121,7 @@ namespace koi
 				continue;
 			}
 
-			KOI_LOG(Shaders, Info, "Shader stale: '{}' (changed: {})", it->first.Path, changed->filename().string());
+			KOI_LOG(Shaders, Debug, "Shader stale: '{}' (changed: {})", it->first.Path, changed->filename().string());
 
 			// One path can have several variants cached, and the caller only wants the path
 			if (std::ranges::find(dropped, it->first.Path) == dropped.end())
@@ -147,7 +148,7 @@ namespace koi
 
 	void ShaderCache::InvalidateAll()
 	{
-		KOI_LOG(Shaders, Info, "Shader cache invalidated ({} entries dropped)", m_entries.size());
+		KOI_LOG(Shaders, Debug, "Shader cache invalidated ({} entries dropped)", m_entries.size());
 		m_entries.clear();
 		m_built.clear();
 		m_manifestsLoaded = false;
@@ -283,11 +284,11 @@ namespace koi
 			if (!hasSource || !IsStale(it->second))
 				return LoadBuilt(it->second, hasSource, outEntry);
 
-			KOI_LOG(Shaders, Info, "{} changed since the last build, compiling it fresh", key.Path);
+			KOI_LOG(Shaders, Debug, "{} changed since the last build, compiling it fresh", key.Path);
 		}
 		else if (hasSource)
 		{
-			KOI_LOG(Shaders, Info, "{} isn't built by any Shaders.json, compiling it now. List it there so the build catches its errors", key.Path);
+			KOI_LOG(Shaders, Warn, "{} isn't built by any Shaders.json, compiling it now. List it there so the build catches its errors", key.Path);
 		}
 
 		if (!hasSource)
@@ -320,6 +321,7 @@ namespace koi
 			args.Defines.push_back(DxcDefine{ wide[i * 2].c_str(), wide[i * 2 + 1].c_str() });
 		}
 
+		const auto start = std::chrono::steady_clock::now();
 		std::vector<fs::path> includes;
 		auto blob = ShaderCompiler::Get().CompileFromFile(source, args, &includes, &outEntry.Info);
 		if (!blob || blob->GetBufferSize() == 0)
@@ -338,6 +340,8 @@ namespace koi
 			AddDependency(outEntry, include);
 		}
 
+		const f64 ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - start).count();
+		KOI_LOG(Shaders, Debug, "Compiled {} in {:.1f} ms", key.Path, ms);
 		return true;
 	}
 

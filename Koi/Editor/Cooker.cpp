@@ -9,6 +9,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <fstream>
 #include <system_error>
 #include <vector>
@@ -62,7 +63,7 @@ namespace koi::editor
 					const Result<AssetFile> asset = AssetFile::FromBytes(std::move(bytes));
 					if (!asset)
 					{
-						KOI_LOG(Cook, Warn, "Cook: left out {}: {}", file.path().string(), asset.error().Message);
+						KOI_LOG(Cook, Error, "Cook: left out {}: {}", file.path().string(), asset.error().Message);
 						continue;
 					}
 
@@ -70,7 +71,7 @@ namespace koi::editor
 					std::ofstream out(target, std::ios::binary | std::ios::trunc);
 					if (!out.write(reinterpret_cast<const char*>(stripped.data()), static_cast<std::streamsize>(stripped.size())))
 					{
-						KOI_LOG(Cook, Warn, "Cook: couldn't write {}", target.string());
+						KOI_LOG(Cook, Error, "Cook: couldn't write {}", target.string());
 						continue;
 					}
 					++cooked;
@@ -79,7 +80,7 @@ namespace koi::editor
 
 				if (!fs::copy_file(file.path(), target, fs::copy_options::overwrite_existing, ec))
 				{
-					KOI_LOG(Cook, Warn, "Cook: couldn't copy {}: {}", file.path().string(), ec.message());
+					KOI_LOG(Cook, Error, "Cook: couldn't copy {}: {}", file.path().string(), ec.message());
 					continue;
 				}
 				++copied;
@@ -132,9 +133,10 @@ namespace koi::editor
 
 	std::string Cook(const CookRequest& request)
 	{
+		const auto start = std::chrono::steady_clock::now();
 		const fs::path outRoot = request.OutputRoot;
 
-		KOI_LOG(Cook, Info, "Cook: output = {}", outRoot.string());
+		KOI_LOG(Cook, Debug, "Cook: output = {}", outRoot.string());
 
 		std::error_code ec;
 		fs::create_directories(outRoot, ec);
@@ -148,7 +150,7 @@ namespace koi::editor
 		{
 			if (!VirtualFileSystem::Get().TryResolveToDisk(virtualPath))
 			{
-				KOI_LOG(Cook, Warn, "Cook: scene '{}' -> '{}' does not exist", name, virtualPath);
+				KOI_LOG(Cook, Error, "Cook: scene '{}' -> '{}' does not exist", name, virtualPath);
 			}
 		}
 
@@ -167,12 +169,13 @@ namespace koi::editor
 			fs::copy_file(request.ProjectFile, projRoot / "Project.koi.toml", fs::copy_options::overwrite_existing, cec);
 			if (cec)
 			{
-				KOI_LOG(Cook, Warn, "Cook: copy project TOML failed: {}", cec.message());
+				KOI_LOG(Cook, Error, "Cook: copy project TOML failed: {}", cec.message());
 			}
 		}
 
 		std::string status = "Cook: " + std::to_string(shaders.Ok) + "/" + std::to_string(shaders.Total) + " shaders ok";
-		KOI_LOG(Cook, Info, "{}", status);
+		const f64 seconds = std::chrono::duration<f64>(std::chrono::steady_clock::now() - start).count();
+		KOI_LOG(Cook, Info, "{}, finished in {:.1f} s", status, seconds);
 		return status;
 	}
 }

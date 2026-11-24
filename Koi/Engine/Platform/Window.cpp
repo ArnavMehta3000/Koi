@@ -234,7 +234,7 @@ namespace koi
 		m_height = static_cast<u32>(client.bottom - client.top);
 
 		::ShowWindow(m_hwnd, SW_SHOWNORMAL);
-		KOI_LOG(Platform, Info, "Window created: '{}' ({}x{}, {:.0f}% scale)", m_title, m_width, m_height, GetContentScale() * 100.0f);
+		KOI_LOG(Platform, Debug, "Window created: '{}' ({}x{}, {:.0f}% scale)", m_title, m_width, m_height, GetContentScale() * 100.0f);
 	}
 
 	void Window::Destroy()

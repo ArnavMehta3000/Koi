@@ -162,6 +162,7 @@ namespace koi::editor
 		if (!WriteMaterial(entry.DiskPath, m_source)) return;
 
 		m_dirty = false;
+		KOI_LOG(AssetDB, Info, "Saved material {}", entry.VirtualPath);
 		ApplyToResident(entry);
 		database.Refresh();
 	}

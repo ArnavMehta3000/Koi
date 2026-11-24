@@ -1,5 +1,6 @@
 #include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Core/Assert.h"
+#include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {
@@ -25,10 +26,12 @@ namespace koi
 			const u32 slot = m_free.back();
 			m_free.pop_back();
 			m_rows[slot] = row;
+			KOI_LOG(Render, Trace, "Material row {} reused", slot);
 			return slot;
 		}
 
 		m_rows.push_back(row);
+		KOI_LOG(Render, Trace, "Material row {} added", m_rows.size() - 1);
 		return static_cast<u32>(m_rows.size() - 1);
 	}
 
@@ -44,6 +47,7 @@ namespace koi
 		// A freed row keeps drawing until something claims the slot, so it becomes the fallback
 		m_rows[slot] = m_rows[kFallbackSlot];
 		m_free.push_back(slot);
+		KOI_LOG(Render, Trace, "Material row {} freed", slot);
 	}
 
 	DescriptorIndex MaterialTable::Upload(u32 frameSlot)

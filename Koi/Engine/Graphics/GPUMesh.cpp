@@ -74,7 +74,7 @@ namespace koi
 			}
 
 			CreateBuffers(device, mesh, prepared.Vertices, prepared.Indices);
-			KOI_LOG(Render, Debug, "GPUMesh uploaded from {}: {} draws, {} verts, {} indices",
+			KOI_LOG(Render, Trace, "GPUMesh uploaded from {}: {} draws, {} verts, {} indices",
 				model.SourcePath, mesh.DrawItems.size(), prepared.Vertices.size(), prepared.Indices.size());
 			return mesh;
 		}
@@ -112,7 +112,7 @@ namespace koi
 		TableSlots.push_back(MaterialTable::kFallbackSlot);
 		SlotPipelines.push_back(nullptr);
 
-		KOI_LOG(Render, Debug, "GPUMesh materials bound: {} slot(s), {} material asset(s)", TableSlots.size(), Materials.size());
+		KOI_LOG(Render, Trace, "GPUMesh materials bound: {} slot(s), {} material asset(s)", TableSlots.size(), Materials.size());
 	}
 
 	void GPUMesh::Release(GfxDevice& device)

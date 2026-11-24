@@ -6,7 +6,24 @@ Koi's logger wraps spdlog. Every message has a **category** and a **level**, and
 KOI_LOG(Render, Info, "Created {} targets", count);
 ```
 
-The format string uses `{fmt}` syntax (`{}`, `{:.2f}`, ...). Levels, from lowest to highest: `Trace`, `Debug`, `Info`, `Warn`, `Error`, `Critical`.
+The format string uses `{fmt}` syntax (`{}`, `{:.2f}`, ...).
+
+## Levels
+
+Pick a level by who the message is for, whatever its category:
+
+| Level | Meaning | Example |
+|---|---|---|
+| `Critical` | The process or the device can't continue | crash, device removed |
+| `Error` | Something requested didn't happen, or its result is wrong | a scene or shader failed to load |
+| `Warn` | It worked, but with a fallback or dropped data | missing material, unknown component table |
+| `Info` | An outcome whoever is making the game cares about | scene saved, asset imported |
+| `Debug` | What the engine did, once per operation | startup steps, swapchain resize |
+| `Trace` | One item inside an operation | each texture, shader or VFS read |
+
+A batch gets one `Debug` summary and its items are `Trace`. Asset imports are the exception: each finished import is `Info`.
+
+By default `Debug` and up is recorded, and the Log panel shows `Info` and up. Its Verbose button reveals the `Debug` messages already recorded. `Trace` has to be turned on first, e.g. `--log RHI=Trace`.
 
 ## Your own categories
 
@@ -35,10 +52,10 @@ There are three filters. A message has to pass all of them:
 
    ```toml
    [logging]
-   level = "Info"
+   level = "Debug"
 
    [logging.categories]
-   Gameplay = "Debug"
+   Gameplay = "Trace"
    RHI      = "Warn"
    ```
 
@@ -63,6 +80,5 @@ The Log panel can filter by level, by category and by text, and shows each messa
 
 ## Conventions the engine follows
 
-- `Trace` is for very detailed output: individual resources, primitives or entities. `Debug` is for details of an operation, `Info` for lifecycle milestones, and `Warn` and above for real problems.
 - Don't log every frame. Use the profiler for that (`*-profile` modes, `ZoneScoped`).
 - Always put braces around an `if` or loop body that contains `KOI_LOG`. The macro compiles to nothing in some configs.

@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/ECS/World.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include <string>
 
 namespace koi::editor
@@ -18,6 +19,7 @@ namespace koi::editor
 			{
 				entity.Add<Selected>();
 				m_entity = entity;
+				KOI_LOG(Editor, Trace, "Selected entity '{}'", entity.GetName());
 			}
 		}
 
@@ -25,6 +27,7 @@ namespace koi::editor
 		{
 			ClearEntity();
 			m_asset = std::move(virtualPath);
+			KOI_LOG(Editor, Trace, "Selected asset {}", m_asset);
 		}
 
 		inline void Clear()

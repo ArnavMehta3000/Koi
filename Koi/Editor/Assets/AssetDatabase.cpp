@@ -68,7 +68,7 @@ namespace koi::editor
 		std::ranges::sort(m_folders);
 		m_folders.erase(std::ranges::unique(m_folders).begin(), m_folders.end());
 
-		KOI_LOG(AssetDB, Info, "Asset browser found {} file(s) across {} folder(s)", m_entries.size(), m_folders.size());
+		KOI_LOG(AssetDB, Debug, "Asset browser found {} file(s) across {} folder(s)", m_entries.size(), m_folders.size());
 
 		// Files may have moved or been deleted, so ids need to point at their new homes
 		Engine& engine = Engine::Get();
@@ -159,7 +159,11 @@ namespace koi::editor
 			}
 
 			std::ofstream out(file, std::ios::binary | std::ios::trunc);
-			out << *text;
+			if (!(out << *text))
+			{
+				KOI_LOG(AssetDB, Error, "Couldn't update references in {}", file.string());
+				continue;
+			}
 			KOI_LOG(AssetDB, Debug, "Updated references in {}", file.string());
 		}
 	}
@@ -168,7 +172,7 @@ namespace koi::editor
 	{
 		if (!entry.Writable)
 		{
-			KOI_LOG(AssetDB, Warn, "Cannot move {}: engine content is read-only", entry.VirtualPath);
+			KOI_LOG(AssetDB, Error, "Cannot move {}: engine content is read-only", entry.VirtualPath);
 			return false;
 		}
 
@@ -244,7 +248,7 @@ namespace koi::editor
 
 		if (!entry->Writable)
 		{
-			KOI_LOG(AssetDB, Warn, "Cannot delete {}: engine content is read-only", entry->VirtualPath);
+			KOI_LOG(AssetDB, Error, "Cannot delete {}: engine content is read-only", entry->VirtualPath);
 			return false;
 		}
 

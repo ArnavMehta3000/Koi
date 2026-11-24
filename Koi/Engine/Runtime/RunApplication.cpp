@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -62,16 +63,24 @@ namespace koi::internal
 			for (const auto& [name, node] : *categories)
 			{
 				const std::string_view level = node.value_or(std::string_view());
-				if (utils::ToString(utils::LogLevelFromString(level)) != level)
+				const std::optional<LogLevel> parsed = utils::LogLevelFromString(level);
+				if (!parsed)
 				{
 					KOI_LOG(Engine, Warn, "[logging.categories] {} = '{}' is not a log level", name.str(), level);
 					continue;
 				}
-				categoryLevels.emplace(std::string(name.str()), utils::LogLevelFromString(level));
+				categoryLevels.emplace(std::string(name.str()), *parsed);
 			}
 		}
 
 		const LoggerConfig defaults{};
+		const std::string_view levelName = project["logging"]["level"].value_or(utils::ToString(defaults.RuntimeLevel));
+		const std::optional<LogLevel> level = utils::LogLevelFromString(levelName);
+		if (!level)
+		{
+			KOI_LOG(Engine, Warn, "[logging] level = '{}' is not a log level; using {}", levelName, utils::ToString(defaults.RuntimeLevel));
+		}
+
 		return AppCreateDesc
 		{
 			.WindowDesc =
@@ -85,7 +94,7 @@ namespace koi::internal
 			.LogConfig =
 			{
 				.FilePath        = project["logging"]["file"].value_or(defaults.FilePath),
-				.RuntimeLevel    = utils::LogLevelFromString(project["logging"]["level"].value_or(utils::ToString(defaults.RuntimeLevel))),
+				.RuntimeLevel    = level.value_or(defaults.RuntimeLevel),
 				.HistoryCapacity = project["logging"]["history"].value_or(defaults.HistoryCapacity),
 				.SpawnConsole    = project["logging"]["console"].value_or(defaults.SpawnConsole),
 				.UseDebugSink    = project["logging"]["debug_sink"].value_or(defaults.UseDebugSink),
@@ -108,7 +117,8 @@ namespace koi::internal
 			const size_t eq = entry.find('=');
 			const std::string_view name  = entry.substr(0, eq);
 			const std::string_view level = eq == std::string_view::npos ? std::string_view() : entry.substr(eq + 1);
-			if (name.empty() || utils::ToString(utils::LogLevelFromString(level)) != level)
+			const std::optional<LogLevel> parsed = utils::LogLevelFromString(level);
+			if (name.empty() || !parsed)
 			{
 				KOI_LOG(Engine, Warn, "--log {}: expected Category=Level", entry);
 				continue;
@@ -116,12 +126,12 @@ namespace koi::internal
 
 			if (name == "all")
 			{
-				log.RuntimeLevel = utils::LogLevelFromString(level);
+				log.RuntimeLevel = *parsed;
 				log.CategoryLevels.clear();
 			}
 			else
 			{
-				named.emplace_back(name, utils::LogLevelFromString(level));
+				named.emplace_back(name, *parsed);
 			}
 		}
 

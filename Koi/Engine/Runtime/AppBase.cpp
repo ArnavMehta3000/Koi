@@ -33,7 +33,7 @@ namespace koi
 
 	void AppBase::HostInit()
 	{
-		KOI_LOG(Engine, Info, "Initializing application: {}", m_desc.AppName);
+		KOI_LOG(Engine, Debug, "Initializing application: {}", m_desc.AppName);
 
 		OnRegisterComponents();
 		OnRegisterSystems();
@@ -82,7 +82,7 @@ namespace koi
 
 		// Hands back the asset references the scene's entities took when they loaded
 		m_world->Clear();
-		KOI_LOG(Engine, Info, "Shutting down application: {}", m_desc.AppName);
+		KOI_LOG(Engine, Debug, "Shutting down application: {}", m_desc.AppName);
 	}
 
 	void AppBase::HostBeginPlay()
@@ -127,6 +127,7 @@ namespace koi
 		{
 			KOI_LOG(Scene, Warn, "Scene '{}' replaces the pending load of '{}'", name, m_pendingScene);
 		}
+		KOI_LOG(Scene, Debug, "Queued scene '{}'", name);
 		m_pendingScene = name;
 		return true;
 	}

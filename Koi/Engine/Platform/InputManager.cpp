@@ -87,6 +87,7 @@ namespace koi
 		case WM_ACTIVATEAPP:
 			// Key-ups that land while another app is in front never reach us
 			m_appActive = msg.WParam != FALSE;
+			KOI_LOG(Input, Trace, "Application {}", m_appActive ? "activated" : "deactivated");
 			if (!m_appActive) m_keyboard.ReleaseAll();
 			m_mouse.OnAppActivated(m_appActive);
 			return std::nullopt;

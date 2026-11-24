@@ -145,7 +145,7 @@ namespace koi
 		}
 		m_phaseOrder.insert(pos, id);
 
-		KOI_LOG(ECS, Debug, "Phase '{}' registered{}{}{}", name, anchor == kNoPhase ? "" : (after ? " after '" : " before '"),
+		KOI_LOG(ECS, Trace, "Phase '{}' registered{}{}{}", name, anchor == kNoPhase ? "" : (after ? " after '" : " before '"),
 			anchor == kNoPhase ? "" : m_phases[anchor]->Name, anchor == kNoPhase ? "" : "'");
 		return id;
 	}

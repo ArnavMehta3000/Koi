@@ -148,7 +148,7 @@ namespace koi::editor
 
 					char name[128];
 					std::snprintf(name, sizeof(name), "%ls", desc.Description);
-					KOI_LOG(Import, Info, "Texture importer: BC6H/BC7 compress on the GPU ({})", name);
+					KOI_LOG(Import, Debug, "Texture importer: BC6H/BC7 compress on the GPU ({})", name);
 					return new GpuCompressor{ .Device = std::move(device) };
 				}
 

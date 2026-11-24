@@ -189,14 +189,11 @@ namespace koi
 	{
 		ZoneScoped;
 		CreatePhysicsWorld(PhysicsSettings::Resolve(world));
-
-		KOI_LOG(Physics, Info, "PhysicsSystem::OnBeginPlay");
 	}
 
 	void PhysicsSystem::OnEndPlay([[maybe_unused]] World& world)
 	{
 		DestroyPhysicsWorld();
-		KOI_LOG(Physics, Info, "PhysicsSystem::OnEndPlay");
 	}
 
 	void PhysicsSystem::CreatePhysicsWorld(const PhysicsSettings& settings)
@@ -205,6 +202,7 @@ namespace koi
 		worldDef.gravity = internal::ToB3(settings.Gravity);
 
 		m_b3WorldId = ::b3CreateWorld(&worldDef);
+		KOI_LOG(Physics, Debug, "Created physics world (gravity {:.2f}, {:.2f}, {:.2f})", settings.Gravity.x, settings.Gravity.y, settings.Gravity.z);
 	}
 
 	void PhysicsSystem::DestroyPhysicsWorld()
@@ -214,6 +212,7 @@ namespace koi
 
 		::b3DestroyWorld(m_b3WorldId);
 		m_b3WorldId = b3_nullWorldId;
+		KOI_LOG(Physics, Debug, "Destroyed physics world");
 	}
 
 	void PhysicsSystem::SetupBodies(World& world)

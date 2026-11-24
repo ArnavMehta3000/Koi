@@ -66,6 +66,7 @@ name = 'Sun'
 	{
 		if (Engine::Get().GetPlayState() != PlayState::Edit)
 		{
+			KOI_LOG(Editor, Warn, "Can't open '{}' during play", virtualPath);
 			m_toasts->Push(ToastKind::Warning, "Stop play before opening a scene");
 			return;
 		}
@@ -76,6 +77,7 @@ name = 'Sun'
 	{
 		if (name.empty() || name.find_first_of("\\/:*?\"<>|.") != std::string_view::npos)
 		{
+			KOI_LOG(Editor, Error, "Couldn't create scene: '{}' isn't a valid name", name);
 			m_toasts->Push(ToastKind::Error, std::format("'{}' isn't a valid scene name", name));
 			return;
 		}
@@ -84,11 +86,13 @@ name = 'Sun'
 		const std::optional<fs::path> diskPath = VirtualFileSystem::Get().TryResolveToDisk(virtualPath);
 		if (!diskPath)
 		{
+			KOI_LOG(Editor, Error, "Couldn't create scene '{}': the project's content isn't on disk", name);
 			m_toasts->Push(ToastKind::Error, "The project's content isn't on disk");
 			return;
 		}
 		if (fs::exists(*diskPath))
 		{
+			KOI_LOG(Editor, Error, "Couldn't create scene '{}': it already exists", name);
 			m_toasts->Push(ToastKind::Error, std::format("Scene '{}' already exists", name));
 			return;
 		}
@@ -97,6 +101,7 @@ name = 'Sun'
 		fs::create_directories(diskPath->parent_path(), ec);
 		if (std::ofstream out(*diskPath, std::ios::binary); !(out << kNewSceneTemplate))
 		{
+			KOI_LOG(Editor, Error, "Couldn't create scene '{}': couldn't write {}", name, diskPath->string());
 			m_toasts->Push(ToastKind::Error, std::format("Couldn't write '{}'", diskPath->string()));
 			return;
 		}

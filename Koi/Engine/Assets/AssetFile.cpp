@@ -295,7 +295,7 @@ namespace koi
 			return false;
 		}
 
-		KOI_LOG(Assets, Info, "Saved {} {} ({} chunk(s), {:.1f} KB)",
+		KOI_LOG(Assets, Trace, "Saved {} {} ({} chunk(s), {:.1f} KB)",
 			AssetFile::ToString(m_header.Type), diskPath.filename().string(), m_chunks.size(), static_cast<f64>(bytes.size()) / 1024.0);
 		return true;
 	}

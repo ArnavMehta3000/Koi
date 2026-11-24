@@ -138,7 +138,7 @@ namespace koi
 			return;
 		}
 
-		KOI_LOG(ECS, Debug, "Registered component '{}' (draw order {})", type->Key(), type->DrawOrder());
+		KOI_LOG(ECS, Trace, "Registered component '{}' (draw order {})", type->Key(), type->DrawOrder());
 
 		const auto at = std::ranges::upper_bound(m_types, type->DrawOrder(), {},
 			[](const std::unique_ptr<IComponentType>& t) { return t->DrawOrder(); });

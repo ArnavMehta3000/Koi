@@ -45,6 +45,7 @@ namespace koi
 
 		m_pipeline = std::string(pipeline);
 		build(*m_renderer, m_features);
+		KOI_LOG(Render, Debug, "Built pipeline '{}': {}", m_pipeline, m_features.Names());
 	}
 
 	void SceneRenderer::Submit(const RenderView& view, const RenderScene& scene)

@@ -28,7 +28,7 @@ namespace koi
 		}
 
 		m_factories.emplace_back(std::string(className), factory);
-		KOI_LOG(ECS, Debug, "Registered prefab class '{}'", className);
+		KOI_LOG(ECS, Trace, "Registered prefab class '{}'", className);
 	}
 
 	bool PrefabRegistry::Contains(std::string_view className) const

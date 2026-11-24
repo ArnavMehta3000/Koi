@@ -1,6 +1,7 @@
 #include "Koi/Engine/RHI/DescriptorHeap.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
+#include "Koi/Engine/Logging/Logger.h"
 
 namespace koi
 {
@@ -63,6 +64,10 @@ namespace koi
 		}
 
 		KOI_ASSERT(m_nextFresh < m_capacity, "DescriptorHeap capacity exhausted");
+		if (m_nextFresh == m_capacity / 10 * 9)
+		{
+			KOI_LOG(RHI, Warn, "Descriptor heap (type {}) is 90% full: {} of {}", static_cast<i32>(m_heap->GetDesc().Type), m_nextFresh, m_capacity);
+		}
 		return m_nextFresh++;
 	}
 

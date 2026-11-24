@@ -16,6 +16,7 @@
 #include "Koi/Engine/Math/Math.h"
 #include "Koi/Engine/Runtime/Engine.h"
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <unordered_map>
 
@@ -59,6 +60,7 @@ namespace koi
 			system->Build(*this);
 			KOI_LOG(ECS, Trace, "Built system '{}'", system->Name());
 		}
+		KOI_LOG(ECS, Debug, "Built {} system(s)", m_systems.size());
 	}
 
 	void World::BuildObservers()
@@ -69,6 +71,7 @@ namespace koi
 			observer->Build(*this);
 			KOI_LOG(ECS, Trace, "Built observer '{}'", observer->Name());
 		}
+		KOI_LOG(ECS, Debug, "Built {} observer(s)", m_observers.size());
 	}
 
 	void World::ConfigureComponentHooks()
@@ -124,6 +127,8 @@ namespace koi
 	void World::SwapScene(const toml::table& scene, std::string_view sourcePath)
 	{
 		ZoneScoped;
+		KOI_LOG(Scene, Debug, "Swapping scene '{}' for '{}' during play", m_sourcePath, sourcePath);
+
 		m_ecs->EmitToAll(koi::EndPlay{}, [](Entity e) { return !IsPersistent(e); });
 		m_ecs->Sync();
 		StopSystems();
@@ -142,6 +147,7 @@ namespace koi
 		KOI_ASSERT(Engine::Get().GetPlayState() != PlayState::Edit, "Persistent entities only exist during play");
 		KOI_ASSERT(!e.GetParent(), "Only a top-level entity can be made persistent");
 		e.Add<Persistent>();
+		KOI_LOG(Scene, Trace, "'{}' now persists across scene loads", e.GetName());
 	}
 
 	bool World::IsPersistent(Entity e)
@@ -157,6 +163,7 @@ namespace koi
 	void World::LoadFromTable(const toml::table& scene)
 	{
 		ZoneScoped;
+		const auto start = std::chrono::steady_clock::now();
 
 		const toml::array* entities = scene["entity"].as_array();
 		if (!entities)
@@ -260,12 +267,14 @@ namespace koi
 				.Set<Transform>(camXform)
 				.Set<CameraComponent>({});
 
-			KOI_LOG(Scene, Debug, "Scene has no camera; spawned a default one");
+			KOI_LOG(Scene, Warn, "Scene has no camera; spawned a default one");
 		}
 
 		PropagateTransforms();
 		m_renderScene->Sync();
-		KOI_LOG(Scene, Debug, "Built world from scene table ({} entities)", entities->size());
+
+		const f64 ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - start).count();
+		KOI_LOG(Scene, Debug, "Built world from scene table ({} entities, {} parented) in {:.1f} ms", entities->size(), pendingParents.size(), ms);
 	}
 
 	Result<void> World::Save()
@@ -457,6 +466,7 @@ namespace koi
 		const std::optional<Matrix> worldMatrix = world ? std::optional(world->World) : std::nullopt;
 
 		child.SetParent(parent);
+		KOI_LOG(Scene, Trace, "Reparented '{}' to '{}'", child.GetName(), parent ? parent.GetName() : std::string_view("<top level>"));
 
 		Transform* local = child.TryGet<Transform>();
 		if (!local || !worldMatrix) return;
@@ -473,6 +483,7 @@ namespace koi
 		m_ecs->SetPlaying(true);
 		m_ecs->EmitToAll(koi::BeginPlay{});
 		m_ecs->Sync();
+		KOI_LOG(Scene, Debug, "World began play");
 	}
 
 	void World::EndPlay()
@@ -482,6 +493,7 @@ namespace koi
 		m_ecs->Sync();
 		m_ecs->SetPlaying(false);
 		StopSystems();
+		KOI_LOG(Scene, Debug, "World ended play");
 	}
 
 	void World::StartSystems()

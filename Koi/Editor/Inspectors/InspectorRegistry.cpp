@@ -15,7 +15,7 @@ namespace koi::editor
 			return;
 		}
 
-		KOI_LOG(Editor, Debug, "Registered inspector for component '{}'", inspector->Key());
+		KOI_LOG(Editor, Trace, "Registered inspector for component '{}'", inspector->Key());
 		m_inspectors.push_back(std::move(inspector));
 	}
 

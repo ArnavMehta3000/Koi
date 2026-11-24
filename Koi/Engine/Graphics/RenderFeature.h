@@ -5,6 +5,7 @@
 #include "Koi/Engine/Graphics/RenderView.h"
 #include <concepts>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -28,14 +29,19 @@ namespace koi
 			virtual ~Slot() = default;
 			virtual void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene) = 0;
 
-			u32 Type = ~0u;
+			u32              Type = ~0u;
+			std::string_view Name;
 		};
 
 		template <RenderFeature T>
 		struct Model final : Slot
 		{
 			template <typename... Args>
-			explicit Model(Args&&... args) : Feature(std::forward<Args>(args)...) { Type = internal::TypeIndex<FeatureList, T>(); }
+			explicit Model(Args&&... args) : Feature(std::forward<Args>(args)...)
+			{
+				Type = internal::TypeIndex<FeatureList, T>();
+				Name = T::kName;
+			}
 
 			void Record(RenderGraph& graph, const RenderView& view, const RenderScene& scene) override { Feature.Record(graph, view, scene); }
 
@@ -67,6 +73,17 @@ namespace koi
 			{
 				slot->Record(graph, view, scene);
 			}
+		}
+
+		[[nodiscard]] std::string Names() const
+		{
+			std::string names;
+			for (const auto& slot : m_features)
+			{
+				if (!names.empty()) names += ", ";
+				names += slot->Name;
+			}
+			return names;
 		}
 
 		inline void Clear() { m_features.clear(); }

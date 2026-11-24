@@ -17,7 +17,7 @@ namespace koi
 			.DoubleSided = doubleSided,
 		}));
 
-		KOI_LOG(Render, Debug, "Material template '{}' registered with {} parameter(s)", entry.Name, entry.Parameters.size());
+		KOI_LOG(Render, Trace, "Material template '{}' registered with {} parameter(s)", entry.Name, entry.Parameters.size());
 		return entry;
 	}
 

@@ -44,7 +44,7 @@ namespace koi
 				return AcquireFallback();
 			}
 
-			KOI_LOG(Assets, Debug, "Loaded {} asset: {}", Traits::Name, key.Path());
+			KOI_LOG(Assets, Trace, "Loaded {} asset: {}", Traits::Name, key.Path());
 			return Insert(device, key, **source);
 		}
 
@@ -56,7 +56,7 @@ namespace koi
 				return existing;
 			}
 
-			KOI_LOG(Assets, Debug, "Registered generated {} asset: {}", AssetTraits<T>::Name, key.ToString());
+			KOI_LOG(Assets, Trace, "Registered generated {} asset: {}", AssetTraits<T>::Name, key.ToString());
 			return Insert(device, key, source);
 		}
 
@@ -138,6 +138,7 @@ namespace koi
 		void Collect(GfxDevice& device, f64 now, f64 grace)
 		{
 			m_now = now;
+			u32 evicted = 0;
 			std::erase_if(m_unused, [&](AssetHandle<T> handle)
 			{
 				const Entry* entry = m_pool.Get(handle);
@@ -145,8 +146,14 @@ namespace koi
 				if (now - entry->UnusedSince < grace) return false;
 
 				Evict(device, handle);
+				++evicted;
 				return true;
 			});
+
+			if (evicted > 0)
+			{
+				KOI_LOG(Assets, Debug, "Evicted {} unused {} asset(s)", evicted, AssetTraits<T>::Name);
+			}
 		}
 
 		// Rebuilds a resident asset from its file under the same handle. The caller makes sure nothing is still using the old one
@@ -169,7 +176,7 @@ namespace koi
 
 			AssetTraits<T>::Destroy(device, entry->Resource);
 			entry->Resource = std::move(fresh);
-			KOI_LOG(Assets, Debug, "Reloaded {} asset: {}", AssetTraits<T>::Name, key.Path());
+			KOI_LOG(Assets, Trace, "Reloaded {} asset: {}", AssetTraits<T>::Name, key.Path());
 			return true;
 		}
 
@@ -247,7 +254,7 @@ namespace koi
 			ZoneScopedN("Asset Evict");
 			ZoneText(entry->Key.Path().data(), entry->Key.Path().size());
 
-			KOI_LOG(Assets, Debug, "Unloaded {} asset: {}", AssetTraits<T>::Name, entry->Key.ToString());
+			KOI_LOG(Assets, Trace, "Unloaded {} asset: {}", AssetTraits<T>::Name, entry->Key.ToString());
 
 			m_handleByKey.erase(entry->Key);
 			AssetTraits<T>::Destroy(device, entry->Resource);

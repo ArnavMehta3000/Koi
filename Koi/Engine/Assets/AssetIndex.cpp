@@ -37,7 +37,7 @@ namespace koi
 		});
 
 		const f64 ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - start).count();
-		KOI_LOG(Assets, Info, "Indexed {} asset(s) in {:.1f} ms", Count(), ms);
+		KOI_LOG(Assets, Debug, "Indexed {} asset(s) in {:.1f} ms", Count(), ms);
 	}
 
 	void AssetIndex::Clear()
@@ -97,7 +97,7 @@ namespace koi
 
 		if (ec)
 		{
-			KOI_LOG(Assets, Warn, "Stopped scanning {} early: {}", contentRoot.string(), ec.message());
+			KOI_LOG(Assets, Error, "Stopped scanning {} early: {}", contentRoot.string(), ec.message());
 		}
 	}
 

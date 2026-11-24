@@ -18,6 +18,12 @@ namespace koi::editor
 				return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
 			}).begin() != text.end() || needle.empty();
 		}
+
+		void Run(const Command& command)
+		{
+			KOI_LOG(Editor, Debug, "Command '{}'", command.Id);
+			command.Execute();
+		}
 	}
 
 	void CommandRegistry::Register(Command command)
@@ -28,7 +34,7 @@ namespace koi::editor
 			return;
 		}
 
-		KOI_LOG(Editor, Debug, "Registered editor command '{}'", command.Id);
+		KOI_LOG(Editor, Trace, "Registered editor command '{}'", command.Id);
 		m_commands.push_back(std::move(command));
 	}
 
@@ -43,7 +49,7 @@ namespace koi::editor
 		const Command* command = Find(id);
 		if (!command || !CanRun(*command)) return false;
 
-		command->Execute();
+		Run(*command);
 		return true;
 	}
 
@@ -60,7 +66,7 @@ namespace koi::editor
 
 			if (ImGui::Shortcut(command.Shortcut, ImGuiInputFlags_RouteGlobal) && CanRun(command))
 			{
-				command.Execute();
+				Run(command);
 			}
 		}
 	}
@@ -73,7 +79,7 @@ namespace koi::editor
 
 			if (ImGui::Shortcut(command.Shortcut) && CanRun(command))
 			{
-				command.Execute();
+				Run(command);
 			}
 		}
 	}
@@ -86,7 +92,7 @@ namespace koi::editor
 		const bool checked = command->IsChecked && command->IsChecked();
 		if (ImGui::MenuItem(command->Label.c_str(), ShortcutName(*command), checked, CanRun(*command)))
 		{
-			command->Execute();
+			Run(*command);
 		}
 	}
 
@@ -145,6 +151,6 @@ namespace koi::editor
 		ImGui::EndPopup();
 
 		// After the popup is gone, so a command that opens a window of its own isn't covered by it
-		if (chosen) chosen->Execute();
+		if (chosen) Run(*chosen);
 	}
 }

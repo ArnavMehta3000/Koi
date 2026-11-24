@@ -54,7 +54,7 @@ namespace koi
 		m_capture.Init(*m_device);
 		RegisterMaterialTemplates();
 
-		KOI_LOG(Render, Info, "Renderer initialized");
+		KOI_LOG(Render, Debug, "Renderer initialized");
 	}
 
 	void Renderer::RegisterMaterialTemplates()
@@ -100,7 +100,7 @@ namespace koi
 		m_defaultResources.Shutdown();
 		m_device = nullptr;
 
-		KOI_LOG(Render, Info, "Renderer shut down");
+		KOI_LOG(Render, Debug, "Renderer shut down");
 	}
 
 	void Renderer::Init(Window& window, bool vsync)
@@ -203,6 +203,7 @@ namespace koi
 
 	void Renderer::RegisterPipeline(std::string name, PipelineBuildFunc build)
 	{
+		KOI_LOG(Render, Trace, "Registered render pipeline '{}'", name);
 		m_pipelines.insert_or_assign(std::move(name), build);
 	}
 

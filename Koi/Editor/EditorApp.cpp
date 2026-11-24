@@ -166,7 +166,7 @@ namespace koi::editor
 
 		LoadEditorState(state);
 
-		KOI_LOG(Editor, Info, "Editor initialized");
+		KOI_LOG(Editor, Debug, "Editor initialized");
 	}
 
 	void EditorApp::StartExtensions()
@@ -223,7 +223,12 @@ namespace koi::editor
 		if (!last) return;
 
 		const std::optional<fs::path> disk = VirtualFileSystem::Get().TryResolveToDisk(*last);
-		if (!disk || !fs::exists(*disk)) return;
+		if (!disk || !fs::exists(*disk))
+		{
+			KOI_LOG(Editor, Debug, "Last scene '{}' is gone, opening the startup scene", *last);
+			return;
+		}
+		KOI_LOG(Editor, Debug, "Reopening '{}'", *last);
 
 		AppCreateDesc desc = m_game->GetDesc();
 		const auto listed = std::ranges::find(desc.Scenes, *last, &decltype(desc.Scenes)::value_type::second);
@@ -258,10 +263,11 @@ namespace koi::editor
 		if (out)
 		{
 			out << koi::utils::TomlDocument(root);
+			KOI_LOG(Editor, Debug, "Saved editor state to '{}'", path.string());
 		}
 		else
 		{
-			KOI_LOG(Editor, Warn, "Could not write editor state to '{}'", path.string());
+			KOI_LOG(Editor, Error, "Could not write editor state to '{}'", path.string());
 		}
 	}
 
@@ -382,7 +388,7 @@ namespace koi::editor
 		m_context.Shutdown();  // cancels running imports and waits for them
 		m_game->HostShutdown();
 		m_imgui.Shutdown();
-		KOI_LOG(Editor, Info, "Editor shut down");
+		KOI_LOG(Editor, Debug, "Editor shut down");
 	}
 
 	void EditorApp::HostBeginPlay()
@@ -604,6 +610,7 @@ namespace koi::editor
 		World& world = m_game->GetWorld();
 		if (world.GetSourcePath().empty())
 		{
+			KOI_LOG(Editor, Warn, "Nothing to save: the world was not loaded from a scene");
 			m_toasts->Push(ToastKind::Warning, "Nothing to save: the world was not loaded from a scene");
 			return;
 		}

@@ -13,6 +13,8 @@ namespace koi
 	{
 		std::lock_guard lock(m_mutex);
 
+		if (m_slots.size() == capacity) return;
+
 		m_slots.clear();
 		m_slots.resize(capacity);
 		m_written = 0;

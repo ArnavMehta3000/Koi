@@ -69,6 +69,8 @@ namespace koi::editor
 			if (key) m_pinnedMaterials.push_back(materials.Acquire(device, key));  // Acquire increases the internal ref-count
 		});
 
+		KOI_LOG(Editor, Debug, "Play: snapshot of '{}' taken ({} entities), {} mesh(es) and {} material(s) pinned", m_snapshotPath,
+			m_snapshot["entity"].as_array()->size(), m_pinnedMeshes.size(), m_pinnedMaterials.size());
 		engine.SetPlayState(PlayState::Playing);  // Fires OnBeginPlay, spawns discarded
 	}
 

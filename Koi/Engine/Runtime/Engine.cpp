@@ -9,12 +9,24 @@
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppBase.h"
 #include "Koi/Engine/Runtime/AppHost.h"
+#include <chrono>
 
 namespace koi
 {
 	template<> InputManager&  Engine::GetSubsystem<InputManager>()  { return *m_input;    }
 	template<> Renderer&      Engine::GetSubsystem<Renderer>()      { return *m_renderer; }
 	template<> AssetRegistry& Engine::GetSubsystem<AssetRegistry>() { return *m_assets;   }
+
+	namespace
+	{
+		void Timed(std::string_view what, auto&& func)
+		{
+			const auto start = std::chrono::steady_clock::now();
+			func();
+			const f64 ms = std::chrono::duration<f64, std::milli>(std::chrono::steady_clock::now() - start).count();
+			KOI_LOG(Engine, Debug, "{} in {:.1f} ms", what, ms);
+		}
+	}
 
 	Engine* Engine::s_instance = nullptr;
 
@@ -31,12 +43,11 @@ namespace koi
 		KOI_ASSERT(s_instance == nullptr, "Engine already initialized");
 		s_instance = this;
 
-		KOI_LOG(Engine, Info, "Engine initializing");
+		KOI_LOG(Engine, Debug, "Engine initializing");
 
-		m_input    = std::make_unique<InputManager>();
-		m_renderer = std::make_unique<Renderer>();
-		m_assets   = std::make_unique<AssetRegistry>();
-		KOI_LOG(Engine, Debug, "Engine subsystems constructed");
+		m_input = std::make_unique<InputManager>();
+		Timed("Created the renderer", [&] { m_renderer = std::make_unique<Renderer>(); });
+		m_assets = std::make_unique<AssetRegistry>();
 
 		ComponentRegistry::Get().RegisterEngineComponents();
 	}
@@ -54,7 +65,7 @@ namespace koi
 		KOI_LOG(Engine, Debug, "Engine subsystems shut down");
 
 		m_window.reset();
-		KOI_LOG(Engine, Info, "Engine shut down after {:.4f}s ({} frames)", GetStats().TotalTime, GetStats().FrameCount);
+		KOI_LOG(Engine, Debug, "Engine shut down after {:.4f}s ({} frames)", GetStats().TotalTime, GetStats().FrameCount);
 
 		s_instance = nullptr;
 	}
@@ -69,18 +80,17 @@ namespace koi
 
 		host.SetWindow(window);
 
-		m_input->Init(window, desc.Input);
-		m_renderer->Init(window, mainWndDesc.VSync);
-		m_assets->Init();
-		KOI_LOG(Engine, Debug, "Engine subsystems initialized");
+		Timed("Initialized input",    [&] { m_input->Init(window, desc.Input); });
+		Timed("Initialized renderer", [&] { m_renderer->Init(window, mainWndDesc.VSync); });
+		Timed("Initialized assets",   [&] { m_assets->Init(); });
 
 		window.SetCloseCallback([this]() { RequestExit(); });
 
 		// Init application
 		m_host = &host;
-		host.HostInit();
+		Timed("Initialized the application", [&] { host.HostInit(); });
 
-		KOI_LOG(Engine, Info, "Entering main loop");
+		KOI_LOG(Engine, Debug, "Entering main loop");
 
 		if (host.StartsInPlayMode())
 		{
@@ -88,7 +98,7 @@ namespace koi
 		}
 
 		MainLoop(host);
-		KOI_LOG(Engine, Info, "Exited main loop");
+		KOI_LOG(Engine, Debug, "Exited main loop");
 
 		SetPlayState(PlayState::Edit);  // fires HostEndPlay when we exit mid-play
 		host.HostShutdown();
@@ -104,7 +114,7 @@ namespace koi
 		const bool wasInPlay = m_playState != PlayState::Edit;
 		const bool nowInPlay = state != PlayState::Edit;
 
-		KOI_LOG(Engine, Info, "Play state: {} -> {}", ToString(m_playState), ToString(state));
+		KOI_LOG(Engine, Debug, "Play state: {} -> {}", ToString(m_playState), ToString(state));
 		m_playState = state;
 
 		if (!m_host) return;

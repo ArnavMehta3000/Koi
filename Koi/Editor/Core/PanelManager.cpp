@@ -37,7 +37,7 @@ namespace koi::editor
 			return nullptr;
 		}
 
-		KOI_LOG(Editor, Debug, "Registered editor panel '{}'", info.Name);
+		KOI_LOG(Editor, Trace, "Registered editor panel '{}'", info.Name);
 		panel->m_info = &info;
 		return m_panels.emplace_back(std::move(panel)).get();
 	}

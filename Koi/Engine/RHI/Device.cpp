@@ -85,8 +85,8 @@ namespace koi
 			case D3D12_MESSAGE_SEVERITY_CORRUPTION: { KOI_LOG(RHI, Critical, "[D3D12] {} (id {})", description, static_cast<i32>(id)); break; }
 			case D3D12_MESSAGE_SEVERITY_ERROR:      { KOI_LOG(RHI, Error, "[D3D12] {} (id {})",    description, static_cast<i32>(id)); break; }
 			case D3D12_MESSAGE_SEVERITY_WARNING:    { KOI_LOG(RHI, Warn, "[D3D12] {} (id {})",     description, static_cast<i32>(id)); break; }
-			case D3D12_MESSAGE_SEVERITY_INFO:       { KOI_LOG(RHI, Info, "[D3D12] {}",             description); break; }
-			default:                                { KOI_LOG(RHI, Debug, "[D3D12] {}",            description); break; }
+			case D3D12_MESSAGE_SEVERITY_INFO:       { KOI_LOG(RHI, Debug, "[D3D12] {}",             description); break; }
+			default:                                { KOI_LOG(RHI, Trace, "[D3D12] {}",            description); break; }
 			}
 		}
 	}
@@ -469,7 +469,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG(RHI, Warn, "Trying to mark invalid texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+			KOI_LOG(RHI, Error, "Trying to mark invalid texture for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 	}
 
@@ -484,7 +484,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG(RHI, Warn, "Trying to mark invalid buffer for deletion (Handle: {})", h.GetId());
+			KOI_LOG(RHI, Error, "Trying to mark invalid buffer for deletion (Handle: {})", h.GetId());
 		}
 	}
 
@@ -571,7 +571,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG(RHI, Warn, "Trying to mark invalid pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
+			KOI_LOG(RHI, Error, "Trying to mark invalid pipeline for deletion (Handle: idx={}, gen={})", h.GetIndex(), h.GetGeneration());
 		}
 	}
 
@@ -760,7 +760,7 @@ namespace koi
 		if (!pso)
 			return {};
 
-		KOI_LOG(RHI, Debug, "Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG(RHI, Trace, "Created pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(*pso), .Topology = desc.Topology });
 	}
 
@@ -770,7 +770,7 @@ namespace koi
 		if (!pso)
 			return {};
 
-		KOI_LOG(RHI, Debug, "Created compute pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG(RHI, Trace, "Created compute pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return m_pipelines.Emplace(Pipeline{ .Pso = std::move(*pso), .IsCompute = true });
 	}
 
@@ -789,7 +789,7 @@ namespace koi
 		pipeline->Pso      = std::move(*pso);
 		pipeline->Topology = desc.Topology;
 
-		KOI_LOG(RHI, Debug, "Recreated pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG(RHI, Trace, "Recreated pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return true;
 	}
 
@@ -803,7 +803,7 @@ namespace koi
 			return false;
 
 		m_pipelines.Get(h)->Pso = std::move(*pso);
-		KOI_LOG(RHI, Debug, "Recreated compute pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
+		KOI_LOG(RHI, Trace, "Recreated compute pipeline: {}", desc.DebugName.empty() ? "<unnamed>" : desc.DebugName);
 		return true;
 	}
 
@@ -918,7 +918,7 @@ namespace koi
 		m_supportsTearing = (allowTearing == TRUE);
 		if (!m_supportsTearing)
 		{
-			KOI_LOG(RHI, Warn, "Variable refresh rate / tearing not supported");
+			KOI_LOG(RHI, Debug, "Variable refresh rate / tearing not supported");
 		}
 	}
 
@@ -945,7 +945,7 @@ namespace koi
 				__uuidof(ID3D12Device), nullptr)))
 			{
 				const std::string name = utils::FromWide(desc.Description);
-				KOI_LOG(RHI, Info, "D3D12 Adapter selected: VID:{:04X} PID:{:04X} - {}",
+				KOI_LOG(RHI, Debug, "D3D12 Adapter selected: VID:{:04X} PID:{:04X} - {}",
 					desc.VendorId, desc.DeviceId, name);
 				break;
 			}
@@ -975,7 +975,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG(RHI, Warn, "DRED unavailable; device-removed reports won't have breadcrumbs");
+			KOI_LOG(RHI, Debug, "DRED unavailable; device-removed reports won't have breadcrumbs");
 		}
 
 		KOI_LOG(RHI, Debug, "Creating D3D12 device");

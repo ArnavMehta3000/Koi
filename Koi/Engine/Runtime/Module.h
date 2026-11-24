@@ -1,4 +1,5 @@
 #pragma once
+#include "Koi/Engine/Logging/Logger.h"
 #include <concepts>
 #include <string_view>
 
@@ -15,6 +16,14 @@ namespace koi
 	template<Module... Ms>
 	struct ModuleList
 	{
-		static void Register() { (Ms::Register(), ...); }
+		static void Register() { (RegisterOne<Ms>(), ...); }
+
+	private:
+		template<Module M>
+		static void RegisterOne()
+		{
+			KOI_LOG(Engine, Debug, "Registering module '{}'", std::string_view(M::kName));
+			M::Register();
+		}
 	};
 }

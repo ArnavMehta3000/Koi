@@ -155,7 +155,7 @@ namespace koi
 	ComPtr<IDxcBlob> ShaderCompiler::CompileFromFile(const fs::path& filePath, const Args& args, std::vector<fs::path>* outIncludes, ShaderInfo* outInfo)
 	{
 		ZoneScoped;
-		KOI_LOG(Shaders, Debug, "Compiling shader: {}", filePath.string());
+		KOI_LOG(Shaders, Trace, "Compiling shader: {}", filePath.string());
 
 		KOI_ASSERT(args.Type != ShaderType::Unknown, "Unknown shader type");
 		if (args.Type == ShaderType::Unknown) return nullptr;

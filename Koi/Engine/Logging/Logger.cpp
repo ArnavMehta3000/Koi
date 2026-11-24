@@ -62,7 +62,7 @@ namespace koi
 			std::mutex                                   Mutex;
 			std::deque<CategoryEntry>                    Entries;
 			std::atomic<u32>                             Count{ 0 };
-			LogLevel                                     DefaultLevel = LogLevel::Trace;
+			LogLevel                                     DefaultLevel = LogLevel::Debug;
 			std::map<std::string, LogLevel, std::less<>> Overrides;
 
 			[[nodiscard]] LogLevel LevelFor(std::string_view name) const

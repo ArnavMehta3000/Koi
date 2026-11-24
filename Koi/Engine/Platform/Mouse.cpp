@@ -1,5 +1,6 @@
 #include "Koi/Engine/Platform/Mouse.h"
 #include "Koi/Engine/Core/Win32.h"
+#include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Platform/Window.h"
 
 namespace koi
@@ -30,6 +31,11 @@ namespace koi
 
 	void Mouse::SetCursorLocked(bool locked)
 	{
+		if (locked != m_cursorLocked)
+		{
+			KOI_LOG(Input, Trace, "Cursor {}", locked ? "locked" : "released");
+		}
+
 		m_cursorLocked = locked;
 		SetCursorVisible(!locked);
 

@@ -145,7 +145,7 @@ namespace koi::editor
 			const bool model = IsModelSource(file);
 			if (!model && !IsTextureSource(file))
 			{
-				KOI_LOG(Import, Info, "Skipping {}: only images and glTF models can be imported for now", file.filename().string());
+				KOI_LOG(Import, Warn, "Skipping {}: only images and glTF models can be imported for now", file.filename().string());
 				return;
 			}
 
@@ -200,7 +200,7 @@ namespace koi::editor
 		const size_t settingsSize = isModel ? sizeof(ModelImportSettings) : sizeof(TextureImportSettings);
 		if ((file->Type() != AssetFileType::Texture && !isModel) || settingsBytes.size() < settingsSize || refBytes.empty())
 		{
-			KOI_LOG(Import, Warn, "Can't reimport {}: it doesn't remember where it came from (a cooked copy, maybe?)", assetPath);
+			KOI_LOG(Import, Error, "Can't reimport {}: it doesn't remember where it came from (a cooked copy, maybe?)", assetPath);
 			return false;
 		}
 
@@ -209,7 +209,7 @@ namespace koi::editor
 		std::error_code ec;
 		if (source.empty() || !fs::exists(source, ec))
 		{
-			KOI_LOG(Import, Warn, "Can't reimport {}: its source {} isn't there anymore", assetPath, ref);
+			KOI_LOG(Import, Error, "Can't reimport {}: its source {} isn't there anymore", assetPath, ref);
 			return false;
 		}
 
@@ -226,7 +226,7 @@ namespace koi::editor
 		item->OutputDisk = VirtualFileSystem::Get().TryResolveToDisk(assetPath).value_or(fs::path());
 		item->Id         = file->Id();  // same id, so everything pointing at it keeps working
 
-		KOI_LOG(Import, Info, "Reimporting {} from {}", assetPath, ref);
+		KOI_LOG(Import, Debug, "Reimporting {} from {}", assetPath, ref);
 		Start({ std::move(item) });
 		return true;
 	}
@@ -289,6 +289,7 @@ namespace koi::editor
 
 	void ImportQueue::Start(std::vector<std::shared_ptr<ImportItem>> items)
 	{
+		KOI_LOG(Import, Debug, "Importing {} file(s)", items.size());
 		m_history.insert(m_history.end(), items.begin(), items.end());
 
 		Batch batch{ .Items = std::move(items) };

@@ -130,6 +130,7 @@ namespace koi
 		DX_CHECK(m_copyFence->SetEventOnCompletion(fenceValue, m_fenceEvent));
 		::WaitForSingleObject(m_fenceEvent, INFINITE);
 
+		KOI_LOG(RHI, Trace, "Upload batch finished: {} staging buffer(s)", m_activeStagingBuffers.size());
 		for (BufferHandle h : m_activeStagingBuffers)
 		{
 			m_device->Destroy(h);
@@ -249,7 +250,7 @@ namespace koi
 		}
 		else
 		{
-			KOI_LOG(RHI, Debug, "Texture layout differs from this GPU's footprints, copying it row by row");
+			KOI_LOG(RHI, Trace, "Texture layout differs from this GPU's footprints, copying it row by row");
 			for (u32 i = 0; i < count; ++i)
 			{
 				const u32 rows  = std::min(numRows[i], layout[i].NumRows);

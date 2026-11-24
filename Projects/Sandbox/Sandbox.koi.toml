@@ -12,29 +12,14 @@ vsync  = false
 
 [logging]
 file       = "Logs/Koi.log"  # relative to <project>/.koi (editor) or the exe (runtime); empty disables
-level      = "Trace"         # default for categories not listed below; --LogLevel still wins
-history    = 4096            # records kept for the editor Log panel; 0 disables
+level      = "Debug"         # the Log panel hides Debug until asked; --log overrides for one run
+history    = 16384           # records kept for the editor Log panel; 0 disables
 console    = false
 debug_sink = true
 
-# Engine and editor categories; `level` covers the game's own and anything not listed.
-# Override per run with --log, e.g. --log RHI=Trace or --log all=Trace
+# Exceptions to `level`, e.g. RHI = "Trace". Override per run with --log RHI=Trace or --log all=Trace
 [logging.categories]
-Engine   = "Info"
-Platform = "Info"
-Input    = "Info"
-IO       = "Info"
-Assets   = "Debug"
-ECS      = "Trace"
-Scene    = "Debug"
-Render   = "Debug"
-RHI      = "Info"
-Shaders  = "Info"
-Physics  = "Info"
-Editor   = "Info"
-AssetDB  = "Info"
-Import   = "Debug"
-Cook     = "Info"
+Render = "Trace"
 
 [scenes]
 startup = "Hierarchy"

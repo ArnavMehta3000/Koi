@@ -11,29 +11,13 @@ vsync  = false
 
 [logging]
 file       = "Logs/Surf.log"  # relative to <project>/.koi (editor) or the exe (runtime); empty disables
-level      = "Trace"
-history    = 4096
+level      = "Debug"         # the Log panel hides Debug until asked; --log overrides for one run
+history    = 16384           # records kept for the editor Log panel; 0 disables
 console    = false
 debug_sink = true
 
-# Engine and editor categories; `level` covers the game's own and anything not listed.
-# Override per run with --log, e.g. --log RHI=Trace or --log all=Trace
+# Exceptions to `level`, e.g. RHI = "Trace". Override per run with --log RHI=Trace or --log all=Trace
 [logging.categories]
-Engine   = "Info"
-Platform = "Info"
-Input    = "Info"
-IO       = "Info"
-Assets   = "Debug"
-ECS      = "Info"
-Scene    = "Debug"
-Render   = "Debug"
-RHI      = "Info"
-Shaders  = "Info"
-Physics  = "Debug"
-Editor   = "Info"
-AssetDB  = "Info"
-Import   = "Debug"
-Cook     = "Info"
 
 [scenes]
 startup = "Main"

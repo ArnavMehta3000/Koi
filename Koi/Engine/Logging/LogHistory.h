@@ -22,7 +22,7 @@ namespace koi
 	public:
 		static LogHistory& Get();
 
-		// 0 disables history entirely. Drops whatever is currently held
+		// 0 disables history entirely. Drops whatever is currently held, unless the size stays the same
 		void Resize(u32 capacity);
 		void Clear();
 

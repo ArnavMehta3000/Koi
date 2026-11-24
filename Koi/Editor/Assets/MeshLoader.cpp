@@ -207,7 +207,7 @@ namespace koi::editor
 			}
 			else
 			{
-				KOI_LOG(Import, Debug, "Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
+				KOI_LOG(Import, Trace, "Primitive in mesh '{}' has no NORMAL attribute", mesh.Name);
 			}
 
 			// UV
@@ -222,7 +222,7 @@ namespace koi::editor
 			}
 			else
 			{
-				KOI_LOG(Import, Debug, "Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
+				KOI_LOG(Import, Trace, "Primitive in mesh '{}' has no TEXCOORD_0 attribute", mesh.Name);
 			}
 
 			// Tangent
@@ -239,7 +239,7 @@ namespace koi::editor
 			}
 			else
 			{
-				KOI_LOG(Import, Debug, "Primitive in mesh '{}' has no TANGENT attribute; generating placeholders", mesh.Name);
+				KOI_LOG(Import, Trace, "Primitive in mesh '{}' has no TANGENT attribute; generating placeholders", mesh.Name);
 			}
 
 			// Indices
