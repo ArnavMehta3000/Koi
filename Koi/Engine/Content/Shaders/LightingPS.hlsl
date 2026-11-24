@@ -1,4 +1,5 @@
 #include "Interop/Lighting.hlsli"
+#include "BRDF.hlsl"
 
 ConstantBuffer<LightingRootConstants> g_root : register(b0);
 
@@ -73,7 +74,8 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 	float3 N = normalize(normalTex.Load(texel).xyz * 2.0 - 1.0);
 
 	float2 material  = materialTex.Load(texel).rg;
-	float roughness  = material.r;
+	float roughness  = max(material.r, kMinRoughness);
+	float a          = roughness * roughness;
 	float metallic   = material.g;
 	float3 V         = normalize(g_root.CameraPosition.xyz - worldPos);
 
@@ -108,12 +110,11 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 		float3 H     = normalize(L + V);
 		float  ndoth = saturate(dot(N, H));
 
-		// Blinn-Phong specular: map roughness -> shininess
-		float shininess = lerp(4.0, 256.0, 1.0 - roughness);
-		float spec      = pow(ndoth, shininess) * (1.0 - roughness);
+		float3 diffuse = diffuseAlbedo / kPi;
+		float3 specular = F0 * D_GGX(ndoth, a) * 0.25; // G cancels the denominator for now
 
 		float3 radiance = light.Color * light.Intensity * atten;
-		color += (diffuseAlbedo + F0 * spec) * ndotl * radiance * SampleShadow(light, worldPos, N, ndotl);
+		color += (diffuse + specular) * ndotl * radiance * SampleShadow(light, worldPos, N, ndotl);
 	}
 
 	return float4(color, 1.0);
