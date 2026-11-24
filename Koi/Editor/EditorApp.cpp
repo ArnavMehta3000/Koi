@@ -149,6 +149,9 @@ namespace koi::editor
 		m_commands->Register({ .Id = "reload.all", .Label = "Reload All Shaders", .Icon = ICON_FA_ARROWS_ROTATE, .Shortcut = ImGuiMod_Shift | ImGuiKey_F5,
 			.Execute = [this] { m_pendingShaderReload = true; } });
 
+		m_commands->Register({ .Id = "view.screenshot", .Label = "Take Screenshot", .Icon = ICON_FA_CAMERA, .Shortcut = ImGuiKey_F9,
+			.Execute = [] { Engine::Get().GetSubsystem<Renderer>().RequestScreenshot(); } });
+
 		m_commands->Register({ .Id = "palette.open", .Label = "Command Palette", .Icon = ICON_FA_MAGNIFYING_GLASS, .Shortcut = ImGuiMod_Ctrl | ImGuiKey_K,
 			.Execute = [this] { m_commands->OpenPalette(); } });
 	}
@@ -493,6 +496,7 @@ namespace koi::editor
 			m_imgui.DrawAppearanceMenu();
 			ImGui::Separator();
 			m_commands->MenuItem("palette.open");
+			m_commands->MenuItem("view.screenshot");
 			ImGui::EndMenu();
 		}
 
