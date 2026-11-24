@@ -18,7 +18,7 @@ The engine is always in one of three states: `Edit`, `Playing` or `Paused`. The 
 
 - **Only what a scene file can hold survives Stop.** Registered components are restored. `koi::Transient<>` fields return to their defaults. Anything that isn't a registered component (unregistered data, singletons on the root) is lost.
 - **Entities spawned during Play are removed** on Stop.
-- **`AppBase::LoadScene` during Play** reloads the world in place: the old entities get `EndPlay`, the new ones `BeginPlay`, and singletons are cleared.
+- **`AppBase::LoadScene` during Play** reloads the world in place after the tick: the old entities get `EndPlay`, the new ones `BeginPlay`, and singletons are cleared. Top-level entities marked with `World::MakePersistent` stay, children included, and get `SceneLoaded` instead. `OnSceneLoaded` runs afterwards.
 - **Your `AppBase` subclass is not reset.** Member variables keep whatever Play left in them. Reset them in `OnBeginPlay` or `OnEndPlay`.
 - **Entity IDs change** on Stop, because the world is rebuilt. Don't keep `koi::Entity` handles across a Stop. The editor clears the selection for the same reason.
 - **Edits you make during Play are thrown away** on Stop, including changes in the inspector and gizmo moves. The play tint on the editor is your reminder.
@@ -34,6 +34,6 @@ In Edit, nothing catches an exception from `OnTick`, so it closes the editor. Th
 
 ## Other things to know
 
-- Fixed-step systems (`using Phase = koi::FixedUpdate;`) run at 60 Hz, as many times per frame as they're behind. The frame delta is clamped, so a long stall can't queue up hundreds of steps.
+- Fixed-step systems (`using Phase = koi::FixedUpdate;`) run at 60 Hz unless `[physics] fixed_step` says otherwise, as many times per frame as they're behind. The frame delta is clamped, so a long stall can't queue up hundreds of steps.
 - There's no C++ hot reload, and none is planned. Changing code means closing the editor, rebuilding and starting it again. Shaders do reload (F5).
-- **Ctrl+S saves whatever the world looks like right now.** Pressing it during Play writes the play-time state into your scene file. Save in Edit.
+- **You can only save in Edit.** Save Scene (Ctrl+S), New Scene and Cook are disabled during Play.

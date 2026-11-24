@@ -15,7 +15,7 @@ Each one starts with a 64-byte header holding the asset's **UUID**, followed by 
 Files refer to assets by UUID, never by path:
 
 ```toml
-[entity.mesh]
+[entity.Mesh]
 id = '8e985361-92e3-5bd0-89b0-eabe0e977013'  # engine Box
 ```
 

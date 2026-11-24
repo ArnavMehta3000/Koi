@@ -5,9 +5,12 @@ Everything below is done from your project. You never need to edit the engine.
 | What | How | Docs |
 |---|---|---|
 | Window, logging, scenes, input actions | The project TOML | [Starting a project](NewProject.md) |
-| Game lifecycle | Override `AppBase` hooks: `OnInit`, `OnTick`, `OnRender`, `OnBeginPlay`, `OnEndPlay`, `OnShutdown` | [Starting a project](NewProject.md) |
+| Game lifecycle | Override `AppBase` hooks: `OnInit`, `OnSceneLoaded`, `OnTick`, `OnRender`, `OnBeginPlay`, `OnEndPlay`, `OnShutdown` | [Starting a project](NewProject.md) |
+| Optional engine features (physics) | `add_deps("Koi.Module.<Name>")` + `OnRegisterModules` | [Starting a project](NewProject.md#modules) |
+| Changing scenes | `AppBase::LoadScene(name)`, `World::MakePersistent` | [Play mode](PlayMode.md) |
 | Components | A struct with `kKey`, plus `ComponentType<T>` | [Components](Components.md) |
 | Scene file format | `KOI_REFLECT(...)`, or a hand-written `Serializer<T>` | [Components](Components.md) |
+| Fixed step rate | `[physics] fixed_step` | [Starting a project](NewProject.md) |
 | Systems | `System<...>` or `TaskSystem`, in a built-in or custom phase (`using Phase = ...`) | [Components](Components.md) |
 | Event reactions | `Observer<Event, Components...>` | [Components](Components.md) |
 | Command-line flags | Subclass `CommandLine` and register it with `CommandLineRegistrar` | [Command line](CommandLine.md) |

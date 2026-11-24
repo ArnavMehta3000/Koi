@@ -2,7 +2,7 @@
 
 A `SceneRenderer` renders one view with a **pipeline**: an ordered list of **features**. Every frame, each feature records passes into that view's **render graph**. The graph creates temporary textures, inserts barriers, binds render targets and then executes the passes.
 
-The engine's default is `DeferredPipeline::Build`: Shadow → GBuffer → Lighting → AutoExposure → Tonemap → Grid → DebugDraw → Blit. The source for each one is in `Koi/Engine/Graphics/RenderPasses/`.
+The engine's default is `DeferredPipeline::Build`: Shadow → GBuffer → Lighting → AutoExposure → Tonemap → Grid → DebugDraw → Blit. Grid is only in `editor-*` modes, and DebugDraw is left out of `game-release`. The source for each one is in `Koi/Engine/Graphics/RenderPasses/`.
 
 ## Swapping the pipeline
 
@@ -23,7 +23,7 @@ renderer.GetMainSceneRenderer().SetPipeline("MyPipeline");
 
 The order you add features in is the order they run. You can also skip `DeferredPipeline::Build` and add only the engine features you want. To reach a feature later, for example to change its settings, use `renderer.GetMainSceneRenderer().GetFeatures().Find<GridPass>()`.
 
-Every view has its own `SceneRenderer`, so its own feature instances: the game world uses the main one, and an editor preview creates another (`std::make_unique<SceneRenderer>(renderer, "Deferred")`).
+Every view has its own `SceneRenderer`, so its own feature instances: the game world uses the main one, and an editor preview creates another (`std::make_unique<SceneRenderer>(renderer, "Deferred")`). Call `Submit(view, scene)` each frame to record it; the `Renderer` executes every submitted view at the end of the frame, in order. `ViewFlags` on the `RenderView` turn on the grid and the shared debug lines.
 
 ## Writing a feature
 
@@ -65,7 +65,7 @@ namespace
 	constexpr koi::ComputePipeline kVignette{ .ComputeShader = "project://Content/Shaders/VignetteCS" };
 }
 
-void VignettePass::Record(koi::RenderGraph& graph, const koi::RenderView&, koi::World&)
+void VignettePass::Record(koi::RenderGraph& graph, const koi::RenderView&, const koi::RenderScene&)
 {
 	koi::DisplayColor* display = graph.GetBlackboard().TryGet<koi::DisplayColor>();
 	if (!display) return;
@@ -132,7 +132,7 @@ F5 in the editor recompiles changed shaders and rebuilds their pipelines, so you
 Settings that belong to the scene live in the `PostProcess` component, one nested struct per effect (`AutoExposure`, `Tonemap`). A feature reads them with `scene.GetPostProcess()`: the first `PostProcess` in the world wins, and without one the struct defaults apply. There are no project-level settings; a scene that wants different values adds the component:
 
 ```toml
-[entity.post_process.tonemap]
+[entity.PostProcess.tonemap]
 operator = 'AgX'  # ACES | AgX | PBRNeutral | Hable | Reinhard | None
 ```
 

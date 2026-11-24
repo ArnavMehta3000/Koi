@@ -24,7 +24,7 @@ KOI_LOG_CATEGORY(AI);
 KOI_LOG(Gameplay, Debug, "Player spawned at ({}, {})", pos.x, pos.z);
 ```
 
-There's already a `Game` category for anything that doesn't need its own. Names have to be unique across the engine, the editor and your game, so `Render` or `Editor` won't compile as a game category. The editor's Log panel marks game categories so they stand out from the engine's.
+There's already a `Game` category for anything that doesn't need its own. Names have to be unique across the engine, the editor, the modules you use and your game, so `Render` or `Editor` won't compile as a game category. The editor's Log panel marks game categories so they stand out from the engine's.
 
 ## Choosing what gets logged
 

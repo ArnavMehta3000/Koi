@@ -30,6 +30,16 @@ KOI_EDITOR_EXTENSION(MyGameEditor);
 
 `EditorContext` holds the editor's services. Get one with `ctx.Get<T>()`: `InspectorRegistry`, `PanelManager`, `CommandRegistry`, `Selection`, `AssetDatabase`, `PlaySession`, `UndoStack` and more. Keep the pointer if you need it later.
 
+## Modules
+
+If your game uses modules, register their editor halves too, so their components get inspectors. Include each module's `Editor/` header, or this won't compile:
+
+```cpp
+koi::editor::EditorModules<MyGameApp::Modules>::Register(ctx);
+```
+
+See [Starting a project](NewProject.md#modules) for the rest of the setup.
+
 ## Inspectors
 
 Without an inspector, a component still shows up in the Inspector panel and can be removed, but you can't edit its fields. If plain widgets for each field are fine, use the reflected one:
@@ -38,7 +48,7 @@ Without an inspector, a component still shows up in the Inspector panel and can 
 ctx.Get<koi::editor::InspectorRegistry>()->Emplace<koi::editor::ReflectedInspector<PlayerController>>();
 ```
 
-It draws one row per field: a checkbox for `bool`, drag boxes for `f32`, `i32` and `Vector3`, a text box for `std::string`, and a combo box for enums. `koi::Transient<>` fields are greyed out. Field names become labels, so `MoveSpeed` shows as "Move Speed".
+It draws one row per field: a checkbox for `bool`, number boxes for `f32`, `i32`, `u64` and `Vector3`, a text box for `std::string`, and a combo box for enums. `koi::Transient<>` fields are greyed out. Field names become labels, so `MoveSpeed` shows as "Move Speed".
 
 For custom widgets, derive `ComponentInspector<T>` and draw with ImGui:
 
@@ -48,7 +58,7 @@ class SpinInspector final : public koi::editor::ComponentInspector<Spin>
 public:
 	void Draw(koi::Entity e) override
 	{
-		Spin* spin = e.try_get_mut<Spin>();
+		Spin* spin = e.TryGet<Spin>();
 		if (!spin || !koi::editor::utils::BeginPropertyGrid("##spin")) return;
 
 		koi::editor::utils::PropertyLabel("Axis");
@@ -101,7 +111,7 @@ private:
 ctx.Get<koi::editor::PanelManager>()->Add<StatsPanel>();
 ```
 
-The editor owns the window, and `OnDraw` only fills it in. `kInfo.Name` is the window title and the key the panel's state is saved under (`[panels.Stats]` in `.koi/Editor.toml`), so don't rename it. For quick debug UI, `PanelManager::Add("Name", icon, [] { ... })` takes just a draw function.
+The editor owns the window, and `OnDraw` only fills it in. While the panel is open, `OnTick(dt)` runs before the game ticks, and `OnRender` is where you submit views of your own. `kInfo.Name` is the window title and the key the panel's state is saved under (`[panels.Stats]` in `.koi/Editor.toml`), so don't rename it. For quick debug UI, `PanelManager::Add("Name", icon, [] { ... })` takes just a draw function.
 
 ## Commands
 

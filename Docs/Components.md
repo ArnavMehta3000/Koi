@@ -21,7 +21,7 @@ struct Spin
 
 `KOI_REFLECT` must list every field, or the build fails. An optional `static constexpr std::string_view kCategory = "Physics";` groups it in the editor's Add Component menu; without one it lands under Gameplay.
 
-In a scene it looks like this. Keys are the field names in snake_case:
+In a scene it looks like this. The table is named after `kKey`, and keys are the field names in snake_case:
 
 ```toml
 [[entity]]
@@ -29,7 +29,7 @@ id = 3
 name = 'Box'
 parent = 1
 
-    [entity.spin]
+    [entity.Spin]
     axis = [ 0.0, 1.0, 0.0 ]
     speed = 90.0
 ```

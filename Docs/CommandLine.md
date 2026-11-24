@@ -10,6 +10,7 @@ No Koi exe needs arguments. The editor has its engine and project paths baked in
 | `--d3ddebug` | Turn on the D3D12 debug layer |
 | `--gpuvalidation` | Turn on GPU-based validation (implies `--d3ddebug`) |
 | `--log <Cat=Level,...>` | Override log levels for this run |
+| `--timeout <seconds>` | Exit after this many seconds. Not in `game-release` |
 
 `--log` beats both `[logging] level` and `[logging.categories]` in the project file. `all=<level>` resets every category first, and then any named categories apply on top:
 
