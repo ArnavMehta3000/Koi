@@ -2,6 +2,8 @@
 
 ConstantBuffer<LightingRootConstants> g_root : register(b0);
 
+static const float3 kDielectricF0 = float3(0.04, 0.04, 0.04); // IOR: 1.5
+
 // 1 = fully lit, 0 = fully shadowed
 float SampleShadow(GPULight light, float3 worldPos, float3 N, float ndotl)
 {
@@ -70,8 +72,13 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 	// Decode normals to [-1, 1]
 	float3 N = normalize(normalTex.Load(texel).xyz * 2.0 - 1.0);
 
-	float  roughness = materialTex.Load(texel).r;  // .g = metallic (unused for now)
+	float2 material  = materialTex.Load(texel).rg;
+	float roughness  = material.r;
+	float metallic   = material.g;
 	float3 V         = normalize(g_root.CameraPosition.xyz - worldPos);
+
+	float3 F0            = lerp(kDielectricF0, albedo, metallic);
+	float3 diffuseAlbedo = albedo * (1.0 - metallic);
 
 	// TODO: Maybe this is not needed?
 	// Small ambient so unlit areas aren't pure black; modulated by baked AO
@@ -106,7 +113,7 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 		float spec      = pow(ndoth, shininess) * (1.0 - roughness);
 
 		float3 radiance = light.Color * light.Intensity * atten;
-		color += (albedo * ndotl + spec) * radiance * SampleShadow(light, worldPos, N, ndotl);
+		color += (diffuseAlbedo + F0 * spec) * ndotl * radiance * SampleShadow(light, worldPos, N, ndotl);
 	}
 
 	return float4(color, 1.0);
