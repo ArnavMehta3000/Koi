@@ -64,7 +64,7 @@ namespace koi::editor
 		{
 			utils::PropertyLabel(label);
 
-			const std::string name = std::filesystem::path(current).stem().string();
+			const std::string name = fs::path(current).stem().string();
 			std::string dropped;
 			if (!utils::AssetField(label, utils::AssetKindIcon(kind), name, current, dropped)) return std::nullopt;
 

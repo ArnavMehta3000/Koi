@@ -100,7 +100,7 @@ namespace koi
 			if (m_onDrop)
 			{
 				const UINT count = ::DragQueryFileW(drop, 0xFFFFFFFF, nullptr, 0);
-				std::vector<std::filesystem::path> files;
+				std::vector<fs::path> files;
 				files.reserve(count);
 
 				std::wstring buffer;

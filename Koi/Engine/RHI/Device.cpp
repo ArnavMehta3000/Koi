@@ -98,9 +98,11 @@ namespace koi
 			ReportDeviceRemoved();
 		}
 
+		namespace fs = std::filesystem;
+
 		const _com_error err(hr);
 		throw GfxError(hr, std::format("{} failed with 0x{:08X} ({}) at {}:{}",
-			expr, static_cast<u32>(hr), utils::FromWide(err.ErrorMessage()), std::filesystem::path(where.file_name()).filename().string(), where.line()));
+			expr, static_cast<u32>(hr), utils::FromWide(err.ErrorMessage()), fs::path(where.file_name()).filename().string(), where.line()));
 	}
 
 	GfxDevice::GfxDevice(const GfxDevice::Desc& desc)

@@ -133,7 +133,7 @@ namespace koi::editor
 		// If there is no local layout file, load default from memory
 		const char* iniPath = io.IniFilename ? io.IniFilename : "imgui.ini";
 		std::error_code ec;
-		m_loadDefaultLayout = !std::filesystem::exists(iniPath, ec);
+		m_loadDefaultLayout = !fs::exists(iniPath, ec);
 
 		ImGui_ImplWin32_Init(window.GetNativeHandle());
 		m_window = &window;

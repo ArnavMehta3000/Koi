@@ -14,6 +14,8 @@ namespace koi::editor
 {
 	namespace utils
 	{
+		namespace fs = std::filesystem;
+
 		// "PopDuration" -> "Pop Duration"
 		inline std::string FieldLabel(std::string_view name)
 		{
@@ -36,7 +38,7 @@ namespace koi::editor
 		bool DrawPrefabRef(const char* id, PrefabRef<P>& value)
 		{
 			const std::string_view path = value.GetPath();
-			const std::string file      = std::filesystem::path(path).filename().string();
+			const std::string file      = fs::path(path).filename().string();
 			const std::string name      = file.substr(0, file.size() - koi::utils::AssetExtensionOf(file).size());
 
 			std::string dropped;

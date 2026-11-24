@@ -12,7 +12,7 @@ namespace koi::internal
 	{
 		const std::string text = std::format("Assertion failed: {}{}{} at {}:{}\n{}",
 			condition, message.empty() ? "" : " - ", message,
-			std::filesystem::path(where.file_name()).filename().string(), where.line(),
+			fs::path(where.file_name()).filename().string(), where.line(),
 			CrashHandler::Format(std::stacktrace::current(1)));
 
 		if (Logger::IsInitialized())

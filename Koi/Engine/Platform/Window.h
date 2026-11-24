@@ -11,6 +11,8 @@ struct HWND__;
 
 namespace koi
 {
+	namespace fs = std::filesystem;
+
 	enum class WindowMode : u8
 	{
 		Windowed,
@@ -42,7 +44,7 @@ namespace koi
 	public:
 		using ResizeCallback = std::function<void(u32, u32)>;
 		using CloseCallback  = std::function<void()>;
-		using DropCallback   = std::function<void(std::span<const std::filesystem::path>)>;
+		using DropCallback   = std::function<void(std::span<const fs::path>)>;
 		using MessageHook    = std::function<std::optional<i64>(const WindowMessage&)>;  // a value marks the message handled
 
 	public:
