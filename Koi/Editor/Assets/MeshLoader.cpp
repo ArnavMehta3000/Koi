@@ -1,4 +1,5 @@
 #include "Koi/Editor/Assets/MeshLoader.h"
+#include "Koi/Editor/Assets/TangentGenerator.h"
 #include "Koi/Engine/Assets/AssetData.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
@@ -183,7 +184,7 @@ namespace koi::editor
 			}
 
 			fastgltf::Accessor& posAcc = Asset->accessors[posAccessor->accessorIndex];
-			const u32 vertexCount = static_cast<u32>(posAcc.count);
+			u32 vertexCount = static_cast<u32>(posAcc.count);
 
 			allVertices.resize(allVertices.size() + vertexCount);
 			Vertex* vertices = &allVertices[sub.VertexOffset];
@@ -196,6 +197,7 @@ namespace koi::editor
 				});
 
 			// Normals
+			bool hasNormals = false;
 			if (auto normAttr = primitive.findAttribute("NORMAL"); normAttr != primitive.attributes.end())
 			{
 				fastgltf::Accessor& acc = Asset->accessors[normAttr->accessorIndex];
@@ -204,6 +206,7 @@ namespace koi::editor
 					{
 						vertices[i].Normal = Vector3(n.x(), n.y(), n.z());
 					});
+				hasNormals = true;
 			}
 			else
 			{
@@ -211,6 +214,7 @@ namespace koi::editor
 			}
 
 			// UV
+			bool hasUVs = false;
 			if (auto uvAttr = primitive.findAttribute("TEXCOORD_0"); uvAttr != primitive.attributes.end())
 			{
 				fastgltf::Accessor& acc = Asset->accessors[uvAttr->accessorIndex];
@@ -219,6 +223,7 @@ namespace koi::editor
 					{
 						vertices[i].UV = Vector2(uv.x(), uv.y());
 					});
+				hasUVs = true;
 			}
 			else
 			{
@@ -239,7 +244,7 @@ namespace koi::editor
 			}
 			else
 			{
-				KOI_LOG(Import, Trace, "Primitive in mesh '{}' has no TANGENT attribute; generating placeholders", mesh.Name);
+				KOI_LOG(Import, Trace, "Primitive in mesh '{}' has no TANGENT attribute", mesh.Name);
 			}
 
 			// Indices

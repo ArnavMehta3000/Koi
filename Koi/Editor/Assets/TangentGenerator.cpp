@@ -9,6 +9,7 @@
 #include "Koi/Engine/Runtime/Engine.h"
 #include <mikktspace.h>
 #include <algorithm>
+#include <cmath>
 #include <string_view>
 #include <unordered_map>
 
@@ -62,8 +63,18 @@ namespace koi::editor
 
 			static void SetTSpaceBasic(const SMikkTSpaceContext* ctx, const float fvTangent[], const float fSign, const int iFace, const int iVert)
 			{
+				Vertex& corner = Corner(ctx, iFace, iVert);
+				Vector3 tangent(fvTangent[0], fvTangent[1], fvTangent[2]);
+
+				// Slivers with no UV area come back as zero: any direction along the surface will do
+				if (tangent.LengthSquared() < 1e-6f)
+				{
+					tangent = corner.Normal.Cross(std::abs(corner.Normal.x) < 0.9f ? Vector3::UnitX : Vector3::UnitY);
+					tangent.Normalize();
+				}
+
 				// glTF's V points down the image and its green channel up, so the bitangent is the other way round
-				Corner(ctx, iFace, iVert).Tangent = Vector4(fvTangent[0], fvTangent[1], fvTangent[2], -fSign);
+				corner.Tangent = Vector4(tangent.x, tangent.y, tangent.z, -fSign);
 			}
 
 			static SMikkTSpaceInterface* GetInterface()
