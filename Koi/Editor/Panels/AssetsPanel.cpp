@@ -1,6 +1,7 @@
 #include "Koi/Editor/Panels/AssetsPanel.h"
 #include "Koi/Editor/Assets/AssetDatabase.h"
 #include "Koi/Editor/Assets/ImportQueue.h"
+#include "Koi/Editor/Assets/TangentGenerator.h"
 #include "Koi/Editor/Core/EditorContext.h"
 #include "Koi/Editor/Core/PanelManager.h"
 #include "Koi/Editor/ImGui/EditorPalette.h"
@@ -312,6 +313,9 @@ namespace koi::editor
 		const bool imported = fileType == AssetFileType::Texture || fileType == AssetFileType::Mesh;
 		if (imported && ImGui::MenuItem("Reimport", nullptr, false, editable))
 			m_imports->Reimport(entry.VirtualPath);
+
+		if (fileType == AssetFileType::Mesh && ImGui::MenuItem("Generate Tangents", nullptr, false, editable))
+			TangentGenerator::GenerateForAsset(entry.VirtualPath);
 
 		ImGui::Separator();
 		if (ImGui::MenuItem("Copy Virtual Path")) ImGui::SetClipboardText(entry.VirtualPath.c_str());

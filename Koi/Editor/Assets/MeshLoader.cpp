@@ -267,11 +267,33 @@ namespace koi::editor
 
 			if (!hasTangent)
 			{
-				// Since no tangents were found, generate them
-				//TODO: MikkTSpace tangent generation
+				// w == 0 marks a placeholder
 				for (u32 i = 0; i < vertexCount; ++i)
 				{
 					vertices[i].Tangent = Vector4(1.0f, 0.0f, 0.0f, 0.0f);
+				}
+
+				const bool triangles = primitive.type == fastgltf::PrimitiveType::Triangles && sub.IndexCount % 3 == 0;
+				if (triangles && hasNormals && hasUVs)
+				{
+					std::vector<Vertex> subVertices(allVertices.begin() + sub.VertexOffset, allVertices.end());
+					std::vector<u32>    subIndices(allIndices.begin() + sub.IndexOffset, allIndices.end());
+
+					if (TangentGenerator::Generate(subVertices, subIndices))
+					{
+						allVertices.resize(sub.VertexOffset);
+						allVertices.insert(allVertices.end(), subVertices.begin(), subVertices.end());
+						allIndices.resize(sub.IndexOffset);
+						allIndices.insert(allIndices.end(), subIndices.begin(), subIndices.end());
+
+						vertices       = allVertices.data() + sub.VertexOffset;  // the insert may have reallocated
+						vertexCount    = static_cast<u32>(subVertices.size());
+						sub.IndexCount = static_cast<u32>(subIndices.size());
+					}
+					else
+					{
+						KOI_LOG(Import, Warn, "Couldn't generate tangents for a primitive of mesh '{}'", mesh.Name);
+					}
 				}
 			}
 
