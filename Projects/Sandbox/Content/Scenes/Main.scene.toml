@@ -50,14 +50,14 @@ id = 3
 name = 'Camera'
 
     [entity.Camera]
-    far = 1000.0
-    fov_y = 1.52367
+    far = 50.0
+    fov_y = 0.959931
     near = 0.05
     primary = true
 
     [entity.Transform]
     position = [ 6.6, 1.35, -0.3 ]
-    rotation = [ 0.0831115, 0.702206, -0.0831115, 0.702205 ]
+    rotation = [ 0.0339257, 0.706292, -0.0339256, 0.706292 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
