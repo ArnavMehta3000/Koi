@@ -168,6 +168,13 @@ namespace koi
 
 		CommandList& cmd = m_frameContext->List;
 
+		// Nothing will write the back buffer (no camera), and flip-discard leaves it undefined
+		if (m_submitted.empty() && !m_overlay)
+		{
+			static constexpr f32 kBlack[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+			cmd.ClearRenderTarget(m_renderWindow->CurrentBackBuffer(), kBlack);
+		}
+
 		for (SceneRenderer* scene : std::exchange(m_submitted, {}))
 		{
 			scene->Execute(cmd);

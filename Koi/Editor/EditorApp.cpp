@@ -269,7 +269,7 @@ namespace koi::editor
 	{
 		ZoneScoped;
 
-		// Requested during the ImGui frame; runs here, before any command list is recording
+		// Requested during the ImGui frame; runs here, before any pass records
 		if (m_pendingShaderReload)
 		{
 			Engine::Get().GetSubsystem<Renderer>().ReloadShaders(*std::exchange(m_pendingShaderReload, std::nullopt));
