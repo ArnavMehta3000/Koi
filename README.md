@@ -21,6 +21,7 @@ xmake run Sandbox        # builds and launches Sandbox-Editor.exe
 ```
 
 A plain `xmake` builds the engine and every project in `Projects/`.
+`xmake koi check` builds everything in `editor-debug` and `game-release`, then switches back to `editor-debug`.
 Run `GenerateProjectFiles.bat` to generate a Visual Studio solution.
 
 ## Build modes
@@ -55,7 +56,7 @@ xmake f -m editor-debug --LogLevel=2
 
 ## Command line
 
-No exe needs arguments. The optional flags are `-p <project.toml>`, `--d3ddebug`, `--gpuvalidation` and `--log Cat=Level,...`. See [Command line](Docs/CommandLine.md) for what they do and how a game adds its own.
+No exe needs arguments. The optional flags are `-p <project.toml>`, `--d3ddebug`, `--gpuvalidation`, `--log Cat=Level,...` and, outside `game-release`, `--timeout <seconds>`. See [Command line](Docs/CommandLine.md) for what they do and how a game adds its own.
 
 ## Projects
 
@@ -68,9 +69,40 @@ xmake run MyGame         # build and open the editor
 
 The layout, the project file and where code goes are in [Starting a project](Docs/NewProject.md). To ship a standalone build, Cook in the editor and then `xmake install` from `game-release`. The steps are in [Shipping a game](Docs/Packaging.md).
 
+## Engine layout
+
+Everything links statically. The engine is split into small libraries, and nothing in `Koi/Engine` knows about the editor or any game.
+
+| Target | What it holds |
+|---|---|
+| `Koi.Core` | Logging, diagnostics, IO, math, memory and reflection. No D3D |
+| `Koi.Platform` | The window and input devices |
+| `Koi.RHI` | D3D12 wrappers, the render graph, shader and pipeline caches |
+| `Koi.Assets` | Readers for Koi's asset formats, and the asset index |
+| `Koi.ECS` | The sparse-set ECS core |
+| `Koi.Engine` | The rest: renderer, world and scenes, GPU asset loading, the app loop. Depends on all of the above |
+| `Koi.Editor` | Panels, inspectors, importers and Cook. `editor-*` modes only |
+| `Koi.Module.<Name>` | An optional feature a game opts into |
+
+## Modules
+
+A module is an optional engine feature in `Koi/Modules/<Name>/`, with a `Source/` half and an editor-only `Editor/` half. Physics (Box3D) is the only one so far. To use it, add it to your project's `xmake.lua` and your app class:
+
+```lua
+add_deps("Koi.Module.Physics")
+```
+
+```cpp
+using Modules = koi::ModuleList<koi::PhysicsModule>;
+void OnRegisterModules() override { Modules::Register(); }
+```
+
+Then call `koi::editor::EditorModules<MyGameApp::Modules>::Register(ctx)` from your editor extension to get its editor half. `Projects/Sandbox` does all three.
+
 ## Docs
 
 - [Architecture](Docs/Architecture.md): how the engine, the editor and your game fit together
+- [Lifecycle](Docs/Lifecycle.md): startup, what one frame does, and shutdown
 - [Starting a project](Docs/NewProject.md): `xmake koi new`, the project layout and the project file
 - [Components and serialization](Docs/Components.md): components, systems and `Serializer<T>`
 - [Editor extensions](Docs/EditorExtensions.md): inspectors, panels, commands and ImGui widgets
@@ -94,11 +126,11 @@ At runtime Koi only reads its own `.kmesh`, `.kmat` and `.ktex` files. You get t
 | | |
 |---|---|
 | `KoiGame` | Turns a target into a game: adds the right launcher main, links `Koi.Editor` in editor modes, bakes the source paths into the exe, and handles `xmake install` |
+| `KoiModule` | Turns a target into a module: a static lib on `Koi.Engine`, plus `Koi.Editor` and its `Editor/` folder in editor modes |
 | `KoiShaders` | Compiles a `Shaders.json` with dxc into `<autogendir>/Built/Shaders`, writing a `Manifest.toml` and a `.refl` per variant. Only rebuilds what changed |
 | `KoiMode` | Applies the mode table in `Xmake/Modes.lua` |
 | `Natvis` | Adds packages' `.natvis` files to the VS solution |
-| `xmake koi` | `new`, `list`, `tracy` (`Plugins/Koi`) |
-
+| `xmake koi` | `new`, `list`, `tracy`, `check` (`Plugins/Koi`) |
 
 ## Dependencies
 
@@ -108,12 +140,11 @@ Xmake fetches everything. Each package uses a recipe in `Xmake/Packages/` that w
 |---|---|
 | `directx-headers` | D3D12 / DXGI headers |
 | `dxc` | Shader compiler (release binaries) |
-| `reflect-cpp` (+ `ctre`) | Component serialization and default inspectors |
 | `toml++` | Project, scene and settings files |
 | `spdlog` | Logging |
 | `cli11` | Command-line parsing |
 | `stduuid` | Asset IDs |
-| `box3d` | Physics |
+| `box3d` | Physics (`Koi.Module.Physics` only) |
 | `tracy-profiler`, `tracy-tools` | Profiling (the tools only install in profile modes) |
 | `directxtex` | Texture import and BC compression (editor only) |
 | `fastgltf` (+ `simdjson`, `simdutf`) | glTF import (editor only) |
