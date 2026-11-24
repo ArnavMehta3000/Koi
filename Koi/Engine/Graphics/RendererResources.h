@@ -18,6 +18,7 @@ namespace koi
 
 		// Default samplers (indices into the bindless sampler heap)
 		DescriptorIndex LinearWrapSampler  = INVALID_DESCRIPTOR;
+		DescriptorIndex AnisoWrapSampler   = INVALID_DESCRIPTOR;  // material textures
 		DescriptorIndex LinearClampSampler = INVALID_DESCRIPTOR;
 		DescriptorIndex PointClampSampler  = INVALID_DESCRIPTOR;
 		DescriptorIndex ShadowSampler      = INVALID_DESCRIPTOR;  // comparison sampler for SampleCmp

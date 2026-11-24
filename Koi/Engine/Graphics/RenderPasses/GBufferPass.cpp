@@ -109,7 +109,7 @@ namespace koi
 				.ObjectIndex         = item.ObjectIndex,
 				.MaterialIndex       = item.MaterialSlot,
 				.VertexBufferIndex   = item.Mesh->VertexBufferSRV,
-				.SamplerIndex        = m_config.Resources->LinearWrapSampler,
+				.SamplerIndex        = m_config.Resources->AnisoWrapSampler,
 				.VertexOffset        = static_cast<u32>(d.VertexOffset),
 			});
 			ctx.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);

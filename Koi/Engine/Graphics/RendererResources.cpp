@@ -23,6 +23,14 @@ namespace koi
 			return d;
 		}
 
+		D3D12_SAMPLER_DESC MakeAnisoWrapDesc()
+		{
+			D3D12_SAMPLER_DESC d = MakeLinearWrapDesc();
+			d.Filter        = D3D12_FILTER_ANISOTROPIC;
+			d.MaxAnisotropy = 16;
+			return d;
+		}
+
 		D3D12_SAMPLER_DESC MakeLinearClampDesc()
 		{
 			D3D12_SAMPLER_DESC d{};
@@ -45,7 +53,7 @@ namespace koi
 		{
 			D3D12_SAMPLER_DESC d{};
 			d.Filter         = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
-			d.AddressU = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+			d.AddressU       = d.AddressV = d.AddressW = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
 			d.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 			// White border = far plane, so anything outside the map compares as lit
 			d.BorderColor[0] = d.BorderColor[1] = d.BorderColor[2] = d.BorderColor[3] = 1.0f;
@@ -56,7 +64,10 @@ namespace koi
 
 	void RendererResources::Init(GfxDevice& device)
 	{
+		KOI_SCOPE("Create default render resources");
+
 		LinearWrapSampler  = device.CreateSampler(MakeLinearWrapDesc());
+		AnisoWrapSampler   = device.CreateSampler(MakeAnisoWrapDesc());
 		LinearClampSampler = device.CreateSampler(MakeLinearClampDesc());
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
 		ShadowSampler      = device.CreateSampler(MakeShadowCompareDesc());
