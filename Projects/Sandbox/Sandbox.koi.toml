@@ -55,4 +55,4 @@ axes = [ "Gamepad.RightX" ]
 buttons = [ "Escape", "Gamepad.Start" ]
 
 [input.actions.NextScene]
-buttons = [ "Tab" ]
+buttons = [ "P" ]
