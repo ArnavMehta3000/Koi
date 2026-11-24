@@ -24,7 +24,7 @@ namespace koi
 		RGTexture Depth;  // D32
 	};
 
-	struct SceneColor  // lit HDR
+	struct SceneColor  // HDR: the G-buffer pass starts it with emissive, lighting adds to it
 	{
 		RGTexture Color;
 	};

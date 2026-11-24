@@ -40,6 +40,7 @@ namespace koi
 			.Material = target(Format::R8G8B8A8_UNORM,      "Material"),
 		};
 		RGTexture depth = target(Format::D32_FLOAT, "Depth");
+		RGTexture hdr   = target(Format::R16G16B16A16_FLOAT, "HDRColor");  // emissive goes straight in
 
 		graph.AddPass<RasterPass>("GBuffer",
 			[&](RGBuilder& b)
@@ -47,6 +48,7 @@ namespace koi
 				out.Albedo   = b.ColorTarget(out.Albedo,   LoadOp::Clear);
 				out.Normals  = b.ColorTarget(out.Normals,  LoadOp::Clear);
 				out.Material = b.ColorTarget(out.Material, LoadOp::Clear);
+				hdr          = b.ColorTarget(hdr,          LoadOp::Clear);
 				depth        = b.DepthTarget(depth,        LoadOp::Clear);
 			},
 			[this, &scene, &camera](RasterContext& ctx) { Draw(ctx, scene, camera); });
@@ -54,6 +56,7 @@ namespace koi
 		RGBlackboard& bb = graph.GetBlackboard();
 		bb.Add(out);
 		bb.Add(SceneDepth{ .Depth = depth });
+		bb.Add(SceneColor{ .Color = hdr });
 	}
 
 	void GBufferPass::Draw(RasterContext& ctx, const RenderScene& scene, const Camera& camera)

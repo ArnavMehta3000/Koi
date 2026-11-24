@@ -49,7 +49,7 @@ Features never point at each other. They share data through the graph's blackboa
 | `ShadowData` | Shadow | Shadow map and light matrix. Missing when nothing casts a shadow |
 | `GBufferData` | GBuffer | Albedo, normals, material |
 | `SceneDepth` | GBuffer | D32 depth |
-| `SceneColor` | Lighting | Lit HDR color |
+| `SceneColor` | GBuffer, then Lighting | HDR color. GBuffer starts it with emissive, Lighting adds to it |
 | `ExposureData` | AutoExposure | One-float buffer the tonemapper scales `SceneColor` by. Missing when auto exposure is off |
 | `DisplayColor` | Tonemap | Tonemapped LDR color. Overlays draw on this, and Blit copies it to the output |
 

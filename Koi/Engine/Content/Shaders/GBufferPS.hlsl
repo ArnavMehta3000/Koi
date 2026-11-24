@@ -18,6 +18,7 @@ struct PSOutput
 	float4 Color    : SV_Target0;  // Albedo.rgb + AO
 	float4 Normal   : SV_Target1;  // Normals [0, 1] range
 	float4 Material : SV_Target2;  // Roughness/Metallic/Specular
+	float4 Emissive : SV_Target3;  // HDR scene color, lighting adds to it
 };
 
 PSOutput PSMain(PSInput input)
@@ -54,6 +55,13 @@ PSOutput PSMain(PSInput input)
 		ao = 1.0f + mat.OcclusionStrength * (sampledAO - 1.0f);
 	}
 
+	float3 emissive = mat.EmissiveFactor.rgb;
+	if (mat.EmissiveIndex != INVALID_DESCRIPTOR)
+	{
+		Texture2D emissiveTex = ResourceDescriptorHeap[mat.EmissiveIndex];
+		emissive *= emissiveTex.Sample(samp, input.UV).rgb;
+	}
+
 	// MikkTSpace wants the interpolated normal as it is, so only the result gets normalized
 	float3 N = input.WorldNormal;
 	if (mat.NormalIndex != INVALID_DESCRIPTOR)
@@ -71,6 +79,7 @@ PSOutput PSMain(PSInput input)
 	output.Color    = float4(albedo, ao);
 	output.Normal   = float4(mappedNormal, 1.0f);
 	output.Material = float4(roughness, metallic, 0.0f, 1.0f);
+	output.Emissive = float4(emissive, 1.0f);
 
 	return output;
 }

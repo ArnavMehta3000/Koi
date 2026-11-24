@@ -17,6 +17,7 @@ namespace koi
 			.VertexShader = "engine://Content/Shaders/LightingVS",
 			.PixelShader  = "engine://Content/Shaders/LightingPS",
 			.Rasterizer   = RasterizerDesc::CullNone(),
+			.Blend        = BlendTargetDesc::Additive(),  // over the emissive
 			.DepthStencil = DepthStencilDesc::None(),
 		};
 	}
@@ -44,8 +45,9 @@ namespace koi
 		const RGTexture   depth   = sceneDepth->Depth;
 		const ShadowData  shadow  = bb.Has<ShadowData>() ? bb.Get<ShadowData>() : ShadowData{};
 
-		const TextureDesc size = graph.GetDesc(gbuffer.Albedo);
-		RGTexture hdr = graph.CreateTexture(TextureDesc{ .Width = size.Width, .Height = size.Height, .Format = Format::R16G16B16A16_FLOAT }, "HDRColor");
+		SceneColor* sceneColor = bb.TryGet<SceneColor>();
+		if (!sceneColor) return;
+		RGTexture hdr = sceneColor->Color;  // From GBuffer
 
 		graph.AddPass<RasterPass>("Lighting",
 			[&](RGBuilder& b)
@@ -55,7 +57,7 @@ namespace koi
 				b.Read(gbuffer.Material);
 				b.Read(depth);
 				b.Read(shadow.ShadowMap);
-				hdr = b.ColorTarget(hdr, LoadOp::Clear);
+				hdr = b.ColorTarget(hdr);
 			},
 			[this, &scene, &camera, gbuffer, depth, shadow](RasterContext& ctx)
 			{
@@ -82,7 +84,7 @@ namespace koi
 				ctx.Draw(3);
 			});
 
-		bb.Add(SceneColor{ .Color = hdr });
+		sceneColor->Color = hdr;
 	}
 
 	void LightingPass::GatherLights(const RenderScene& scene, const Matrix& lightViewProjection, DescriptorIndex shadowMapIndex)

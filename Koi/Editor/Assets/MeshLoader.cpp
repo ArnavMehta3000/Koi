@@ -393,8 +393,8 @@ namespace koi::editor
 			if (gltfMat.emissiveTexture)
 			{
 				mat.EmissiveTextureIdx = LoadTexture(model, static_cast<u32>(gltfMat.emissiveTexture->textureIndex));
-				mat.MaterialConstants.EmissiveFactor = Vector3(gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
 			}
+			mat.MaterialConstants.EmissiveFactor = Vector3(gltfMat.emissiveFactor[0], gltfMat.emissiveFactor[1], gltfMat.emissiveFactor[2]);
 
 			model.Materials.push_back(std::move(mat));
 		}
