@@ -21,6 +21,11 @@ namespace koi
 		return texture ? texture->SRVIndex : INVALID_DESCRIPTOR;
 	}
 
+	void Material::SelectPipeline()
+	{
+		Pipeline = Template ? &Template->PipelineFor(IsMasked(), DoubleSided) : nullptr;
+	}
+
 	void Material::WriteRow() const
 	{
 		Renderer& renderer = Engine::Get().GetSubsystem<Renderer>();
@@ -113,8 +118,7 @@ namespace koi
 			material.Template = templates.Default();
 		}
 
-		if (material.Template)
-			material.Pipeline = &material.Template->PipelineFor(material.DoubleSided);
+		material.SelectPipeline();
 
 		// The row is only writable once the textures are resident, since it stores their indices
 		material.TableSlot = renderer.GetMaterialTable().Allocate({});

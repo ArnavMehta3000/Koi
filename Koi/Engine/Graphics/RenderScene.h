@@ -61,6 +61,8 @@ namespace koi
 		u32                   ObjectIndex;
 		const RasterPipeline* Pipeline;      // null = the pass decides
 		u32                   MaterialSlot;  // row in the MaterialTable
+		bool                  Masked;
+		bool                  DoubleSided;
 	};
 
 	struct MeshGatherResult

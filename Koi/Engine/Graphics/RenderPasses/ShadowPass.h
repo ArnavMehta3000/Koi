@@ -7,6 +7,7 @@ namespace koi
 {
 	class  RenderScene;
 	class  GfxDevice;
+	class  MaterialTable;
 	struct RendererResources;
 
 	class ShadowPass
@@ -18,6 +19,7 @@ namespace koi
 		{
 			GfxDevice*               Device     = nullptr;
 			const RendererResources* Resources  = nullptr;
+			MaterialTable*           Materials  = nullptr;
 			u32                      Resolution = 2048;
 		};
 

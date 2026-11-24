@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/RHI/PipelineCache.h"
+#include <array>
 #include <memory>
 #include <string>
 
@@ -20,21 +21,20 @@ namespace koi
 		std::string                Name;
 		std::vector<MaterialParam> Parameters;
 
-		// A material picks by its own double_sided flag
-		RasterPipeline SingleSided;
-		RasterPipeline DoubleSided;
+		// Indexed [masked][double sided]
+		std::array<std::array<RasterPipeline, 2>, 2> Pipelines;
 
-		[[nodiscard]] inline const RasterPipeline& PipelineFor(bool doubleSided) const
+		[[nodiscard]] inline const RasterPipeline& PipelineFor(bool masked, bool doubleSided) const
 		{
-			return doubleSided ? DoubleSided : SingleSided;
+			return Pipelines[masked][doubleSided];
 		}
 	};
 
 	class MaterialTemplateLibrary : public NonCopyable
 	{
 	public:
-		// The double-sided variant is the same pipeline with culling off
-		const MaterialTemplate& Register(std::string name, const RasterPipeline& pipeline, std::vector<MaterialParam> parameters);
+		// Double-sided variants turn culling off, masked ones swap in maskedPixelShader (if there is one)
+		const MaterialTemplate& Register(std::string name, const RasterPipeline& pipeline, ShaderRef maskedPixelShader, std::vector<MaterialParam> parameters);
 
 		[[nodiscard]] const MaterialTemplate* Find(std::string_view name) const;
 		[[nodiscard]] const MaterialTemplate* Default() const;  // Fallback material

@@ -4,17 +4,26 @@
 
 namespace koi
 {
-	const MaterialTemplate& MaterialTemplateLibrary::Register(std::string name, const RasterPipeline& pipeline, std::vector<MaterialParam> parameters)
+	const MaterialTemplate& MaterialTemplateLibrary::Register(std::string name, const RasterPipeline& pipeline, ShaderRef maskedPixelShader, std::vector<MaterialParam> parameters)
 	{
-		RasterPipeline doubleSided = pipeline;
-		doubleSided.Rasterizer.CullMode = D3D12_CULL_MODE_NONE;
+		RasterPipeline masked = pipeline;
+		if (maskedPixelShader.IsValid())
+		{
+			masked.PixelShader = maskedPixelShader;
+		}
+
+		const auto withDoubleSided = [](const RasterPipeline& single)
+		{
+			RasterPipeline both = single;
+			both.Rasterizer.CullMode = D3D12_CULL_MODE_NONE;
+			return std::array{ single, both };
+		};
 
 		const MaterialTemplate& entry = *m_templates.emplace_back(std::make_unique<MaterialTemplate>(MaterialTemplate
 		{
 			.Name        = std::move(name),
 			.Parameters  = std::move(parameters),
-			.SingleSided = pipeline,
-			.DoubleSided = doubleSided,
+			.Pipelines   = { withDoubleSided(pipeline), withDoubleSided(masked) },
 		}));
 
 		KOI_LOG(Render, Trace, "Material template '{}' registered with {} parameter(s)", entry.Name, entry.Parameters.size());

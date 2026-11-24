@@ -4,6 +4,7 @@
 #include "Koi/Engine/ECS/Components.h"
 #include "Koi/Engine/Graphics/RenderScene.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Graphics/RendererResources.h"
 #include "Koi/Engine/RHI/Device.h"
 
@@ -12,10 +13,26 @@ namespace koi
 	namespace
 	{
 		// Raster-stage depth bias pushes fragments away from the light, which removes most acne for free
-		constexpr RasterPipeline kShadow
+		constexpr RasterPipeline MakeShadow(bool masked, bool doubleSided)
 		{
-			.VertexShader = "engine://Content/Shaders/ShadowVS",
-			.Rasterizer   = { .DepthBias = 100, .SlopeScaledDepthBias = 2.0f },
+			return
+			{
+				.VertexShader = masked ? ShaderRef("engine://Content/Shaders/ShadowMaskedVS") : ShaderRef("engine://Content/Shaders/ShadowVS"),
+				.PixelShader  = masked ? ShaderRef("engine://Content/Shaders/ShadowMaskedPS") : ShaderRef(),
+				.Rasterizer   =
+				{
+					.CullMode             = doubleSided ? D3D12_CULL_MODE_NONE : D3D12_CULL_MODE_BACK,
+					.DepthBias            = 100,
+					.SlopeScaledDepthBias = 2.0f,
+				},
+			};
+		}
+
+		// Indexed [masked][double sided]
+		constexpr RasterPipeline kShadow[2][2] =
+		{
+			{ MakeShadow(false, false), MakeShadow(false, true) },
+			{ MakeShadow(true,  false), MakeShadow(true,  true) },
 		};
 	}
 
@@ -128,16 +145,26 @@ namespace koi
 
 		const DescriptorIndex frameConstantsIndex = m_frameConstants.Upload(frameSlot, FrameConstants
 		{
-			.ViewProjection = m_lightViewProjection,
-			.CameraPosition = Vector4::Zero,
+			.ViewProjection      = m_lightViewProjection,
+			.CameraPosition      = Vector4::Zero,
+			.MaterialBufferIndex = m_config.Materials ? m_config.Materials->Upload(frameSlot) : INVALID_DESCRIPTOR,
 		});
 
-		if (!ctx.SetPipeline(kShadow)) return;
+		const GPUMesh*        boundMesh     = nullptr;
+		const RasterPipeline* boundPipeline = nullptr;
+		bool                  pipelineOk    = false;
 
-		const GPUMesh* boundMesh = nullptr;
 		for (const MeshDrawItem& item : m_gather.Draws)
 		{
 			KOI_ASSERT(item.Mesh, "Invalid mesh pointer");
+
+			const RasterPipeline* pipeline = &kShadow[item.Masked && m_config.Materials][item.DoubleSided];
+			if (pipeline != boundPipeline)
+			{
+				pipelineOk    = ctx.SetPipeline(*pipeline);
+				boundPipeline = pipeline;
+			}
+			if (!pipelineOk) continue;
 
 			if (item.Mesh && item.Mesh != boundMesh)
 			{
@@ -151,9 +178,9 @@ namespace koi
 				.FrameConstantsIndex = frameConstantsIndex,
 				.ObjectBufferIndex   = objectBufferIndex,
 				.ObjectIndex         = item.ObjectIndex,
-				.MaterialIndex       = 0,
+				.MaterialIndex       = item.MaterialSlot,
 				.VertexBufferIndex   = item.Mesh ? item.Mesh->VertexBufferSRV : INVALID_DESCRIPTOR,
-				.SamplerIndex        = INVALID_DESCRIPTOR,
+				.SamplerIndex        = m_config.Resources->LinearWrapSampler,
 				.VertexOffset        = static_cast<u32>(d.VertexOffset),
 			});
 			ctx.DrawIndexed(d.IndexCount, 1, d.IndexOffset, 0);

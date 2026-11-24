@@ -32,9 +32,14 @@ namespace koi
 		u32 TableSlot = 0;  // the row this material owns in the renderer's MaterialTable
 
 		const MaterialTemplate* Template = nullptr;  // owned by the MaterialTemplateLibrary
-		const RasterPipeline*   Pipeline = nullptr;  // the template's variant for this cull mode
+		const RasterPipeline*   Pipeline = nullptr;  // the template's variant for Mode and DoubleSided
 
 		[[nodiscard]] DescriptorIndex SRVFor(MaterialTextureSlot slot) const;
+
+		[[nodiscard]] bool IsMasked() const { return Mode == ImportMaterial::AlphaMode::Mask; }
+
+		// Picks Pipeline again after Mode, DoubleSided or Template changed
+		void SelectPipeline();
 
 		// Rewrites this material's table row from its current factors and textures
 		void WriteRow() const;

@@ -20,6 +20,7 @@ namespace koi
 		{
 			.Device    = &renderer.GetDevice(),
 			.Resources = &renderer.GetDefaultResources(),
+			.Materials = &renderer.GetMaterialTable(),
 		});
 
 		features.Add<GBufferPass>(GBufferPass::Config
@@ -27,7 +28,7 @@ namespace koi
 			.Device          = &renderer.GetDevice(),
 			.Resources       = &renderer.GetDefaultResources(),
 			.Materials       = &renderer.GetMaterialTable(),
-			.DefaultPipeline = &renderer.GetMaterialTemplates().Default()->SingleSided,
+			.DefaultPipeline = &renderer.GetMaterialTemplates().Default()->PipelineFor(false, false),
 		});
 
 		features.Add<LightingPass>(LightingPass::Config

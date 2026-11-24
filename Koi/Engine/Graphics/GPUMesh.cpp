@@ -4,7 +4,6 @@
 #include "Koi/Engine/Assets/MeshFile.h"
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
-#include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/RHI/Device.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -88,8 +87,7 @@ namespace koi
 		return UploadPrepared(device, model);
 	}
 
-	// Every slot resolves to a material asset, which owns its own table row and its own texture
-	// references. A slot with no material draws with the fallback
+	// A slot with no material draws with the fallback
 	void GPUMesh::BindMaterials(GfxDevice& device, const ModelAsset& model)
 	{
 		ZoneScoped;
@@ -100,19 +98,10 @@ namespace koi
 		{
 			const AssetKey* key = i < model.MaterialBindings.size() ? &model.MaterialBindings[i] : nullptr;
 
-			const MaterialHandle handle = key && key->IsValid() ? cache.Acquire(device, *key) : MaterialHandle{};
-			const Material* material = cache.Get(handle);
-
-			Materials.push_back(handle);
-			TableSlots.push_back(material ? material->TableSlot : MaterialTable::kFallbackSlot);
-			SlotPipelines.push_back(material ? material->Pipeline : nullptr);
+			Materials.push_back(key && key->IsValid() ? cache.Acquire(device, *key) : MaterialHandle{});
 		}
 
-		// The slot Upload gave every submesh whose material index was missing or out of range
-		TableSlots.push_back(MaterialTable::kFallbackSlot);
-		SlotPipelines.push_back(nullptr);
-
-		KOI_LOG(Render, Trace, "GPUMesh materials bound: {} slot(s), {} material asset(s)", TableSlots.size(), Materials.size());
+		KOI_LOG(Render, Trace, "GPUMesh materials bound: {} slot(s)", Materials.size());
 	}
 
 	void GPUMesh::Release(GfxDevice& device)
@@ -126,8 +115,6 @@ namespace koi
 			materials.Release(device, handle);
 		}
 
-		TableSlots.clear();
-		SlotPipelines.clear();
 		Materials.clear();
 		DrawItems.clear();
 		VertexBufferSRV = INVALID_DESCRIPTOR;

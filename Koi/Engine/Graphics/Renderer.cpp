@@ -68,6 +68,7 @@ namespace koi
 				.VertexShader = "engine://Content/Shaders/GBufferVS",
 				.PixelShader  = "engine://Content/Shaders/GBufferPS",
 			},
+			"engine://Content/Shaders/GBufferMaskedPS",
 			{   // std::vector<MaterialParams>
 				{ "base_color",         Float4,  offsetof(GPUMaterialData, BaseColorFactor)        },
 				{ "emissive",           Float3,  offsetof(GPUMaterialData, EmissiveFactor)         },

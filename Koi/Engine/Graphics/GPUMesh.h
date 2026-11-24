@@ -8,7 +8,6 @@ namespace koi
 {
 	class GfxDevice;
 	struct ModelAsset;
-	struct RasterPipeline;
 
 	struct GPUMeshDraw
 	{
@@ -33,16 +32,14 @@ namespace koi
 		BufferHandle IndexBuffer;
 		DescriptorIndex VertexBufferSRV = INVALID_DESCRIPTOR;
 
-		std::vector<u32> TableSlots;                       // GPUMeshDraw::MaterialSlot -> row in the MaterialTable
-		std::vector<const RasterPipeline*> SlotPipelines;  // parallel to TableSlots; null = the pass decides
-		std::vector<MaterialHandle> Materials;             // slot -> material asset, empty when the mesh has no sidecar
+		std::vector<MaterialHandle> Materials;  // GPUMeshDraw::MaterialSlot -> material, one past the end is the fallback
 		std::vector<GPUMeshDraw> DrawItems;
-		BoundingBox Bounds{ {}, {} };                      // model-space, carried over from the source ModelAsset
+		BoundingBox Bounds{ {}, {} };           // model-space, carried over from the source ModelAsset
 
 		// Geometry only: buffers, draw items and bounds. Loading a mesh touches no texture
 		[[nodiscard]] static GPUMesh Upload(GfxDevice& device, const ModelAsset& model);
 
-		// Resolves the sidecar's material assets into table rows, one per material slot
+		// Acquires the material asset of every slot
 		void BindMaterials(GfxDevice& device, const ModelAsset& model);
 
 		void Release(GfxDevice& device);

@@ -2,6 +2,7 @@
 #include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Graphics/MaterialTable.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -125,13 +126,21 @@ namespace koi
 					});
 				}
 
+				const Material* material = override;
+				if (!material && draw.MaterialSlot < mesh->Materials.size())
+				{
+					material = materials.Get(mesh->Materials[draw.MaterialSlot]);
+				}
+
 				out.Draws.push_back(MeshDrawItem
 				{
 					.Mesh         = mesh,
 					.Draw         = &draw,
 					.ObjectIndex  = objectIndex,
-					.Pipeline     = override ? override->Pipeline  : mesh->SlotPipelines[draw.MaterialSlot],
-					.MaterialSlot = override ? override->TableSlot : mesh->TableSlots[draw.MaterialSlot],
+					.Pipeline     = material ? material->Pipeline  : nullptr,
+					.MaterialSlot = material ? material->TableSlot : MaterialTable::kFallbackSlot,
+					.Masked       = material && material->IsMasked(),
+					.DoubleSided  = material && material->DoubleSided,
 				});
 			}
 		}

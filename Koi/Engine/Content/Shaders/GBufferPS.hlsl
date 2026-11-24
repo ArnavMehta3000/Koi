@@ -31,7 +31,12 @@ PSOutput PSMain(PSInput input)
 	SamplerState samp      = SamplerDescriptorHeap[g_root.SamplerIndex];
 
 	// Albedo: base color texture (always valid, CPU falls back to white) * factor
-	const float3 albedo = baseColorTex.Sample(samp, input.UV).rgb * mat.BaseColorFactor.rgb;
+	const float4 baseColor = baseColorTex.Sample(samp, input.UV) * mat.BaseColorFactor;
+	const float3 albedo    = baseColor.rgb;
+
+#ifdef ALPHA_TEST
+	clip(baseColor.a - mat.AlphaCutoff);  // Discard current pixel if val < 0
+#endif
 
 	// Metallic-roughness: glTF packs roughness in G, metallic in B of one texture
 	float roughness = mat.RoughnessFactor;

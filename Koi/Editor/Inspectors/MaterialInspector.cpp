@@ -84,6 +84,15 @@ namespace koi::editor
 			utils::PropertyLabel("Template");
 			ImGui::TextDisabled("%s", target->Name.c_str());
 
+			// Blend has no pass of its own yet and draws as opaque
+			utils::PropertyLabel("Alpha Mode");
+			int mode = static_cast<int>(m_source.Mode);
+			if (ImGui::Combo("##alpha_mode", &mode, "Opaque\0Mask\0Blend\0"))
+			{
+				m_source.Mode = static_cast<ImportMaterial::AlphaMode>(mode);
+				m_dirty       = true;
+			}
+
 			utils::PropertyLabel("Double Sided");
 			if (ImGui::Checkbox("##double_sided", &m_source.DoubleSided)) m_dirty = true;
 
@@ -179,11 +188,10 @@ namespace koi::editor
 		if (!material) return;
 
 		material->Constants   = m_source.Constants;
+		material->Mode        = m_source.Mode;
 		material->DoubleSided = m_source.DoubleSided;
 
-		if (material->Template)
-			material->Pipeline = &material->Template->PipelineFor(material->DoubleSided);
-
+		material->SelectPipeline();
 		material->WriteRow();
 	}
 }
