@@ -194,7 +194,7 @@ namespace koi::editor
 		utils::PropertyLabel("Color");
 		ImGui::ColorEdit3("##Color", &light->Color.x);
 		utils::PropertyLabel("Intensity");
-		ImGui::DragFloat("##Intensity", &light->Intensity, 0.05f, 0.0f, 100.0f);
+		ImGui::DragFloat("##Intensity", &light->Intensity, 0.1f, 0.0f, 1000.0f);
 		if (light->Type == LightType::Point)
 		{
 			utils::PropertyLabel("Range");

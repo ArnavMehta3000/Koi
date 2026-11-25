@@ -16,7 +16,7 @@ namespace koi
 			{
 				.Type         = LightType::Directional,
 				.Color        = Vector3(1.0f, 0.95f, 0.9f),
-				.Intensity    = 3.0f,
+				.Intensity    = 9.4f,
 				.CastsShadows = true,
 			});
 	}

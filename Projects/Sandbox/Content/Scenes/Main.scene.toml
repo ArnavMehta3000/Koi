@@ -122,13 +122,13 @@ name = 'Sun'
     [entity.Light]
     casts_shadows = true
     color = [ 1.0, 0.927912, 0.877451 ]
-    intensity = 2.8
+    intensity = 10.0
     range = 0.0
     shadow_bias = 0.0015
-    shadow_extent = 16.5
+    shadow_extent = 14.0
     type = 'Directional'
 
     [entity.Transform]
-    position = [ 4.93682, 0.0, 5.53945 ]
+    position = [ -0.813, 0.0, -1.111 ]
     rotation = [ -0.704015, 0.0, -0.0, 0.710185 ]
     scale = [ 1.0, 1.0, 1.0 ]

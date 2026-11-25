@@ -40,7 +40,7 @@ name = 'Sun'
     [entity.Light]
     casts_shadows = true
     color = [ 1.0, 0.95, 0.9 ]
-    intensity = 3.0
+    intensity = 9.4
     range = 0.0
     shadow_bias = 0.0015
     shadow_extent = 20.0
