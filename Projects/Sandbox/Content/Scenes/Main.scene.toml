@@ -66,15 +66,15 @@ name = 'Child Light'
 
     [entity.Light]
     casts_shadows = false
-    color = [ 0.696203, 0.176254, 0.176254 ]
-    intensity = 1.0
+    color = [ 0.714286, 0.385728, 0.0744623 ]
+    intensity = 16.0
     range = 10.0
     shadow_bias = 0.0015
     shadow_extent = 0.0
     type = 'Point'
 
     [entity.Transform]
-    position = [ 3.35, 0.0, 0.0 ]
+    position = [ 5.5, 1.5, 0.0 ]
     rotation = [ 0.0, 0.0, 0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
@@ -84,15 +84,15 @@ name = 'Point Light'
 
     [entity.Light]
     casts_shadows = false
-    color = [ 0.6, 0.470588, 1.0 ]
-    intensity = 2.6
-    range = 10.3
+    color = [ 0.470588, 0.85896, 1.0 ]
+    intensity = 30.0
+    range = 6.2
     shadow_bias = 0.0015
     shadow_extent = 0.0
     type = 'Point'
 
     [entity.Transform]
-    position = [ -4.289, 3.95884, -0.17466 ]
+    position = [ -5.5, 1.5, -0.17466 ]
     rotation = [ -0.0, 0.0, -0.0, 1.0 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
