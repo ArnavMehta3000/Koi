@@ -161,6 +161,7 @@ namespace koi
 		Register<AssetRefComponentType<MaterialRef, Material>>(11, kDefaultMaterial);
 		Register<ComponentType<CameraComponent>>(20);
 		Register<ComponentType<Light>>(30);
+		Register<ComponentType<Sky>>(35);
 		Register<ComponentType<PostProcess>>(40);
 	}
 }

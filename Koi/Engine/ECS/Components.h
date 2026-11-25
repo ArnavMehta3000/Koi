@@ -1,6 +1,7 @@
 #pragma once
 #include "Koi/Engine/Assets/AssetHandles.h"
 #include "Koi/Engine/Core/Reflect.h"
+#include "Koi/Engine/Core/UUID.h"
 #include "Koi/Engine/Math/MathTypes.h"
 #include <string_view>
 
@@ -87,6 +88,19 @@ namespace koi
 		TonemapSettings      Tonemap;
 
 		KOI_REFLECT(PostProcess, AutoExposure, Tonemap);
+	};
+
+	struct Sky
+	{
+		static constexpr std::string_view kKey = "Sky";
+		static constexpr std::string_view kCategory = "Rendering";
+
+		UUID    Image;  // equirectangular .ktex; nil leaves a flat Color
+		Vector3 Color     = Vector3(1.0f, 1.0f, 1.0f);
+		f32     Intensity = 1.0f;
+		f32     Rotation  = 0.0f;  // around world up, radians
+
+		KOI_REFLECT(Sky, Image, Color, Intensity, Rotation);
 	};
 
 	enum class LightType : u8
