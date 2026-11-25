@@ -1,5 +1,6 @@
 #pragma once
 #include "Koi/Engine/Core/Types.h"
+#include "Koi/Engine/Core/UUID.h"
 
 #include <toml++/toml.hpp>
 
@@ -55,6 +56,20 @@ namespace koi
 	{
 		static T Serialize(const T& value) { return value; }
 		static std::optional<T> Deserialize(const toml::node& node) { return node.value_exact<T>(); }
+	};
+
+	// Empty string for nil
+	template <>
+	struct Serializer<UUID>
+	{
+		static std::string Serialize(const UUID& id) { return id.is_nil() ? std::string() : utils::ToString(id); }
+
+		static std::optional<UUID> Deserialize(const toml::node& node)
+		{
+			const std::optional<std::string> text = node.value<std::string>();
+			if (!text) return std::nullopt;
+			return text->empty() ? std::optional<UUID>(UUID{}) : UUID::from_string(*text);
+		}
 	};
 
 	// f32 needs its own: the default above would round-trip through value_exact<f32>, which toml has no type for
