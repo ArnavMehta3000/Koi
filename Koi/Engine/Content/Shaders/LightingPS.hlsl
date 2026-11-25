@@ -77,6 +77,8 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 	float metallic   = material.g;
 	float3 V         = normalize(g_root.CameraPosition.xyz - worldPos);
 
+	float ndotv = max(dot(N, V), 1e-4);
+
 	float3 F0            = lerp(kDielectricF0, albedo, metallic);
 	float3 diffuseAlbedo = albedo * (1.0 - metallic);
 
@@ -111,11 +113,11 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 
 		float3 F        = F_Schlick(vdoth, F0);
 		float3 diffuse  = (1.0 - F) * diffuseAlbedo / kPi;
-		float3 specular = F * D_GGX(ndoth, a) * 0.25; // G cancels the denominator for now
+		float3 specular = D_GGX(ndoth, a) * V_SmithGGX(ndotl, ndotv, a) * F;
 
 		float3 radiance = light.Color * light.Intensity * atten;
 		color += (diffuse + specular) * ndotl * radiance * SampleShadow(light, worldPos, N, ndotl);
 	}
 
-	return float4(color, 1.0);
+	return float4(min(color, kMaxRadiance), 1.0);
 }
