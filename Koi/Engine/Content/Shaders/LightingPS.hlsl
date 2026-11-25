@@ -44,6 +44,14 @@ float SampleShadow(GPULight light, float3 worldPos, float3 N, float ndotl)
 	return sum / 9.0;
 }
 
+// Inverse square, windowed to reach zero at range
+float PointAttenuation(float distSq, float range)
+{
+	float ratioSq = distSq / max(range * range, 1e-4);
+	float window  = saturate(1.0 - ratioSq * ratioSq);
+	return window * window / max(distSq, 1e-4);
+}
+
 float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 {
 	Texture2D<float4> albedoTex   = ResourceDescriptorHeap[g_root.AlbedoIndex];
@@ -100,10 +108,9 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 		else                  // point: attenuate toward Range
 		{
 			float3 toLight = light.Position - worldPos;
-			float  dist    = length(toLight);
-			L              = toLight / max(dist, 1e-4);
-			float d        = saturate(1.0 - dist / max(light.Range, 1e-4));
-			atten          = d * d;
+			float distSq   = dot(toLight, toLight);
+			L              = toLight / sqrt(max(distSq, 1e-8));
+			atten          = PointAttenuation(distSq, light.Range);
 		}
 
 		float ndotl = saturate(dot(N, L));
