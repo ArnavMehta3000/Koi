@@ -5,6 +5,7 @@
 #include "Koi/Engine/ECS/Core/ECS.h"
 #include "Koi/Engine/RHI/Types.h"
 #include "Koi/Engine/Math/Math.h"
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -41,6 +42,12 @@ namespace koi
 		Light   Data;
 		Vector3 Position;
 		Vector3 Direction;  // the entity's forward
+	};
+
+	struct RenderSky
+	{
+		Sky              Data;
+		GPUTextureHandle Image;  // invalid without an image
 	};
 
 	// What a pass wants out of the scene
@@ -121,6 +128,7 @@ namespace koi
 		};
 	public:
 		explicit RenderScene(ECS& ecs);
+		~RenderScene();
 
 		void Sync();
 		void Gather(const GatherDesc& desc, const CullVolume& volume, MeshGatherResult& out) const;
@@ -132,11 +140,20 @@ namespace koi
 		// The first PostProcess component in query order, else the defaults
 		[[nodiscard]] const PostProcess&            GetPostProcess() const { return m_postProcess; }
 
+		// The first Sky component in query order, or empty
+		[[nodiscard]] const std::optional<RenderSky>& GetSky() const { return m_sky; }
+
 	private:
-		RecordSet<RenderObject> m_objects;
-		RecordSet<RenderLight>  m_lights;
-		BoundingBox             m_bounds{ {}, {} };
-		PostProcess             m_postProcess;
-		ECS*                    m_ecs = nullptr;
+		void SyncSky();
+
+	private:
+		RecordSet<RenderObject>  m_objects;
+		RecordSet<RenderLight>   m_lights;
+		BoundingBox              m_bounds{ {}, {} };
+		PostProcess              m_postProcess;
+		std::optional<RenderSky> m_sky;
+		UUID                     m_skyImageId;  // what m_skyImage was acquired for
+		GPUTextureHandle         m_skyImage;    // owns a cache reference
+		ECS*                     m_ecs = nullptr;
 	};
 }

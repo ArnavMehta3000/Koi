@@ -132,6 +132,6 @@ target("Koi.Engine")
 		add_syslinks("ole32", "windowscodecs", { public = true })  -- screenshots are encoded with WIC
 	end
 
-	add_extrafiles("Content/Shaders/**.hlsl")
+	add_extrafiles("Content/Shaders/**.hlsl", "Content/Shaders/**.hlsli")
 	add_files("Content/Shaders/Shaders.json", { rule = "KoiShaders", koi_scheme = "engine" })
 target_end()

@@ -13,12 +13,27 @@ name = 'Post Process'
     operator = 'AgX'
 
     [entity.Transform]
-    position = [ 2.007, 2.1, 0.0 ]
+    position = [ 0.0, 0.0, 0.0 ]
     rotation = [ -0.0, 0.406737, -0.0, 0.913545 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
 id = 1
+name = 'Sky'
+
+    [entity.Sky]
+    color = [ 1.0, 1.0, 1.0 ]
+    image = 'f028d4b5-d562-49c7-ab85-266c6b801a36'
+    intensity = 1.0
+    rotation = 0.0
+
+    [entity.Transform]
+    position = [ 0.0, 0.0, 0.0 ]
+    rotation = [ -0.0, 0.0, -0.0, 1.0 ]
+    scale = [ 1.0, 1.0, 1.0 ]
+
+[[entity]]
+id = 2
 name = 'Sponza'
 
     [entity.Mesh]
@@ -30,7 +45,7 @@ name = 'Sponza'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-id = 2
+id = 3
 name = 'Damaged Helmet'
 
     [entity.Mesh]
@@ -41,12 +56,12 @@ name = 'Damaged Helmet'
     turn_speed = 90.0
 
     [entity.Transform]
-    position = [ 2.007, 2.1, 0.0 ]
+    position = [ 2.007, 1.45, 0.0 ]
     rotation = [ 0.0, 0.406737, 0.0, 0.913545 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-id = 3
+id = 4
 name = 'Camera'
 
     [entity.Camera]
@@ -56,12 +71,12 @@ name = 'Camera'
     primary = true
 
     [entity.Transform]
-    position = [ 6.6, 1.35, -0.3 ]
-    rotation = [ 0.0339257, 0.706292, -0.0339256, 0.706292 ]
+    position = [ 6.6, 0.95, -0.3 ]
+    rotation = [ 0.0892363, 0.701453, -0.089236, 0.701454 ]
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-id = 4
+id = 5
 name = 'Child Light'
 
     [entity.Light]
@@ -79,7 +94,7 @@ name = 'Child Light'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-id = 5
+id = 6
 name = 'Point Light'
 
     [entity.Light]
@@ -97,7 +112,7 @@ name = 'Point Light'
     scale = [ 1.0, 1.0, 1.0 ]
 
 [[entity]]
-id = 6
+id = 7
 name = 'Torus'
 
     [entity.Material]
@@ -116,7 +131,7 @@ name = 'Torus'
     scale = [ 15.0, 5.0, 15.0 ]
 
 [[entity]]
-id = 7
+id = 8
 name = 'Sun'
 
     [entity.Light]

@@ -40,6 +40,13 @@ namespace koi
 			return d;
 		}
 
+		D3D12_SAMPLER_DESC MakeLatLongDesc()
+		{
+			D3D12_SAMPLER_DESC d = MakeLinearWrapDesc();
+			d.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+			return d;
+		}
+
 		D3D12_SAMPLER_DESC MakePointClampDesc()
 		{
 			D3D12_SAMPLER_DESC d{};
@@ -69,6 +76,7 @@ namespace koi
 		LinearWrapSampler  = device.CreateSampler(MakeLinearWrapDesc());
 		AnisoWrapSampler   = device.CreateSampler(MakeAnisoWrapDesc());
 		LinearClampSampler = device.CreateSampler(MakeLinearClampDesc());
+		LatLongSampler     = device.CreateSampler(MakeLatLongDesc());
 		PointClampSampler  = device.CreateSampler(MakePointClampDesc());
 		ShadowSampler      = device.CreateSampler(MakeShadowCompareDesc());
 

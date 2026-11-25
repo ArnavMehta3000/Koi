@@ -2,7 +2,9 @@
 #include "Koi/Engine/Resources/AssetRegistry.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Graphics/GPUMesh.h"
+#include "Koi/Engine/Graphics/GPUTexture.h"
 #include "Koi/Engine/Graphics/MaterialTable.h"
+#include "Koi/Engine/Graphics/Renderer.h"
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Math/Transform.h"
 #include "Koi/Engine/Runtime/Engine.h"
@@ -29,6 +31,52 @@ namespace koi
 		ecs.OnRemove<Light>([this](Entity e, Light&)      { m_lights.Remove(e); });
 	}
 
+	RenderScene::~RenderScene()
+	{
+		if (!m_skyImage) return;
+
+		Engine& engine = Engine::Get();
+		engine.GetSubsystem<AssetRegistry>().Cache<GPUTexture>().Release(engine.GetSubsystem<Renderer>().GetDevice(), m_skyImage);
+	}
+
+	void RenderScene::SyncSky()
+	{
+		m_sky.reset();
+		m_ecs->Each<const Sky>([&](const Sky& sky)
+		{
+			if (!m_sky)
+			{
+				m_sky = RenderSky{ .Data = sky };
+			}
+		});
+
+		const UUID id = m_sky ? m_sky->Data.Image : UUID{};
+		if (id != m_skyImageId)  // Resource mismatch, create/acquire other (newly set) texture
+		{
+			Engine&                 engine   = Engine::Get();
+			GfxDevice&              device   = engine.GetSubsystem<Renderer>().GetDevice();
+			AssetRegistry&          assets   = engine.GetSubsystem<AssetRegistry>();
+			AssetCache<GPUTexture>& textures = assets.Cache<GPUTexture>();
+
+			if (m_skyImage)
+			{
+				textures.Release(device, std::exchange(m_skyImage, {}));
+			}
+			m_skyImageId = id;
+
+			if (const AssetIndexEntry* entry = id.is_nil() ? nullptr : assets.Index().Find(id))
+			{
+				m_skyImage = textures.Acquire(device, AssetKey(entry->VirtualPath));
+			}
+			else if (!id.is_nil())
+			{
+				KOI_LOG(Scene, Warn, "The sky wants texture {}, which isn't in the project anymore", utils::ToString(id));
+			}
+		}
+
+		if (m_sky) m_sky->Image = m_skyImage;
+	}
+
 	void RenderScene::Sync()
 	{
 		KOI_SCOPE("RenderScene Sync");
@@ -42,6 +90,8 @@ namespace koi
 		{
 			if (!std::exchange(foundPost, true)) m_postProcess = post;
 		});
+
+		SyncSky();
 
 		for (RenderObject& object : m_objects.All())
 		{

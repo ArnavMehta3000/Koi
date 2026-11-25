@@ -13,6 +13,8 @@
 		{ "source": "ShadowVS.hlsl" },
 		{ "source": "ShadowMaskedVS.hlsl" },
 		{ "source": "ShadowMaskedPS.hlsl" },
+		{ "source": "SkyVS.hlsl" },
+		{ "source": "SkyPS.hlsl" },
 		{ "source": "FullscreenVS.hlsl" },
 		{ "source": "TonemapCS.hlsl" },
 		{ "source": "HistogramClearCS.hlsl" },

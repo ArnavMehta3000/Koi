@@ -20,6 +20,7 @@ namespace koi
 		DescriptorIndex LinearWrapSampler  = INVALID_DESCRIPTOR;
 		DescriptorIndex AnisoWrapSampler   = INVALID_DESCRIPTOR;  // material textures
 		DescriptorIndex LinearClampSampler = INVALID_DESCRIPTOR;
+		DescriptorIndex LatLongSampler     = INVALID_DESCRIPTOR;  // wraps U, clamps V
 		DescriptorIndex PointClampSampler  = INVALID_DESCRIPTOR;
 		DescriptorIndex ShadowSampler      = INVALID_DESCRIPTOR;  // comparison sampler for SampleCmp
 

@@ -7,6 +7,7 @@
 #include "Koi/Engine/Graphics/RenderPasses/GridPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/LightingPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/ShadowPass.h"
+#include "Koi/Engine/Graphics/RenderPasses/SkyPass.h"
 #include "Koi/Engine/Graphics/RenderPasses/TonemapPass.h"
 #include "Koi/Engine/Graphics/Renderer.h"
 
@@ -16,30 +17,39 @@ namespace koi
 	{
 		ZoneScoped;
 
+		GfxDevice* device = &renderer.GetDevice();
+		RendererResources* defResources = &renderer.GetDefaultResources();
+		MaterialTable* matTable = &renderer.GetMaterialTable();
+
 		features.Add<ShadowPass>(ShadowPass::Config
 		{
-			.Device    = &renderer.GetDevice(),
-			.Resources = &renderer.GetDefaultResources(),
-			.Materials = &renderer.GetMaterialTable(),
+			.Device    = device,
+			.Resources = defResources,
+			.Materials = matTable,
 		});
 
 		features.Add<GBufferPass>(GBufferPass::Config
 		{
-			.Device          = &renderer.GetDevice(),
-			.Resources       = &renderer.GetDefaultResources(),
-			.Materials       = &renderer.GetMaterialTable(),
+			.Device          = device,
+			.Resources       = defResources,
+			.Materials       = matTable,
 			.DefaultPipeline = &renderer.GetMaterialTemplates().Default()->PipelineFor(false, false),
 		});
 
 		features.Add<LightingPass>(LightingPass::Config
 		{
-			.Device    = &renderer.GetDevice(),
-			.Resources = &renderer.GetDefaultResources(),
+			.Device    = device,
+			.Resources = defResources,
+		});
+
+		features.Add<SkyPass>(SkyPass::Config
+		{
+			.Resources = defResources,
 		});
 
 		features.Add<AutoExposurePass>(AutoExposurePass::Config
 		{
-			.Device = &renderer.GetDevice(),
+			.Device = device,
 		});
 		features.Add<TonemapPass>();
 
@@ -47,16 +57,16 @@ namespace koi
 		// Over the tonemapped image, under the debug lines
 		features.Add<GridPass>(GridPass::Config
 		{
-			.Device    = &renderer.GetDevice(),
-			.Resources = &renderer.GetDefaultResources(),
+			.Device    = device,
+			.Resources = defResources,
 		});
 #endif
 
 #if KOI_DEBUG_DRAW
 		features.Add<DebugDrawPass>(DebugDrawPass::Config
 		{
-			.Device    = &renderer.GetDevice(),
-			.Resources = &renderer.GetDefaultResources(),
+			.Device    = device,
+			.Resources = defResources,
 			.Queue     = &renderer.GetDebugDraw(),
 		});
 #endif
