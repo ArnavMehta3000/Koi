@@ -3,8 +3,6 @@
 
 ConstantBuffer<LightingRootConstants> g_root : register(b0);
 
-static const float3 kDielectricF0 = float3(0.04, 0.04, 0.04); // IOR: 1.5
-
 // 1 = fully lit, 0 = fully shadowed
 float SampleShadow(GPULight light, float3 worldPos, float3 N, float ndotl)
 {
@@ -106,12 +104,14 @@ float4 PSMain(float4 pos : SV_Position, float2 uv : TEXCOORD0) : SV_Target
 			atten          = d * d;
 		}
 
-		float  ndotl = saturate(dot(N, L));
-		float3 H     = normalize(L + V);
-		float  ndoth = saturate(dot(N, H));
+		float ndotl = saturate(dot(N, L));
+		float3 H    = normalize(L + V);
+		float ndoth = saturate(dot(N, H));
+		float vdoth = saturate(dot(V, H));
 
-		float3 diffuse = diffuseAlbedo / kPi;
-		float3 specular = F0 * D_GGX(ndoth, a) * 0.25; // G cancels the denominator for now
+		float3 F        = F_Schlick(vdoth, F0);
+		float3 diffuse  = (1.0 - F) * diffuseAlbedo / kPi;
+		float3 specular = F * D_GGX(ndoth, a) * 0.25; // G cancels the denominator for now
 
 		float3 radiance = light.Color * light.Intensity * atten;
 		color += (diffuse + specular) * ndotl * radiance * SampleShadow(light, worldPos, N, ndotl);
