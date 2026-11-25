@@ -43,6 +43,12 @@ namespace koi::editor
 		void Draw(Entity e) override;
 	};
 
+	class SkyInspector final : public ComponentInspector<Sky>
+	{
+	public:
+		void Draw(Entity e) override;
+	};
+
 	class PostProcessInspector final : public ComponentInspector<PostProcess>
 	{
 	public:

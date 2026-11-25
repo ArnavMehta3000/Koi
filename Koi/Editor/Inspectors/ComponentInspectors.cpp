@@ -217,6 +217,52 @@ namespace koi::editor
 		utils::EndPropertyGrid();
 	}
 
+	void SkyInspector::Draw(Entity e)
+	{
+		Sky* sky = e.TryGet<Sky>();
+		if (!sky) return;
+
+		if (!utils::BeginPropertyGrid("##sky")) return;
+
+		const AssetIndex& index = Engine::Get().GetSubsystem<AssetRegistry>().Index();
+		const AssetIndexEntry* bound = index.Find(sky->Image);
+		const std::string path = bound ? bound->VirtualPath : std::string();
+		const std::string name = bound ? fs::path(path).stem().string() : (sky->Image.is_nil() ? std::string() : std::string("Missing"));
+
+		utils::PropertyLabel("Image", "An equirectangular (2:1) HDR texture. Empty leaves a flat color");
+		std::string dropped;
+		if (utils::AssetField("##Image", utils::AssetKindIcon(AssetKind::Texture), name, path, dropped, true))
+		{
+			const AssetIndexEntry* entry = dropped.empty() ? nullptr : index.FindByPath(dropped);
+			if (dropped.empty())
+			{
+				sky->Image = {};
+			}
+			else if (entry && entry->Type == AssetFileType::Texture)
+			{
+				sky->Image = entry->Id;
+			}
+			else
+			{
+				KOI_LOG(Editor, Warn, "Dropped asset is not a texture: {}", dropped);
+			}
+		}
+
+		utils::PropertyLabel("Color", "Multiplies the image");
+		ImGui::ColorEdit3("##Color", &sky->Color.x);
+		utils::PropertyLabel("Intensity");
+		ImGui::DragFloat("##Intensity", &sky->Intensity, 0.01f, 0.0f, 1000.0f);
+
+		f32 degrees = sky->Rotation * kRadToDeg;
+		utils::PropertyLabel("Rotation", "Around world up, in degrees");
+		if (ImGui::DragFloat("##Rotation", &degrees, 0.5f, -360.0f, 360.0f, "%.1f"))
+		{
+			sky->Rotation = degrees * kDegToRad;
+		}
+
+		utils::EndPropertyGrid();
+	}
+
 	void PostProcessInspector::Draw(Entity e)
 	{
 		PostProcess* post = e.TryGet<PostProcess>();

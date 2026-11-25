@@ -34,6 +34,7 @@ namespace koi::editor
 		Emplace<MaterialRefInspector>();
 		Emplace<CameraInspector>();
 		Emplace<LightInspector>();
+		Emplace<SkyInspector>();
 		Emplace<PostProcessInspector>();
 	}
 }
