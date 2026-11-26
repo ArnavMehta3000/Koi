@@ -8,6 +8,7 @@ set_version("0.0.1", { build = "%Y%m%d%H%M" })
 add_plugindirs("./Plugins")
 
 set_languages("c17", "cxx23")
+set_toolchains("msvc", { vs = "2026", vs_toolset = "14.52" })
 set_warnings("all", "extra")
 
 set_policy("build.warning", true)
