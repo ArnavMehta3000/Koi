@@ -214,6 +214,10 @@ namespace koi::internal
 				KOI_LOG(Engine, Critical, "Failed to parse command line arguments");
 				return -1;
 			}
+			else if (const std::string cmdString = cmd->config_to_str(CLI::ConfigOutputMode::Active); !cmdString.empty())
+			{
+				KOI_LOG(Engine, Debug, "Active commandline args: {}", cmdString);
+			}
 
 			const fs::path exeDir   = utils::ExecutableDir();
 			const bool     isEditor = !desc.ProjectDir.empty();
