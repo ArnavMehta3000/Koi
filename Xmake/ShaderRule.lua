@@ -40,6 +40,7 @@ rule("KoiShaders")
 		local enginedir      = path.join(os.projectdir(), "Koi", "Engine")
 		local outdir         = path.join(target:autogendir(), "Built", "Shaders")
 		local isdebug        = is_mode(".*-debug")
+		local isrelease      = is_mode("game-release")
 
 		local function find_dxc()
 			for _, owner in ipairs({ target, target:dep("Koi.Engine") }) do
@@ -111,7 +112,7 @@ rule("KoiShaders")
 				local flags = table.join({ "-T", stage[1], "-E", stage[2] }, common, defines)
 				for _, define in ipairs(combo) do table.join2(flags, { "-D", define }) end
 
-				local args = table.join(flags, isdebug and { "-Zi", "-Fd", path.join(outdir, base .. ".pdb") } or { "-O3" },
+				local args = table.join(flags, isdebug and {} or { "-O3" }, isrelease and {} or { "-Zi", "-Qembed_debug" },
 					{ "-Qstrip_reflect", "-Fo", cso, "-Fre", path.join(outdir, base .. ".refl"), src })
 
 				local dependfile = target:dependfile(cso)
