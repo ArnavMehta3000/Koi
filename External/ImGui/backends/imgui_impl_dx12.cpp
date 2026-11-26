@@ -347,6 +347,7 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
         desc.Flags = D3D12_RESOURCE_FLAG_NONE;
         if (bd->pd3dDevice->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&fr->VertexBuffer)) < 0)
             return;
+        fr->VertexBuffer->SetName(L"ImGui Vertex Buffer"); // Koi: named for PIX
     }
     if (fr->IndexBuffer == nullptr || fr->IndexBufferSize < draw_data->TotalIdxCount)
     {
@@ -368,6 +369,7 @@ void ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3D12GraphicsCommandL
         desc.Flags = D3D12_RESOURCE_FLAG_NONE;
         if (bd->pd3dDevice->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&fr->IndexBuffer)) < 0)
             return;
+        fr->IndexBuffer->SetName(L"ImGui Index Buffer"); // Koi: named for PIX
     }
 
     // Upload vertex/index data into a single contiguous GPU buffer
@@ -506,6 +508,7 @@ void ImGui_ImplDX12_UpdateTexture(ImTextureData* tex)
         ID3D12Resource* pTexture = nullptr;
         bd->pd3dDevice->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc,
             D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&pTexture));
+        pTexture->SetName(L"ImGui Texture"); // Koi: named for PIX
 
         // Create SRV
         D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
@@ -579,6 +582,7 @@ void ImGui_ImplDX12_UpdateTexture(ImTextureData* tex)
             HRESULT hr = bd->pd3dDevice->CreateCommittedResource(&props, D3D12_HEAP_FLAG_NONE, &desc,
                 D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&bd->pTexUploadBuffer));
             IM_ASSERT(SUCCEEDED(hr));
+            bd->pTexUploadBuffer->SetName(L"ImGui Texture Upload"); // Koi: named for PIX
 
             D3D12_RANGE range = {0, upload_size};
             hr = bd->pTexUploadBuffer->Map(0, &range, &bd->pTexUploadBufferMapped);
