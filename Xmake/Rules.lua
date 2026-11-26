@@ -50,6 +50,19 @@ rule("KoiGame")
 			'KOI_PROJECT_BUILD_DIR="' .. path.unix(path.absolute(path.join(target:autogendir(), "Built"), os.projectdir())) .. '"')
 	end)
 
+	-- WinPixEventRuntime.dll must sit beside the exe; game-release compiles PIX out, so never imports it
+	after_build(function(target)
+		if is_mode("game-release") then return end
+
+		for _, dep in ipairs(target:orderdeps()) do
+			local pix = dep:pkg("winpixevent")
+			if pix then
+				os.vcp(path.join(pix:installdir(), "bin", "WinPixEventRuntime.dll"), target:targetdir())
+				return
+			end
+		end
+	end)
+
 	-- `xmake install <Game>` assembles a self-contained folder: exe + cooked Engine/ + Project/
 	on_install(function(target)
 		if is_mode("editor-.*") then
@@ -66,6 +79,7 @@ rule("KoiGame")
 		os.tryrm(path.join(dst, "Project"))
 		os.mkdir(dst)
 		os.cp(target:targetfile(), dst)
+		os.trycp(path.join(target:targetdir(), "WinPixEventRuntime.dll"), dst)
 		if os.isfile(target:symbolfile()) then
 			os.cp(target:symbolfile(), dst)
 		end

@@ -77,7 +77,12 @@ target("Koi.RHI")
 	add_options("LogLevel")
 
 	add_deps("Koi.Core", { public = true })
-	add_packages("dxc", "directx-headers", { public = true })
+	add_packages("dxc", "directx-headers", "winpixevent", { public = true })
+
+	-- pix3.h only turns itself on in _DEBUG builds; shipping builds drop the markers
+	if not is_mode("game-release") then
+		add_defines("USE_PIX", { public = true })
+	end
 
 	add_includedirs("$(projectdir)", { public = true })
 	add_dirs({ "RHI" })
