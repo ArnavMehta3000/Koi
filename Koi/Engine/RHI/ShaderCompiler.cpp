@@ -5,35 +5,20 @@
 #include "Koi/Engine/Logging/Logger.h"
 #include "Koi/Engine/Text/StringUtils.h"
 #include <algorithm>
+#include <array>
 #include <d3d12shader.h>
 #include <fstream>
 #include <span>
 #include <spdlog/fmt/xchar.h>
-#include <unordered_map>
 
 namespace koi
 {
 	namespace
 	{
-		static const std::unordered_map<ShaderType, std::wstring_view> s_shaderProfile
-		{
-			{ ShaderType::Vertex  , L"vs_6_6" },
-			{ ShaderType::Hull    , L"hs_6_6" },
-			{ ShaderType::Domain  , L"ds_6_6" },
-			{ ShaderType::Geometry, L"gs_6_6" },
-			{ ShaderType::Pixel   , L"ps_6_6" },
-			{ ShaderType::Compute , L"cs_6_6" },
-		};
-
-		static const std::unordered_map<ShaderType, std::wstring_view> s_entryPoint
-		{
-			{ ShaderType::Vertex  , L"VSMain" },
-			{ ShaderType::Hull    , L"HSMain" },
-			{ ShaderType::Domain  , L"DSMain" },
-			{ ShaderType::Geometry, L"GSMain" },
-			{ ShaderType::Pixel   , L"PSMain" },
-			{ ShaderType::Compute , L"CSMain" },
-		};
+		// Indexed by ShaderType
+		constexpr std::array<std::wstring_view, size_t(ShaderType::MAX_COUNT)> kShaderProfile{ L"vs_6_6", L"hs_6_6", L"ds_6_6", L"gs_6_6", L"ps_6_6", L"cs_6_6" };
+		constexpr std::array<std::wstring_view, size_t(ShaderType::MAX_COUNT)> kEntryPoint{ L"VSMain", L"HSMain", L"DSMain", L"GSMain", L"PSMain", L"CSMain" };
+		static_assert(kShaderProfile.back() == L"cs_6_6" && kEntryPoint.back() == L"CSMain", "tables must cover every ShaderType");
 
 		class ShaderIncludeHandler final : public IDxcIncludeHandler
 		{
@@ -195,8 +180,8 @@ namespace koi
 		ComPtr<IDxcCompilerArgs> compilerArgs;
 		DX_CHECK(m_dxcUtils->BuildArguments(
 			shaderName.c_str(),
-			s_entryPoint.at(args.Type).data(),
-			s_shaderProfile.at(args.Type).data(),
+			kEntryPoint[size_t(args.Type)].data(),
+			kShaderProfile[size_t(args.Type)].data(),
 			argsSpan.data(),
 			static_cast<u32>(argsSpan.size()),
 			args.Defines.data(),
@@ -317,10 +302,6 @@ namespace koi
 	ShaderCompiler::ShaderCompiler()
 	{
 		ZoneScoped;
-
-		// Ensure the map size is correct.
-		KOI_ASSERT(s_shaderProfile.size() == (size_t)ShaderType::MAX_COUNT);
-		KOI_ASSERT(s_entryPoint.size() == (size_t)ShaderType::MAX_COUNT);
 
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&m_dxcUtils)));
 		DX_CHECK(::DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&m_dxcCompiler)));
