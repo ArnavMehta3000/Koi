@@ -234,7 +234,7 @@ namespace koi::editor
 		KOI_LOG(Editor, Debug, "Reopening '{}'", *last);
 
 		AppCreateDesc desc = m_game->GetDesc();
-		const auto listed = std::ranges::find(desc.Scenes, *last, &decltype(desc.Scenes)::value_type::second);
+		const auto listed = std::ranges::find_if(desc.Scenes, [&](const auto& scene) { return scene.second == *last; });
 		if (listed == desc.Scenes.end())
 		{
 			m_scenes->Open(*last);

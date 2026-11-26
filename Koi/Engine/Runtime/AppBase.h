@@ -5,7 +5,7 @@
 #include "Koi/Engine/Platform/InputActions.h"
 #include "Koi/Engine/Platform/Window.h"
 #include "Koi/Engine/Runtime/AppHost.h"
-#include <map>
+#include <flat_map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -19,11 +19,13 @@ namespace koi
 
 	struct AppCreateDesc
 	{
+		using SceneMap = std::flat_map<std::string, std::string, std::less<>>;
+
 		WindowDesc   WindowDesc{};
 		LoggerConfig LogConfig{};
 		InputConfig  Input{};
 		std::string  AppName        = "Koi Application";
-		std::map<std::string, std::string> Scenes;   // name -> virtual path, from [scenes.list]
+		SceneMap     Scenes;                         // name -> virtual path, from [scenes.list]
 		std::string  StartupScene;                   // name in Scenes, empty = none
 		f32          FixedStep      = 1.0f / 60.0f;  // seconds per FixedUpdate step, from [physics]
 	};

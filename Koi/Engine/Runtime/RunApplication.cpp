@@ -12,7 +12,7 @@
 #include "Koi/Engine/Text/StringUtils.h"
 #include <toml++/toml.hpp>
 #include <filesystem>
-#include <map>
+#include <flat_map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -47,7 +47,7 @@ namespace koi::internal
 		const toml::table* input = project["input"].as_table();
 
 		// Load scene list
-		std::map<std::string, std::string> scenes;
+		std::flat_map<std::string, std::string, std::less<>> scenes;
 		if (const toml::table* list = project["scenes"]["list"].as_table())
 		{
 			for (const auto& [name, node] : *list)
@@ -57,7 +57,7 @@ namespace koi::internal
 		}
 
 		// Load logging categories
-		std::map<std::string, LogLevel, std::less<>> categoryLevels;
+		std::flat_map<std::string, LogLevel, std::less<>> categoryLevels;
 		if (const toml::table* categories = project["logging"]["categories"].as_table())
 		{
 			for (const auto& [name, node] : *categories)

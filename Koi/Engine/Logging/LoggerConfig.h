@@ -1,7 +1,7 @@
 #pragma once
 #include "Koi/Engine/Core/LogLevel.h"
 #include "Koi/Engine/Core/Types.h"
-#include <map>
+#include <flat_map>
 #include <string>
 
 namespace koi
@@ -14,6 +14,6 @@ namespace koi
 		bool        SpawnConsole    = false;            // force-allocate a console on Windows
 		bool        UseDebugSink    = true;             // OutputDebugString sink
 
-		std::map<std::string, LogLevel, std::less<>> CategoryLevels;  // [logging.categories], overrides RuntimeLevel
+		std::flat_map<std::string, LogLevel, std::less<>> CategoryLevels;  // [logging.categories], overrides RuntimeLevel
 	};
 }

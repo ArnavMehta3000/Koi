@@ -11,7 +11,7 @@
 #include <deque>
 #include <filesystem>
 #include <iostream>
-#include <map>
+#include <flat_map>
 #include <mutex>
 #include <ranges>
 #include <unordered_map>
@@ -59,11 +59,13 @@ namespace koi
 
 		struct CategoryTable
 		{
-			std::mutex                                   Mutex;
-			std::deque<CategoryEntry>                    Entries;
-			std::atomic<u32>                             Count{ 0 };
-			LogLevel                                     DefaultLevel = LogLevel::Debug;
-			std::map<std::string, LogLevel, std::less<>> Overrides;
+			using OverrideMap = std::flat_map<std::string, LogLevel, std::less<>>;
+
+			std::mutex                Mutex;
+			std::deque<CategoryEntry> Entries;
+			std::atomic<u32>          Count{ 0 };
+			LogLevel                  DefaultLevel = LogLevel::Debug;
+			OverrideMap               Overrides;
 
 			[[nodiscard]] LogLevel LevelFor(std::string_view name) const
 			{
@@ -191,7 +193,7 @@ namespace koi
 				s_levels[i].store(static_cast<u8>(table.LevelFor(table.Entries[i].Name)), std::memory_order_relaxed);
 			}
 
-			for (const auto& name : table.Overrides | std::views::keys)
+			for (const auto& name : table.Overrides.keys())
 			{
 				if (std::ranges::none_of(table.Entries, [&](const CategoryEntry& e) { return e.Name == name; }))
 					unknown.push_back(name);

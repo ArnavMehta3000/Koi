@@ -117,7 +117,7 @@ namespace koi
 
 	bool AppBase::LoadScene(std::string_view name)
 	{
-		if (!m_desc.Scenes.contains(std::string(name)))
+		if (!m_desc.Scenes.contains(name))
 		{
 			KOI_LOG(Scene, Error, "Scene '{}' is not listed in [scenes.list]", name);
 			return false;
