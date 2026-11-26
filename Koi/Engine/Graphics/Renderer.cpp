@@ -180,6 +180,7 @@ namespace koi
 		const bool mainSubmitted = std::ranges::contains(m_submitted, m_mainScene.get());
 		for (SceneRenderer* scene : std::exchange(m_submitted, {}))
 		{
+			KOI_GPU_EVENT(cmd, "%s (%s)", scene == m_mainScene.get() ? "Main View" : "Preview View", scene->GetPipeline().c_str());
 			scene->Execute(cmd);
 		}
 		m_debugDraw.Clear();  // after the pass consumed it, so ImGui-time pushes (inspectors) survive into the next frame

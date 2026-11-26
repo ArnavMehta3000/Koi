@@ -167,10 +167,13 @@ namespace koi
 			DXC_ARG_ALL_RESOURCES_BOUND,
 #if KOI_DEBUG
 			L"-D", L"KOI_DEBUG=1",
-			DXC_ARG_DEBUG,    // -Zi: emit a separate PDB output (extracted below)
 #else
 			L"-D", L"KOI_DEBUG=0",
 			DXC_ARG_OPTIMIZATION_LEVEL3,
+#endif
+#if !KOI_RELEASE
+			DXC_ARG_DEBUG,  // -Zi, embedded in the blob so PIX resolves it in place
+			L"-Qembed_debug",
 #endif
 			L"-Qstrip_reflect"  // Strip reflection into a separate blob
 		};

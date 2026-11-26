@@ -71,8 +71,10 @@ namespace koi
 		{
 			for (auto& slot : m_features)
 			{
+				graph.SetGroup(slot->Name);
 				slot->Record(graph, view, scene);
 			}
+			graph.SetGroup({});
 		}
 
 		[[nodiscard]] std::string Names() const

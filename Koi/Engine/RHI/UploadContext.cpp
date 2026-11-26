@@ -2,6 +2,7 @@
 #include "Koi/Engine/Core/Assert.h"
 #include "Koi/Engine/Diagnostics/Profiling.h"
 #include "Koi/Engine/Logging/Logger.h"
+#include "Koi/Engine/RHI/GpuProfiling.h"
 #include <algorithm>
 #include <cstring>
 
@@ -123,7 +124,9 @@ namespace koi
 
 
 		dx12::CommandList* lists[] = { m_cmdList.Get() };
+		PIXBeginEvent(m_copyQueue.Get(), utils::GpuEventColor("Upload"), "Upload (%u staging buffers)", u32(m_activeStagingBuffers.size()));
 		m_copyQueue->ExecuteCommandLists(1, lists);
+		PIXEndEvent(m_copyQueue.Get());
 
 		const u64 fenceValue = m_nextFenceValue++;
 		DX_CHECK(m_copyQueue->Signal(m_copyFence.Get(), fenceValue));

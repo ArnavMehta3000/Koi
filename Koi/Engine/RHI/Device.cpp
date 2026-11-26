@@ -613,26 +613,6 @@ namespace koi
 		KOI_ASSERT(desc.RenderTargetCount <= MAX_RENDER_TARGETS, "Too many render targets");
 		KOI_ASSERT(desc.RenderTargetCount > 0 || desc.DepthFormat != Format::UNKNOWN, "PipelineDesc has neither render targets nor a depth target");
 
-		// Vertex input layout
-		std::array<D3D12_INPUT_ELEMENT_DESC, MAX_VERTEX_ATTRIBUTES> inputElements{};
-
-		for (const auto& [index, attr] : std::views::enumerate(desc.VertexLayout) | std::views::as_const)
-		{
-			KOI_ASSERT(index < MAX_VERTEX_ATTRIBUTES, "Too many vertex attributes");
-			KOI_ASSERT(attr.SemanticName && *attr.SemanticName, "Vertex attribute missing semantic name");
-
-			inputElements[index] =
-			{
-				.SemanticName         = attr.SemanticName,
-				.SemanticIndex        = attr.SemanticIndex,
-				.Format               = utils::ToDXGIFormat(attr.Format),
-				.InputSlot            = attr.InputSlot,
-				.AlignedByteOffset    = attr.ByteOffset,
-				.InputSlotClass       = attr.PerInstance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-				.InstanceDataStepRate = attr.PerInstance ? 1u : 0u,
-			};
-		}
-
 		// Rasterizer
 		auto rasterDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		rasterDesc.FillMode              = desc.Rasterizer.FillMode;
@@ -671,15 +651,12 @@ namespace koi
 		depthDesc.DepthFunc                = desc.DepthStencil.DepthFunc;
 		depthDesc.StencilEnable            = desc.DepthStencil.StencilEnable;
 
+		// Vertices are pulled bindlessly, so no input layout
 		struct GraphicsStream
 		{
 			CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE         RootSignature;
-			CD3DX12_PIPELINE_STATE_STREAM_INPUT_LAYOUT           InputLayout;
 			CD3DX12_PIPELINE_STATE_STREAM_PRIMITIVE_TOPOLOGY     TopologyType;
 			CD3DX12_PIPELINE_STATE_STREAM_VS                     VS;
-			CD3DX12_PIPELINE_STATE_STREAM_HS                     HS;
-			CD3DX12_PIPELINE_STATE_STREAM_DS                     DS;
-			CD3DX12_PIPELINE_STATE_STREAM_GS                     GS;
 			CD3DX12_PIPELINE_STATE_STREAM_PS                     PS;
 			CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER             Rasterizer;
 			CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC             Blend;
@@ -700,12 +677,8 @@ namespace koi
 		GraphicsStream stream
 		{
 			.RootSignature       = m_rootSignature.Get(),
-			.InputLayout         = D3D12_INPUT_LAYOUT_DESC{ inputElements.data(), static_cast<u32>(desc.VertexLayout.size()) },
 			.TopologyType        = desc.TopologyType,
 			.VS                  = bytecode(desc.VertexShader),
-			.HS                  = bytecode(desc.HullShader),
-			.DS                  = bytecode(desc.DomainShader),
-			.GS                  = bytecode(desc.GeometryShader),
 			.PS                  = bytecode(desc.PixelShader),
 			.Rasterizer          = rasterDesc,
 			.Blend               = blendDesc,

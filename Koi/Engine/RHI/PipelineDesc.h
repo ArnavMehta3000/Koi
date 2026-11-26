@@ -66,13 +66,8 @@ namespace koi
 
 	struct PipelineDesc
 	{
-		std::span<const VertexAttribute> VertexLayout;
-
 		std::span<const byte> VertexShader;
 		std::span<const byte> PixelShader;
-		std::span<const byte> GeometryShader; // optional
-		std::span<const byte> HullShader;     // optional
-		std::span<const byte> DomainShader;   // optional
 
 		RasterizerDesc   Rasterizer{};
 		BlendTargetDesc  BlendTargets[MAX_RENDER_TARGETS]{};

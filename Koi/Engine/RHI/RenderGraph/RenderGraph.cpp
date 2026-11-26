@@ -154,6 +154,7 @@ namespace koi
 		m_passes.clear();
 		m_uses.clear();
 		m_blackboard.Clear();
+		m_group = nullptr;
 	}
 
 	const std::string& RenderGraph::Intern(std::string_view name)
@@ -231,7 +232,7 @@ namespace koi
 
 	u32 RenderGraph::BeginPass(std::string_view name)
 	{
-		m_passes.push_back(Pass{ .Name = Intern(name).c_str(), .FirstUse = static_cast<u32>(m_uses.size()) });
+		m_passes.push_back(Pass{ .Name = Intern(name).c_str(), .Group = m_group, .FirstUse = static_cast<u32>(m_uses.size()) });
 		return static_cast<u32>(m_passes.size() - 1);
 	}
 
@@ -369,36 +370,54 @@ namespace koi
 			cmd.TransitionBarrier(handle, state);
 		};
 
-		for (Pass& pass : m_passes)
-		{
-			KOI_GPU_ZONE_TRANSIENT(cmd, passZone, pass.Name);
+		const auto sameGroup = [&](size_t a, size_t b) { return b < m_passes.size() && m_passes[a].Group && m_passes[a].Group == m_passes[b].Group; };
 
-			for (const Use& use : UsesOf(pass))
+		bool inGroup = false;
+		for (size_t i = 0; i < m_passes.size(); i++)
+		{
+			Pass& pass = m_passes[i];
+			if (!inGroup && sameGroup(i, i + 1))
 			{
-				const D3D12_RESOURCE_STATES state = use.Access == Access::ShaderRead  ? kShaderRead
-				                                  : use.Access == Access::ShaderWrite ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS
-				                                  : use.Access == Access::ColorTarget ? D3D12_RESOURCE_STATE_RENDER_TARGET
-				                                  : use.Access == Access::CopySource  ? D3D12_RESOURCE_STATE_COPY_SOURCE
-				                                  :                                     D3D12_RESOURCE_STATE_DEPTH_WRITE;
-				if (use.IsBuffer)
+				KOI_GPU_BEGIN_EVENT(cmd, "%s", pass.Group);
+				inGroup = true;
+			}
+
+			{
+				KOI_GPU_ZONE_TRANSIENT(cmd, passZone, pass.Name);
+
+				for (const Use& use : UsesOf(pass))
 				{
-					const BufferHandle buffer = m_buffers[use.Index].Buffer;
-					barrier(buffer, m_device->Get(buffer), state);
+					const D3D12_RESOURCE_STATES state = use.Access == Access::ShaderRead  ? kShaderRead
+					                                  : use.Access == Access::ShaderWrite ? D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+					                                  : use.Access == Access::ColorTarget ? D3D12_RESOURCE_STATE_RENDER_TARGET
+					                                  : use.Access == Access::CopySource  ? D3D12_RESOURCE_STATE_COPY_SOURCE
+					                                  :                                     D3D12_RESOURCE_STATE_DEPTH_WRITE;
+					if (use.IsBuffer)
+					{
+						const BufferHandle buffer = m_buffers[use.Index].Buffer;
+						barrier(buffer, m_device->Get(buffer), state);
+					}
+					else
+					{
+						const TextureHandle texture = m_resources[use.Index].Texture;
+						barrier(texture, m_device->Get(texture), state);
+					}
 				}
-				else
+				cmd.FlushBarriers();
+
+				KOI_ASSERT(!pass.Compute || (pass.ColorCount == 0 && !pass.DepthTarget), "Compute passes write through Write(), not targets");
+				BindTargets(cmd, pass);
+
+				if (pass.Execute)
 				{
-					const TextureHandle texture = m_resources[use.Index].Texture;
-					barrier(texture, m_device->Get(texture), state);
+					pass.Execute(cmd, FormatsOf(pass));
 				}
 			}
-			cmd.FlushBarriers();
 
-			KOI_ASSERT(!pass.Compute || (pass.ColorCount == 0 && !pass.DepthTarget), "Compute passes write through Write(), not targets");
-			BindTargets(cmd, pass);
-
-			if (pass.Execute)
+			if (inGroup && !sameGroup(i, i + 1))
 			{
-				pass.Execute(cmd, FormatsOf(pass));
+				KOI_GPU_END_EVENT(cmd);
+				inGroup = false;
 			}
 		}
 

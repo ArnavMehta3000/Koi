@@ -10,7 +10,6 @@ namespace koi
 {
 	static constexpr u32 FRAMES_IN_FLIGHT       = 3;  // also the swapchain buffer count: each frame waits on its back buffer's fence
 	static constexpr u32 MAX_RENDER_TARGETS     = 8;  // D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT
-	static constexpr u32 MAX_VERTEX_ATTRIBUTES  = 16;
 	static constexpr u32 MAX_PUSH_CONSTANT_U32S = 32;
 
 	template <typename T>
@@ -99,16 +98,6 @@ namespace koi
 		BufferUsageFlag Usage = BufferUsage::None;
 		MemoryUsage Memory    = MemoryUsage::GpuOnly;
 		std::string_view DebugName;
-	};
-
-	struct VertexAttribute
-	{
-		const char* SemanticName      = "";
-		u32 SemanticIndex             = 0;
-		Format Format                 = Format::UNKNOWN;
-		u32 InputSlot                 = 0;
-		u32 ByteOffset                = 0;
-		bool PerInstance              = false;
 	};
 
 	// Where one mip of one array slice sits in a block of upload data. Also stored as-is in .ktex files

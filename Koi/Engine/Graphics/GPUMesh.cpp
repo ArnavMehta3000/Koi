@@ -18,11 +18,14 @@ namespace koi
 			return BoundingBox((lo + hi) * 0.5f, (hi - lo) * 0.5f);
 		}
 
-		void CreateBuffers(GfxDevice& device, GPUMesh& mesh, std::span<const Vertex> vertices, std::span<const u32> indices)
+		void CreateBuffers(GfxDevice& device, GPUMesh& mesh, std::span<const Vertex> vertices, std::span<const u32> indices, std::string_view source)
 		{
 			const u64 vbSize = vertices.size_bytes();
 			const u64 ibSize = indices.size_bytes();
 			KOI_ASSERT(vbSize > 0 && ibSize > 0, "GPUMesh::Upload: model has no geometry");
+
+			const std::string vbName = fmt::format("{} VB", source);
+			const std::string ibName = fmt::format("{} IB", source);
 
 			mesh.VertexBuffer = device.CreateBuffer(BufferDesc
 			{
@@ -30,7 +33,7 @@ namespace koi
 				.Stride    = sizeof(Vertex),
 				.Usage     = BufferUsage::Storage | BufferUsage::CopyDest,
 				.Memory    = MemoryUsage::GpuOnly,
-				.DebugName = "Mesh VB",
+				.DebugName = vbName,
 			});
 
 			mesh.IndexBuffer = device.CreateBuffer(BufferDesc
@@ -39,7 +42,7 @@ namespace koi
 				.Stride    = sizeof(u32),
 				.Usage     = BufferUsage::Index | BufferUsage::CopyDest,
 				.Memory    = MemoryUsage::GpuOnly,
-				.DebugName = "Mesh IB",
+				.DebugName = ibName,
 			});
 
 			GfxDevice::UploadContext& upload = device.GetUploadContext();
@@ -72,7 +75,7 @@ namespace koi
 				});
 			}
 
-			CreateBuffers(device, mesh, prepared.Vertices, prepared.Indices);
+			CreateBuffers(device, mesh, prepared.Vertices, prepared.Indices, model.SourcePath);
 			KOI_LOG(Render, Trace, "GPUMesh uploaded from {}: {} draws, {} verts, {} indices",
 				model.SourcePath, mesh.DrawItems.size(), prepared.Vertices.size(), prepared.Indices.size());
 			return mesh;

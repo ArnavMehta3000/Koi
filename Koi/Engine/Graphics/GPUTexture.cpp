@@ -26,7 +26,7 @@ namespace koi
 				.MipLevels    = header.MipLevels,
 				.Format       = header.Format,
 				.Usage        = TextureUsage::ShaderRead,
-				.DebugName    = image.Name,
+				.DebugName    = image.Path.empty() ? image.Name : image.Path,  // importer names alone are often just hashes
 			});
 
 			GfxDevice::UploadContext& upload = device.GetUploadContext();

@@ -86,7 +86,8 @@ namespace koi
 
 		struct Pass
 		{
-			const char* Name = nullptr;  // interned, GPU zones keep the pointer
+			const char* Name  = nullptr;  // interned, GPU zones keep the pointer
+			const char* Group = nullptr;  // the feature that added it, interned
 			u32                                           FirstUse = 0;  // into m_uses, contiguous per pass
 			u32                                           UseCount = 0;
 			std::array<Attachment, MAX_RENDER_TARGETS>    ColorTargets{};
@@ -151,6 +152,9 @@ namespace koi
 
 		inline void SetObserver(IRGObserver* observer) noexcept { m_observer = observer; }
 
+		// Passes added after this are grouped under one PIX event when there are several
+		void SetGroup(std::string_view group) { m_group = group.empty() ? nullptr : Intern(group).c_str(); }
+
 	private:
 		[[nodiscard]] const std::string& Intern(std::string_view name);
 		[[nodiscard]] std::span<const Use> UsesOf(const Pass& pass) const { return { m_uses.data() + pass.FirstUse, pass.UseCount }; }
@@ -175,6 +179,7 @@ namespace koi
 		RGBlackboard                       m_blackboard;
 		RGInspection                       m_inspection;
 		IRGObserver*                       m_observer  = nullptr;
+		const char*                        m_group     = nullptr;
 		bool                               m_notifying = false;
 	};
 }
